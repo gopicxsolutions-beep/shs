@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Bell } from 'lucide-react'
+import { Bell, ChevronsUpDown } from 'lucide-react'
 import { Avatar } from '../../components/ui/Avatar'
 import { useApp } from '../../context/AppContext'
 import { ROLES } from '../../lib/types'
@@ -15,8 +15,11 @@ export function DashboardTopBar() {
     <div className="bg-gradient-to-br from-brand-700 via-brand-600 to-brand-500 px-5 pb-16 pt-[calc(env(safe-area-inset-top)+1.25rem)] text-white">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-white/70">{roleInfo.label}</p>
-          <h1 className="font-display text-lg font-bold">Namaste, {user.name.split(' ')[0]} 🙏</h1>
+          <Link to={paths.profileSettings} className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 -ml-2 active:scale-95 transition">
+            <span className="text-xs text-white/80">{roleInfo.label}</span>
+            <ChevronsUpDown className="h-3 w-3 text-white/60" />
+          </Link>
+          <h1 className="font-display text-lg font-bold mt-1">Namaste, {user.name.split(' ')[0]} 🙏</h1>
           <p className="text-xs text-white/70 mt-0.5">{user.shgName}</p>
         </div>
         <div className="flex items-center gap-2.5">

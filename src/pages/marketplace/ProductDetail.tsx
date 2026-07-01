@@ -8,11 +8,12 @@ import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { SegmentedTabs } from '../../components/ui/SegmentedTabs'
 import { paths } from '../../routes/paths'
-import { products } from '../../data/marketplace'
+import { useData } from '../../context/DataContext'
 
 export function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { products, addOrder } = useData()
   const product = products.find((p) => p.id === id)
   const [checkingOut, setCheckingOut] = useState(false)
   const [paymentMode, setPaymentMode] = useState<'UPI' | 'Bank Transfer'>('UPI')
@@ -118,7 +119,20 @@ export function ProductDetail() {
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 px-4 py-3 backdrop-blur-md flex gap-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}>
         {checkingOut ? (
-          <Button fullWidth size="lg" onClick={() => setOrdered(true)}>
+          <Button
+            fullWidth
+            size="lg"
+            onClick={() => {
+              addOrder({
+                product: product.name,
+                buyer: 'You',
+                amount: product.price,
+                qty: 1,
+                paymentMode,
+              })
+              setOrdered(true)
+            }}
+          >
             Confirm &amp; Pay via {paymentMode}
           </Button>
         ) : (

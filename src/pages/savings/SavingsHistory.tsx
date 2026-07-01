@@ -4,9 +4,10 @@ import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { SegmentedTabs } from '../../components/ui/SegmentedTabs'
 import { Avatar } from '../../components/ui/Avatar'
-import { savingsEntries } from '../../data/savings'
+import { useData } from '../../context/DataContext'
 
 export function SavingsHistory() {
+  const { savingsEntries } = useData()
   const [filter, setFilter] = useState('all')
   const filtered = filter === 'all' ? savingsEntries : savingsEntries.filter((s) => s.status === filter)
 

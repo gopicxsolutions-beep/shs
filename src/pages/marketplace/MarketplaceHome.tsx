@@ -5,9 +5,10 @@ import { Badge } from '../../components/ui/Badge'
 import { SectionHeader } from '../../components/ui/SectionHeader'
 import { IconTile } from '../../components/ui/IconTile'
 import { paths } from '../../routes/paths'
-import { products, orders } from '../../data/marketplace'
+import { useData } from '../../context/DataContext'
 
 export function MarketplaceHome() {
+  const { products, orders } = useData()
   return (
     <div className="pb-6">
       <div className="bg-gradient-to-br from-brand-700 to-brand-500 px-4 pb-8 pt-[calc(env(safe-area-inset-top)+1.25rem)] text-white">

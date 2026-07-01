@@ -8,7 +8,7 @@ import { ProgressBar } from '../../components/ui/ProgressBar'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { paths } from '../../routes/paths'
-import { loans } from '../../data/loans'
+import { useData } from '../../context/DataContext'
 
 const statusTone: Record<string, 'success' | 'warning' | 'danger' | 'brand' | 'neutral'> = {
   active: 'brand', pending: 'warning', overdue: 'danger', closed: 'success', approved: 'success', rejected: 'neutral',
@@ -17,6 +17,7 @@ const statusTone: Record<string, 'success' | 'warning' | 'danger' | 'brand' | 'n
 export function LoanDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { loans, payLoanEmi } = useData()
   const loan = loans.find((l) => l.id === id)
   const [paid, setPaid] = useState(false)
 
@@ -35,7 +36,7 @@ export function LoanDetail() {
           </div>
           <div className="flex items-center justify-between text-xs mt-2">
             <span className="text-ink-500">New outstanding</span>
-            <span className="font-semibold text-ink-800">₹{Math.max(0, loan.outstanding - loan.emi).toLocaleString('en-IN')}</span>
+            <span className="font-semibold text-ink-800">₹{loan.outstanding.toLocaleString('en-IN')}</span>
           </div>
         </Card>
         <Button className="mt-8" fullWidth size="lg" onClick={() => navigate(paths.loanTracking)}>
@@ -109,7 +110,16 @@ export function LoanDetail() {
 
       {loan.status === 'active' || loan.status === 'overdue' ? (
         <div className="px-4 mt-5">
-          <Button fullWidth size="lg" onClick={() => setPaid(true)}>Pay EMI ₹{loan.emi}</Button>
+          <Button
+            fullWidth
+            size="lg"
+            onClick={() => {
+              payLoanEmi(loan.id)
+              setPaid(true)
+            }}
+          >
+            Pay EMI ₹{loan.emi}
+          </Button>
         </div>
       ) : null}
     </div>

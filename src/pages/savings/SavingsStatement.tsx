@@ -2,11 +2,12 @@ import { Download, Share2 } from 'lucide-react'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
-import { savingsEntries } from '../../data/savings'
 import { useApp } from '../../context/AppContext'
+import { useData } from '../../context/DataContext'
 
 export function SavingsStatement() {
   const { user } = useApp()
+  const { savingsEntries } = useData()
   const mine = savingsEntries.filter((s) => s.memberName === 'Lakshmi Devi')
   const total = mine.reduce((s, e) => s + e.amount, 0)
 

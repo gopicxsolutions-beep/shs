@@ -4,10 +4,16 @@ import { CheckCircle2 } from 'lucide-react'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Input, Textarea } from '../../components/ui/Field'
+import { useData } from '../../context/DataContext'
 import { paths } from '../../routes/paths'
 
 export function MeetingSchedule() {
   const navigate = useNavigate()
+  const { addMeeting } = useData()
+  const [date, setDate] = useState('2026-07-12')
+  const [time, setTime] = useState('16:00')
+  const [venue, setVenue] = useState('Anganwadi Centre, Kondapur')
+  const [agenda, setAgenda] = useState('')
   const [submitted, setSubmitted] = useState(false)
 
   if (submitted) {
@@ -32,15 +38,26 @@ export function MeetingSchedule() {
         className="px-4 mt-2 space-y-4"
         onSubmit={(e) => {
           e.preventDefault()
+          const dateLabel = new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+          const [h, m] = time.split(':').map(Number)
+          const timeLabel = new Date(2000, 0, 1, h, m).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+          addMeeting({ date: dateLabel, time: timeLabel, venue, agenda: agenda || 'Monthly review meeting' })
           setSubmitted(true)
         }}
       >
         <div className="grid grid-cols-2 gap-3">
-          <Input label="Date" type="date" defaultValue="2026-07-12" required />
-          <Input label="Time" type="time" defaultValue="16:00" required />
+          <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+          <Input label="Time" type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
         </div>
-        <Input label="Venue" placeholder="Anganwadi Centre, Kondapur" defaultValue="Anganwadi Centre, Kondapur" required />
-        <Textarea label="Agenda" placeholder="e.g. Monthly savings review & loan applications" rows={3} required />
+        <Input label="Venue" placeholder="Anganwadi Centre, Kondapur" value={venue} onChange={(e) => setVenue(e.target.value)} required />
+        <Textarea
+          label="Agenda"
+          placeholder="e.g. Monthly savings review & loan applications"
+          rows={3}
+          value={agenda}
+          onChange={(e) => setAgenda(e.target.value)}
+          required
+        />
         <Button type="submit" fullWidth size="lg" className="mt-2">
           Schedule &amp; Notify Members
         </Button>

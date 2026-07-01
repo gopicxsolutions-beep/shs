@@ -5,16 +5,31 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Avatar } from '../../components/ui/Avatar'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { paths } from '../../routes/paths'
 import { members } from '../../data/members'
+import { useData } from '../../context/DataContext'
 
 export function MeetingAttendance() {
   const navigate = useNavigate()
+  const { meetings, markAttendance } = useData()
+  const targetMeeting = meetings.find((m) => m.status === 'upcoming')
   const [present, setPresent] = useState<Record<string, boolean>>(
     Object.fromEntries(members.map((m) => [m.id, true])),
   )
   const [saved, setSaved] = useState(false)
   const count = Object.values(present).filter(Boolean).length
+
+  if (!targetMeeting) {
+    return (
+      <div>
+        <PageHeader title="Digital Attendance" />
+        <div className="px-4 pt-8">
+          <EmptyState title="No upcoming meeting" description="Schedule a meeting first to take attendance." />
+        </div>
+      </div>
+    )
+  }
 
   if (saved) {
     return (
@@ -33,7 +48,7 @@ export function MeetingAttendance() {
 
   return (
     <div className="pb-6">
-      <PageHeader title="Digital Attendance" subtitle={`${count} of ${members.length} present`} />
+      <PageHeader title="Digital Attendance" subtitle={`${targetMeeting.agenda} · ${count} of ${members.length} present`} />
       <div className="px-4 mt-2">
         <Card className="!p-0 divide-y divide-ink-100">
           {members.map((m) => (
@@ -62,7 +77,16 @@ export function MeetingAttendance() {
         </Card>
       </div>
       <div className="px-4 mt-5">
-        <Button fullWidth size="lg" onClick={() => setSaved(true)}>Save Attendance</Button>
+        <Button
+          fullWidth
+          size="lg"
+          onClick={() => {
+            markAttendance(targetMeeting.id, count)
+            setSaved(true)
+          }}
+        >
+          Save Attendance
+        </Button>
       </div>
     </div>
   )

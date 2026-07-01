@@ -6,7 +6,7 @@ import { Badge } from '../../components/ui/Badge'
 import { IconTile } from '../../components/ui/IconTile'
 import { SectionHeader } from '../../components/ui/SectionHeader'
 import { paths } from '../../routes/paths'
-import { schemes } from '../../data/schemes'
+import { useData } from '../../context/DataContext'
 
 type Status = 'not_applied' | 'applied' | 'under_review' | 'approved' | 'rejected'
 
@@ -27,6 +27,7 @@ const statusLabel: Record<Status, string> = {
 }
 
 export function SchemeRepository() {
+  const { schemes } = useData()
   return (
     <div className="pb-6">
       <PageHeader title="Government Schemes" subtitle={`${schemes.length} schemes available`} />

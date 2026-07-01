@@ -3,7 +3,7 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
-import { schemes } from '../../data/schemes'
+import { useData } from '../../context/DataContext'
 import { cn } from '../../lib/cn'
 
 type Status = 'applied' | 'under_review' | 'approved' | 'rejected'
@@ -35,6 +35,7 @@ function stepIndex(status: Status) {
 }
 
 export function ApplicationTracking() {
+  const { schemes } = useData()
   const tracked = schemes.filter((s) => s.status && s.status !== 'not_applied') as (typeof schemes[number] & { status: Status })[]
 
   if (tracked.length === 0) {

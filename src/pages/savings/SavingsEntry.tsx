@@ -7,13 +7,17 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Field'
 import { SegmentedTabs } from '../../components/ui/SegmentedTabs'
 import { members } from '../../data/members'
+import { useData } from '../../context/DataContext'
 import { paths } from '../../routes/paths'
 
 export function SavingsEntry() {
   const navigate = useNavigate()
+  const { addSavingsEntry } = useData()
   const [member, setMember] = useState(members[0].name)
   const [amount, setAmount] = useState('500')
-  const [mode, setMode] = useState('Cash')
+  const [frequency, setFrequency] = useState<'Daily' | 'Weekly' | 'Monthly'>('Weekly')
+  const [mode, setMode] = useState<'Cash' | 'UPI' | 'Bank Transfer'>('Cash')
+  const [date, setDate] = useState('2026-06-28')
   const [submitted, setSubmitted] = useState(false)
 
   if (submitted) {
@@ -38,6 +42,13 @@ export function SavingsEntry() {
         className="px-4 mt-2 space-y-4"
         onSubmit={(e) => {
           e.preventDefault()
+          addSavingsEntry({
+            memberName: member,
+            amount: Number(amount),
+            mode,
+            type: frequency,
+            date: new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          })
           setSubmitted(true)
         }}
       >
@@ -72,8 +83,8 @@ export function SavingsEntry() {
               { value: 'Weekly', label: 'Weekly' },
               { value: 'Monthly', label: 'Monthly' },
             ]}
-            value="Weekly"
-            onChange={() => {}}
+            value={frequency}
+            onChange={(v) => setFrequency(v as typeof frequency)}
           />
         </div>
 
@@ -86,11 +97,11 @@ export function SavingsEntry() {
               { value: 'Bank Transfer', label: 'Bank' },
             ]}
             value={mode}
-            onChange={setMode}
+            onChange={(v) => setMode(v as typeof mode)}
           />
         </div>
 
-        <Input label="Date" type="date" defaultValue="2026-06-28" required />
+        <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
 
         <Button type="submit" fullWidth size="lg" className="mt-2">
           Save Entry

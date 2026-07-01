@@ -6,9 +6,10 @@ import { Badge } from '../../components/ui/Badge'
 import { IconTile } from '../../components/ui/IconTile'
 import { SectionHeader } from '../../components/ui/SectionHeader'
 import { paths } from '../../routes/paths'
-import { meetings } from '../../data/meetings'
+import { useData } from '../../context/DataContext'
 
 export function MeetingsHome() {
+  const { meetings } = useData()
   const upcoming = meetings.filter((m) => m.status === 'upcoming')
   const past = meetings.filter((m) => m.status === 'completed')
 

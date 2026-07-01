@@ -8,14 +8,15 @@ import { Badge } from '../../components/ui/Badge'
 import { ProgressBar } from '../../components/ui/ProgressBar'
 import { IconTile } from '../../components/ui/IconTile'
 import { paths } from '../../routes/paths'
-import { loans } from '../../data/loans'
 import { shgInfo } from '../../data/shg'
+import { useData } from '../../context/DataContext'
 
 const statusTone: Record<string, 'success' | 'warning' | 'danger' | 'brand' | 'neutral'> = {
   active: 'brand', pending: 'warning', overdue: 'danger', closed: 'success', approved: 'success', rejected: 'neutral',
 }
 
 export function LoanHome() {
+  const { loans } = useData()
   const active = loans.filter((l) => l.status === 'active' || l.status === 'overdue')
 
   return (

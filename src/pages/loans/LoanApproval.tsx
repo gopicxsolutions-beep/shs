@@ -6,15 +6,22 @@ import { Button } from '../../components/ui/Button'
 import { Avatar } from '../../components/ui/Avatar'
 import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
-import { loans as loanData } from '../../data/loans'
+import { useData } from '../../context/DataContext'
 
 export function LoanApproval() {
+  const { loans, decideLoan } = useData()
   const [decided, setDecided] = useState<Record<string, 'approved' | 'rejected'>>({})
-  const pending = loanData.filter((l) => l.status === 'pending')
+  // keep a decided loan visible (with its badge) even after its status flips away from 'pending'
+  const pending = loans.filter((l) => l.status === 'pending' || decided[l.id])
+
+  function decide(id: string, decision: 'approved' | 'rejected') {
+    setDecided((d) => ({ ...d, [id]: decision }))
+    decideLoan(id, decision)
+  }
 
   return (
     <div className="pb-6">
-      <PageHeader title="Loan Approvals" subtitle={`${pending.length} pending requests`} />
+      <PageHeader title="Loan Approvals" subtitle={`${pending.filter((l) => !decided[l.id]).length} pending requests`} />
       <div className="px-4 mt-2 space-y-3">
         {pending.length === 0 && <EmptyState title="No pending requests" description="All loan applications have been reviewed." />}
         {pending.map((l) => {
@@ -36,7 +43,7 @@ export function LoanApproval() {
 
               {decision ? (
                 <Badge tone={decision === 'approved' ? 'success' : 'danger'} className="mt-3">
-                  {decision === 'approved' ? 'Approved' : 'Rejected'}
+                  {decision === 'approved' ? 'Approved · disbursed' : 'Rejected'}
                 </Badge>
               ) : (
                 <div className="mt-3 grid grid-cols-2 gap-2">
@@ -44,14 +51,14 @@ export function LoanApproval() {
                     variant="danger"
                     size="sm"
                     icon={<X className="h-3.5 w-3.5" />}
-                    onClick={() => setDecided((d) => ({ ...d, [l.id]: 'rejected' }))}
+                    onClick={() => decide(l.id, 'rejected')}
                   >
                     Reject
                   </Button>
                   <Button
                     size="sm"
                     icon={<Check className="h-3.5 w-3.5" />}
-                    onClick={() => setDecided((d) => ({ ...d, [l.id]: 'approved' }))}
+                    onClick={() => decide(l.id, 'approved')}
                   >
                     Approve
                   </Button>

@@ -4,7 +4,7 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { paths } from '../../routes/paths'
-import { schemes } from '../../data/schemes'
+import { useData } from '../../context/DataContext'
 
 const recommendations = [
   {
@@ -25,6 +25,7 @@ const recommendations = [
 ]
 
 export function SchemeRecommender() {
+  const { schemes } = useData()
   return (
     <div className="pb-6">
       <PageHeader title="Scheme Recommender" subtitle="Schemes matched to your profile by AI" />

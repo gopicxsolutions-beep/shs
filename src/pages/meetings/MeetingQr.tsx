@@ -2,11 +2,22 @@ import { useState } from 'react'
 import { QrCode, CheckCircle2, ScanLine } from 'lucide-react'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
-import { meetings } from '../../data/meetings'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { useData } from '../../context/DataContext'
 
 export function MeetingQr() {
+  const { meetings } = useData()
   const [scanned, setScanned] = useState(false)
-  const meeting = meetings.find((m) => m.status === 'upcoming')!
+  const meeting = meetings.find((m) => m.status === 'upcoming')
+
+  if (!meeting) {
+    return (
+      <div>
+        <PageHeader title="QR Attendance" />
+        <div className="px-4 pt-8"><EmptyState title="No upcoming meeting" description="Check back once a meeting is scheduled." /></div>
+      </div>
+    )
+  }
 
   return (
     <div className="pb-6">

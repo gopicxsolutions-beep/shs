@@ -4,10 +4,12 @@ import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { Avatar } from '../../components/ui/Avatar'
 import { EmptyState } from '../../components/ui/EmptyState'
-import { activities, categoryMeta } from '../../data/livelihood'
+import { categoryMeta } from '../../data/livelihood'
+import { useData } from '../../context/DataContext'
 
 export function LivelihoodDetail() {
   const { id } = useParams()
+  const { activities } = useData()
   const activity = activities.find((a) => a.id === id)
 
   if (!activity) {

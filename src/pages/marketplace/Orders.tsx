@@ -6,7 +6,8 @@ import { Badge } from '../../components/ui/Badge'
 import { SegmentedTabs } from '../../components/ui/SegmentedTabs'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { paths } from '../../routes/paths'
-import { orders, type Order } from '../../data/marketplace'
+import type { Order } from '../../data/marketplace'
+import { useData } from '../../context/DataContext'
 
 const statusTone: Record<Order['status'], 'brand' | 'warning' | 'info' | 'success'> = {
   new: 'warning',
@@ -24,6 +25,7 @@ const filters = [
 ]
 
 export function Orders() {
+  const { orders } = useData()
   const [status, setStatus] = useState('all')
   const filtered = status === 'all' ? orders : orders.filter((o) => o.status === status)
 

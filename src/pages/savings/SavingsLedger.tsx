@@ -1,8 +1,9 @@
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
-import { savingsEntries } from '../../data/savings'
+import { useData } from '../../context/DataContext'
 
 export function SavingsLedger() {
+  const { savingsEntries } = useData()
   let running = 486200 - savingsEntries.reduce((s, e) => s + e.amount, 0)
   const rows = savingsEntries
     .slice()

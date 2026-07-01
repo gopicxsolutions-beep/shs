@@ -7,15 +7,20 @@ import { Button } from '../../components/ui/Button'
 import { Input, Textarea } from '../../components/ui/Field'
 import { paths } from '../../routes/paths'
 import { categoryMeta, type Activity } from '../../data/livelihood'
+import { useApp } from '../../context/AppContext'
+import { useData } from '../../context/DataContext'
 
 const categories = Object.keys(categoryMeta) as Activity['category'][]
 
 export function LivelihoodEntry() {
   const navigate = useNavigate()
+  const { user } = useApp()
+  const { addActivity } = useData()
   const [category, setCategory] = useState<Activity['category']>(categories[0])
   const [production, setProduction] = useState('')
   const [income, setIncome] = useState('5000')
   const [expense, setExpense] = useState('2000')
+  const [month, setMonth] = useState('2026-06')
   const [submitted, setSubmitted] = useState(false)
 
   if (submitted) {
@@ -42,6 +47,16 @@ export function LivelihoodEntry() {
         className="px-4 mt-2 space-y-4"
         onSubmit={(e) => {
           e.preventDefault()
+          const [y, m] = month.split('-').map(Number)
+          const monthLabel = new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+          addActivity({
+            category,
+            member: user.name,
+            production,
+            income: Number(income),
+            expense: Number(expense),
+            month: monthLabel,
+          })
           setSubmitted(true)
         }}
       >
@@ -86,7 +101,7 @@ export function LivelihoodEntry() {
           />
         </div>
 
-        <Input label="Month" type="month" defaultValue="2026-06" required />
+        <Input label="Month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} required />
 
         <Button type="submit" fullWidth size="lg" className="mt-2">
           Save Entry

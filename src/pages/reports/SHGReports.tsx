@@ -5,11 +5,12 @@ import { Card } from '../../components/ui/Card'
 import { StatCard } from '../../components/ui/StatCard'
 import { Badge } from '../../components/ui/Badge'
 import { SectionHeader } from '../../components/ui/SectionHeader'
-import { savingsEntries, savingsMonthlyTrend } from '../../data/savings'
-import { loans } from '../../data/loans'
+import { savingsMonthlyTrend } from '../../data/savings'
 import { members } from '../../data/members'
+import { useData } from '../../context/DataContext'
 
 export function SHGReports() {
+  const { savingsEntries, loans } = useData()
   const totalSavingsCollected = savingsEntries.reduce((s, e) => s + e.amount, 0)
   const totalDisbursed = loans.reduce((s, l) => s + l.amount, 0)
   const totalOutstanding = loans.reduce((s, l) => s + l.outstanding, 0)

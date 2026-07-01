@@ -7,11 +7,12 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Field'
 import { Badge } from '../../components/ui/Badge'
 import { paths } from '../../routes/paths'
-import { schemes } from '../../data/schemes'
+import { useData } from '../../context/DataContext'
 
 const occupations = ['Agriculture', 'Dairy / Livestock', 'Handicrafts', 'Petty Trade', 'Tailoring', 'Other']
 
 export function EligibilityChecker() {
+  const { schemes } = useData()
   const [age, setAge] = useState('32')
   const [occupation, setOccupation] = useState(occupations[0])
   const [income, setIncome] = useState('60000')

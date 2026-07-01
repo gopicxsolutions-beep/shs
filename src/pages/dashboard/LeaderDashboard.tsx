@@ -8,10 +8,10 @@ import { Avatar } from '../../components/ui/Avatar'
 import { IconTile } from '../../components/ui/IconTile'
 import { paths } from '../../routes/paths'
 import { shgInfo } from '../../data/shg'
-import { loans } from '../../data/loans'
-import { meetings } from '../../data/meetings'
+import { useData } from '../../context/DataContext'
 
 export function LeaderDashboard() {
+  const { loans, meetings } = useData()
   const pendingLoans = loans.filter((l) => l.status === 'pending')
   const overdueLoans = loans.filter((l) => l.status === 'overdue')
   const upcomingMeeting = meetings.find((m) => m.status === 'upcoming')

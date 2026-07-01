@@ -5,12 +5,16 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Input, Textarea } from '../../components/ui/Field'
+import { useApp } from '../../context/AppContext'
+import { useData } from '../../context/DataContext'
 import { paths } from '../../routes/paths'
 
 const categories = ['Agriculture', 'Dairy', 'Poultry', 'Tailoring', 'Handicrafts', 'Food Processing']
 
 export function AddProduct() {
   const navigate = useNavigate()
+  const { user } = useApp()
+  const { addProduct } = useData()
   const [name, setName] = useState('')
   const [category, setCategory] = useState(categories[0])
   const [price, setPrice] = useState('100')
@@ -42,6 +46,17 @@ export function AddProduct() {
         className="px-4 mt-2 space-y-4"
         onSubmit={(e) => {
           e.preventDefault()
+          addProduct({
+            name,
+            seller: user.name,
+            price: Number(price),
+            unit,
+            category,
+            rating: 0,
+            reviews: 0,
+            image: '📦',
+            stock: Number(stock),
+          })
           setSubmitted(true)
         }}
       >

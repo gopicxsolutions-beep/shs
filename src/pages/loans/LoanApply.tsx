@@ -5,11 +5,17 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Input, Textarea } from '../../components/ui/Field'
+import { useApp } from '../../context/AppContext'
+import { useData } from '../../context/DataContext'
 import { paths } from '../../routes/paths'
 
 export function LoanApply() {
   const navigate = useNavigate()
+  const { user } = useApp()
+  const { addLoanRequest } = useData()
   const [amount, setAmount] = useState('20000')
+  const [purpose, setPurpose] = useState('')
+  const [tenureMonths, setTenureMonths] = useState('12')
   const [submitted, setSubmitted] = useState(false)
 
   if (submitted) {
@@ -36,6 +42,12 @@ export function LoanApply() {
         className="px-4 mt-2 space-y-4"
         onSubmit={(e) => {
           e.preventDefault()
+          addLoanRequest({
+            memberName: user.name,
+            purpose: purpose || 'General purpose loan',
+            amount: Number(amount),
+            tenureMonths: Number(tenureMonths),
+          })
           setSubmitted(true)
         }}
       >
@@ -47,9 +59,22 @@ export function LoanApply() {
           icon={<IndianRupee className="h-4 w-4" />}
           required
         />
-        <Textarea label="Purpose of loan" placeholder="e.g. Purchase of milch cow for dairy" rows={3} required />
+        <Textarea
+          label="Purpose of loan"
+          placeholder="e.g. Purchase of milch cow for dairy"
+          rows={3}
+          value={purpose}
+          onChange={(e) => setPurpose(e.target.value)}
+          required
+        />
         <div className="grid grid-cols-2 gap-3">
-          <Input label="Tenure (months)" type="number" defaultValue="12" required />
+          <Input
+            label="Tenure (months)"
+            type="number"
+            value={tenureMonths}
+            onChange={(e) => setTenureMonths(e.target.value)}
+            required
+          />
           <Input label="Preferred EMI" type="number" placeholder="Auto-calculated" disabled />
         </div>
 

@@ -4,9 +4,10 @@ import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
-import { schemes as initialSchemes } from '../../data/schemes'
+import { useData } from '../../context/DataContext'
 
 export function SchemeManagement() {
+  const { schemes: initialSchemes } = useData()
   const [activeMap, setActiveMap] = useState<Record<string, boolean>>(
     () => Object.fromEntries(initialSchemes.map((s) => [s.id, true])),
   )

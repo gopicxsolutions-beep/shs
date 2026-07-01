@@ -9,16 +9,14 @@ import { Badge } from '../../components/ui/Badge'
 import { IconTile } from '../../components/ui/IconTile'
 import { paths } from '../../routes/paths'
 import { savingsMonthlyTrend } from '../../data/savings'
-import { loans } from '../../data/loans'
-import { meetings } from '../../data/meetings'
 import { courses } from '../../data/training'
 import { announcements } from '../../data/announcements'
-import { schemes } from '../../data/schemes'
-import { products, orders } from '../../data/marketplace'
 import { members } from '../../data/members'
 import { shgInfo } from '../../data/shg'
+import { useData } from '../../context/DataContext'
 
 export function MemberDashboard() {
+  const { loans, meetings, schemes, products, orders } = useData()
   const myLoan = loans.find((l) => l.memberName === 'Lakshmi Devi' && l.status === 'active')
   const upcomingMeeting = meetings.find((m) => m.status === 'upcoming')
   const inProgressCourse = courses.find((c) => c.progress > 0 && c.progress < 100)

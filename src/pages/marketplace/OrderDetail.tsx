@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Check, Package, User, IndianRupee, Landmark, QrCode } from 'lucide-react'
 import { PageHeader } from '../../components/layout/PageHeader'
@@ -7,7 +6,8 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { cn } from '../../lib/cn'
-import { orders, type Order } from '../../data/marketplace'
+import type { Order } from '../../data/marketplace'
+import { useData } from '../../context/DataContext'
 
 const steps: { key: Order['status']; label: string }[] = [
   { key: 'new', label: 'New' },
@@ -32,10 +32,10 @@ const nextAction: Record<Order['status'], string | null> = {
 
 export function OrderDetail() {
   const { id } = useParams()
+  const { orders, advanceOrder } = useData()
   const order = orders.find((o) => o.id === id)
-  const [status, setStatus] = useState<Order['status'] | undefined>(order?.status)
 
-  if (!order || !status) {
+  if (!order) {
     return (
       <div>
         <PageHeader title="Order" />
@@ -44,13 +44,9 @@ export function OrderDetail() {
     )
   }
 
+  const status = order.status
   const currentIndex = steps.findIndex((s) => s.key === status)
   const action = nextAction[status]
-
-  const handleAdvance = () => {
-    const idx = steps.findIndex((s) => s.key === status)
-    if (idx < steps.length - 1) setStatus(steps[idx + 1].key)
-  }
 
   return (
     <div className="pb-6">
@@ -159,7 +155,7 @@ export function OrderDetail() {
 
       {action && (
         <div className="px-4 mt-6">
-          <Button fullWidth size="lg" onClick={handleAdvance}>
+          <Button fullWidth size="lg" onClick={() => advanceOrder(order.id)}>
             {action}
           </Button>
         </div>

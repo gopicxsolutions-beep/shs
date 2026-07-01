@@ -7,9 +7,11 @@ import { SectionHeader } from '../../components/ui/SectionHeader'
 import { Badge } from '../../components/ui/Badge'
 import { IconTile } from '../../components/ui/IconTile'
 import { paths } from '../../routes/paths'
-import { activities, categoryMeta } from '../../data/livelihood'
+import { categoryMeta } from '../../data/livelihood'
+import { useData } from '../../context/DataContext'
 
 export function LivelihoodHome() {
+  const { activities } = useData()
   const totalIncome = activities.reduce((sum, a) => sum + a.income, 0)
   const totalExpense = activities.reduce((sum, a) => sum + a.expense, 0)
 

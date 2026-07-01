@@ -7,10 +7,12 @@ import { SectionHeader } from '../../components/ui/SectionHeader'
 import { Badge } from '../../components/ui/Badge'
 import { IconTile } from '../../components/ui/IconTile'
 import { paths } from '../../routes/paths'
-import { savingsEntries, savingsMonthlyTrend } from '../../data/savings'
+import { savingsMonthlyTrend } from '../../data/savings'
 import { shgInfo } from '../../data/shg'
+import { useData } from '../../context/DataContext'
 
 export function SavingsHome() {
+  const { savingsEntries } = useData()
   return (
     <div className="pb-6">
       <PageHeader title="Savings Management" subtitle={shgInfo.name} />

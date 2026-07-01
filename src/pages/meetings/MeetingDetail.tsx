@@ -5,10 +5,11 @@ import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { paths } from '../../routes/paths'
-import { meetings } from '../../data/meetings'
+import { useData } from '../../context/DataContext'
 
 export function MeetingDetail() {
   const { id } = useParams()
+  const { meetings } = useData()
   const meeting = meetings.find((m) => m.id === id)
 
   if (!meeting) {

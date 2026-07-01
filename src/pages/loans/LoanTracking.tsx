@@ -6,13 +6,14 @@ import { Badge } from '../../components/ui/Badge'
 import { Avatar } from '../../components/ui/Avatar'
 import { ProgressBar } from '../../components/ui/ProgressBar'
 import { paths } from '../../routes/paths'
-import { loans } from '../../data/loans'
+import { useData } from '../../context/DataContext'
 
 const statusTone: Record<string, 'success' | 'warning' | 'danger' | 'brand' | 'neutral'> = {
   active: 'brand', pending: 'warning', overdue: 'danger', closed: 'success', approved: 'success', rejected: 'neutral',
 }
 
 export function LoanTracking() {
+  const { loans } = useData()
   const overdue = loans.filter((l) => l.status === 'overdue')
   const tracked = loans.filter((l) => l.status === 'active' || l.status === 'overdue')
 

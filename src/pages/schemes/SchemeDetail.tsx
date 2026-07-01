@@ -7,7 +7,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { paths } from '../../routes/paths'
-import { schemes } from '../../data/schemes'
+import { useData } from '../../context/DataContext'
 
 const requiredDocuments = ['Aadhaar Card', 'Bank Passbook', 'SHG Membership Certificate', 'Income Certificate']
 
@@ -31,6 +31,7 @@ const statusLabel: Record<Status, string> = {
 
 export function SchemeDetail() {
   const { id } = useParams()
+  const { schemes, applyScheme } = useData()
   const scheme = schemes.find((s) => s.id === id)
 
   if (!scheme) {
@@ -139,7 +140,15 @@ export function SchemeDetail() {
             <Button fullWidth size="lg" variant="secondary">View Application Status</Button>
           </Link>
         ) : showUpload ? (
-          <Button fullWidth size="lg" disabled={!allUploaded} onClick={() => setJustApplied(true)}>
+          <Button
+            fullWidth
+            size="lg"
+            disabled={!allUploaded}
+            onClick={() => {
+              applyScheme(scheme.id)
+              setJustApplied(true)
+            }}
+          >
             Submit Application
           </Button>
         ) : (
