@@ -49,7 +49,7 @@ export function SchemeRepository() {
                       <div className="flex items-center gap-2">
                         <Badge tone="brand">{s.name}</Badge>
                       </div>
-                      <p className="text-sm font-semibold text-ink-900 mt-1.5 truncate">{s.fullName}</p>
+                      <p className="text-sm font-semibold text-ink-900 mt-1.5 line-clamp-2">{s.fullName}</p>
                     </div>
                     <Badge tone={statusTone[status]} className="shrink-0">{statusLabel[status]}</Badge>
                   </div>

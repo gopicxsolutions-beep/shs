@@ -1,32 +1,32 @@
-# React + TypeScript + Vite
+# SHG Saathi — Mobile App UI/UX for Self-Help Groups
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A complete, premium mobile-app UI/UX for a Self-Help Group (SHG) management platform, covering all five user roles (Member, Leader/President, Community Resource Person, Cluster Level Federation, Administrator) and every feature tab from the product spec — savings, loans, meetings, financial records, livelihoods, marketplace, government schemes, training, digital payments, announcements, AI-powered advisors, reports, and analytics.
 
-Currently, two official plugins are available:
+Built as a mobile-first React app, rendered inside a phone frame on desktop for easy preview.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+- Vite + React 19 + TypeScript
+- Tailwind CSS v4 (custom brand/gold/ink design tokens)
+- react-router-dom for navigation
+- recharts for charts, lucide-react for icons
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting started
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Open the printed local URL. On desktop the app renders inside a phone frame; on a mobile viewport it fills the screen edge-to-edge.
+
+The onboarding flow (Splash → Login → OTP → Profile Setup → Role Select) lets you pick any of the 5 roles to explore a tailored dashboard and navigation experience. Role can be changed anytime from Profile → Settings.
+
+## Project structure
+
+- `src/components/ui` — shared design-system primitives (Card, Button, Badge, StatCard, ProgressBar, IconTile, etc.)
+- `src/components/layout` — app shell, bottom navigation, page headers, phone frame
+- `src/context` — app-wide state (current user, role, language)
+- `src/data` — mock data for members, savings, loans, meetings, schemes, etc.
+- `src/pages` — one folder per feature module (auth, dashboard, shg, savings, loans, meetings, financial, livelihood, marketplace, schemes, training, payments, announcements, support, ai, reports, analytics, profile, admin)
+- `src/routes` — route path constants and the top-level router
