@@ -1,10 +1,13 @@
-import { useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { CheckCircle2 } from 'lucide-react'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { ProgressBar } from '../../components/ui/ProgressBar'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { paths } from '../../routes/paths'
 import { loans } from '../../data/loans'
 
 const statusTone: Record<string, 'success' | 'warning' | 'danger' | 'brand' | 'neutral'> = {
@@ -13,7 +16,34 @@ const statusTone: Record<string, 'success' | 'warning' | 'danger' | 'brand' | 'n
 
 export function LoanDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const loan = loans.find((l) => l.id === id)
+  const [paid, setPaid] = useState(false)
+
+  if (paid && loan) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center px-8 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-brand-600">
+          <CheckCircle2 className="h-9 w-9" />
+        </div>
+        <h1 className="mt-5 font-display text-xl font-bold text-ink-900">EMI paid successfully!</h1>
+        <p className="mt-1.5 text-sm text-ink-500">₹{loan.emi} received. Digital receipt sent by SMS &amp; the loan ledger has been updated.</p>
+        <Card className="mt-6 w-full text-left">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-ink-500">Receipt No.</span>
+            <span className="font-semibold text-ink-800">RCPT-{loan.id.toUpperCase()}-{Math.floor(Math.random() * 9000 + 1000)}</span>
+          </div>
+          <div className="flex items-center justify-between text-xs mt-2">
+            <span className="text-ink-500">New outstanding</span>
+            <span className="font-semibold text-ink-800">₹{Math.max(0, loan.outstanding - loan.emi).toLocaleString('en-IN')}</span>
+          </div>
+        </Card>
+        <Button className="mt-8" fullWidth size="lg" onClick={() => navigate(paths.loanTracking)}>
+          Done
+        </Button>
+      </div>
+    )
+  }
 
   if (!loan) {
     return (
@@ -79,7 +109,7 @@ export function LoanDetail() {
 
       {loan.status === 'active' || loan.status === 'overdue' ? (
         <div className="px-4 mt-5">
-          <Button fullWidth size="lg">Pay EMI ₹{loan.emi}</Button>
+          <Button fullWidth size="lg" onClick={() => setPaid(true)}>Pay EMI ₹{loan.emi}</Button>
         </div>
       ) : null}
     </div>

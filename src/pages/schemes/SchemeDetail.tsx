@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { CheckCircle2, Building2 } from 'lucide-react'
 import { PageHeader } from '../../components/layout/PageHeader'
@@ -41,8 +42,26 @@ export function SchemeDetail() {
     )
   }
 
-  const status = (scheme.status ?? 'not_applied') as Status
+  const [justApplied, setJustApplied] = useState(false)
+  const status = justApplied ? 'applied' : ((scheme.status ?? 'not_applied') as Status)
   const hasApplied = status !== 'not_applied'
+
+  if (justApplied) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center px-8 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-brand-600">
+          <CheckCircle2 className="h-9 w-9" />
+        </div>
+        <h1 className="mt-5 font-display text-xl font-bold text-ink-900">Application submitted!</h1>
+        <p className="mt-1.5 text-sm text-ink-500">
+          Your application for {scheme.name} has been sent to your CRP for verification.
+        </p>
+        <Link to={paths.schemeTracking} className="mt-8 w-full">
+          <Button fullWidth size="lg">Track Application</Button>
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div className="pb-6">
@@ -92,7 +111,7 @@ export function SchemeDetail() {
             <Button fullWidth size="lg" variant="secondary">View Application Status</Button>
           </Link>
         ) : (
-          <Button fullWidth size="lg">Apply Now</Button>
+          <Button fullWidth size="lg" onClick={() => setJustApplied(true)}>Apply Now</Button>
         )}
       </div>
     </div>

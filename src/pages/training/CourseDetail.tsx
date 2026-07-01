@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { PlayCircle, FileText, Headphones, CheckCircle2 } from 'lucide-react'
+import { PlayCircle, FileText, Headphones, CheckCircle2, Pause } from 'lucide-react'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
@@ -31,17 +32,26 @@ export function CourseDetail() {
   }
 
   const Icon = formatIcon[course.format]
+  const [playing, setPlaying] = useState(false)
+  const [progress, setProgress] = useState(course.progress)
+  const complete = progress === 100
 
   return (
     <div className="pb-6">
       <PageHeader title="Course" subtitle={course.topic} />
 
       <div className="px-4 mt-2">
-        <div className="flex h-48 w-full items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-[var(--shadow-card)]">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/15">
-            <Icon className="h-10 w-10" />
+        <button
+          onClick={() => setPlaying((p) => !p)}
+          className="flex h-48 w-full items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-[var(--shadow-card)] transition active:scale-[0.99]"
+        >
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/15">
+              {playing ? <Pause className="h-10 w-10" /> : <Icon className="h-10 w-10" />}
+            </div>
+            {playing && <span className="text-xs font-semibold text-white/80">Playing {course.format.toLowerCase()}…</span>}
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="px-4 mt-5">
@@ -56,14 +66,14 @@ export function CourseDetail() {
           <div className="mt-4">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-semibold text-ink-600">Progress</span>
-              <span className="text-xs font-semibold text-ink-600">{course.progress}%</span>
+              <span className="text-xs font-semibold text-ink-600">{progress}%</span>
             </div>
-            <ProgressBar value={course.progress} tone="gold" />
+            <ProgressBar value={progress} tone="gold" />
           </div>
         </Card>
       </div>
 
-      {course.progress === 100 && (
+      {complete && (
         <div className="px-4 mt-4">
           <Card className="flex items-center gap-3 bg-brand-50/40 border-brand-100">
             <CheckCircle2 className="h-5 w-5 text-brand-600 shrink-0" />
@@ -73,8 +83,15 @@ export function CourseDetail() {
       )}
 
       <div className="px-4 mt-6 space-y-3">
-        <Button fullWidth size="lg">
-          {course.progress === 0 ? 'Start Learning' : course.progress === 100 ? 'Review Course' : 'Continue Learning'}
+        <Button
+          fullWidth
+          size="lg"
+          onClick={() => {
+            setPlaying(true)
+            setProgress(100)
+          }}
+        >
+          {progress === 0 ? 'Start Learning' : complete ? 'Review Course' : 'Continue Learning'}
         </Button>
         <Link to={paths.trainingQuiz(course.id)}>
           <Button fullWidth size="lg" variant="secondary">Start Quiz</Button>

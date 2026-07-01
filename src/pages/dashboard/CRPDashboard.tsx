@@ -29,19 +29,21 @@ export function CRPDashboard() {
         <SectionHeader title="SHGs Under Monitoring" action="View all" actionTo={paths.reportsShg} icon={<Radar className="h-4 w-4 text-ink-400" />} />
         <div className="space-y-3">
           {shgsForMonitoring.map((g) => (
-            <Card key={g.id}>
-              <div className="flex items-center justify-between">
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-ink-900 truncate">{g.name}</p>
-                  <p className="text-xs text-ink-500 mt-0.5">{g.village} · {g.members} members</p>
+            <Link key={g.id} to={paths.analyticsShgDetail(g.id)}>
+              <Card interactive>
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-ink-900 truncate">{g.name}</p>
+                    <p className="text-xs text-ink-500 mt-0.5">{g.village} · {g.members} members</p>
+                  </div>
+                  <Badge tone={gradeTone[g.grade] ?? 'neutral'}>{g.grade}</Badge>
                 </div>
-                <Badge tone={gradeTone[g.grade] ?? 'neutral'}>{g.grade}</Badge>
-              </div>
-              <div className="flex items-center gap-2 mt-3">
-                <ProgressBar value={g.health} tone={g.health > 80 ? 'brand' : g.health > 60 ? 'gold' : 'danger'} className="flex-1" />
-                <span className="text-xs font-semibold text-ink-600">{g.health}%</span>
-              </div>
-            </Card>
+                <div className="flex items-center gap-2 mt-3">
+                  <ProgressBar value={g.health} tone={g.health > 80 ? 'brand' : g.health > 60 ? 'gold' : 'danger'} className="flex-1" />
+                  <span className="text-xs font-semibold text-ink-600">{g.health}%</span>
+                </div>
+              </Card>
+            </Link>
           ))}
         </div>
       </div>

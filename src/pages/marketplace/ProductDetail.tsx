@@ -1,15 +1,36 @@
-import { useParams } from 'react-router-dom'
-import { Star, MessageCircle, Package, User } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { Star, MessageCircle, Package, User, CheckCircle2 } from 'lucide-react'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { paths } from '../../routes/paths'
 import { products } from '../../data/marketplace'
 
 export function ProductDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const product = products.find((p) => p.id === id)
+  const [ordered, setOrdered] = useState(false)
+
+  if (product && ordered) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center px-8 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-brand-600">
+          <CheckCircle2 className="h-9 w-9" />
+        </div>
+        <h1 className="mt-5 font-display text-xl font-bold text-ink-900">Order placed!</h1>
+        <p className="mt-1.5 text-sm text-ink-500">
+          Your order for {product.name} has been sent to {product.seller}. You'll be notified once it's packed.
+        </p>
+        <Button className="mt-8" fullWidth size="lg" onClick={() => navigate(paths.marketplaceOrders)}>
+          View My Orders
+        </Button>
+      </div>
+    )
+  }
 
   if (!product) {
     return (
@@ -74,10 +95,17 @@ export function ProductDetail() {
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 px-4 py-3 backdrop-blur-md flex gap-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}>
-        <Button variant="outline" fullWidth size="lg" className="flex-1" icon={<MessageCircle className="h-4 w-4" />}>
+        <Button
+          variant="outline"
+          fullWidth
+          size="lg"
+          className="flex-1"
+          icon={<MessageCircle className="h-4 w-4" />}
+          onClick={() => navigate(paths.supportChat)}
+        >
           Contact Seller
         </Button>
-        <Button fullWidth size="lg" className="flex-1" disabled={product.stock === 0}>
+        <Button fullWidth size="lg" className="flex-1" disabled={product.stock === 0} onClick={() => setOrdered(true)}>
           Buy Now
         </Button>
       </div>

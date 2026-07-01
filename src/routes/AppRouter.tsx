@@ -87,6 +87,7 @@ import { SHGReports } from '../pages/reports/SHGReports'
 import { FederationReports } from '../pages/reports/FederationReports'
 
 import { AnalyticsDashboard } from '../pages/analytics/AnalyticsDashboard'
+import { ShgMonitorDetail } from '../pages/analytics/ShgMonitorDetail'
 
 import { Profile } from '../pages/profile/Profile'
 import { Settings } from '../pages/profile/Settings'
@@ -187,6 +188,7 @@ export function AppRouter() {
         <Route path={paths.reportsFederation} element={<FederationReports />} />
 
         <Route path={paths.analytics} element={<AnalyticsDashboard />} />
+        <Route path="/app/analytics/shg/:id" element={<ShgMonitorDetail />} />
 
         <Route path={paths.profileSettings} element={<Settings />} />
         <Route path={paths.profileLanguage} element={<LanguageSelect />} />
