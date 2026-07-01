@@ -54,6 +54,7 @@ export function Orders() {
                     <p className="text-base font-bold font-display text-ink-900">₹{o.amount.toLocaleString('en-IN')}</p>
                     <p className="text-xs text-ink-500">Qty {o.qty} · {o.date}</p>
                   </div>
+                  <p className="text-[11px] text-ink-400 mt-1">Paid via {o.paymentMode}</p>
                 </Card>
               </Link>
             ))}

@@ -28,13 +28,14 @@ export interface Order {
   qty: number
   status: 'new' | 'packed' | 'shipped' | 'delivered'
   date: string
+  paymentMode: 'UPI' | 'Bank Transfer'
 }
 
 export const orders: Order[] = [
-  { id: 'o1', product: 'Farm Fresh Cow Ghee', buyer: 'Ravi Kumar, Hanamkonda', amount: 1240, qty: 2, status: 'new', date: '29 Jun 2026' },
-  { id: 'o2', product: 'Organic Turmeric Powder', buyer: 'Sunitha Rao', amount: 360, qty: 2, status: 'packed', date: '28 Jun 2026' },
-  { id: 'o3', product: 'Bamboo Storage Basket', buyer: 'Priya Sharma', amount: 700, qty: 2, status: 'shipped', date: '25 Jun 2026' },
-  { id: 'o4', product: 'Mango Pickle (Homemade)', buyer: 'Kiran Reddy', amount: 220, qty: 1, status: 'delivered', date: '20 Jun 2026' },
+  { id: 'o1', product: 'Farm Fresh Cow Ghee', buyer: 'Ravi Kumar, Hanamkonda', amount: 1240, qty: 2, status: 'new', date: '29 Jun 2026', paymentMode: 'UPI' },
+  { id: 'o2', product: 'Organic Turmeric Powder', buyer: 'Sunitha Rao', amount: 360, qty: 2, status: 'packed', date: '28 Jun 2026', paymentMode: 'UPI' },
+  { id: 'o3', product: 'Bamboo Storage Basket', buyer: 'Priya Sharma', amount: 700, qty: 2, status: 'shipped', date: '25 Jun 2026', paymentMode: 'Bank Transfer' },
+  { id: 'o4', product: 'Mango Pickle (Homemade)', buyer: 'Kiran Reddy', amount: 220, qty: 1, status: 'delivered', date: '20 Jun 2026', paymentMode: 'UPI' },
 ]
 
 export const reviews = [

@@ -6,6 +6,7 @@ import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { SegmentedTabs } from '../../components/ui/SegmentedTabs'
 import { paths } from '../../routes/paths'
 import { products } from '../../data/marketplace'
 
@@ -13,6 +14,8 @@ export function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const product = products.find((p) => p.id === id)
+  const [checkingOut, setCheckingOut] = useState(false)
+  const [paymentMode, setPaymentMode] = useState<'UPI' | 'Bank Transfer'>('UPI')
   const [ordered, setOrdered] = useState(false)
 
   if (product && ordered) {
@@ -23,7 +26,7 @@ export function ProductDetail() {
         </div>
         <h1 className="mt-5 font-display text-xl font-bold text-ink-900">Order placed!</h1>
         <p className="mt-1.5 text-sm text-ink-500">
-          Your order for {product.name} has been sent to {product.seller}. You'll be notified once it's packed.
+          Your order for {product.name} has been sent to {product.seller}, paid via {paymentMode}. You'll be notified once it's packed.
         </p>
         <Button className="mt-8" fullWidth size="lg" onClick={() => navigate(paths.marketplaceOrders)}>
           View My Orders
@@ -94,20 +97,47 @@ export function ProductDetail() {
         </Card>
       </div>
 
+      {checkingOut && (
+        <div className="px-4 mt-5">
+          <p className="text-xs font-bold uppercase tracking-wide text-ink-400 mb-2">Choose Payment Method</p>
+          <Card>
+            <SegmentedTabs
+              options={[
+                { value: 'UPI', label: 'UPI' },
+                { value: 'Bank Transfer', label: 'Bank Transfer' },
+              ]}
+              value={paymentMode}
+              onChange={(v) => setPaymentMode(v as 'UPI' | 'Bank Transfer')}
+            />
+            <p className="text-[11px] text-ink-500 mt-3">
+              Total payable: <span className="font-bold text-ink-900">₹{product.price.toLocaleString('en-IN')}</span> /{product.unit}
+            </p>
+          </Card>
+        </div>
+      )}
+
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 px-4 py-3 backdrop-blur-md flex gap-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}>
-        <Button
-          variant="outline"
-          fullWidth
-          size="lg"
-          className="flex-1"
-          icon={<MessageCircle className="h-4 w-4" />}
-          onClick={() => navigate(paths.supportChat)}
-        >
-          Contact Seller
-        </Button>
-        <Button fullWidth size="lg" className="flex-1" disabled={product.stock === 0} onClick={() => setOrdered(true)}>
-          Buy Now
-        </Button>
+        {checkingOut ? (
+          <Button fullWidth size="lg" onClick={() => setOrdered(true)}>
+            Confirm &amp; Pay via {paymentMode}
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              fullWidth
+              size="lg"
+              className="flex-1"
+              icon={<MessageCircle className="h-4 w-4" />}
+              onClick={() => navigate(paths.supportChat)}
+            >
+              Contact Seller
+            </Button>
+            <Button fullWidth size="lg" className="flex-1" disabled={product.stock === 0} onClick={() => setCheckingOut(true)}>
+              Buy Now
+            </Button>
+          </>
+        )}
       </div>
     </div>
   )

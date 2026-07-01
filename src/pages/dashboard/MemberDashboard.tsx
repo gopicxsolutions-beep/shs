@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { AreaChart, Area, ResponsiveContainer } from 'recharts'
-import { Wallet, Landmark, CalendarClock, GraduationCap, QrCode, FileText, CheckSquare, Sparkles } from 'lucide-react'
+import { Wallet, Landmark, CalendarClock, GraduationCap, QrCode, FileText, CheckSquare, Sparkles, CalendarCheck2, Store } from 'lucide-react'
 import { StatCard } from '../../components/ui/StatCard'
 import { Card } from '../../components/ui/Card'
 import { SectionHeader } from '../../components/ui/SectionHeader'
@@ -13,12 +13,21 @@ import { loans } from '../../data/loans'
 import { meetings } from '../../data/meetings'
 import { courses } from '../../data/training'
 import { announcements } from '../../data/announcements'
+import { schemes } from '../../data/schemes'
+import { products, orders } from '../../data/marketplace'
+import { members } from '../../data/members'
 import { shgInfo } from '../../data/shg'
 
 export function MemberDashboard() {
   const myLoan = loans.find((l) => l.memberName === 'Lakshmi Devi' && l.status === 'active')
   const upcomingMeeting = meetings.find((m) => m.status === 'upcoming')
   const inProgressCourse = courses.find((c) => c.progress > 0 && c.progress < 100)
+  const myAttendance = members.find((m) => m.name === 'Lakshmi Devi')?.attendance ?? 0
+  const newSchemesCount = schemes.filter((s) => (s.status ?? 'not_applied') === 'not_applied').length
+  const myProducts = products.filter((p) => p.seller === 'Lakshmi Devi')
+  const myOrders = orders.filter((o) => myProducts.some((p) => p.name === o.product))
+  const myProductSales = myOrders.reduce((sum, o) => sum + o.amount, 0)
+  const myPendingOrders = myOrders.filter((o) => o.status === 'new').length
 
   return (
     <div className="pb-6">
@@ -33,7 +42,28 @@ export function MemberDashboard() {
         <IconTile to={paths.savingsEntry} icon={<Wallet className="h-5.5 w-5.5" />} label="Add Savings" tone="brand" />
         <IconTile to={paths.loanApply} icon={<Landmark className="h-5.5 w-5.5" />} label="Apply Loan" tone="gold" />
         <IconTile to={paths.meetingQr} icon={<QrCode className="h-5.5 w-5.5" />} label="Attendance" tone="sky" />
-        <IconTile to={paths.schemes} icon={<FileText className="h-5.5 w-5.5" />} label="Schemes" tone="violet" />
+        <IconTile to={paths.schemes} icon={<FileText className="h-5.5 w-5.5" />} label="Schemes" tone="violet" badge={newSchemesCount ? String(newSchemesCount) : undefined} />
+      </div>
+
+      <div className="px-4 mt-4 grid grid-cols-2 gap-3">
+        <Link to={paths.reportsMember}>
+          <Card interactive className="!p-3 flex items-center gap-2">
+            <CalendarCheck2 className="h-4 w-4 text-brand-600 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-ink-900">{myAttendance}%</p>
+              <p className="text-[10px] text-ink-500">Attendance</p>
+            </div>
+          </Card>
+        </Link>
+        <Link to={paths.schemes}>
+          <Card interactive className="!p-3 flex items-center gap-2">
+            <FileText className="h-4 w-4 text-violet-600 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-ink-900">{newSchemesCount} new</p>
+              <p className="text-[10px] text-ink-500">Schemes available</p>
+            </div>
+          </Card>
+        </Link>
       </div>
 
       <div className="px-4 mt-6">
@@ -75,6 +105,21 @@ export function MemberDashboard() {
             <div className="flex items-center justify-between mt-3">
               <Badge tone="warning" dot>EMI ₹{myLoan.emi} due {myLoan.nextDueDate}</Badge>
               <Link to={paths.paymentsQr} className="text-xs font-semibold text-brand-600">Pay now</Link>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {myProducts.length > 0 && (
+        <div className="px-4 mt-5">
+          <SectionHeader title="Product Sales Summary" action="View orders" actionTo={paths.marketplaceOrders} icon={<Store className="h-4 w-4 text-ink-400" />} />
+          <Card>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold font-display text-ink-900">₹{myProductSales.toLocaleString('en-IN')}</p>
+                <p className="text-xs text-ink-500 mt-1">{myProducts.length} products listed · {myOrders.length} orders</p>
+              </div>
+              {myPendingOrders > 0 && <Badge tone="warning" dot>{myPendingOrders} pending</Badge>}
             </div>
           </Card>
         </div>

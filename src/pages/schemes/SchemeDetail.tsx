@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { CheckCircle2, Building2 } from 'lucide-react'
+import { CheckCircle2, Building2, UploadCloud, FileCheck2 } from 'lucide-react'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
@@ -8,6 +8,8 @@ import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { paths } from '../../routes/paths'
 import { schemes } from '../../data/schemes'
+
+const requiredDocuments = ['Aadhaar Card', 'Bank Passbook', 'SHG Membership Certificate', 'Income Certificate']
 
 type Status = 'not_applied' | 'applied' | 'under_review' | 'approved' | 'rejected'
 
@@ -42,9 +44,12 @@ export function SchemeDetail() {
     )
   }
 
+  const [showUpload, setShowUpload] = useState(false)
+  const [uploaded, setUploaded] = useState<Record<string, boolean>>({})
   const [justApplied, setJustApplied] = useState(false)
   const status = justApplied ? 'applied' : ((scheme.status ?? 'not_applied') as Status)
   const hasApplied = status !== 'not_applied'
+  const allUploaded = requiredDocuments.every((d) => uploaded[d])
 
   if (justApplied) {
     return (
@@ -105,13 +110,40 @@ export function SchemeDetail() {
         </Card>
       </div>
 
+      {showUpload && !hasApplied && (
+        <div className="px-4 mt-5">
+          <h2 className="text-[15px] font-bold text-ink-900 font-display mb-3">Document Upload</h2>
+          <Card className="!p-0 divide-y divide-ink-100">
+            {requiredDocuments.map((doc) => (
+              <button
+                key={doc}
+                onClick={() => setUploaded((u) => ({ ...u, [doc]: !u[doc] }))}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left"
+              >
+                <div
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${uploaded[doc] ? 'bg-brand-50 text-brand-600' : 'bg-ink-100 text-ink-400'}`}
+                >
+                  {uploaded[doc] ? <FileCheck2 className="h-4 w-4" /> : <UploadCloud className="h-4 w-4" />}
+                </div>
+                <span className="flex-1 text-xs font-semibold text-ink-800">{doc}</span>
+                <Badge tone={uploaded[doc] ? 'success' : 'neutral'}>{uploaded[doc] ? 'Uploaded' : 'Tap to upload'}</Badge>
+              </button>
+            ))}
+          </Card>
+        </div>
+      )}
+
       <div className="px-4 mt-6">
         {hasApplied ? (
           <Link to={paths.schemeTracking}>
             <Button fullWidth size="lg" variant="secondary">View Application Status</Button>
           </Link>
+        ) : showUpload ? (
+          <Button fullWidth size="lg" disabled={!allUploaded} onClick={() => setJustApplied(true)}>
+            Submit Application
+          </Button>
         ) : (
-          <Button fullWidth size="lg" onClick={() => setJustApplied(true)}>Apply Now</Button>
+          <Button fullWidth size="lg" onClick={() => setShowUpload(true)}>Apply Now</Button>
         )}
       </div>
     </div>

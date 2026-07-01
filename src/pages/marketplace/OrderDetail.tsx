@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Check, Package, User, IndianRupee } from 'lucide-react'
+import { Check, Package, User, IndianRupee, Landmark, QrCode } from 'lucide-react'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
@@ -143,6 +143,16 @@ export function OrderDetail() {
               <p className="text-xs font-semibold text-ink-800 truncate">₹{order.amount.toLocaleString('en-IN')}</p>
               <p className="text-[11px] text-ink-400">Total amount</p>
             </div>
+          </div>
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+              {order.paymentMode === 'UPI' ? <QrCode className="h-4 w-4" /> : <Landmark className="h-4 w-4" />}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-ink-800 truncate">{order.paymentMode}</p>
+              <p className="text-[11px] text-ink-400">Payment method</p>
+            </div>
+            <Badge tone="success">Paid</Badge>
           </div>
         </Card>
       </div>
