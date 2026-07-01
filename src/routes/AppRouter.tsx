@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { SubPageShell } from '../components/layout/SubPageShell'
+import { RoleGate } from '../components/RoleGate'
 import { paths } from './paths'
 
 import { Splash } from '../pages/auth/Splash'
@@ -88,6 +89,7 @@ import { FederationReports } from '../pages/reports/FederationReports'
 
 import { AnalyticsDashboard } from '../pages/analytics/AnalyticsDashboard'
 import { ShgMonitorDetail } from '../pages/analytics/ShgMonitorDetail'
+import { ShgMonitorList } from '../pages/analytics/ShgMonitorList'
 
 import { Profile } from '../pages/profile/Profile'
 import { Settings } from '../pages/profile/Settings'
@@ -128,13 +130,34 @@ export function AppRouter() {
 
         <Route path={paths.loans} element={<LoanHome />} />
         <Route path={paths.loanApply} element={<LoanApply />} />
-        <Route path={paths.loanApproval} element={<LoanApproval />} />
+        <Route
+          path={paths.loanApproval}
+          element={
+            <RoleGate allow={['leader']}>
+              <LoanApproval />
+            </RoleGate>
+          }
+        />
         <Route path={paths.loanTracking} element={<LoanTracking />} />
         <Route path="/app/loans/:id" element={<LoanDetail />} />
 
         <Route path={paths.meetings} element={<MeetingsHome />} />
-        <Route path={paths.meetingSchedule} element={<MeetingSchedule />} />
-        <Route path={paths.meetingAttendance} element={<MeetingAttendance />} />
+        <Route
+          path={paths.meetingSchedule}
+          element={
+            <RoleGate allow={['leader']}>
+              <MeetingSchedule />
+            </RoleGate>
+          }
+        />
+        <Route
+          path={paths.meetingAttendance}
+          element={
+            <RoleGate allow={['leader']}>
+              <MeetingAttendance />
+            </RoleGate>
+          }
+        />
         <Route path={paths.meetingQr} element={<MeetingQr />} />
         <Route path="/app/meetings/:id/mom" element={<MeetingMom />} />
         <Route path="/app/meetings/:id" element={<MeetingDetail />} />
@@ -184,18 +207,75 @@ export function AppRouter() {
 
         <Route path={paths.reports} element={<ReportsHome />} />
         <Route path={paths.reportsMember} element={<MemberReports />} />
-        <Route path={paths.reportsShg} element={<SHGReports />} />
-        <Route path={paths.reportsFederation} element={<FederationReports />} />
+        <Route
+          path={paths.reportsShg}
+          element={
+            <RoleGate allow={['leader', 'crp', 'clf', 'admin']}>
+              <SHGReports />
+            </RoleGate>
+          }
+        />
+        <Route
+          path={paths.reportsFederation}
+          element={
+            <RoleGate allow={['crp', 'clf', 'admin']}>
+              <FederationReports />
+            </RoleGate>
+          }
+        />
 
-        <Route path={paths.analytics} element={<AnalyticsDashboard />} />
-        <Route path="/app/analytics/shg/:id" element={<ShgMonitorDetail />} />
+        <Route
+          path={paths.analytics}
+          element={
+            <RoleGate allow={['crp', 'clf', 'admin']}>
+              <AnalyticsDashboard />
+            </RoleGate>
+          }
+        />
+        <Route
+          path={paths.analyticsShgList}
+          element={
+            <RoleGate allow={['crp', 'clf', 'admin']}>
+              <ShgMonitorList />
+            </RoleGate>
+          }
+        />
+        <Route
+          path="/app/analytics/shg/:id"
+          element={
+            <RoleGate allow={['crp', 'clf', 'admin']}>
+              <ShgMonitorDetail />
+            </RoleGate>
+          }
+        />
 
         <Route path={paths.profileSettings} element={<Settings />} />
         <Route path={paths.profileLanguage} element={<LanguageSelect />} />
 
-        <Route path={paths.adminUsers} element={<UserManagement />} />
-        <Route path={paths.adminSchemes} element={<SchemeManagement />} />
-        <Route path={paths.adminMonitoring} element={<SystemMonitoring />} />
+        <Route
+          path={paths.adminUsers}
+          element={
+            <RoleGate allow={['admin']}>
+              <UserManagement />
+            </RoleGate>
+          }
+        />
+        <Route
+          path={paths.adminSchemes}
+          element={
+            <RoleGate allow={['admin']}>
+              <SchemeManagement />
+            </RoleGate>
+          }
+        />
+        <Route
+          path={paths.adminMonitoring}
+          element={
+            <RoleGate allow={['admin']}>
+              <SystemMonitoring />
+            </RoleGate>
+          }
+        />
       </Route>
 
       <Route path="*" element={<Navigate to={paths.splash} replace />} />

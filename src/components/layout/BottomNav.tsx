@@ -1,16 +1,22 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Users, Grid2x2, Store, UserRound } from 'lucide-react'
+import { Home, Users, Building2, Grid2x2, Store, UserRound } from 'lucide-react'
 import { cn } from '../../lib/cn'
-
-const items = [
-  { to: '/app/dashboard', label: 'Home', icon: Home },
-  { to: '/app/shg', label: 'My SHG', icon: Users },
-  { to: '/app/services', label: 'Services', icon: Grid2x2, center: true },
-  { to: '/app/marketplace', label: 'Market', icon: Store },
-  { to: '/app/profile', label: 'Profile', icon: UserRound },
-]
+import { useApp } from '../../context/AppContext'
 
 export function BottomNav() {
+  const { user } = useApp()
+  const isOversightRole = user.role === 'crp' || user.role === 'clf' || user.role === 'admin'
+
+  const items = [
+    { to: '/app/dashboard', label: 'Home', icon: Home },
+    isOversightRole
+      ? { to: '/app/shg', label: 'SHGs', icon: Building2 }
+      : { to: '/app/shg', label: 'My SHG', icon: Users },
+    { to: '/app/services', label: 'Services', icon: Grid2x2, center: true },
+    { to: '/app/marketplace', label: 'Market', icon: Store },
+    { to: '/app/profile', label: 'Profile', icon: UserRound },
+  ]
+
   return (
     <nav className="sticky bottom-0 z-40 border-t border-ink-100 bg-white/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] shadow-[var(--shadow-nav)]">
       <div className="flex items-center justify-between px-2">

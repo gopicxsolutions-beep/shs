@@ -7,8 +7,27 @@ import { SectionHeader } from '../../components/ui/SectionHeader'
 import { paths } from '../../routes/paths'
 import { shgInfo, documents } from '../../data/shg'
 import { members } from '../../data/members'
+import { shgsForMonitoring } from '../../data/analytics'
+import { useApp } from '../../context/AppContext'
+import { ShgMonitorListContent } from '../analytics/ShgMonitorListContent'
 
 export function MySHG() {
+  const { user } = useApp()
+
+  if (user.role === 'crp' || user.role === 'clf' || user.role === 'admin') {
+    return (
+      <div className="pb-6">
+        <div className="px-4 pb-3 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
+          <h1 className="font-display text-xl font-bold text-ink-900">
+            {user.role === 'clf' ? 'Village Organisations' : 'SHGs Under Monitoring'}
+          </h1>
+          <p className="text-xs text-ink-500 mt-0.5">{shgsForMonitoring.length} groups under your cluster</p>
+        </div>
+        <ShgMonitorListContent />
+      </div>
+    )
+  }
+
   return (
     <div className="pb-6">
       <div className="bg-gradient-to-br from-brand-700 to-brand-500 px-4 pb-8 pt-[calc(env(safe-area-inset-top)+1.25rem)] text-white">

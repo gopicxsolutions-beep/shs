@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { BarChart, Bar, ResponsiveContainer, XAxis } from 'recharts'
-import { Landmark, Building2, PiggyBank, LineChart } from 'lucide-react'
+import { Landmark, Building2, PiggyBank, LineChart, ChevronRight } from 'lucide-react'
 import { StatCard } from '../../components/ui/StatCard'
 import { Card } from '../../components/ui/Card'
 import { SectionHeader } from '../../components/ui/SectionHeader'
@@ -18,6 +18,21 @@ export function CLFDashboard() {
       </div>
 
       <div className="px-4 mt-6">
+        <Link to={paths.analyticsShgList}>
+          <Card interactive className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-ink-900">Monitor Village Organisations</p>
+              <p className="text-xs text-ink-500">{villageWiseSHGs.length} villages · {kpis.totalSHGs} SHGs</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-ink-300 shrink-0" />
+          </Card>
+        </Link>
+      </div>
+
+      <div className="px-4 mt-5">
         <SectionHeader title="Village-wise SHGs" action="Federation reports" actionTo={paths.reportsFederation} icon={<Building2 className="h-4 w-4 text-ink-400" />} />
         <Card>
           <div className="h-40">

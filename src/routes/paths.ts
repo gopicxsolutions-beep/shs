@@ -84,6 +84,7 @@ export const paths = {
   reportsFederation: '/app/reports/federation',
 
   analytics: '/app/analytics',
+  analyticsShgList: '/app/analytics/shgs',
   analyticsShgDetail: (id: string) => `/app/analytics/shg/${id}`,
 
   profileSettings: '/app/profile/settings',

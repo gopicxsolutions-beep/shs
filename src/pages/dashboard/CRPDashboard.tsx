@@ -26,7 +26,7 @@ export function CRPDashboard() {
       </div>
 
       <div className="px-4 mt-6">
-        <SectionHeader title="SHGs Under Monitoring" action="View all" actionTo={paths.reportsShg} icon={<Radar className="h-4 w-4 text-ink-400" />} />
+        <SectionHeader title="SHGs Under Monitoring" action="View all" actionTo={paths.analyticsShgList} icon={<Radar className="h-4 w-4 text-ink-400" />} />
         <div className="space-y-3">
           {shgsForMonitoring.map((g) => (
             <Link key={g.id} to={paths.analyticsShgDetail(g.id)}>
