@@ -35,6 +35,10 @@ import '../pages/meetings/meetings_home_page.dart';
 import '../pages/payments/payments_home_page.dart';
 import '../pages/payments/payments_history_page.dart';
 import '../pages/payments/payments_qr_page.dart';
+import '../pages/reports/federation_report_page.dart';
+import '../pages/reports/member_report_page.dart';
+import '../pages/reports/reports_hub_page.dart';
+import '../pages/reports/shg_report_page.dart';
 import '../pages/savings/savings_entry_page.dart';
 import '../pages/savings/savings_group_report_page.dart';
 import '../pages/savings/savings_history_page.dart';
@@ -150,10 +154,10 @@ GoRouter buildRouter(AppState appState) {
             path: Paths.aiMarketAdvisor,
             builder: (context, state) => const AiAdvisorChatPage(advisorType: 'market', title: 'Market Advisor', hint: 'Ask about pricing, demand, or selling your products.'),
           ),
-          comingSoon(Paths.reports, 'Reports'),
-          comingSoon(Paths.reportsMember, 'My Reports'),
-          comingSoon(Paths.reportsShg, 'SHG Reports'),
-          comingSoon(Paths.reportsFederation, 'Federation Reports'),
+          GoRoute(path: Paths.reports, builder: (context, state) => const ReportsHubPage()),
+          GoRoute(path: Paths.reportsMember, builder: (context, state) => const MemberReportPage()),
+          GoRoute(path: Paths.reportsShg, builder: (context, state) => const ShgReportPage()),
+          GoRoute(path: Paths.reportsFederation, builder: (context, state) => const FederationReportPage()),
           comingSoon(Paths.analytics, 'Analytics'),
           comingSoon(Paths.analyticsShgList, 'SHGs Monitoring'),
           comingSoon(Paths.profileSettings, 'Settings'),

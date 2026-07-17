@@ -1,0 +1,124 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/report.dart';
+import '../services/supabase_service.dart';
+
+/// `public.report_snapshots` exists so an Edge Function can eventually
+/// generate these server-side and cache them (`report_snapshots_write_staff`
+/// restricts writes to staff). No such function is wired yet, so this
+/// repository computes the same shape on-the-fly from live tables — a
+/// documented placeholder for that future server-side generation. In demo
+/// mode (no Supabase configured) it returns a small illustrative snapshot
+/// instead of hitting any table.
+class ReportRepository {
+  SupabaseClient get _client => SupabaseService.instance.client;
+  bool get _live => SupabaseService.isConfigured;
+
+  Future<MemberReport> fetchMemberReport({required String? memberId, required String? shgId}) async {
+    if (!_live || memberId == null || shgId == null) {
+      return const MemberReport(totalSavings: 48200, savingsEntryCount: 12, totalOutstanding: 22000, activeLoanCount: 1, meetingsAttended: 10, meetingsTotal: 12, period: 'All time');
+    }
+    final savings = await _client.from('savings_entries').select('amount').eq('member_id', memberId);
+    final totalSavings = (savings as List).fold<num>(0, (s, r) => s + ((r as Map<String, dynamic>)['amount'] as num));
+
+    final loans = await _client.from('loans').select('outstanding, status').eq('member_id', memberId);
+    num totalOutstanding = 0;
+    int activeLoanCount = 0;
+    for (final r in loans as List) {
+      final map = r as Map<String, dynamic>;
+      final status = map['status'] as String;
+      if (status == 'active' || status == 'overdue') {
+        totalOutstanding += map['outstanding'] as num;
+        activeLoanCount++;
+      }
+    }
+
+    final completedMeetings = await _client.from('meetings').select('id').eq('shg_id', shgId).eq('status', 'completed');
+    final meetingsTotal = (completedMeetings as List).length;
+    final attendance = await _client.from('meeting_attendance').select('present, meetings!inner(status)').eq('member_id', memberId).eq('meetings.status', 'completed');
+    final meetingsAttended = (attendance as List).where((r) => (r as Map<String, dynamic>)['present'] == true).length;
+
+    return MemberReport(
+      totalSavings: totalSavings,
+      savingsEntryCount: (savings).length,
+      totalOutstanding: totalOutstanding,
+      activeLoanCount: activeLoanCount,
+      meetingsAttended: meetingsAttended,
+      meetingsTotal: meetingsTotal,
+      period: 'All time',
+    );
+  }
+
+  Future<ShgReportData> fetchShgReport(String? shgId) async {
+    if (!_live || shgId == null) {
+      return const ShgReportData(memberCount: 14, totalSavings: 612500, totalOutstanding: 184000, activeLoanCount: 6, avgAttendancePct: 82, period: 'All time');
+    }
+    final members = await _client.from('profiles').select('id').eq('shg_id', shgId);
+    final memberCount = (members as List).length;
+
+    final savings = await _client.from('savings_entries').select('amount').eq('shg_id', shgId);
+    final totalSavings = (savings as List).fold<num>(0, (s, r) => s + ((r as Map<String, dynamic>)['amount'] as num));
+
+    final loans = await _client.from('loans').select('outstanding, status').eq('shg_id', shgId);
+    num totalOutstanding = 0;
+    int activeLoanCount = 0;
+    for (final r in loans as List) {
+      final map = r as Map<String, dynamic>;
+      final status = map['status'] as String;
+      if (status == 'active' || status == 'overdue') {
+        totalOutstanding += map['outstanding'] as num;
+        activeLoanCount++;
+      }
+    }
+
+    final completedMeetings = await _client.from('meetings').select('id').eq('shg_id', shgId).eq('status', 'completed');
+    final meetingsTotal = (completedMeetings as List).length;
+    double avgAttendancePct = 0;
+    if (meetingsTotal > 0 && memberCount > 0) {
+      final attendance = await _client.from('meeting_attendance').select('present, meetings!inner(shg_id, status)').eq('meetings.shg_id', shgId).eq('meetings.status', 'completed');
+      final presentCount = (attendance as List).where((r) => (r as Map<String, dynamic>)['present'] == true).length;
+      avgAttendancePct = (presentCount / (meetingsTotal * memberCount)) * 100;
+    }
+
+    return ShgReportData(
+      memberCount: memberCount,
+      totalSavings: totalSavings,
+      totalOutstanding: totalOutstanding,
+      activeLoanCount: activeLoanCount,
+      avgAttendancePct: avgAttendancePct,
+      period: 'All time',
+    );
+  }
+
+  /// Aggregates across every SHG — relies on the `is_staff()` RLS bypass on
+  /// `shgs` / `savings_entries` / `loans` / `profiles`, so this only returns
+  /// meaningful (non-empty) data for crp/clf/admin callers.
+  Future<FederationReportData> fetchFederationReport() async {
+    if (!_live) {
+      return const FederationReportData(shgCount: 8, memberCount: 96, totalSavings: 4120000, totalOutstanding: 1180000, period: 'All time');
+    }
+    final shgs = await _client.from('shgs').select('id');
+    final shgCount = (shgs as List).length;
+
+    final members = await _client.from('profiles').select('id').eq('role', 'member');
+    final memberCount = (members as List).length;
+
+    final savings = await _client.from('savings_entries').select('amount');
+    final totalSavings = (savings as List).fold<num>(0, (s, r) => s + ((r as Map<String, dynamic>)['amount'] as num));
+
+    final loans = await _client.from('loans').select('outstanding, status');
+    num totalOutstanding = 0;
+    for (final r in loans as List) {
+      final map = r as Map<String, dynamic>;
+      final status = map['status'] as String;
+      if (status == 'active' || status == 'overdue') totalOutstanding += map['outstanding'] as num;
+    }
+
+    return FederationReportData(
+      shgCount: shgCount,
+      memberCount: memberCount,
+      totalSavings: totalSavings,
+      totalOutstanding: totalOutstanding,
+      period: 'All time',
+    );
+  }
+}

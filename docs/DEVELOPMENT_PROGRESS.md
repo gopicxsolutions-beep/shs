@@ -139,7 +139,7 @@ Meetings, etc.:
 | Announcements | ✅ done | Model, repository, 2 screens (home list with unread-dot indicator + leader/staff-only post dialog, detail with read-receipt tracking via `announcement_reads`). Global (`shg_id is null`) + shg-scoped announcements merged via `.or()` query. Live-tested DB/RLS (member-post denied, leader-post allowed, shared shg read visibility, own read-receipt insert allowed, marking another member's receipt denied) and UI (list + detail render correctly in demo mode, member correctly sees no post button) |
 | Support (chat/voice/FAQ/tickets) | ✅ done | Model, dual-mode repository, 5 screens (hub, full ticket list, raise-ticket form, ticket detail/chat thread with staff status-change menu, FAQ accordion) + `VoiceSupportService` abstraction (`MockVoiceSupportService` cycles canned Q&A pairs) for the record→transcribe→answer flow, wired incl. `/app/support/ticket/:id`. Tickets are private per-member, visible to staff (crp/clf/admin) — staff see all tickets with the member's name shown; member sees only their own. Live-tested DB/RLS (own-ticket insert, deny-insert-for-another-member, own-ticket read, deny-read-for-non-owner-non-staff, staff-can-read-any, own-message insert, deny-message-for-non-owner-non-staff, staff-can-message-any, own-status-update, deny-status-update-for-non-owner-non-staff, staff-can-update-any — 10/10 passed) and UI (hub, ticket list, chat bubbles with correct mine/theirs alignment, raise-ticket form validation, FAQ accordion, voice support page all render correctly) |
 | AI Advisors (financial/scheme/market) | ✅ done | Model, dual-mode repository, hub + one shared `AiAdvisorChatPage(advisorType, title, hint)` reused across all 3 routes (identical shape, scoped by type) — chat bubbles + composer, wired incl. `/app/ai/financial-advisor` etc. `AiAdvisorService` abstraction (`MockAiAdvisorService` keyword-matches canned responses per advisor type, generic fallback otherwise) — unlike Payments/Support, the ask flow works in both demo and live mode (only the log persistence is live-only), so the chat is fully interactive without a Supabase connection. Live-tested DB/RLS (own-log insert, deny-insert-for-another-member, own-log read, deny-read-for-non-owner-non-staff, staff-can-read-any — 5/5 passed), fixtures cleaned up and verified zero remnants. UI-tested: hub renders all 3 advisor cards, Financial Advisor chat loads mock history correctly, composer input focuses and accepts real keystrokes (confirmed via `activeElement.value`) — the final send-button tap hit the same coordinate-calibration friction as the Voice Support mic button in the prior iteration and wasn't click-verified, but the ask()/setState logic is structurally identical to the already-proven Support ticket composer |
-| Reports | ⬜ not started | `report_snapshots`; snapshots are meant to be generated server-side (Edge Function) — for now, repository can compute on-the-fly client-side from live tables as a placeholder |
+| Reports | ✅ done | Models (`MemberReport`/`ShgReportData`/`FederationReportData`, shaped to match what `report_snapshots.data` will eventually hold), dual-mode repository, role-gated hub (My Reports always; SHG Reports for leader/staff; Federation Reports for crp/clf/admin) + 3 screens, wired incl. this also activates the pre-existing dashboard link at `Paths.reportsMember`. The repository always computes client-side from live tables (savings/loans/meetings/attendance) — a documented placeholder for the server-side Edge Function generation `report_snapshots` (staff-write-only) is meant for; the Flutter client never reads/writes that table directly yet. Live-tested DB/RLS: confirmed cross-shg isolation (a member from SHG A cannot read SHG B's savings entries; a caught test-fixture bug — a savings row with `member_id`/`shg_id` from different SHGs — was corrected before re-confirming, since `member_id = auth.uid()` correctly grants read access to a member's own rows regardless of `shg_id` by design) and confirmed staff (crp/clf/admin) can read across all SHGs (underpins federation aggregation) plus the `report_snapshots` staff-write-only policy (staff insert allowed, member insert denied) — 6/6 checks passed; fixtures cleaned up and verified zero remnants. UI-tested: hub correctly shows only "My Reports" for a member role, My Reports/SHG Reports/Federation Reports all render their stat cards correctly with mock data |
 | Analytics | ⬜ not started | `analytics_kpis`; CRP/CLF/Admin dashboards already show a version of this from mock data — needs a real repository |
 | Admin (users/schemes/monitoring) | ⬜ not started | User role management (admin can update any profile's role per RLS), scheme catalog CRUD, system monitoring (likely needs an Edge Function for real infra metrics — mock for now) |
 | Automated tests | ⬜ not started | No `test/` directory exists yet. Add widget tests for the async/repository pattern once 2-3 more modules land, so the test harness matches a stable pattern rather than being rewritten each time |
@@ -442,3 +442,33 @@ package is still the more robust long-term answer.
   targets have consistently focused correctly all session); worth
   investigating directly if a future module's golden path depends on a
   small icon-button tap succeeding. Next: Reports module.
+- **2026-07-18 (cont'd)**: Built the full Reports module (models shaped to
+  match the eventual `report_snapshots.data` payload, dual-mode repository
+  that always computes client-side from live tables, role-gated hub + 3
+  screens). This also wired up the pre-existing dashboard attendance-card
+  link at `Paths.reportsMember`, which had been pointing at a `ComingSoon`
+  stub since the dashboard was first built. `flutter analyze` clean (same 9
+  pre-existing info-level lints, 0 new issues). Live-tested DB/RLS with a
+  2-SHG, 3-profile fixture set — hit a **real test-fixture bug** during this
+  pass: the first cross-shg-isolation attempt used a savings row with
+  `member_id` set to the querying member but `shg_id` set to a *different*
+  SHG, which the querying member could see — not an RLS gap, but exactly
+  correct behavior per the `member_id = auth.uid() or shg_id = current_shg_id()
+  or is_staff()` policy (a member can always read their own rows regardless
+  of `shg_id`, and a self-owned row with a mismatched `shg_id` isn't a
+  realistic case the policy needs to guard against). Corrected by giving the
+  SHG-B row a distinct SHG-B member as its owner, then re-ran: all 6 checks
+  passed (real cross-shg isolation for a non-owner, staff can read across
+  SHGs, staff can read another SHG's row directly, member cannot read
+  another SHG's row directly, staff can insert into `report_snapshots`,
+  member insert denied); fixtures cleaned up and verified zero remnants.
+  Also hit two check-constraint casing mistakes while building the fixture
+  (`savings_entries.frequency` wants `'Weekly'` not `'weekly'`,
+  `.mode` wants `'Cash'` not `'cash'` — both enums are capitalized in the
+  schema) — worth remembering for any future savings_entries fixture.
+  UI-tested on a fresh tab: hub correctly shows only "My Reports" for the
+  member role (SHG/Federation cards correctly hidden), and all 3 report
+  screens (My Reports, SHG Reports, Federation Reports — the latter two
+  reached directly by hash since only the hub gates by role, not the
+  routes themselves) render their stat cards with the demo-mode mock data
+  correctly. Next: Analytics module.
