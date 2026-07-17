@@ -50,6 +50,15 @@ failed silently. The actual fix, in order:
    you don't wait long enough — cost real time misdiagnosing this as a bug
    before finding the cause. `location.hash = '#/app/whatever'` changes the
    route within the already-running SPA instantly, no reboot.
+6. **Never call `navigate()` on a tab right after `preview_start` opens it,
+   not even once.** Doing so before the Flutter web app's first cold boot
+   finishes orphans the debug connection — the tab gets stuck on the raw
+   un-hydrated `index.html` indefinitely, and no amount of waiting recovers
+   it (this is worse than the plain reload case in point 5, which does
+   eventually re-boot). If you need a clean tab, use `tabs_create` +
+   exactly one `navigate()` call on the *new* tab, then wait from there —
+   or just wait on the tab `preview_start` already opened without touching
+   it further.
 Verified end-to-end this way: typed a full phone number into Login, tapped
 Send OTP, and watched the **real** `signInWithOtp` call fail against the live
 project (no SMS provider configured — expected) with the app's error-handling
@@ -127,7 +136,7 @@ Meetings, etc.:
 | Government schemes | ✅ done | Model, repository, 4 screens (catalog, detail, eligibility checker, tracking). Eligibility checker is a client-side keyword-matching heuristic against each scheme's eligibility text, not a real rules engine — documented as a deliberate placeholder. Live-tested DB/RLS (own-application insert, deny-apply-for-another-member, deny-direct-catalog-edit) and UI (status badges render correctly, eligibility filter toggle verified to actually change results) |
 | Training | ✅ done | Model, repository, 4 screens (catalog, course detail, quiz, certificates). Quiz is a small generic 3-question set (not tied to specific course content — no quiz-content table in the schema), passing ≥2/3 marks the course certified; documented as a placeholder. Live-tested DB/RLS (own-progress insert, deny-progress-for-another-member, deny-direct-catalog-edit, shared shg visibility) and UI (progress bars, radio quiz, disabled-in-demo-mode submit) |
 | Digital payments | ✅ done | `PaymentProcessor` abstraction (`lib/services/payment_processor.dart`) with a `MockPaymentProcessor` that always succeeds and synthesizes a reference — swapping in a real gateway later is a one-file change. 3 screens (home, scan & pay, history). Live-tested DB/RLS: payments are **private to the owning member**, not shared shg-wide like savings/loans (deliberate — confirmed correct), deny-recording-for-another-member also confirmed. UI-tested: amount entry, mode chips, disabled-in-demo-mode Pay button |
-| Announcements | 🟡 partial | List already reads mock data on dashboards; needs its own repository + detail screen + read-receipt tracking via `announcement_reads` |
+| Announcements | ✅ done | Model, repository, 2 screens (home list with unread-dot indicator + leader/staff-only post dialog, detail with read-receipt tracking via `announcement_reads`). Global (`shg_id is null`) + shg-scoped announcements merged via `.or()` query. Live-tested DB/RLS (member-post denied, leader-post allowed, shared shg read visibility, own read-receipt insert allowed, marking another member's receipt denied) and UI (list + detail render correctly in demo mode, member correctly sees no post button) |
 | Support (chat/voice/FAQ/tickets) | ⬜ not started | `support_tickets` + `support_messages`; voice support needs an external STT/TTS API — abstract behind an interface, mock for now |
 | AI Advisors (financial/scheme/market) | ⬜ not started | `ai_advisor_logs` table exists. **External LLM API is out of scope until keys are supplied** — build a `AiAdvisorService` interface with a canned/mock implementation now, swap in a real provider later |
 | Reports | ⬜ not started | `report_snapshots`; snapshots are meant to be generated server-side (Edge Function) — for now, repository can compute on-the-fly client-side from live tables as a placeholder |
@@ -359,3 +368,21 @@ package is still the more robust long-term answer.
   — `preview_list` showed it missing entirely); a plain restart fixed it.
   UI-tested payments home, scan & pay form (amount entry + mode chips both
   verified interactive), all correct. Next: Announcements module.
+- **2026-07-18 (cont'd)**: Built the full Announcements module (model,
+  dual-mode repository merging global + shg-scoped announcements via
+  `.or()`, home list with unread indicator + leader/staff post dialog,
+  detail page with read-receipt tracking). `flutter analyze` clean (same 9
+  pre-existing info-level lints, 0 new issues). Live-tested DB/RLS — all 5
+  checks passed (member-post denied, leader-post allowed, shared shg read
+  visibility, own read-receipt insert allowed, marking another member's
+  receipt denied); fixtures cleaned up and verified zero remnants
+  afterward. Hit a new variant of the known `navigate()`-reload gotcha:
+  calling it even *once* right after `preview_start` (before the app's
+  first cold boot finished) orphaned the Flutter debug connection and left
+  the tab stuck on un-hydrated raw HTML indefinitely — a plain wait never
+  recovered it. Fix: after `preview_start`, don't call `navigate()` at all;
+  either just wait on the tab it already opened, or open a fresh tab via
+  `tabs_create` + a single `navigate()` call and wait from there. UI-tested
+  the golden path on a fresh tab: list renders with unread dots, detail
+  page renders title/date/body, member correctly has no post button
+  (demo-mode auto-session as "Lakshmi", SHG Member). Next: Support module.

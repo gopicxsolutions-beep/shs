@@ -5,6 +5,8 @@ import '../pages/auth/otp_page.dart';
 import '../pages/auth/profile_setup_page.dart';
 import '../pages/auth/role_select_page.dart';
 import '../pages/auth/splash_page.dart';
+import '../pages/announcements/announcement_detail_page.dart';
+import '../pages/announcements/announcements_home_page.dart';
 import '../pages/common/coming_soon.dart';
 import '../pages/dashboard/dashboard_page.dart';
 import '../pages/financial/financial_ledger_page.dart';
@@ -121,7 +123,7 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.payments, builder: (context, state) => const PaymentsHomePage()),
           GoRoute(path: Paths.paymentsQr, builder: (context, state) => const PaymentsQrPage()),
           GoRoute(path: Paths.paymentsHistory, builder: (context, state) => const PaymentsHistoryPage()),
-          comingSoon(Paths.announcements, 'Announcements'),
+          GoRoute(path: Paths.announcements, builder: (context, state) => const AnnouncementsHomePage()),
           comingSoon(Paths.support, 'Support'),
           comingSoon(Paths.supportChat, 'Chat Support'),
           comingSoon(Paths.supportVoice, 'Voice Support'),
@@ -152,7 +154,7 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: '/app/schemes/:id', builder: (context, state) => SchemeDetailPage(schemeId: state.pathParameters['id']!)),
           GoRoute(path: '/app/training/:id', builder: (context, state) => CourseDetailPage(courseId: state.pathParameters['id']!)),
           GoRoute(path: '/app/training/:id/quiz', builder: (context, state) => CourseQuizPage(courseId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/announcements/:id', builder: (context, state) => ComingSoonPage(title: 'Announcement')),
+          GoRoute(path: '/app/announcements/:id', builder: (context, state) => AnnouncementDetailPage(announcementId: state.pathParameters['id']!)),
           GoRoute(path: '/app/analytics/shg/:id', builder: (context, state) => ComingSoonPage(title: 'SHG Analytics')),
         ],
       ),
