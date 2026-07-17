@@ -33,19 +33,27 @@ class AppState extends ChangeNotifier {
   Profile? _profile;
   ShgSearchResult? _pendingShg;
 
+  // Demo mode mirrors the real two-step gate (session, then profile) with
+  // two independent flags — collapsing them into one previously caused
+  // profile setup to instantly satisfy both `hasSession` and `hasProfile`,
+  // which skipped Role Select entirely (router saw onAuthFlow + fully
+  // onboarded and bounced straight to the dashboard). Found via live UI
+  // testing, not by analyze or DB tests — see docs/DEVELOPMENT_PROGRESS.md.
+  bool _legacySessionStarted = false;
   bool _legacyOnboarded = false;
   Role _legacyRole = defaultUser.role;
 
   static const _roleKey = 'shg_role';
+  static const _sessionKey = 'shg_session_started';
   static const _onboardedKey = 'shg_authenticated';
   static const _langKey = 'shg_language';
 
   /// A Supabase session exists (phone OTP verified), or — unconfigured —
-  /// the legacy local onboarding flag is set.
-  bool get hasSession => SupabaseService.isConfigured ? _session != null : _legacyOnboarded;
+  /// profile setup has been completed.
+  bool get hasSession => SupabaseService.isConfigured ? _session != null : _legacySessionStarted;
 
   /// A `profiles` row exists for the current session (profile setup done),
-  /// or — unconfigured — the legacy local onboarding flag is set.
+  /// or — unconfigured — role selection has been completed.
   bool get hasProfile => SupabaseService.isConfigured ? _profile != null : _legacyOnboarded;
 
   bool get isAuthenticated => hasSession && hasProfile;
@@ -83,6 +91,7 @@ class AppState extends ChangeNotifier {
         final match = Role.values.where((r) => r.name == roleName);
         if (match.isNotEmpty) _legacyRole = match.first;
       }
+      _legacySessionStarted = prefs.getBool(_sessionKey) ?? false;
       _legacyOnboarded = prefs.getBool(_onboardedKey) ?? false;
       notifyListeners();
       return;
@@ -130,9 +139,9 @@ class AppState extends ChangeNotifier {
     String? district,
   }) async {
     if (!SupabaseService.isConfigured) {
-      _legacyOnboarded = true;
+      _legacySessionStarted = true;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_onboardedKey, true);
+      await prefs.setBool(_sessionKey, true);
       notifyListeners();
       return;
     }
@@ -155,9 +164,11 @@ class AppState extends ChangeNotifier {
       return;
     }
     _legacyRole = role;
+    _legacyOnboarded = true;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_roleKey, role.name);
+    await prefs.setBool(_onboardedKey, true);
   }
 
   Future<void> setLanguage(Language lang) async {
@@ -173,8 +184,10 @@ class AppState extends ChangeNotifier {
       _profile = null;
       _pendingShg = null;
     } else {
+      _legacySessionStarted = false;
       _legacyOnboarded = false;
       final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_sessionKey, false);
       await prefs.setBool(_onboardedKey, false);
     }
     notifyListeners();

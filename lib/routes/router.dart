@@ -8,6 +8,9 @@ import '../pages/auth/splash_page.dart';
 import '../pages/common/coming_soon.dart';
 import '../pages/dashboard/dashboard_page.dart';
 import '../pages/financial/financial_ledger_page.dart';
+import '../pages/livelihood/livelihood_detail_page.dart';
+import '../pages/livelihood/livelihood_entry_page.dart';
+import '../pages/livelihood/livelihood_home_page.dart';
 import '../pages/loans/loan_apply_page.dart';
 import '../pages/loans/loan_approval_page.dart';
 import '../pages/loans/loan_detail_page.dart';
@@ -88,8 +91,8 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.financialLedger, builder: (context, state) => const FinancialLedgerPage(entryType: 'ledger', title: 'General Ledger')),
           GoRoute(path: Paths.financialBank, builder: (context, state) => const FinancialLedgerPage(entryType: 'bank', title: 'Bank Reconciliation')),
           GoRoute(path: Paths.financialAudit, builder: (context, state) => const FinancialLedgerPage(entryType: 'audit', title: 'Audit Trail')),
-          comingSoon(Paths.livelihood, 'Livelihoods'),
-          comingSoon(Paths.livelihoodEntry, 'Add Activity'),
+          GoRoute(path: Paths.livelihood, builder: (context, state) => const LivelihoodHomePage()),
+          GoRoute(path: Paths.livelihoodEntry, builder: (context, state) => const LivelihoodEntryPage()),
           comingSoon(Paths.marketplaceAddProduct, 'Add Product'),
           comingSoon(Paths.marketplaceOrders, 'Orders'),
           comingSoon(Paths.marketplaceReviews, 'Reviews'),
@@ -126,7 +129,7 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: '/app/loans/:id', builder: (context, state) => LoanDetailPage(loanId: state.pathParameters['id']!)),
           GoRoute(path: '/app/meetings/:id', builder: (context, state) => MeetingDetailPage(meetingId: state.pathParameters['id']!)),
           GoRoute(path: '/app/meetings/:id/mom', builder: (context, state) => MeetingMomPage(meetingId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/livelihood/:id', builder: (context, state) => ComingSoonPage(title: 'Activity Detail')),
+          GoRoute(path: '/app/livelihood/:id', builder: (context, state) => LivelihoodDetailPage(activityId: state.pathParameters['id']!)),
           GoRoute(path: '/app/marketplace/product/:id', builder: (context, state) => ComingSoonPage(title: 'Product Detail')),
           GoRoute(path: '/app/marketplace/orders/:id', builder: (context, state) => ComingSoonPage(title: 'Order Detail')),
           GoRoute(path: '/app/schemes/:id', builder: (context, state) => ComingSoonPage(title: 'Scheme Detail')),

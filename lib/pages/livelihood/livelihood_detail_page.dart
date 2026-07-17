@@ -1,0 +1,117 @@
+import 'package:flutter/material.dart';
+import '../../layout/page_header.dart';
+import '../../models/livelihood.dart';
+import '../../repositories/livelihood_repository.dart';
+import '../../services/supabase_service.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/colors.dart';
+import '../../widgets/app_badge.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_card.dart';
+import '../../widgets/async_state.dart';
+
+const _statusOptions = ['planned', 'active', 'completed'];
+
+class LivelihoodDetailPage extends StatelessWidget {
+  final String activityId;
+  const LivelihoodDetailPage({super.key, required this.activityId});
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = LivelihoodRepository();
+    final key = GlobalKey<AppAsyncBuilderState<LivelihoodActivity?>>();
+
+    return Scaffold(
+      appBar: const PageHeader(title: 'Activity Detail'),
+      body: AppAsyncBuilder<LivelihoodActivity?>(
+        key: key,
+        future: () => repo.fetchById(activityId),
+        builder: (context, activity) {
+          if (activity == null) {
+            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This activity could not be found');
+          }
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              AppCard(
+                gradient: LinearGradient(colors: activity.profit >= 0 ? [Brand.c700, Brand.c600] : [Accent.red600, Accent.red500]),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Text(activity.activityType, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+                      AppBadge(text: activity.status, tone: BadgeTone.neutral),
+                    ]),
+                    const SizedBox(height: 6),
+                    Text(activity.description ?? '', style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.9))),
+                    const SizedBox(height: 12),
+                    Text('₹${activity.profit} net', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white)),
+                    Text('${activity.profit >= 0 ? "Profit" : "Loss"} so far', style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.75))),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(child: _infoTile('Investment', '₹${activity.investment}')),
+                const SizedBox(width: 12),
+                Expanded(child: _infoTile('Revenue', '₹${activity.revenue}')),
+              ]),
+              const SizedBox(height: 20),
+              AppButton(
+                label: 'Update Progress',
+                fullWidth: true,
+                onPressed: !SupabaseService.isConfigured ? null : () => _updateProgress(context, repo, activity, key),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _infoTile(String label, String value) => AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: AppTheme.sans(11, color: Neutral.c500)),
+            const SizedBox(height: 4),
+            Text(value, style: AppTheme.sans(15, weight: FontWeight.w700)),
+          ],
+        ),
+      );
+
+  Future<void> _updateProgress(BuildContext context, LivelihoodRepository repo, LivelihoodActivity activity, GlobalKey<AppAsyncBuilderState<LivelihoodActivity?>> key) async {
+    final revenueController = TextEditingController(text: '${activity.revenue}');
+    var status = activity.status;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Update progress'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(controller: revenueController, keyboardType: TextInputType.number, decoration: const InputDecoration(prefixText: '₹', labelText: 'Revenue to date')),
+              const SizedBox(height: 12),
+              DropdownButton<String>(
+                value: status,
+                isExpanded: true,
+                items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                onChanged: (v) => setState(() => status = v ?? status),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Save')),
+          ],
+        ),
+      ),
+    );
+    if (result != true) return;
+    final revenue = num.tryParse(revenueController.text) ?? activity.revenue;
+    await repo.updateProgress(activity.id, revenue: revenue, status: status);
+    key.currentState?.reload();
+  }
+}

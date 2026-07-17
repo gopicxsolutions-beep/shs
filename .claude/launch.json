@@ -6,6 +6,12 @@
       "runtimeExecutable": "flutter",
       "runtimeArgs": ["run", "-d", "chrome", "--web-port=5000", "--dart-define-from-file=.env.json"],
       "port": 5000
+    },
+    {
+      "name": "flutter-web-demo",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": ["run", "-d", "chrome", "--web-port=5001"],
+      "port": 5001
     }
   ]
 }

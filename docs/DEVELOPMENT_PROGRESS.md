@@ -113,7 +113,7 @@ Meetings, etc.:
 | Meetings | ✅ done | Model, repository, 6 screens (home/schedule/attendance roster/self check-in/detail/MoM with decisions+action items), wired incl. `/app/meetings/:id` and `/app/meetings/:id/mom`. QR check-in is real attendance-marking logic behind a tap, not a camera scanner (no camera plugin in pubspec yet) |
 | My SHG (members/documents) | ✅ done | Model, repository, 4 screens (shg home/members list/member detail/documents), wired incl. `/app/shg/members/:id`. Document upload is metadata-only — actual file upload needs a Supabase Storage bucket + file-picker plugin (neither wired yet) |
 | Financial records (cashbook/ledger/bank/audit) | ✅ done | One shared `FinancialLedgerPage(entryType, title)` screen reused across all 4 routes (they're identical shape, just filtered by `entry_type`) + add-entry dialog with running-balance calc. Live-tested: leader-only write denied for member, shared read works |
-| Livelihoods | ⬜ not started | `livelihood_activities` table |
+| Livelihoods | ✅ done | Model, repository, 3 screens (home/entry/detail with Update Progress dialog). Live-tested DB/RLS + full UI golden path (see session log) — found and fixed a real Role-Select-skip bug in the process |
 | Marketplace (products/orders/reviews) | ⬜ not started | Cross-SHG browsing; needs Supabase Storage for product images |
 | Government schemes | ⬜ not started | Catalog + `scheme_applications`; eligibility checker can be client-side rule evaluation for now |
 | Training | ⬜ not started | `training_courses` + `course_progress`; quiz screen needs a quiz-content model (not in schema yet — add if needed) |
@@ -274,3 +274,27 @@ package is still the more robust long-term answer.
   conclusion — use real UI testing for golden paths going forward, alongside
   the DB-level RLS testing. Next: Livelihoods module, with both testing modes
   applied.
+- **2026-07-17 (cont'd)**: Built the full Livelihoods module (3 screens) and
+  live-tested it both ways. DB/RLS: member adds own activity, updates own
+  revenue, leader can update a member's activity, cross-tenant isolation
+  holds — all correct. **UI testing found a real bug**: added a second
+  `flutter-web-demo` launch config (port 5001, no `--dart-define`, so
+  `SupabaseService.isConfigured=false`) to reach authenticated screens
+  without needing real SMS OTP. Walked the full onboarding flow (typing
+  included) and found that completing Profile Setup skipped Role Select
+  entirely, landing straight on the dashboard. Root cause:
+  `hasSession`/`hasProfile` both read the same single `_legacyOnboarded`
+  flag in demo mode, so completing profile setup satisfied both
+  simultaneously and the router's "fully onboarded, leave the auth flow"
+  redirect fired before Role Select could render. Fixed in
+  `lib/state/app_state.dart` by splitting into two independent flags
+  (`_legacySessionStarted` set after profile setup →  `hasSession`;
+  `_legacyOnboarded` set after role select → `hasProfile`), mirroring how
+  the two flags are already genuinely independent in the real-Supabase
+  path. Verified the fix live: full flow now correctly stops at Role
+  Select, and picking a role lands on the dashboard as expected. Also
+  live-tested the Livelihoods list/entry/detail screens this way — all
+  render and behave correctly (chip selection, typing, profit/loss
+  coloring, demo-mode write no-ops). Minor unrelated finding: bottom nav
+  overflows by 2px on an 812px-tall viewport (`lib/layout/app_shell.dart`)
+  — cosmetic, not yet fixed, low priority. Next: Marketplace module.
