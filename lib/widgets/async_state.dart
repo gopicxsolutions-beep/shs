@@ -31,7 +31,9 @@ class AppAsyncBuilderState<T> extends State<AppAsyncBuilder<T>> {
 
   Future<void> reload() {
     final next = widget.future();
-    setState(() => _future = next);
+    setState(() {
+      _future = next;
+    });
     return next;
   }
 
