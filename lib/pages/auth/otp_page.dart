@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../routes/paths.dart';
 import '../../services/auth_service.dart';
 import '../../services/supabase_service.dart';
@@ -98,6 +99,7 @@ class _OtpPageState extends State<OtpPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Neutral.c50,
       body: SafeArea(
@@ -114,12 +116,12 @@ class _OtpPageState extends State<OtpPage> {
                 child: const Icon(Icons.sms_rounded, color: Colors.white, size: 28),
               ),
               const SizedBox(height: 20),
-              Text('Verify OTP', style: AppTheme.display(22)),
+              Text(l10n.otpTitle, style: AppTheme.display(22)),
               const SizedBox(height: 6),
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(style: AppTheme.sans(13, color: Neutral.c500), children: [
-                  const TextSpan(text: "We've sent a 6-digit code to "),
+                  TextSpan(text: l10n.otpSentTo),
                   TextSpan(text: _phone, style: AppTheme.sans(13, weight: FontWeight.w700, color: Neutral.c700)),
                 ]),
               ),
@@ -157,22 +159,22 @@ class _OtpPageState extends State<OtpPage> {
                 child: Text.rich(
                   TextSpan(style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600), children: [
                     if (_resendSeconds > 0) ...[
-                      const TextSpan(text: 'Resend OTP in '),
+                      TextSpan(text: l10n.otpResendIn),
                       TextSpan(text: '00:${_resendSeconds.toString().padLeft(2, '0')}', style: AppTheme.sans(12, color: Neutral.c400, weight: FontWeight.w400)),
                     ] else
-                      const TextSpan(text: 'Resend OTP'),
+                      TextSpan(text: l10n.otpResend),
                   ]),
                 ),
               ),
               const SizedBox(height: 28),
               AppButton(
-                label: _verifying ? 'Verifying…' : 'Verify & Continue',
+                label: _verifying ? l10n.otpVerifying : l10n.otpVerifyContinue,
                 fullWidth: true,
                 size: ButtonSize.lg,
                 onPressed: _filled && !_verifying ? _submit : null,
               ),
               const Spacer(),
-              Text("Didn't receive the code? Check your SMS inbox.", style: AppTheme.sans(11, color: Neutral.c400)),
+              Text(l10n.otpDidntReceive, style: AppTheme.sans(11, color: Neutral.c400)),
             ],
           ),
         ),

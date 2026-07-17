@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../models/types.dart';
 import '../routes/paths.dart';
 import '../state/app_state.dart';
@@ -36,12 +37,13 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final role = context.watch<AppState>().user.role;
     final isOversight = role == Role.crp || role == Role.clf || role == Role.admin;
+    final l10n = AppLocalizations.of(context)!;
     final items = <_NavItem>[
-      const _NavItem(Paths.dashboard, 'Home', Icons.home_rounded),
-      _NavItem(Paths.shg, isOversight ? 'SHGs' : 'My SHG', isOversight ? Icons.apartment_rounded : Icons.groups_rounded),
-      const _NavItem(Paths.services, 'Services', Icons.grid_view_rounded, center: true),
-      const _NavItem(Paths.marketplace, 'Market', Icons.storefront_rounded),
-      const _NavItem(Paths.profile, 'Profile', Icons.person_rounded),
+      _NavItem(Paths.dashboard, l10n.navHome, Icons.home_rounded),
+      _NavItem(Paths.shg, isOversight ? l10n.navSHGs : l10n.navMySHG, isOversight ? Icons.apartment_rounded : Icons.groups_rounded),
+      _NavItem(Paths.services, l10n.navServices, Icons.grid_view_rounded, center: true),
+      _NavItem(Paths.marketplace, l10n.navMarket, Icons.storefront_rounded),
+      _NavItem(Paths.profile, l10n.navProfile, Icons.person_rounded),
     ];
 
     return DecoratedBox(

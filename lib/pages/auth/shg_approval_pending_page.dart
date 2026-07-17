@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/shg_join_request.dart';
 import '../../repositories/shg_join_request_repository.dart';
 import '../../routes/paths.dart';
@@ -35,6 +36,7 @@ class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
   @override
   Widget build(BuildContext context) {
     final memberId = context.watch<AppState>().profile?.id;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: Neutral.c50,
@@ -59,12 +61,10 @@ class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
                     child: Icon(rejected ? Icons.cancel_rounded : Icons.hourglass_top_rounded, color: rejected ? Accent.red600 : Gold.c600, size: 30),
                   ),
                   const SizedBox(height: 20),
-                  Text(rejected ? 'Request not approved' : 'Waiting for approval', textAlign: TextAlign.center, style: AppTheme.display(20)),
+                  Text(rejected ? l10n.shgApprovalRejectedTitle : l10n.shgApprovalWaitingTitle, textAlign: TextAlign.center, style: AppTheme.display(20)),
                   const SizedBox(height: 8),
                   Text(
-                    rejected
-                        ? 'Your SHG leader did not approve this request. You can pick a different SHG and try again.'
-                        : 'Your request to join has been sent to your SHG leader. You will get access once it is approved.',
+                    rejected ? l10n.shgApprovalRejectedMessage : l10n.shgApprovalWaitingMessage,
                     textAlign: TextAlign.center,
                     style: AppTheme.sans(13, color: Neutral.c500),
                   ),
@@ -74,24 +74,24 @@ class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('SHG', style: AppTheme.sans(11, weight: FontWeight.w700, color: Neutral.c500)),
+                          Text(l10n.profileSHG, style: AppTheme.sans(11, weight: FontWeight.w700, color: Neutral.c500)),
                           const SizedBox(height: 2),
-                          Text(request.shgName ?? 'Unknown SHG', style: AppTheme.sans(15, weight: FontWeight.w700)),
+                          Text(request.shgName ?? l10n.unknownShg, style: AppTheme.sans(15, weight: FontWeight.w700)),
                         ],
                       ),
                     ),
                   const SizedBox(height: 24),
                   if (rejected)
-                    AppButton(label: 'Choose a different SHG', fullWidth: true, size: ButtonSize.lg, onPressed: () => context.go(Paths.profileSetup))
+                    AppButton(label: l10n.chooseDifferentShg, fullWidth: true, size: ButtonSize.lg, onPressed: () => context.go(Paths.profileSetup))
                   else
-                    AppButton(label: _checking ? 'Checking…' : 'Check status', fullWidth: true, size: ButtonSize.lg, onPressed: _checking ? null : _checkStatus),
+                    AppButton(label: _checking ? l10n.checkingStatus : l10n.actionCheckStatus, fullWidth: true, size: ButtonSize.lg, onPressed: _checking ? null : _checkStatus),
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: () async {
                       await context.read<AppState>().signOut();
                       if (context.mounted) context.go(Paths.splash);
                     },
-                    child: Text('Sign out', style: AppTheme.sans(13, color: Neutral.c500)),
+                    child: Text(l10n.actionSignOut, style: AppTheme.sans(13, color: Neutral.c500)),
                   ),
                 ],
               );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shg_saathi/l10n/gen/app_localizations.dart';
 import 'package:shg_saathi/pages/auth/shg_approval_pending_page.dart';
 import 'package:shg_saathi/pages/shg/shg_join_requests_page.dart';
 import 'package:shg_saathi/services/supabase_service.dart';
@@ -25,20 +27,20 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<AppState>(
         create: (_) => AppState(),
-        child: const MaterialApp(home: ShgApprovalPendingPage()),
+        child: _localizedApp(const ShgApprovalPendingPage()),
       ),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('Waiting for approval'), findsOneWidget);
-    expect(find.text('Check status'), findsOneWidget);
+    expect(find.text('Check Status'), findsOneWidget);
   });
 
   testWidgets('ShgJoinRequestsPage renders the empty state without any live requests', (tester) async {
     await tester.pumpWidget(
       ChangeNotifierProvider<AppState>(
         create: (_) => AppState(),
-        child: const MaterialApp(home: ShgJoinRequestsPage()),
+        child: _localizedApp(const ShgJoinRequestsPage()),
       ),
     );
     await tester.pumpAndSettle();
@@ -46,3 +48,14 @@ void main() {
     expect(find.text('No pending join requests'), findsOneWidget);
   });
 }
+
+MaterialApp _localizedApp(Widget home) => MaterialApp(
+      home: home,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+    );

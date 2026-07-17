@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../data/shg.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/profile.dart';
 import '../../routes/paths.dart';
 import '../../services/profile_repository.dart';
@@ -103,6 +104,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   @override
   Widget build(BuildContext context) {
     final valid = _name.text.trim().isNotEmpty && _selectedShg != null;
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Neutral.c50,
       body: SafeArea(
@@ -121,21 +123,21 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                 child: const Icon(Icons.account_circle_rounded, color: Colors.white, size: 30),
               ),
               const SizedBox(height: 20),
-              Text('Create your profile', textAlign: TextAlign.center, style: AppTheme.display(22)),
+              Text(l10n.profileSetupTitle, textAlign: TextAlign.center, style: AppTheme.display(22)),
               const SizedBox(height: 6),
-              Text('Tell us a bit about yourself to get started', textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
+              Text(l10n.profileSetupSubtitle, textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
               const SizedBox(height: 28),
-              _field('Full name', placeholder: 'e.g. Lakshmi Devi', controller: _name),
+              _field(l10n.fieldFullName, placeholder: 'e.g. Lakshmi Devi', controller: _name),
               const SizedBox(height: 14),
               Row(children: [
-                Expanded(child: _field('Village', placeholder: 'Kondapur', controller: _village)),
+                Expanded(child: _field(l10n.profileVillage, placeholder: 'Kondapur', controller: _village)),
                 const SizedBox(width: 12),
-                Expanded(child: _field('Mandal', placeholder: 'Hanamkonda', controller: _mandal)),
+                Expanded(child: _field(l10n.fieldMandal, placeholder: 'Hanamkonda', controller: _mandal)),
               ]),
               const SizedBox(height: 14),
-              _field('District', placeholder: 'Warangal', controller: _district),
+              _field(l10n.fieldDistrict, placeholder: 'Warangal', controller: _district),
               const SizedBox(height: 14),
-              Text('Your SHG', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+              Text(l10n.yourShg, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
               const SizedBox(height: 6),
               AppCard(
                 onTap: _pickShg,
@@ -154,18 +156,18 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                               ],
                             ),
                           ),
-                          Text('Change', style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
+                          Text(l10n.changeShg, style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
                         ],
                       )
                     : Row(children: [
                         Icon(Icons.search, size: 16, color: Neutral.c500),
                         const SizedBox(width: 8),
-                        Text('Search & select your SHG', style: AppTheme.sans(14, color: Neutral.c500)),
+                        Text(l10n.searchSelectShg, style: AppTheme.sans(14, color: Neutral.c500)),
                       ]),
               ),
               const SizedBox(height: 24),
               AppButton(
-                label: _saving ? 'Saving…' : 'Continue',
+                label: _saving ? l10n.profileSetupSaving : l10n.profileSetupContinue,
                 fullWidth: true,
                 size: ButtonSize.lg,
                 onPressed: valid && !_saving ? _continue : null,
@@ -224,6 +226,7 @@ class _ShgSearchSheetState extends State<_ShgSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SizedBox(
@@ -233,7 +236,7 @@ class _ShgSearchSheetState extends State<_ShgSearchSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Find your SHG', style: AppTheme.display(16)),
+              Text(l10n.findYourShg, style: AppTheme.display(16)),
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(border: Border.all(color: Neutral.c200), borderRadius: BorderRadius.circular(12)),
@@ -245,7 +248,7 @@ class _ShgSearchSheetState extends State<_ShgSearchSheet> {
                     child: TextField(
                       controller: _query,
                       onChanged: _onChanged,
-                      decoration: const InputDecoration(border: InputBorder.none, hintText: 'Search by SHG name'),
+                      decoration: InputDecoration(border: InputBorder.none, hintText: l10n.searchShgHint),
                       style: AppTheme.sans(14),
                     ),
                   ),
@@ -257,7 +260,7 @@ class _ShgSearchSheetState extends State<_ShgSearchSheet> {
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
                     : _results.isEmpty
-                        ? Center(child: Text('No SHGs found', style: AppTheme.sans(13, color: Neutral.c400)))
+                        ? Center(child: Text(l10n.noShgsFound, style: AppTheme.sans(13, color: Neutral.c400)))
                         : ListView.separated(
                             itemCount: _results.length,
                             separatorBuilder: (_, _) => const SizedBox(height: 8),

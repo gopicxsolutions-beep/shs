@@ -1,0 +1,90 @@
+{
+  "@@locale": "hi",
+
+  "appTitle": "SHG Saathi",
+
+  "navHome": "होम",
+  "navMySHG": "मेरा SHG",
+  "navSHGs": "SHGs",
+  "navServices": "सेवाएं",
+  "navMarket": "बाज़ार",
+  "navProfile": "प्रोफ़ाइल",
+
+  "actionSave": "सेव करें",
+  "actionCancel": "रद्द करें",
+  "actionAdd": "जोड़ें",
+  "actionEdit": "संपादित करें",
+  "actionDelete": "हटाएं",
+  "actionSubmit": "सबमिट करें",
+  "actionRetry": "फिर से कोशिश करें",
+  "actionSignOut": "साइन आउट",
+  "actionCheckStatus": "स्थिति जांचें",
+
+  "commonLoading": "लोड हो रहा है…",
+  "commonError": "कुछ गलत हो गया",
+
+  "profileTitle": "प्रोफ़ाइल",
+  "profileEditProfile": "प्रोफ़ाइल संपादित करें",
+  "profileMobile": "मोबाइल",
+  "profileVillage": "गांव",
+  "profileSHG": "SHG",
+  "profileName": "नाम",
+
+  "settingsTitle": "सेटिंग्स",
+  "settingsNotifications": "सूचनाएं",
+  "settingsNotifMeetingReminders": "बैठक अनुस्मारक",
+  "settingsNotifPaymentAlerts": "भुगतान अलर्ट",
+  "settingsNotifAnnouncements": "घोषणाएं",
+  "settingsLanguage": "भाषा",
+  "settingsPreviewAs": "इस रूप में देखें",
+  "settingsAppVersion": "ऐप संस्करण",
+
+  "languageTitle": "भाषा",
+  "languageEnglish": "अंग्रेज़ी",
+  "languageTelugu": "తెలుగు",
+  "languageHindi": "हिन्दी",
+
+  "servicesTitle": "सेवाएं",
+
+  "loginTitle": "वापसी पर स्वागत है",
+  "loginSubtitle": "जारी रखने के लिए अपना पंजीकृत मोबाइल नंबर दर्ज करें",
+  "loginSending": "भेजा जा रहा है…",
+  "loginSendOtp": "OTP भेजें",
+
+  "otpTitle": "OTP सत्यापित करें",
+  "otpHint": "अपने फोन पर भेजा गया 6-अंकों का कोड दर्ज करें",
+  "otpVerify": "सत्यापित करें",
+  "otpSentTo": "हमने 6-अंकों का कोड भेजा है ",
+  "otpVerifyContinue": "सत्यापित करें और जारी रखें",
+  "otpVerifying": "सत्यापित हो रहा है…",
+  "otpResendIn": "OTP दोबारा भेजें ",
+  "otpResend": "OTP दोबारा भेजें",
+  "otpDidntReceive": "कोड नहीं मिला? अपना SMS इनबॉक्स जांचें।",
+
+  "profileSetupTitle": "अपनी प्रोफ़ाइल बनाएं",
+  "profileSetupSubtitle": "शुरू करने के लिए अपने बारे में थोड़ा बताएं",
+  "fieldFullName": "पूरा नाम",
+  "fieldMandal": "मंडल",
+  "fieldDistrict": "ज़िला",
+  "yourShg": "आपका SHG",
+  "searchSelectShg": "अपना SHG खोजें और चुनें",
+  "changeShg": "बदलें",
+  "profileSetupSaving": "सेव हो रहा है…",
+  "profileSetupContinue": "जारी रखें",
+  "findYourShg": "अपना SHG खोजें",
+  "searchShgHint": "SHG नाम से खोजें",
+  "noShgsFound": "कोई SHG नहीं मिला",
+
+  "roleSelectTitle": "इस रूप में जारी रखें",
+  "roleSelectSubtitle": "अनुकूलित अनुभव देखने के लिए SHG तंत्र में अपनी भूमिका चुनें",
+
+  "dashboardGreeting": "वापसी पर स्वागत है",
+
+  "shgApprovalWaitingTitle": "अनुमोदन का इंतज़ार है",
+  "shgApprovalWaitingMessage": "आपका जुड़ने का अनुरोध आपके SHG लीडर को भेज दिया गया है। स्वीकृति मिलते ही आपको पहुंच मिल जाएगी।",
+  "shgApprovalRejectedTitle": "अनुरोध स्वीकृत नहीं हुआ",
+  "shgApprovalRejectedMessage": "आपके SHG लीडर ने इस अनुरोध को स्वीकृत नहीं किया। आप कोई दूसरा SHG चुनकर फिर से कोशिश कर सकते हैं।",
+  "unknownShg": "अज्ञात SHG",
+  "chooseDifferentShg": "दूसरा SHG चुनें",
+  "checkingStatus": "जांच हो रही है…"
+}

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/env.dart';
+import 'l10n/gen/app_localizations.dart';
+import 'models/types.dart';
 import 'routes/router.dart';
 import 'services/supabase_service.dart';
 import 'state/app_state.dart';
@@ -43,12 +46,34 @@ class _ShgSaathiAppState extends State<ShgSaathiApp> {
     }
     return ChangeNotifierProvider.value(
       value: _appState,
-      child: MaterialApp.router(
-        title: 'SHG Saathi',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.data,
-        routerConfig: _router,
+      child: AnimatedBuilder(
+        animation: _appState,
+        builder: (context, _) => MaterialApp.router(
+          title: 'SHG Saathi',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.data,
+          routerConfig: _router,
+          locale: _localeFor(_appState.language),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
       ),
     );
+  }
+
+  Locale _localeFor(Language language) {
+    switch (language) {
+      case Language.te:
+        return const Locale('te');
+      case Language.hi:
+        return const Locale('hi');
+      case Language.en:
+        return const Locale('en');
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/types.dart';
 import '../../routes/paths.dart';
 import '../../state/app_state.dart';
@@ -30,6 +31,7 @@ class RoleSelectPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = context.read<AppState>();
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Neutral.c50,
       body: SafeArea(
@@ -37,9 +39,9 @@ class RoleSelectPage extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
           child: Column(
             children: [
-              Text('Continue as', textAlign: TextAlign.center, style: AppTheme.display(22)),
+              Text(l10n.roleSelectTitle, textAlign: TextAlign.center, style: AppTheme.display(22)),
               const SizedBox(height: 6),
-              Text('Choose your role in the SHG ecosystem to see a tailored experience', textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
+              Text(l10n.roleSelectSubtitle, textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
               const SizedBox(height: 28),
               ...roles.map((r) {
                 final (bg, fg) = _tones[r.id]!;

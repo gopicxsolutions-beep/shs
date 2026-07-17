@@ -1,0 +1,90 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "SHG Saathi",
+
+  "navHome": "Home",
+  "navMySHG": "My SHG",
+  "navSHGs": "SHGs",
+  "navServices": "Services",
+  "navMarket": "Market",
+  "navProfile": "Profile",
+
+  "actionSave": "Save",
+  "actionCancel": "Cancel",
+  "actionAdd": "Add",
+  "actionEdit": "Edit",
+  "actionDelete": "Delete",
+  "actionSubmit": "Submit",
+  "actionRetry": "Retry",
+  "actionSignOut": "Sign Out",
+  "actionCheckStatus": "Check Status",
+
+  "commonLoading": "Loading…",
+  "commonError": "Something went wrong",
+
+  "profileTitle": "Profile",
+  "profileEditProfile": "Edit Profile",
+  "profileMobile": "Mobile",
+  "profileVillage": "Village",
+  "profileSHG": "SHG",
+  "profileName": "Name",
+
+  "settingsTitle": "Settings",
+  "settingsNotifications": "Notifications",
+  "settingsNotifMeetingReminders": "Meeting reminders",
+  "settingsNotifPaymentAlerts": "Payment alerts",
+  "settingsNotifAnnouncements": "Announcements",
+  "settingsLanguage": "Language",
+  "settingsPreviewAs": "Preview as",
+  "settingsAppVersion": "App version",
+
+  "languageTitle": "Language",
+  "languageEnglish": "English",
+  "languageTelugu": "తెలుగు",
+  "languageHindi": "हिन्दी",
+
+  "servicesTitle": "Services",
+
+  "loginTitle": "Welcome back",
+  "loginSubtitle": "Enter your registered mobile number to continue",
+  "loginSending": "Sending…",
+  "loginSendOtp": "Send OTP",
+
+  "otpTitle": "Verify OTP",
+  "otpHint": "Enter the 6-digit code sent to your phone",
+  "otpVerify": "Verify",
+  "otpSentTo": "We've sent a 6-digit code to ",
+  "otpVerifyContinue": "Verify & Continue",
+  "otpVerifying": "Verifying…",
+  "otpResendIn": "Resend OTP in ",
+  "otpResend": "Resend OTP",
+  "otpDidntReceive": "Didn't receive the code? Check your SMS inbox.",
+
+  "profileSetupTitle": "Create your profile",
+  "profileSetupSubtitle": "Tell us a bit about yourself to get started",
+  "fieldFullName": "Full name",
+  "fieldMandal": "Mandal",
+  "fieldDistrict": "District",
+  "yourShg": "Your SHG",
+  "searchSelectShg": "Search & select your SHG",
+  "changeShg": "Change",
+  "profileSetupSaving": "Saving…",
+  "profileSetupContinue": "Continue",
+  "findYourShg": "Find your SHG",
+  "searchShgHint": "Search by SHG name",
+  "noShgsFound": "No SHGs found",
+
+  "roleSelectTitle": "Continue as",
+  "roleSelectSubtitle": "Choose your role in the SHG ecosystem to see a tailored experience",
+
+  "dashboardGreeting": "Welcome back",
+
+  "shgApprovalWaitingTitle": "Waiting for approval",
+  "shgApprovalWaitingMessage": "Your request to join has been sent to your SHG leader. You will get access once it is approved.",
+  "shgApprovalRejectedTitle": "Request not approved",
+  "shgApprovalRejectedMessage": "Your SHG leader did not approve this request. You can pick a different SHG and try again.",
+  "unknownShg": "Unknown SHG",
+  "chooseDifferentShg": "Choose a different SHG",
+  "checkingStatus": "Checking…"
+}

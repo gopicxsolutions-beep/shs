@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../routes/paths.dart';
 import '../../services/auth_service.dart';
 import '../../services/supabase_service.dart';
@@ -48,6 +49,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final valid = _controller.text.length >= 10;
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Neutral.c50,
       body: SafeArea(
@@ -64,9 +66,9 @@ class _LoginPageState extends State<LoginPage> {
                 child: const Icon(Icons.phone_iphone_rounded, color: Colors.white, size: 28),
               ),
               const SizedBox(height: 20),
-              Text('Welcome back', style: AppTheme.display(22)),
+              Text(l10n.loginTitle, style: AppTheme.display(22)),
               const SizedBox(height: 6),
-              Text('Enter your registered mobile number to continue', textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
+              Text(l10n.loginSubtitle, textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
               const SizedBox(height: 28),
               Container(
                 decoration: BoxDecoration(border: Border.all(color: Neutral.c200), borderRadius: BorderRadius.circular(12), color: Colors.white),
@@ -94,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
               ],
               const SizedBox(height: 16),
               AppButton(
-                label: _sending ? 'Sending…' : 'Send OTP',
+                label: _sending ? l10n.loginSending : l10n.loginSendOtp,
                 fullWidth: true,
                 size: ButtonSize.lg,
                 onPressed: valid && !_sending ? _submit : null,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/types.dart';
 import '../../routes/paths.dart';
@@ -51,25 +52,26 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Settings'),
+      appBar: PageHeader(title: l10n.settingsTitle),
       body: !_loaded
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Text('Notifications', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
+                Text(l10n.settingsNotifications, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
                 const SizedBox(height: 12),
                 AppCard(
                   padded: false,
                   child: Column(
                     children: [
-                      _toggleRow('Meeting reminders', _notifyMeetings, (v) => _setPref(_notifyMeetingsKey, v, (val) => _notifyMeetings = val)),
+                      _toggleRow(l10n.settingsNotifMeetingReminders, _notifyMeetings, (v) => _setPref(_notifyMeetingsKey, v, (val) => _notifyMeetings = val)),
                       const Divider(height: 1, color: Neutral.c100),
-                      _toggleRow('Savings & loan updates', _notifySavings, (v) => _setPref(_notifySavingsKey, v, (val) => _notifySavings = val)),
+                      _toggleRow(l10n.settingsNotifPaymentAlerts, _notifySavings, (v) => _setPref(_notifySavingsKey, v, (val) => _notifySavings = val)),
                       const Divider(height: 1, color: Neutral.c100),
-                      _toggleRow('Announcements', _notifyAnnouncements, (v) => _setPref(_notifyAnnouncementsKey, v, (val) => _notifyAnnouncements = val)),
+                      _toggleRow(l10n.settingsNotifAnnouncements, _notifyAnnouncements, (v) => _setPref(_notifyAnnouncementsKey, v, (val) => _notifyAnnouncements = val)),
                     ],
                   ),
                 ),
@@ -85,7 +87,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       child: Row(children: [
                         Icon(Icons.language_rounded, size: 18, color: Brand.c600),
                         const SizedBox(width: 12),
-                        Expanded(child: Text('Language', style: AppTheme.sans(13, weight: FontWeight.w600))),
+                        Expanded(child: Text(l10n.settingsLanguage, style: AppTheme.sans(13, weight: FontWeight.w600))),
                         Text(_languageLabel(appState.language), style: AppTheme.sans(12, color: Neutral.c500)),
                         const SizedBox(width: 4),
                         Icon(Icons.chevron_right_rounded, color: Neutral.c300),
@@ -94,7 +96,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('Preview as', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
+                Text(l10n.settingsPreviewAs, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
                 const SizedBox(height: 6),
                 Text('This app lets you preview every role\'s dashboard — switch anytime.', style: AppTheme.sans(11, color: Neutral.c400)),
                 const SizedBox(height: 12),
@@ -118,7 +120,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Center(child: Text('SHG Saathi v1.0.0', style: AppTheme.sans(11, color: Neutral.c400))),
+                Center(child: Text('${l10n.settingsAppVersion}: SHG Saathi v1.0.0', style: AppTheme.sans(11, color: Neutral.c400))),
               ],
             ),
     );

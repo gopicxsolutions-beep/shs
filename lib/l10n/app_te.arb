@@ -1,0 +1,90 @@
+{
+  "@@locale": "te",
+
+  "appTitle": "SHG Saathi",
+
+  "navHome": "హోమ్",
+  "navMySHG": "నా SHG",
+  "navSHGs": "SHGలు",
+  "navServices": "సేవలు",
+  "navMarket": "మార్కెట్",
+  "navProfile": "ప్రొఫైల్",
+
+  "actionSave": "సేవ్ చేయండి",
+  "actionCancel": "రద్దు చేయండి",
+  "actionAdd": "జోడించండి",
+  "actionEdit": "సవరించండి",
+  "actionDelete": "తొలగించండి",
+  "actionSubmit": "సమర్పించండి",
+  "actionRetry": "మళ్ళీ ప్రయత్నించండి",
+  "actionSignOut": "సైన్ అవుట్",
+  "actionCheckStatus": "స్థితిని తనిఖీ చేయండి",
+
+  "commonLoading": "లోడ్ అవుతోంది…",
+  "commonError": "ఏదో తప్పు జరిగింది",
+
+  "profileTitle": "ప్రొఫైల్",
+  "profileEditProfile": "ప్రొఫైల్ సవరించండి",
+  "profileMobile": "మొబైల్",
+  "profileVillage": "గ్రామం",
+  "profileSHG": "SHG",
+  "profileName": "పేరు",
+
+  "settingsTitle": "సెట్టింగ్‌లు",
+  "settingsNotifications": "నోటిఫికేషన్‌లు",
+  "settingsNotifMeetingReminders": "సమావేశ రిమైండర్‌లు",
+  "settingsNotifPaymentAlerts": "చెల్లింపు హెచ్చరికలు",
+  "settingsNotifAnnouncements": "ప్రకటనలు",
+  "settingsLanguage": "భాష",
+  "settingsPreviewAs": "ఇలా చూడండి",
+  "settingsAppVersion": "యాప్ వెర్షన్",
+
+  "languageTitle": "భాష",
+  "languageEnglish": "ఇంగ్లీష్",
+  "languageTelugu": "తెలుగు",
+  "languageHindi": "హిందీ",
+
+  "servicesTitle": "సేవలు",
+
+  "loginTitle": "తిరిగి స్వాగతం",
+  "loginSubtitle": "కొనసాగించడానికి మీ నమోదిత మొబైల్ నంబర్‌ను నమోదు చేయండి",
+  "loginSending": "పంపుతోంది…",
+  "loginSendOtp": "OTP పంపండి",
+
+  "otpTitle": "OTP ధృవీకరించండి",
+  "otpHint": "మీ ఫోన్‌కు పంపిన 6-అంకెల కోడ్‌ను నమోదు చేయండి",
+  "otpVerify": "ధృవీకరించండి",
+  "otpSentTo": "మేము 6-అంకెల కోడ్‌ను పంపాము ",
+  "otpVerifyContinue": "ధృవీకరించి కొనసాగించండి",
+  "otpVerifying": "ధృవీకరిస్తోంది…",
+  "otpResendIn": "OTP మళ్ళీ పంపడం ",
+  "otpResend": "OTP మళ్ళీ పంపండి",
+  "otpDidntReceive": "కోడ్ రాలేదా? మీ SMS ఇన్‌బాక్స్‌ను తనిఖీ చేయండి.",
+
+  "profileSetupTitle": "మీ ప్రొఫైల్‌ను సృష్టించండి",
+  "profileSetupSubtitle": "ప్రారంభించడానికి మీ గురించి కొంచెం చెప్పండి",
+  "fieldFullName": "పూర్తి పేరు",
+  "fieldMandal": "మండలం",
+  "fieldDistrict": "జిల్లా",
+  "yourShg": "మీ SHG",
+  "searchSelectShg": "మీ SHGని వెతికి ఎంచుకోండి",
+  "changeShg": "మార్చండి",
+  "profileSetupSaving": "సేవ్ చేస్తోంది…",
+  "profileSetupContinue": "కొనసాగించండి",
+  "findYourShg": "మీ SHGని కనుగొనండి",
+  "searchShgHint": "SHG పేరు ద్వారా వెతకండి",
+  "noShgsFound": "SHGలు కనుగొనబడలేదు",
+
+  "roleSelectTitle": "ఇలా కొనసాగించండి",
+  "roleSelectSubtitle": "అనుకూలీకరించిన అనుభవం కోసం SHG వ్యవస్థలో మీ పాత్రను ఎంచుకోండి",
+
+  "dashboardGreeting": "తిరిగి స్వాగతం",
+
+  "shgApprovalWaitingTitle": "ఆమోదం కోసం వేచి ఉంది",
+  "shgApprovalWaitingMessage": "మీ చేరిక అభ్యర్థన మీ SHG నాయకుడికి పంపబడింది. ఆమోదం లభించిన తర్వాత మీకు యాక్సెస్ లభిస్తుంది.",
+  "shgApprovalRejectedTitle": "అభ్యర్థన ఆమోదించబడలేదు",
+  "shgApprovalRejectedMessage": "మీ SHG నాయకుడు ఈ అభ్యర్థనను ఆమోదించలేదు. మీరు వేరే SHGని ఎంచుకుని మళ్ళీ ప్రయత్నించవచ్చు.",
+  "unknownShg": "తెలియని SHG",
+  "chooseDifferentShg": "వేరే SHGని ఎంచుకోండి",
+  "checkingStatus": "తనిఖీ చేస్తోంది…"
+}

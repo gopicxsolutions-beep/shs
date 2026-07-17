@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/types.dart';
 import '../../state/app_state.dart';
@@ -19,9 +20,10 @@ class LanguagePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Language'),
+      appBar: PageHeader(title: l10n.languageTitle),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

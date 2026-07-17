@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/profile.dart';
 import '../../models/shg.dart';
@@ -39,23 +40,24 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _editProfile(Profile? profile) async {
     if (profile == null) return;
+    final l10n = AppLocalizations.of(context)!;
     final name = TextEditingController(text: profile.name);
     final village = TextEditingController(text: profile.village ?? '');
     final saved = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit profile'),
+        title: Text(l10n.profileEditProfile),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: name, decoration: const InputDecoration(hintText: 'Full name')),
+            TextField(controller: name, decoration: InputDecoration(hintText: l10n.profileName)),
             const SizedBox(height: 12),
-            TextField(controller: village, decoration: const InputDecoration(hintText: 'Village')),
+            TextField(controller: village, decoration: InputDecoration(hintText: l10n.profileVillage)),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Save')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.actionSave)),
         ],
       ),
     );
@@ -74,11 +76,12 @@ class _ProfilePageState extends State<ProfilePage> {
     final appState = context.watch<AppState>();
     final user = appState.user;
     final profile = appState.profile;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: PageHeader(
-        title: 'Profile',
-        right: IconButton(icon: const Icon(Icons.edit_rounded), tooltip: 'Edit profile', onPressed: () => _editProfile(profile)),
+        title: l10n.profileTitle,
+        right: IconButton(icon: const Icon(Icons.edit_rounded), tooltip: l10n.profileEditProfile, onPressed: () => _editProfile(profile)),
       ),
       body: AppAsyncBuilder<ShgProfile?>(
         key: _key,
@@ -103,11 +106,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _row(Icons.phone_rounded, 'Mobile', user.mobile),
+                    _row(Icons.phone_rounded, l10n.profileMobile, user.mobile),
                     const Divider(height: 20),
-                    _row(Icons.location_on_rounded, 'Village', user.village),
+                    _row(Icons.location_on_rounded, l10n.profileVillage, user.village),
                     const Divider(height: 20),
-                    _row(Icons.groups_rounded, 'SHG', shg?.name ?? (SupabaseService.isConfigured ? 'Not yet approved' : user.shgName)),
+                    _row(Icons.groups_rounded, l10n.profileSHG, shg?.name ?? (SupabaseService.isConfigured ? 'Not yet approved' : user.shgName)),
                   ],
                 ),
               ),
@@ -116,15 +119,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 padded: false,
                 child: Column(
                   children: [
-                    _linkRow(context, icon: Icons.settings_rounded, label: 'Settings', onTap: () => context.go(Paths.profileSettings)),
+                    _linkRow(context, icon: Icons.settings_rounded, label: l10n.settingsTitle, onTap: () => context.go(Paths.profileSettings)),
                     const Divider(height: 1, color: Neutral.c100),
-                    _linkRow(context, icon: Icons.language_rounded, label: 'Language', onTap: () => context.go(Paths.profileLanguage)),
+                    _linkRow(context, icon: Icons.language_rounded, label: l10n.languageTitle, onTap: () => context.go(Paths.profileLanguage)),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               AppButton(
-                label: 'Sign out',
+                label: l10n.actionSignOut,
                 variant: ButtonVariant.outline,
                 fullWidth: true,
                 onPressed: () async {
