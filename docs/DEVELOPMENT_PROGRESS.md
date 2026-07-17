@@ -94,7 +94,7 @@ Meetings, etc.:
 | Loans | ✅ done | Model, repository, 5 screens (home/apply/approval/tracking/detail with payment recording), wired in router incl. `/app/loans/:id` |
 | Meetings | ✅ done | Model, repository, 6 screens (home/schedule/attendance roster/self check-in/detail/MoM with decisions+action items), wired incl. `/app/meetings/:id` and `/app/meetings/:id/mom`. QR check-in is real attendance-marking logic behind a tap, not a camera scanner (no camera plugin in pubspec yet) |
 | My SHG (members/documents) | ✅ done | Model, repository, 4 screens (shg home/members list/member detail/documents), wired incl. `/app/shg/members/:id`. Document upload is metadata-only — actual file upload needs a Supabase Storage bucket + file-picker plugin (neither wired yet) |
-| Financial records (cashbook/ledger/bank/audit) | ⬜ not started | Backed by `financial_ledger` table |
+| Financial records (cashbook/ledger/bank/audit) | ✅ done | One shared `FinancialLedgerPage(entryType, title)` screen reused across all 4 routes (they're identical shape, just filtered by `entry_type`) + add-entry dialog with running-balance calc. Live-tested: leader-only write denied for member, shared read works |
 | Livelihoods | ⬜ not started | `livelihood_activities` table |
 | Marketplace (products/orders/reviews) | ⬜ not started | Cross-SHG browsing; needs Supabase Storage for product images |
 | Government schemes | ⬜ not started | Catalog + `scheme_applications`; eligibility checker can be client-side rule evaluation for now |
@@ -151,6 +151,53 @@ repo file — only the URL + anon key went into `.env.json`. Both remain
 sensitive since they were shared in plaintext chat; recommend rotating the DB
 password.
 
+## Live testing methodology (do this for every module, per user request)
+
+Since browser automation can't drive Flutter web's text fields (see above),
+real end-to-end verification happens **directly against the live database**
+via the Management API's SQL endpoint, simulating each role's RLS context.
+This actually exercises the real schema + real RLS policies, not just code
+review. User has explicitly authorized creating temporary test fixtures for
+this, on the condition they're always cleaned up afterward.
+
+**Pattern** (PowerShell, using the `Invoke-Sql`/`Invoke-SqlAs` helpers built
+during this session — recreate them each time, they aren't saved to a file):
+
+1. Create fixtures once per test session: a `__TEST__`-prefixed SHG
+   (`11111111-1111-1111-1111-111111111111`) + a member + a leader profile,
+   with matching `auth.users` rows (needed because `profiles.id` FKs to
+   `auth.users.id`). Use fixed, recognizable UUIDs so cleanup is trivial.
+2. Simulate a specific user's RLS context within one SQL request via:
+   `set local role authenticated; set local request.jwt.claims = '{"sub":"<uuid>","role":"authenticated"}';`
+   then the real query — `auth.uid()` reads this session-local claim, so
+   every RLS policy evaluates exactly as it would for that real user.
+3. **Always check actual affected/visible row counts, not HTTP success/failure.**
+   An `UPDATE`/`DELETE` blocked by a `USING`-only policy (no `WITH CHECK`)
+   doesn't error — it silently matches 0 rows and returns HTTP success. Wrap
+   mutations as `with r as (<stmt> returning 1) select count(*) from r` and
+   assert on the count. (First pass at this got a false "FAIL" by checking
+   HTTP status instead — cost real time to debug. Don't repeat that.)
+4. Test the real boundaries a module's RLS is supposed to enforce: the
+   owning-member-can-write-their-own-row case, the wrong-role-denied case,
+   the shared-shg-read case, and cross-tenant isolation (a user from a
+   different SHG can't see this one's rows).
+5. **Clean up every fixture row afterward** (`delete from ... where shg_id =
+   '11111111-...'` across every table touched, plus the `auth.users` rows) —
+   verify zero rows remain. Never leave synthetic data in the live project.
+
+Verified this way already: Savings (own-entry insert, deny-insert-for-others,
+leader-only verify, shared read), Loans (self-apply, deny-self-approve,
+leader-approve), Meetings (leader-only schedule, shared read), My SHG
+(shared roster read, cross-tenant SHG isolation). All passed — no real RLS
+gaps found, only test-harness bugs of my own making (documented in point 3).
+
+**Caveat**: this proves the database/RLS layer is correct end-to-end, but
+doesn't exercise the Flutter UI layer itself (button-tap navigation and
+static rendering are separately verified in the Browser pane; text-entry
+flows are only verified by code review, per the browser-automation
+limitation above). For true UI-level E2E, use Flutter's `integration_test`
+package eventually.
+
 ## Session log
 
 - **2026-07-17**: Built the foundation (RLS policies for all 27 tables, Supabase
@@ -182,3 +229,16 @@ password.
   SavingsRepository/LoanRepository, documents list). `flutter analyze` caught
   3 unused-import warnings (no real bugs this round), fixed. Next: Financial
   Records module.
+- **2026-07-17 (cont'd)**: Established the live-testing methodology documented
+  above (user explicitly asked for live E2E, not just static analysis). First
+  attempt to create test fixtures was correctly blocked by the safety
+  classifier (writing to `auth.users`/`profiles`/`shgs` needed explicit user
+  sign-off); asked, user approved. Live-tested Savings, Loans, Meetings, and
+  My SHG against the real database — all RLS boundaries verified correct,
+  except two false alarms caused by my own test-harness bugs (documented
+  above so they aren't repeated). Built the full Financial Records module
+  (one shared screen reused across cashbook/ledger/bank/audit via an
+  `entryType` param instead of 4 near-duplicate files) and live-tested it
+  the same way — leader-only write correctly denied for members, shared
+  read works. All test fixtures cleaned up after each round (verified zero
+  remnants). Next: Livelihoods module.

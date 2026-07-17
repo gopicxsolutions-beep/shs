@@ -7,6 +7,7 @@ import '../pages/auth/role_select_page.dart';
 import '../pages/auth/splash_page.dart';
 import '../pages/common/coming_soon.dart';
 import '../pages/dashboard/dashboard_page.dart';
+import '../pages/financial/financial_ledger_page.dart';
 import '../pages/loans/loan_apply_page.dart';
 import '../pages/loans/loan_approval_page.dart';
 import '../pages/loans/loan_detail_page.dart';
@@ -83,10 +84,10 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.meetingSchedule, builder: (context, state) => const MeetingSchedulePage()),
           GoRoute(path: Paths.meetingAttendance, builder: (context, state) => const MeetingAttendancePage()),
           GoRoute(path: Paths.meetingQr, builder: (context, state) => const MeetingQrPage()),
-          comingSoon(Paths.financialCashbook, 'Cashbook'),
-          comingSoon(Paths.financialLedger, 'General Ledger'),
-          comingSoon(Paths.financialBank, 'Bank Reconciliation'),
-          comingSoon(Paths.financialAudit, 'Audit Trail'),
+          GoRoute(path: Paths.financialCashbook, builder: (context, state) => const FinancialLedgerPage(entryType: 'cashbook', title: 'Cashbook')),
+          GoRoute(path: Paths.financialLedger, builder: (context, state) => const FinancialLedgerPage(entryType: 'ledger', title: 'General Ledger')),
+          GoRoute(path: Paths.financialBank, builder: (context, state) => const FinancialLedgerPage(entryType: 'bank', title: 'Bank Reconciliation')),
+          GoRoute(path: Paths.financialAudit, builder: (context, state) => const FinancialLedgerPage(entryType: 'audit', title: 'Audit Trail')),
           comingSoon(Paths.livelihood, 'Livelihoods'),
           comingSoon(Paths.livelihoodEntry, 'Add Activity'),
           comingSoon(Paths.marketplaceAddProduct, 'Add Product'),
