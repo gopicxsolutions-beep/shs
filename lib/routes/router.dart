@@ -16,6 +16,12 @@ import '../pages/loans/loan_approval_page.dart';
 import '../pages/loans/loan_detail_page.dart';
 import '../pages/loans/loan_tracking_page.dart';
 import '../pages/loans/loans_home_page.dart';
+import '../pages/marketplace/add_product_page.dart';
+import '../pages/marketplace/marketplace_home_page.dart';
+import '../pages/marketplace/marketplace_orders_page.dart';
+import '../pages/marketplace/marketplace_reviews_page.dart';
+import '../pages/marketplace/order_detail_page.dart';
+import '../pages/marketplace/product_detail_page.dart';
 import '../pages/meetings/meeting_attendance_page.dart';
 import '../pages/meetings/meeting_detail_page.dart';
 import '../pages/meetings/meeting_mom_page.dart';
@@ -69,7 +75,7 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.dashboard, builder: (context, state) => const DashboardPage()),
           GoRoute(path: Paths.shg, builder: (context, state) => const ShgHomePage()),
           comingSoon(Paths.services, 'Services'),
-          comingSoon(Paths.marketplace, 'Marketplace'),
+          GoRoute(path: Paths.marketplace, builder: (context, state) => const MarketplaceHomePage()),
           comingSoon(Paths.profile, 'Profile'),
           GoRoute(path: Paths.shgMembers, builder: (context, state) => const ShgMembersPage()),
           GoRoute(path: Paths.shgDocuments, builder: (context, state) => const ShgDocumentsPage()),
@@ -93,9 +99,9 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.financialAudit, builder: (context, state) => const FinancialLedgerPage(entryType: 'audit', title: 'Audit Trail')),
           GoRoute(path: Paths.livelihood, builder: (context, state) => const LivelihoodHomePage()),
           GoRoute(path: Paths.livelihoodEntry, builder: (context, state) => const LivelihoodEntryPage()),
-          comingSoon(Paths.marketplaceAddProduct, 'Add Product'),
-          comingSoon(Paths.marketplaceOrders, 'Orders'),
-          comingSoon(Paths.marketplaceReviews, 'Reviews'),
+          GoRoute(path: Paths.marketplaceAddProduct, builder: (context, state) => const AddProductPage()),
+          GoRoute(path: Paths.marketplaceOrders, builder: (context, state) => const MarketplaceOrdersPage()),
+          GoRoute(path: Paths.marketplaceReviews, builder: (context, state) => const MarketplaceReviewsPage()),
           comingSoon(Paths.schemes, 'Government Schemes'),
           comingSoon(Paths.schemeEligibility, 'Eligibility Checker'),
           comingSoon(Paths.schemeTracking, 'Application Tracking'),
@@ -130,8 +136,8 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: '/app/meetings/:id', builder: (context, state) => MeetingDetailPage(meetingId: state.pathParameters['id']!)),
           GoRoute(path: '/app/meetings/:id/mom', builder: (context, state) => MeetingMomPage(meetingId: state.pathParameters['id']!)),
           GoRoute(path: '/app/livelihood/:id', builder: (context, state) => LivelihoodDetailPage(activityId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/marketplace/product/:id', builder: (context, state) => ComingSoonPage(title: 'Product Detail')),
-          GoRoute(path: '/app/marketplace/orders/:id', builder: (context, state) => ComingSoonPage(title: 'Order Detail')),
+          GoRoute(path: '/app/marketplace/product/:id', builder: (context, state) => ProductDetailPage(productId: state.pathParameters['id']!)),
+          GoRoute(path: '/app/marketplace/orders/:id', builder: (context, state) => OrderDetailPage(orderId: state.pathParameters['id']!)),
           GoRoute(path: '/app/schemes/:id', builder: (context, state) => ComingSoonPage(title: 'Scheme Detail')),
           GoRoute(path: '/app/training/:id', builder: (context, state) => ComingSoonPage(title: 'Course Detail')),
           GoRoute(path: '/app/training/:id/quiz', builder: (context, state) => ComingSoonPage(title: 'Course Quiz')),

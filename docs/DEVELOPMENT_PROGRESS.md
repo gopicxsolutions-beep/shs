@@ -114,7 +114,7 @@ Meetings, etc.:
 | My SHG (members/documents) | ✅ done | Model, repository, 4 screens (shg home/members list/member detail/documents), wired incl. `/app/shg/members/:id`. Document upload is metadata-only — actual file upload needs a Supabase Storage bucket + file-picker plugin (neither wired yet) |
 | Financial records (cashbook/ledger/bank/audit) | ✅ done | One shared `FinancialLedgerPage(entryType, title)` screen reused across all 4 routes (they're identical shape, just filtered by `entry_type`) + add-entry dialog with running-balance calc. Live-tested: leader-only write denied for member, shared read works |
 | Livelihoods | ✅ done | Model, repository, 3 screens (home/entry/detail with Update Progress dialog). Live-tested DB/RLS + full UI golden path (see session log) — found and fixed a real Role-Select-skip bug in the process |
-| Marketplace (products/orders/reviews) | ⬜ not started | Cross-SHG browsing; needs Supabase Storage for product images |
+| Marketplace (products/orders/reviews) | 🟡 built, DB test pending | Model, repository, 6 screens (home, product detail, add product, orders, order detail, reviews). `flutter analyze` clean. **DB/RLS live testing blocked by a sandbox-wide network outage** (DNS resolution failing for all external hosts, confirmed not Supabase-specific) — retry once connectivity returns, then mark done. Needs Supabase Storage for product images eventually (not wired) |
 | Government schemes | ⬜ not started | Catalog + `scheme_applications`; eligibility checker can be client-side rule evaluation for now |
 | Training | ⬜ not started | `training_courses` + `course_progress`; quiz screen needs a quiz-content model (not in schema yet — add if needed) |
 | Digital payments | ⬜ not started | `payments` table; **external payment gateway is out of scope until keys are supplied** — build the full UI/DB flow with a mock "processor" abstraction (see External APIs section below) |
@@ -298,3 +298,13 @@ package is still the more robust long-term answer.
   coloring, demo-mode write no-ops). Minor unrelated finding: bottom nav
   overflows by 2px on an 812px-tall viewport (`lib/layout/app_shell.dart`)
   — cosmetic, not yet fixed, low priority. Next: Marketplace module.
+- **2026-07-18**: Built the full Marketplace module (6 screens: home/browse,
+  product detail with reviews + place-order, add product, orders, order
+  detail with status-update chips, reviews). `flutter analyze` clean. Hit a
+  **sandbox-wide network outage** (DNS resolution failing for api.supabase.com,
+  google.com, github.com alike — confirmed not Supabase-specific) partway
+  through live DB/RLS testing, so that's deferred until connectivity returns
+  (marked 🟡 in the status table, not ✅). Continuing to build the next module
+  in the meantime since `flutter analyze` and local file work don't need
+  network — will circle back and finish Marketplace's DB testing once the
+  outage clears.
