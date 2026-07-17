@@ -110,28 +110,30 @@ when building the AI Advisors module), not speculatively ahead of time.
 
 ## Live Supabase project
 
-A real project now exists: `pccbwfmlhpvieetetrpx` (URL in the gitignored
-`.env.json`, which is populated with the URL + anon key only). **Migrations are
-NOT yet applied to it.** Two blockers found while trying:
+A real project exists: `pccbwfmlhpvieetetrpx` (URL + anon key in the gitignored
+`.env.json`). **Migrations are applied and live** — verified: 27 base tables +
+`shg_directory` view, 67 RLS policies, 6 helper functions.
 
-1. This sandbox can only reach the internet over HTTPS (443) — confirmed by
-   direct TCP tests. Both direct Postgres (`5432`) and the connection pooler
-   (`6543`) are unreachable, so `supabase db push` cannot run from here (it
-   needs a real Postgres wire-protocol connection). This matches the warning
-   already at the top of `0001_init_schema.sql`.
-2. The Supabase CLI on this machine is logged into a different account (one
-   that owns an unrelated "humanproof" project) than the account that owns
-   `pccbwfmlhpvieetetrpx`, so `supabase link` also fails on privileges even
-   before the network issue would matter.
+Direct Postgres (`5432`) and the pooler (`6543`) are both unreachable from this
+sandbox (HTTPS/443-only egress), so `supabase db push`/`supabase link` don't
+work here. What did work: the Supabase **Management API**'s SQL endpoint —
+`POST https://api.supabase.com/v1/projects/{ref}/database/query` with
+`Authorization: Bearer <personal-access-token>` and body `{"query": "<sql>"}` —
+which goes over plain HTTPS. The user supplied a personal access token
+(different from the anon/service-role keys) for this.
 
-**Next session should either**: (a) check if the user ran `supabase db push`
-themselves and the schema is now live — if so, everything in this repo should
-work against it as-is — or (b) if they provided a Supabase **personal access
-token** (Management API token, not anon/service key), use it to push the SQL
-via `POST https://api.supabase.com/v1/projects/{ref}/database/query` over
-HTTPS instead of a direct DB connection. Never write the DB password or
-service-role key into any repo file — both were shared in chat and should be
-treated as sensitive (recommend the user rotate the DB password).
+**Gotcha for next time**: Windows PowerShell 5.1's `ConvertTo-Json` pathologically
+bloats large strings when serializing a hashtable literal (a 17.7KB SQL file
+became a 3.8MB "body", tripping the endpoint's 413 limit) — it appears to
+serialize the String object's properties rather than just its value. Build the
+JSON body by hand (escape `"`, `\`, and control chars, wrap in `{"query":"..."}"`)
+instead of trusting `ConvertTo-Json` for large payloads. Both migration files
+went through fine once built manually (18KB and 27.7KB bodies).
+
+The DB password and service-role key the user shared were never written to any
+repo file — only the URL + anon key went into `.env.json`. Both remain
+sensitive since they were shared in plaintext chat; recommend rotating the DB
+password.
 
 ## Session log
 
