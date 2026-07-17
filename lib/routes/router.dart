@@ -42,6 +42,10 @@ import '../pages/shg/member_detail_page.dart';
 import '../pages/shg/shg_documents_page.dart';
 import '../pages/shg/shg_home_page.dart';
 import '../pages/shg/shg_members_page.dart';
+import '../pages/training/certificates_page.dart';
+import '../pages/training/course_detail_page.dart';
+import '../pages/training/course_quiz_page.dart';
+import '../pages/training/training_home_page.dart';
 import '../state/app_state.dart';
 import 'paths.dart';
 
@@ -109,8 +113,8 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.schemes, builder: (context, state) => const SchemesHomePage()),
           GoRoute(path: Paths.schemeEligibility, builder: (context, state) => const SchemeEligibilityPage()),
           GoRoute(path: Paths.schemeTracking, builder: (context, state) => const SchemeTrackingPage()),
-          comingSoon(Paths.training, 'Training'),
-          comingSoon(Paths.trainingCertificates, 'Certificates'),
+          GoRoute(path: Paths.training, builder: (context, state) => const TrainingHomePage()),
+          GoRoute(path: Paths.trainingCertificates, builder: (context, state) => const CertificatesPage()),
           comingSoon(Paths.payments, 'Digital Payments'),
           comingSoon(Paths.paymentsQr, 'Scan & Pay'),
           comingSoon(Paths.paymentsHistory, 'Payment History'),
@@ -143,8 +147,8 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: '/app/marketplace/product/:id', builder: (context, state) => ProductDetailPage(productId: state.pathParameters['id']!)),
           GoRoute(path: '/app/marketplace/orders/:id', builder: (context, state) => OrderDetailPage(orderId: state.pathParameters['id']!)),
           GoRoute(path: '/app/schemes/:id', builder: (context, state) => SchemeDetailPage(schemeId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/training/:id', builder: (context, state) => ComingSoonPage(title: 'Course Detail')),
-          GoRoute(path: '/app/training/:id/quiz', builder: (context, state) => ComingSoonPage(title: 'Course Quiz')),
+          GoRoute(path: '/app/training/:id', builder: (context, state) => CourseDetailPage(courseId: state.pathParameters['id']!)),
+          GoRoute(path: '/app/training/:id/quiz', builder: (context, state) => CourseQuizPage(courseId: state.pathParameters['id']!)),
           GoRoute(path: '/app/announcements/:id', builder: (context, state) => ComingSoonPage(title: 'Announcement')),
           GoRoute(path: '/app/analytics/shg/:id', builder: (context, state) => ComingSoonPage(title: 'SHG Analytics')),
         ],

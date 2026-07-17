@@ -41,6 +41,15 @@ failed silently. The actual fix, in order:
    presses, not a combo). The `type` action and any JS-based `.value` /
    `InputEvent` injection do NOT sync into Flutter's internal editing state —
    only genuine dispatched keyboard events do.
+5. **To jump directly to a deep route once the app has already booted, set
+   `location.hash` via `javascript_tool` — do NOT call `navigate()` with a
+   `#/...` URL.** `navigate()` triggers a full browser page reload (confirmed
+   via DOM inspection: `document.body` reverts to the raw un-hydrated
+   `index.html`, no `<canvas>`/`flt-glass-pane`), forcing a full Flutter web
+   cold boot (~20-30s) that looks identical to a permanently blank page if
+   you don't wait long enough — cost real time misdiagnosing this as a bug
+   before finding the cause. `location.hash = '#/app/whatever'` changes the
+   route within the already-running SPA instantly, no reboot.
 Verified end-to-end this way: typed a full phone number into Login, tapped
 Send OTP, and watched the **real** `signInWithOtp` call fail against the live
 project (no SMS provider configured — expected) with the app's error-handling
@@ -116,7 +125,7 @@ Meetings, etc.:
 | Livelihoods | ✅ done | Model, repository, 3 screens (home/entry/detail with Update Progress dialog). Live-tested DB/RLS + full UI golden path (see session log) — found and fixed a real Role-Select-skip bug in the process |
 | Marketplace (products/orders/reviews) | ✅ done | 6 screens (home, product detail, add product, orders, order detail, reviews). Live-tested DB/RLS (own-listing insert, deny-listing-as-another-seller, cross-shg browse, seller-only order status update) and UI (grid + product detail render correctly). Needs Supabase Storage for product images eventually (not wired) |
 | Government schemes | ✅ done | Model, repository, 4 screens (catalog, detail, eligibility checker, tracking). Eligibility checker is a client-side keyword-matching heuristic against each scheme's eligibility text, not a real rules engine — documented as a deliberate placeholder. Live-tested DB/RLS (own-application insert, deny-apply-for-another-member, deny-direct-catalog-edit) and UI (status badges render correctly, eligibility filter toggle verified to actually change results) |
-| Training | ⬜ not started | `training_courses` + `course_progress`; quiz screen needs a quiz-content model (not in schema yet — add if needed) |
+| Training | ✅ done | Model, repository, 4 screens (catalog, course detail, quiz, certificates). Quiz is a small generic 3-question set (not tied to specific course content — no quiz-content table in the schema), passing ≥2/3 marks the course certified; documented as a placeholder. Live-tested DB/RLS (own-progress insert, deny-progress-for-another-member, deny-direct-catalog-edit, shared shg visibility) and UI (progress bars, radio quiz, disabled-in-demo-mode submit) |
 | Digital payments | ⬜ not started | `payments` table; **external payment gateway is out of scope until keys are supplied** — build the full UI/DB flow with a mock "processor" abstraction (see External APIs section below) |
 | Announcements | 🟡 partial | List already reads mock data on dashboards; needs its own repository + detail screen + read-receipt tracking via `announcement_reads` |
 | Support (chat/voice/FAQ/tickets) | ⬜ not started | `support_tickets` + `support_messages`; voice support needs an external STT/TTS API — abstract behind an interface, mock for now |
@@ -329,3 +338,16 @@ package is still the more robust long-term answer.
   buttons, and the eligibility filter actually changing results when a
   toggle flips, all confirmed correct. All fixtures cleaned up (verified
   zero remnants). Next: Training module.
+- **2026-07-18 (cont'd)**: Built the full Training module (4 screens
+  including a generic quiz). `flutter analyze` clean (2 new info-level
+  `RadioListTile` deprecation notices, left as-is). Live-tested DB/RLS —
+  all 4 checks passed on the first try (own-progress insert, deny-for-
+  another-member, deny-direct-catalog-edit, shared visibility). Hit a real
+  UI-testing snag: navigating straight to a deep route via `navigate()`
+  silently triggers a full page reload that looks exactly like a stuck
+  blank screen unless you wait ~20-30s for a full cold boot — traced it via
+  DOM inspection (no canvas/glass-pane = un-hydrated raw HTML) and fixed by
+  using `location.hash` assignment instead for same-session navigation,
+  documented above (point 5) so it isn't re-diagnosed from scratch next
+  time. Verified the full course list → detail → quiz flow renders and
+  behaves correctly once past that. Next: Digital Payments module.
