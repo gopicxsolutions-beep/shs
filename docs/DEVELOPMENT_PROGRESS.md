@@ -93,7 +93,7 @@ Meetings, etc.:
 | Savings | ✅ done | Model, repository, 5 screens (home/entry/history/ledger[realtime]/statement/group-report), wired in router |
 | Loans | ✅ done | Model, repository, 5 screens (home/apply/approval/tracking/detail with payment recording), wired in router incl. `/app/loans/:id` |
 | Meetings | ✅ done | Model, repository, 6 screens (home/schedule/attendance roster/self check-in/detail/MoM with decisions+action items), wired incl. `/app/meetings/:id` and `/app/meetings/:id/mom`. QR check-in is real attendance-marking logic behind a tap, not a camera scanner (no camera plugin in pubspec yet) |
-| My SHG (members/documents) | ⬜ not started | Member list + detail, document list (Supabase Storage for uploads) |
+| My SHG (members/documents) | ✅ done | Model, repository, 4 screens (shg home/members list/member detail/documents), wired incl. `/app/shg/members/:id`. Document upload is metadata-only — actual file upload needs a Supabase Storage bucket + file-picker plugin (neither wired yet) |
 | Financial records (cashbook/ledger/bank/audit) | ⬜ not started | Backed by `financial_ledger` table |
 | Livelihoods | ⬜ not started | `livelihood_activities` table |
 | Marketplace (products/orders/reviews) | ⬜ not started | Cross-SHG browsing; needs Supabase Storage for product images |
@@ -176,3 +176,9 @@ password.
   `decoration` param to `AppTheme.sans()`, fixed by using `.copyWith()`
   instead), confirming the analyze-every-module habit is worth keeping.
   Next: My SHG (members/documents) or Financial Records module.
+- **2026-07-17 (cont'd)**: Built the full My SHG module (4 screens: shg home
+  with federation/bank details, members list, member detail combining
+  profile + aggregated savings/loan totals via composition of
+  SavingsRepository/LoanRepository, documents list). `flutter analyze` caught
+  3 unused-import warnings (no real bugs this round), fixed. Next: Financial
+  Records module.

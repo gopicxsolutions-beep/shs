@@ -24,6 +24,10 @@ import '../pages/savings/savings_history_page.dart';
 import '../pages/savings/savings_home_page.dart';
 import '../pages/savings/savings_ledger_page.dart';
 import '../pages/savings/savings_statement_page.dart';
+import '../pages/shg/member_detail_page.dart';
+import '../pages/shg/shg_documents_page.dart';
+import '../pages/shg/shg_home_page.dart';
+import '../pages/shg/shg_members_page.dart';
 import '../state/app_state.dart';
 import 'paths.dart';
 
@@ -59,12 +63,12 @@ GoRouter buildRouter(AppState appState) {
         builder: (context, state, child) => AppShell(location: state.matchedLocation, child: child),
         routes: [
           GoRoute(path: Paths.dashboard, builder: (context, state) => const DashboardPage()),
-          comingSoon(Paths.shg, 'My SHG'),
+          GoRoute(path: Paths.shg, builder: (context, state) => const ShgHomePage()),
           comingSoon(Paths.services, 'Services'),
           comingSoon(Paths.marketplace, 'Marketplace'),
           comingSoon(Paths.profile, 'Profile'),
-          comingSoon(Paths.shgMembers, 'Members'),
-          comingSoon(Paths.shgDocuments, 'Documents'),
+          GoRoute(path: Paths.shgMembers, builder: (context, state) => const ShgMembersPage()),
+          GoRoute(path: Paths.shgDocuments, builder: (context, state) => const ShgDocumentsPage()),
           GoRoute(path: Paths.savings, builder: (context, state) => const SavingsHomePage()),
           GoRoute(path: Paths.savingsEntry, builder: (context, state) => const SavingsEntryPage()),
           GoRoute(path: Paths.savingsHistory, builder: (context, state) => const SavingsHistoryPage()),
@@ -117,7 +121,7 @@ GoRouter buildRouter(AppState appState) {
           comingSoon(Paths.adminUsers, 'Manage Users'),
           comingSoon(Paths.adminSchemes, 'Manage Schemes'),
           comingSoon(Paths.adminMonitoring, 'System Monitoring'),
-          GoRoute(path: '/app/shg/members/:id', builder: (context, state) => ComingSoonPage(title: 'Member Detail')),
+          GoRoute(path: '/app/shg/members/:id', builder: (context, state) => MemberDetailPage(memberId: state.pathParameters['id']!)),
           GoRoute(path: '/app/loans/:id', builder: (context, state) => LoanDetailPage(loanId: state.pathParameters['id']!)),
           GoRoute(path: '/app/meetings/:id', builder: (context, state) => MeetingDetailPage(meetingId: state.pathParameters['id']!)),
           GoRoute(path: '/app/meetings/:id/mom', builder: (context, state) => MeetingMomPage(meetingId: state.pathParameters['id']!)),
