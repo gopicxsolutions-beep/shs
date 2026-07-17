@@ -138,7 +138,7 @@ Meetings, etc.:
 | Digital payments | ✅ done | `PaymentProcessor` abstraction (`lib/services/payment_processor.dart`) with a `MockPaymentProcessor` that always succeeds and synthesizes a reference — swapping in a real gateway later is a one-file change. 3 screens (home, scan & pay, history). Live-tested DB/RLS: payments are **private to the owning member**, not shared shg-wide like savings/loans (deliberate — confirmed correct), deny-recording-for-another-member also confirmed. UI-tested: amount entry, mode chips, disabled-in-demo-mode Pay button |
 | Announcements | ✅ done | Model, repository, 2 screens (home list with unread-dot indicator + leader/staff-only post dialog, detail with read-receipt tracking via `announcement_reads`). Global (`shg_id is null`) + shg-scoped announcements merged via `.or()` query. Live-tested DB/RLS (member-post denied, leader-post allowed, shared shg read visibility, own read-receipt insert allowed, marking another member's receipt denied) and UI (list + detail render correctly in demo mode, member correctly sees no post button) |
 | Support (chat/voice/FAQ/tickets) | ✅ done | Model, dual-mode repository, 5 screens (hub, full ticket list, raise-ticket form, ticket detail/chat thread with staff status-change menu, FAQ accordion) + `VoiceSupportService` abstraction (`MockVoiceSupportService` cycles canned Q&A pairs) for the record→transcribe→answer flow, wired incl. `/app/support/ticket/:id`. Tickets are private per-member, visible to staff (crp/clf/admin) — staff see all tickets with the member's name shown; member sees only their own. Live-tested DB/RLS (own-ticket insert, deny-insert-for-another-member, own-ticket read, deny-read-for-non-owner-non-staff, staff-can-read-any, own-message insert, deny-message-for-non-owner-non-staff, staff-can-message-any, own-status-update, deny-status-update-for-non-owner-non-staff, staff-can-update-any — 10/10 passed) and UI (hub, ticket list, chat bubbles with correct mine/theirs alignment, raise-ticket form validation, FAQ accordion, voice support page all render correctly) |
-| AI Advisors (financial/scheme/market) | ⬜ not started | `ai_advisor_logs` table exists. **External LLM API is out of scope until keys are supplied** — build a `AiAdvisorService` interface with a canned/mock implementation now, swap in a real provider later |
+| AI Advisors (financial/scheme/market) | ✅ done | Model, dual-mode repository, hub + one shared `AiAdvisorChatPage(advisorType, title, hint)` reused across all 3 routes (identical shape, scoped by type) — chat bubbles + composer, wired incl. `/app/ai/financial-advisor` etc. `AiAdvisorService` abstraction (`MockAiAdvisorService` keyword-matches canned responses per advisor type, generic fallback otherwise) — unlike Payments/Support, the ask flow works in both demo and live mode (only the log persistence is live-only), so the chat is fully interactive without a Supabase connection. Live-tested DB/RLS (own-log insert, deny-insert-for-another-member, own-log read, deny-read-for-non-owner-non-staff, staff-can-read-any — 5/5 passed), fixtures cleaned up and verified zero remnants. UI-tested: hub renders all 3 advisor cards, Financial Advisor chat loads mock history correctly, composer input focuses and accepts real keystrokes (confirmed via `activeElement.value`) — the final send-button tap hit the same coordinate-calibration friction as the Voice Support mic button in the prior iteration and wasn't click-verified, but the ask()/setState logic is structurally identical to the already-proven Support ticket composer |
 | Reports | ⬜ not started | `report_snapshots`; snapshots are meant to be generated server-side (Edge Function) — for now, repository can compute on-the-fly client-side from live tables as a placeholder |
 | Analytics | ⬜ not started | `analytics_kpis`; CRP/CLF/Admin dashboards already show a version of this from mock data — needs a real repository |
 | Admin (users/schemes/monitoring) | ⬜ not started | User role management (admin can update any profile's role per RLS), scheme catalog CRUD, system monitoring (likely needs an Edge Function for real infra metrics — mock for now) |
@@ -415,3 +415,30 @@ package is still the more robust long-term answer.
   the default viewport size, so exact-coordinate taps landed inconsistently;
   worth avoiding `resize_window` on the demo tab in future iterations
   unless truly needed). Next: AI Advisors module.
+- **2026-07-18 (cont'd)**: Built the full AI Advisors module (model,
+  dual-mode repository, hub + one shared `AiAdvisorChatPage` reused across
+  all 3 advisor routes, `AiAdvisorService`/`MockAiAdvisorService`
+  abstraction). Deliberately made the ask flow work in both demo and live
+  mode (only DB persistence is live-gated) since a chat-style feature reads
+  as broken if it's inert in demo mode — a different call than
+  Payments/Support, where disabling the composer in demo mode is correct
+  because those actions have real financial/support consequences.
+  `flutter analyze` clean (same 9 pre-existing info-level lints, 0 new
+  issues). Live-tested DB/RLS with a 3-profile fixture set — all 5 checks
+  passed (own-log insert, deny insert-for-another-member, own-log read,
+  deny read-for-non-owner-non-staff, staff-can-read-any); fixtures cleaned
+  up and verified zero remnants. UI-tested on a fresh tab (no `resize_window`
+  this time, confirming the coordinate mismatch isn't resize-specific — it
+  recurred even at the default viewport): hub renders all 3 cards
+  correctly, Financial Advisor chat loads its mock history, composer input
+  focus and real keystroke typing both confirmed via
+  `document.activeElement.value` (`"Howmuchtosave?"` — note `key` action
+  with `"space"` tokens didn't produce actual space characters, only
+  visible via reading the input value, not screenshots). The final
+  send-button tap didn't land after several coordinate attempts — same
+  friction as the Voice Support mic button last iteration. Root cause is
+  still unconfirmed (possibly semantics-tree hit-testing being imprecise
+  for small icon-button targets specifically, since text-field-sized
+  targets have consistently focused correctly all session); worth
+  investigating directly if a future module's golden path depends on a
+  small icon-button tap succeeding. Next: Reports module.

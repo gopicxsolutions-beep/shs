@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
 import '../layout/app_shell.dart';
+import '../pages/ai/ai_advisor_chat_page.dart';
+import '../pages/ai/ai_hub_page.dart';
 import '../pages/auth/login_page.dart';
 import '../pages/auth/otp_page.dart';
 import '../pages/auth/profile_setup_page.dart';
@@ -135,10 +137,19 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.supportVoice, builder: (context, state) => const SupportVoicePage()),
           GoRoute(path: Paths.supportFaq, builder: (context, state) => const SupportFaqPage()),
           GoRoute(path: Paths.supportTicket, builder: (context, state) => const SupportTicketFormPage()),
-          comingSoon(Paths.aiHub, 'AI Advisors'),
-          comingSoon(Paths.aiFinancialAdvisor, 'AI Financial Advisor'),
-          comingSoon(Paths.aiSchemeRecommender, 'AI Scheme Recommender'),
-          comingSoon(Paths.aiMarketAdvisor, 'AI Market Advisor'),
+          GoRoute(path: Paths.aiHub, builder: (context, state) => const AiHubPage()),
+          GoRoute(
+            path: Paths.aiFinancialAdvisor,
+            builder: (context, state) => const AiAdvisorChatPage(advisorType: 'financial', title: 'Financial Advisor', hint: 'Ask about savings, loans, or budgeting for your SHG.'),
+          ),
+          GoRoute(
+            path: Paths.aiSchemeRecommender,
+            builder: (context, state) => const AiAdvisorChatPage(advisorType: 'scheme', title: 'Scheme Recommender', hint: 'Ask which government schemes you may be eligible for.'),
+          ),
+          GoRoute(
+            path: Paths.aiMarketAdvisor,
+            builder: (context, state) => const AiAdvisorChatPage(advisorType: 'market', title: 'Market Advisor', hint: 'Ask about pricing, demand, or selling your products.'),
+          ),
           comingSoon(Paths.reports, 'Reports'),
           comingSoon(Paths.reportsMember, 'My Reports'),
           comingSoon(Paths.reportsShg, 'SHG Reports'),
