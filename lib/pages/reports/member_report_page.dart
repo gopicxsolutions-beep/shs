@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
 import '../../models/report.dart';
 import '../../repositories/report_repository.dart';
+import '../../routes/paths.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -10,6 +12,9 @@ import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/stat_card.dart';
 
+/// Hub for the 3 named member reports the spec calls for (Savings
+/// Statement, Loan Statement, Attendance Report), plus a quick at-a-glance
+/// overview on top.
 class MemberReportPage extends StatelessWidget {
   const MemberReportPage({super.key});
 
@@ -35,29 +40,63 @@ class MemberReportPage extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(child: StatCard(label: 'Loan Outstanding', value: '₹${r.totalOutstanding}', tone: StatTone.gold, trend: '${r.activeLoanCount} active', icon: Icons.account_balance_rounded)),
               ]),
+              const SizedBox(height: 20),
+              Text('Reports', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
               const SizedBox(height: 12),
-              AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('Meeting Attendance', style: AppTheme.sans(13, weight: FontWeight.w700)),
-                      Text('${r.attendancePct.toStringAsFixed(0)}%', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600)),
-                    ]),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(value: r.attendancePct / 100, minHeight: 8, backgroundColor: Neutral.c100, color: Brand.c500),
-                    ),
-                    const SizedBox(height: 6),
-                    Text('${r.meetingsAttended} of ${r.meetingsTotal} meetings attended', style: AppTheme.sans(11, color: Neutral.c500)),
-                  ],
-                ),
+              _ReportTile(
+                icon: Icons.receipt_long_rounded,
+                title: 'Savings Statement',
+                subtitle: 'Running balance across every savings entry',
+                onTap: () => context.go(Paths.savingsStatement),
+              ),
+              const SizedBox(height: 8),
+              _ReportTile(
+                icon: Icons.account_balance_rounded,
+                title: 'Loan Statement',
+                subtitle: 'Every loan, EMI schedule & outstanding balance',
+                onTap: () => context.go(Paths.reportsLoanStatement),
+              ),
+              const SizedBox(height: 8),
+              _ReportTile(
+                icon: Icons.event_available_rounded,
+                title: 'Attendance Report',
+                subtitle: '${r.attendancePct.toStringAsFixed(0)}% · ${r.meetingsAttended} of ${r.meetingsTotal} meetings',
+                onTap: () => context.go(Paths.reportsAttendance),
               ),
             ],
           );
         },
       ),
+    );
+  }
+}
+
+class _ReportTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  const _ReportTile({required this.icon, required this.title, required this.subtitle, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      onTap: onTap,
+      child: Row(children: [
+        Container(width: 40, height: 40, decoration: BoxDecoration(color: Brand.c50, borderRadius: BorderRadius.circular(12)), alignment: Alignment.center, child: Icon(icon, size: 18, color: Brand.c600)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: AppTheme.sans(13, weight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(subtitle, style: AppTheme.sans(11, color: Neutral.c500)),
+            ],
+          ),
+        ),
+        Icon(Icons.chevron_right_rounded, color: Neutral.c300),
+      ]),
     );
   }
 }

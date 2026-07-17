@@ -42,9 +42,16 @@ import '../pages/meetings/meetings_home_page.dart';
 import '../pages/payments/payments_home_page.dart';
 import '../pages/payments/payments_history_page.dart';
 import '../pages/payments/payments_qr_page.dart';
+import '../pages/reports/attendance_report_page.dart';
+import '../pages/reports/federation_growth_page.dart';
+import '../pages/reports/federation_recovery_page.dart';
 import '../pages/reports/federation_report_page.dart';
+import '../pages/reports/federation_villages_page.dart';
+import '../pages/reports/loan_statement_page.dart';
 import '../pages/reports/member_report_page.dart';
 import '../pages/reports/reports_hub_page.dart';
+import '../pages/reports/shg_financial_summary_page.dart';
+import '../pages/reports/shg_performance_report_page.dart';
 import '../pages/reports/shg_report_page.dart';
 import '../pages/savings/savings_entry_page.dart';
 import '../pages/savings/savings_group_report_page.dart';
@@ -179,8 +186,15 @@ GoRouter buildRouter(AppState appState) {
           ),
           GoRoute(path: Paths.reports, builder: (context, state) => const ReportsHubPage()),
           GoRoute(path: Paths.reportsMember, builder: (context, state) => const MemberReportPage()),
+          GoRoute(path: Paths.reportsLoanStatement, builder: (context, state) => const LoanStatementPage()),
+          GoRoute(path: Paths.reportsAttendance, builder: (context, state) => const AttendanceReportPage()),
           GoRoute(path: Paths.reportsShg, builder: (context, state) => const ShgReportPage()),
+          GoRoute(path: Paths.reportsShgFinancialSummary, builder: (context, state) => const ShgFinancialSummaryPage()),
+          GoRoute(path: Paths.reportsShgPerformance, builder: (context, state) => const ShgPerformanceReportPage()),
           GoRoute(path: Paths.reportsFederation, builder: (context, state) => const FederationReportPage()),
+          GoRoute(path: Paths.reportsFederationVillages, builder: (context, state) => const FederationVillagesPage()),
+          GoRoute(path: Paths.reportsFederationRecovery, builder: (context, state) => const FederationRecoveryPage()),
+          GoRoute(path: Paths.reportsFederationGrowth, builder: (context, state) => const FederationGrowthPage()),
           GoRoute(path: Paths.analytics, builder: (context, state) => const AnalyticsDashboardPage()),
           GoRoute(path: Paths.analyticsShgList, builder: (context, state) => const AnalyticsShgListPage()),
           comingSoon(Paths.profileSettings, 'Settings'),

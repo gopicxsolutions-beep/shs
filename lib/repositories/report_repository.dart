@@ -121,4 +121,40 @@ class ReportRepository {
       period: 'All time',
     );
   }
+
+  /// Every SHG grouped by village, with a per-village SHG count and total
+  /// savings — backs the Federation "Village-wise SHGs" report.
+  Future<List<VillageShgGroup>> fetchVillageWiseShgs() async {
+    if (!_live) {
+      return const [
+        VillageShgGroup(village: 'Kondapur', shgCount: 24, totalSavings: 6100000),
+        VillageShgGroup(village: 'Hanamkonda', shgCount: 31, totalSavings: 8300000),
+        VillageShgGroup(village: 'Warangal Rural', shgCount: 28, totalSavings: 7200000),
+        VillageShgGroup(village: 'Narsampet', shgCount: 19, totalSavings: 4600000),
+        VillageShgGroup(village: 'Parkal', shgCount: 22, totalSavings: 5400000),
+      ];
+    }
+    final shgs = await _client.from('shgs').select('id, village');
+    final shgList = shgs as List;
+    final villageByShgId = <String, String>{for (final r in shgList) (r as Map<String, dynamic>)['id'] as String: (r['village'] as String?) ?? 'Unknown'};
+
+    final savings = await _client.from('savings_entries').select('shg_id, amount');
+    final savingsByShg = <String, num>{};
+    for (final r in savings as List) {
+      final map = r as Map<String, dynamic>;
+      final shgId = map['shg_id'] as String;
+      savingsByShg[shgId] = (savingsByShg[shgId] ?? 0) + (map['amount'] as num);
+    }
+
+    final shgCountByVillage = <String, int>{};
+    final savingsByVillage = <String, num>{};
+    for (final entry in villageByShgId.entries) {
+      final village = entry.value;
+      shgCountByVillage[village] = (shgCountByVillage[village] ?? 0) + 1;
+      savingsByVillage[village] = (savingsByVillage[village] ?? 0) + (savingsByShg[entry.key] ?? 0);
+    }
+
+    final villages = shgCountByVillage.keys.toList()..sort();
+    return villages.map((v) => VillageShgGroup(village: v, shgCount: shgCountByVillage[v]!, totalSavings: savingsByVillage[v] ?? 0)).toList();
+  }
 }

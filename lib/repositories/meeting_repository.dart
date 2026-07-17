@@ -71,6 +71,26 @@ class MeetingRepository {
     return roster.map((m) => AttendanceRow(memberId: m.$1, memberName: m.$2, present: presentById[m.$1] ?? false)).toList();
   }
 
+  /// This member's attendance across every completed meeting for their
+  /// SHG, newest first — backs the Attendance Report (see
+  /// `lib/pages/reports/attendance_report_page.dart`).
+  Future<List<MemberAttendanceRecord>> fetchAttendanceHistory(String? memberId, String? shgId) async {
+    if (!_live || memberId == null || shgId == null) {
+      return _mockMeetings().map((m) => MemberAttendanceRecord(meetingDate: m.date, venue: m.venue, present: true)).toList();
+    }
+    final meetings = await _client.from('meetings').select('id, meeting_date, venue').eq('shg_id', shgId).eq('status', 'completed').order('meeting_date', ascending: false);
+    final meetingList = meetings as List;
+    if (meetingList.isEmpty) return const [];
+    final meetingIds = meetingList.map((m) => (m as Map<String, dynamic>)['id'] as String).toList();
+    final attendance = await _client.from('meeting_attendance').select('meeting_id, present').eq('member_id', memberId).inFilter('meeting_id', meetingIds);
+    final presentByMeeting = <String, bool>{for (final r in attendance as List) (r as Map<String, dynamic>)['meeting_id'] as String: r['present'] as bool? ?? false};
+    return meetingList.map((m) {
+      final map = m as Map<String, dynamic>;
+      final id = map['id'] as String;
+      return MemberAttendanceRecord(meetingDate: DateTime.parse(map['meeting_date'] as String), venue: map['venue'] as String?, present: presentByMeeting[id] ?? false);
+    }).toList();
+  }
+
   Future<void> markAttendance(String meetingId, String memberId, bool present) async {
     if (!_live) return;
     await _client.from('meeting_attendance').upsert({

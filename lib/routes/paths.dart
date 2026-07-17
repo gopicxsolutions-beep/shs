@@ -83,8 +83,15 @@ class Paths {
 
   static const reports = '/app/reports';
   static const reportsMember = '/app/reports/member';
+  static const reportsLoanStatement = '/app/reports/member/loan-statement';
+  static const reportsAttendance = '/app/reports/member/attendance';
   static const reportsShg = '/app/reports/shg';
+  static const reportsShgFinancialSummary = '/app/reports/shg/financial-summary';
+  static const reportsShgPerformance = '/app/reports/shg/performance';
   static const reportsFederation = '/app/reports/federation';
+  static const reportsFederationVillages = '/app/reports/federation/villages';
+  static const reportsFederationRecovery = '/app/reports/federation/recovery';
+  static const reportsFederationGrowth = '/app/reports/federation/growth';
 
   static const analytics = '/app/analytics';
   static const analyticsShgList = '/app/analytics/shgs';

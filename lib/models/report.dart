@@ -41,6 +41,13 @@ class ShgReportData {
   });
 }
 
+class VillageShgGroup {
+  final String village;
+  final int shgCount;
+  final num totalSavings;
+  const VillageShgGroup({required this.village, required this.shgCount, required this.totalSavings});
+}
+
 class FederationReportData {
   final int shgCount;
   final int memberCount;

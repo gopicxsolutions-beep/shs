@@ -38,6 +38,15 @@ class AttendanceRow {
   const AttendanceRow({required this.memberId, required this.memberName, required this.present});
 }
 
+/// One member's attendance for one completed meeting — used by the
+/// Attendance Report (see `lib/pages/reports/attendance_report_page.dart`).
+class MemberAttendanceRecord {
+  final DateTime meetingDate;
+  final String? venue;
+  final bool present;
+  const MemberAttendanceRecord({required this.meetingDate, this.venue, required this.present});
+}
+
 /// Mirrors a row in `public.meeting_minutes`. Each save inserts a new
 /// (append-only) row — the repository reads the latest one.
 class MeetingMinutes {
