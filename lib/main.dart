@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/env.dart';
 import 'routes/router.dart';
+import 'services/supabase_service.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
 
@@ -11,6 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (Env.supabaseUrl.isNotEmpty && Env.supabaseAnonKey.isNotEmpty) {
     await Supabase.initialize(url: Env.supabaseUrl, publishableKey: Env.supabaseAnonKey);
+    SupabaseService.isConfigured = true;
   }
   runApp(const ShgSaathiApp());
 }
@@ -31,7 +33,7 @@ class _ShgSaathiAppState extends State<ShgSaathiApp> {
   void initState() {
     super.initState();
     _router = buildRouter(_appState);
-    _appState.restore().then((_) => setState(() => _ready = true));
+    _appState.init().then((_) => setState(() => _ready = true));
   }
 
   @override

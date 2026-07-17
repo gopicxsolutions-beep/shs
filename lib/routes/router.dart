@@ -7,6 +7,12 @@ import '../pages/auth/role_select_page.dart';
 import '../pages/auth/splash_page.dart';
 import '../pages/common/coming_soon.dart';
 import '../pages/dashboard/dashboard_page.dart';
+import '../pages/savings/savings_entry_page.dart';
+import '../pages/savings/savings_group_report_page.dart';
+import '../pages/savings/savings_history_page.dart';
+import '../pages/savings/savings_home_page.dart';
+import '../pages/savings/savings_ledger_page.dart';
+import '../pages/savings/savings_statement_page.dart';
 import '../state/app_state.dart';
 import 'paths.dart';
 
@@ -17,16 +23,25 @@ GoRouter buildRouter(AppState appState) {
     initialLocation: Paths.splash,
     refreshListenable: appState,
     redirect: (context, state) {
-      final loggedIn = appState.isAuthenticated;
       final onAuthFlow = !state.matchedLocation.startsWith('/app');
-      if (!loggedIn && !onAuthFlow) return Paths.splash;
-      if (loggedIn && onAuthFlow) return Paths.dashboard;
+
+      // No session yet (OTP not verified) — confined to the auth flow.
+      if (!appState.hasSession) return onAuthFlow ? null : Paths.splash;
+
+      // Session but no `profiles` row yet — must finish onboarding.
+      if (!appState.hasProfile) {
+        final onboarding = state.matchedLocation == Paths.profileSetup || state.matchedLocation == Paths.roleSelect;
+        return onboarding ? null : Paths.profileSetup;
+      }
+
+      // Fully onboarded — keep out of the auth flow.
+      if (onAuthFlow) return Paths.dashboard;
       return null;
     },
     routes: [
       GoRoute(path: Paths.splash, builder: (context, state) => const SplashPage()),
       GoRoute(path: Paths.login, builder: (context, state) => const LoginPage()),
-      GoRoute(path: Paths.otp, builder: (context, state) => const OtpPage()),
+      GoRoute(path: Paths.otp, builder: (context, state) => OtpPage(phone: state.extra as String?)),
       GoRoute(path: Paths.profileSetup, builder: (context, state) => const ProfileSetupPage()),
       GoRoute(path: Paths.roleSelect, builder: (context, state) => const RoleSelectPage()),
       ShellRoute(
@@ -39,12 +54,12 @@ GoRouter buildRouter(AppState appState) {
           comingSoon(Paths.profile, 'Profile'),
           comingSoon(Paths.shgMembers, 'Members'),
           comingSoon(Paths.shgDocuments, 'Documents'),
-          comingSoon(Paths.savings, 'Savings'),
-          comingSoon(Paths.savingsEntry, 'Add Savings'),
-          comingSoon(Paths.savingsHistory, 'Savings History'),
-          comingSoon(Paths.savingsLedger, 'Savings Ledger'),
-          comingSoon(Paths.savingsStatement, 'Savings Statement'),
-          comingSoon(Paths.savingsGroupReport, 'Group Savings Report'),
+          GoRoute(path: Paths.savings, builder: (context, state) => const SavingsHomePage()),
+          GoRoute(path: Paths.savingsEntry, builder: (context, state) => const SavingsEntryPage()),
+          GoRoute(path: Paths.savingsHistory, builder: (context, state) => const SavingsHistoryPage()),
+          GoRoute(path: Paths.savingsLedger, builder: (context, state) => const SavingsLedgerPage()),
+          GoRoute(path: Paths.savingsStatement, builder: (context, state) => const SavingsStatementPage()),
+          GoRoute(path: Paths.savingsGroupReport, builder: (context, state) => const SavingsGroupReportPage()),
           comingSoon(Paths.loans, 'Loans'),
           comingSoon(Paths.loanApply, 'Apply for Loan'),
           comingSoon(Paths.loanApproval, 'Loan Approvals'),

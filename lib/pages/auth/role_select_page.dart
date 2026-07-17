@@ -48,7 +48,6 @@ class RoleSelectPage extends StatelessWidget {
                   child: AppCard(
                     onTap: () async {
                       await appState.setRole(r.id);
-                      await appState.setAuthenticated(true);
                       if (context.mounted) context.go(Paths.dashboard);
                     },
                     child: Row(
