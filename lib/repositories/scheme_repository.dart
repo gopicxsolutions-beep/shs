@@ -56,6 +56,34 @@ class SchemeRepository {
     });
   }
 
+  /// Admin-only catalog management (enforced server-side by
+  /// `schemes_write_admin`).
+  Future<void> createScheme({required String name, String? fullName, String? agency, String? benefit, List<String> eligibility = const []}) async {
+    if (!_live) return;
+    await _client.from('schemes').insert({
+      'name': name,
+      if (fullName != null) 'full_name': fullName,
+      if (agency != null) 'agency': agency,
+      if (benefit != null) 'benefit': benefit,
+      'eligibility': eligibility,
+    });
+  }
+
+  Future<void> updateScheme(String id, {required String name, String? fullName, String? agency, String? benefit}) async {
+    if (!_live) return;
+    await _client.from('schemes').update({
+      'name': name,
+      'full_name': fullName,
+      'agency': agency,
+      'benefit': benefit,
+    }).eq('id', id);
+  }
+
+  Future<void> deleteScheme(String id) async {
+    if (!_live) return;
+    await _client.from('schemes').delete().eq('id', id);
+  }
+
   DateTime? _parseMockDate(String? s) {
     if (s == null) return null;
     const months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12};

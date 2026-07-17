@@ -1,5 +1,8 @@
 import 'package:go_router/go_router.dart';
 import '../layout/app_shell.dart';
+import '../pages/admin/admin_monitoring_page.dart';
+import '../pages/admin/admin_schemes_page.dart';
+import '../pages/admin/admin_users_page.dart';
 import '../pages/ai/ai_advisor_chat_page.dart';
 import '../pages/ai/ai_hub_page.dart';
 import '../pages/analytics/analytics_dashboard_page.dart';
@@ -165,9 +168,9 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.analyticsShgList, builder: (context, state) => const AnalyticsShgListPage()),
           comingSoon(Paths.profileSettings, 'Settings'),
           comingSoon(Paths.profileLanguage, 'Language'),
-          comingSoon(Paths.adminUsers, 'Manage Users'),
-          comingSoon(Paths.adminSchemes, 'Manage Schemes'),
-          comingSoon(Paths.adminMonitoring, 'System Monitoring'),
+          GoRoute(path: Paths.adminUsers, builder: (context, state) => const AdminUsersPage()),
+          GoRoute(path: Paths.adminSchemes, builder: (context, state) => const AdminSchemesPage()),
+          GoRoute(path: Paths.adminMonitoring, builder: (context, state) => const AdminMonitoringPage()),
           GoRoute(path: '/app/shg/members/:id', builder: (context, state) => MemberDetailPage(memberId: state.pathParameters['id']!)),
           GoRoute(path: '/app/loans/:id', builder: (context, state) => LoanDetailPage(loanId: state.pathParameters['id']!)),
           GoRoute(path: '/app/meetings/:id', builder: (context, state) => MeetingDetailPage(meetingId: state.pathParameters['id']!)),
