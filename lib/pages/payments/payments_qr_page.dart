@@ -10,11 +10,11 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/qr_scanner_sheet.dart';
 
-/// A real camera-based QR scan needs a camera plugin (none in pubspec.yaml
-/// yet); this implements the actual charge + record flow behind a manual
-/// amount-entry form instead of faking a scanner UI that wouldn't scan
-/// anything — same pattern as the Meetings module's self check-in.
+/// Scans a UPI-style QR code (`upi://pay?pa=...&pn=...&am=...`) and prefills
+/// the amount/payee from it; manual entry remains the fallback for when no
+/// camera exists or the merchant's QR doesn't carry an amount.
 class PaymentsQrPage extends StatefulWidget {
   const PaymentsQrPage({super.key});
   @override
@@ -27,6 +27,7 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
   String _mode = 'UPI';
   bool _paying = false;
   String? _error;
+  String? _payeeName;
 
   static const _modes = ['UPI', 'QR', 'Card', 'NetBanking'];
 
@@ -34,6 +35,31 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
   void dispose() {
     _amount.dispose();
     super.dispose();
+  }
+
+  Future<void> _scan() async {
+    final code = await showQrScanner(context, title: 'Scan to Pay', instructions: 'Point your camera at the merchant\'s UPI QR code');
+    if (code == null || !mounted) return;
+
+    String? payee;
+    String? amount;
+    if (code.startsWith('upi://')) {
+      final uri = Uri.tryParse(code);
+      payee = uri?.queryParameters['pn'];
+      amount = uri?.queryParameters['am'];
+    } else if (num.tryParse(code) != null) {
+      amount = code;
+    }
+
+    setState(() {
+      _mode = 'QR';
+      _payeeName = payee;
+      if (amount != null) _amount.text = amount;
+      _error = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(amount != null ? 'QR scanned — amount filled in' : 'QR scanned — enter the amount to pay'),
+    ));
   }
 
   Future<void> _pay() async {
@@ -71,15 +97,23 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              height: 160,
-              decoration: BoxDecoration(color: Neutral.c100, borderRadius: BorderRadius.circular(16)),
-              alignment: Alignment.center,
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.qr_code_scanner_rounded, size: 48, color: Neutral.c400),
-                const SizedBox(height: 8),
-                Text('Camera scanning coming soon — enter amount manually for now', textAlign: TextAlign.center, style: AppTheme.sans(11, color: Neutral.c500)),
-              ]),
+            InkWell(
+              onTap: _scan,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                height: 160,
+                decoration: BoxDecoration(color: Neutral.c100, borderRadius: BorderRadius.circular(16)),
+                alignment: Alignment.center,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.qr_code_scanner_rounded, size: 48, color: Brand.c600),
+                  const SizedBox(height: 8),
+                  Text('Tap to scan a QR code', textAlign: TextAlign.center, style: AppTheme.sans(13, weight: FontWeight.w600, color: Neutral.c700)),
+                  if (_payeeName != null) ...[
+                    const SizedBox(height: 4),
+                    Text('Paying $_payeeName', style: AppTheme.sans(11, color: Brand.c600)),
+                  ],
+                ]),
+              ),
             ),
             const SizedBox(height: 16),
             AppCard(

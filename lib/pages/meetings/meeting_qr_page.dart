@@ -11,11 +11,13 @@ import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
+import '../../widgets/qr_scanner_sheet.dart';
 
-/// Self check-in for the current member. A real camera-based QR scan needs a
-/// camera plugin (none is in pubspec.yaml yet); this implements the actual
-/// attendance-marking logic behind a simple "Check In" tap instead of faking
-/// a scanner UI that wouldn't really scan anything.
+/// Self check-in for the current member. Scanning any QR code (the meeting
+/// itself doesn't render/print one in this app yet — that's a separate
+/// "generate a QR" feature not built here) opens the camera and checks the
+/// member in on the first successful scan; the "Check In" tap remains as
+/// the always-available fallback for when no camera/printed QR exists.
 class MeetingQrPage extends StatefulWidget {
   const MeetingQrPage({super.key});
   @override
@@ -36,6 +38,12 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
     } finally {
       if (mounted) setState(() => _checkingIn = false);
     }
+  }
+
+  Future<void> _scanAndCheckIn(Meeting meeting, String? memberId) async {
+    final code = await showQrScanner(context, title: 'Scan Attendance QR', instructions: 'Point your camera at the QR code displayed at the venue');
+    if (code == null || !mounted) return;
+    await _checkIn(meeting, memberId);
   }
 
   @override
@@ -79,13 +87,22 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                if (!_checkedIn)
+                if (!_checkedIn) ...[
                   AppButton(
-                    label: _checkingIn ? 'Checking in…' : 'Check In',
+                    label: _checkingIn ? 'Scanning…' : 'Scan QR to Check In',
+                    icon: Icons.qr_code_scanner_rounded,
                     fullWidth: true,
                     size: ButtonSize.lg,
+                    onPressed: !SupabaseService.isConfigured || _checkingIn ? null : () => _scanAndCheckIn(meeting, memberId),
+                  ),
+                  const SizedBox(height: 10),
+                  AppButton(
+                    label: _checkingIn ? 'Checking in…' : 'Check In Without Scanning',
+                    variant: ButtonVariant.outline,
+                    fullWidth: true,
                     onPressed: !SupabaseService.isConfigured || _checkingIn ? null : () => _checkIn(meeting, memberId),
                   ),
+                ],
               ],
             ),
           );
