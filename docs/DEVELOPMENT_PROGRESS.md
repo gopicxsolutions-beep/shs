@@ -125,7 +125,7 @@ Meetings, etc.:
 | Module | Status | Notes |
 |---|---|---|
 | Foundation (RLS, services, AppState, auth) | ✅ done | `0002_rls_policies.sql`, `lib/services/*`, `lib/state/app_state.dart`, auth pages |
-| Onboarding (Login/OTP/Profile Setup/Role Select) | ✅ done | Real phone-OTP via Supabase Auth; profile setup persists to `profiles`; SHG search via `shg_directory` view |
+| Onboarding (Login/OTP/Profile Setup/Role Select/SHG Approval) | ✅ done | Real phone-OTP via Supabase Auth; profile setup persists to `profiles`; SHG search via `shg_directory` view. **Spec gap closed**: a member's `shg_id` now stays null until their SHG leader approves a `shg_join_requests` row (via the `approve_shg_join_request()` security-definer RPC) — live mode only, gated by `AppState.needsShgApproval` + a new `ShgApprovalPendingPage`; demo mode is untouched (its own simplified two-flag onboarding is unaffected by design). Also fixed a real live-mode-only latent bug found while building this: `hasProfile` flipped true the instant `completeProfileSetup()` ran, skipping Role Select entirely — the same bug already fixed for demo mode, never fixed for live mode since real phone OTP can't complete in this environment and this path was never exercised until now. Fixed with a `needsRoleSelection` flag mirroring the demo-mode two-flag pattern. Leader-side approval screen at `Paths.shgJoinRequests`, linked from the Members list. |
 | Savings | ✅ done | Model, repository, 5 screens (home/entry/history/ledger[realtime]/statement/group-report), wired in router |
 | Loans | ✅ done | Model, repository, 5 screens (home/apply/approval/tracking/detail with payment recording), wired in router incl. `/app/loans/:id` |
 | Meetings | ✅ done | Model, repository, 6 screens (home/schedule/attendance roster/self check-in/detail/MoM with decisions+action items), wired incl. `/app/meetings/:id` and `/app/meetings/:id/mom`. QR check-in is real attendance-marking logic behind a tap, not a camera scanner (no camera plugin in pubspec yet) |
@@ -587,3 +587,69 @@ package is still the more robust long-term answer.
   as `supabase/migrations/0003_scheduled_report_snapshots.sql` for
   repo-tracked infra-as-code, matching how the schema/RLS migrations are
   already tracked.
+- **2026-07-18 (cont'd)**: User supplied the original product spec document
+  ("Mobile Application for SHGs.docx") and asked to close any remaining
+  gaps against it across every role including Admin. Audited the built app
+  against the spec section by section and found 4 real gaps (everything
+  else — all 5 roles, all 13 tabs, the AI advisor trio, reports/analytics/
+  admin as categories — was already built): (1) the spec's "Step 2: SHG
+  Mapping — Member → Select SHG → Approval by Leader" workflow didn't
+  exist — a new member's `shg_id` was set instantly with no leader
+  approval step; (2) the Reports module showed one combined stat-card page
+  per role instead of the spec's named sub-reports (Savings/Loan/
+  Attendance Statement for members; Financial Summary/Audit/Performance
+  for SHGs; Village-wise/Recovery/Growth for federation); (3) the Analytics
+  Dashboard had KPIs but none of the spec's 4 trend charts (Savings/Loan/
+  Revenue/Attendance Trends), despite `fl_chart` already being a
+  dependency; (4) no distinct "AI Voice Assistant" existed — only a
+  generic FAQ-style Voice Support under Help & Support, missing the spec's
+  Telugu-language awareness, notification read-aloud, and voice form-fill.
+  Started a new /loop to close all 4, one per iteration with the same
+  full rigor as every module this session (build → flutter analyze → live
+  DB/RLS test → live UI test → document → commit).
+
+  **Gap 1 (SHG join-approval) — done.** New `shg_join_requests` table +
+  RLS + a `security definer` `approve_shg_join_request(request_id, approve)`
+  RPC (a leader can't otherwise update another member's `profiles` row
+  under `profiles_update_self_or_admin`, so the RPC checks authorization
+  internally and does both writes atomically, rather than opening a
+  broader UPDATE policy). New `AppState.needsShgApproval` gates the router
+  to a new `ShgApprovalPendingPage` for a member whose join request is
+  still pending (scoped to live mode + the `member` role only — the
+  role-preview personas this app's self-service Role Select otherwise
+  offers aren't part of this workflow). New leader-side
+  `ShgJoinRequestsPage` (approve/reject), linked from the Members list via
+  a new icon button visible to leaders. **Found and fixed a second real
+  bug in the process**: in live mode, `hasProfile` (`_profile != null`)
+  flips true the instant `completeProfileSetup()` runs — before
+  `context.go(Paths.roleSelect)` even executes — so the router's "fully
+  onboarded" branch fired first and Role Select was skippable. This is the
+  exact same class of bug already found and fixed for demo mode earlier
+  this session, just never triggered for live mode since real phone OTP
+  can't complete in this environment. Fixed with a `needsRoleSelection`
+  flag mirroring the demo-mode two-flag split. Also caught and fixed a
+  subtler routing bug of my own making while implementing this: the
+  `needsShgApproval` gate initially redirected away from `profileSetup`
+  too, which would have permanently trapped a rejected member (tapping
+  "choose a different SHG" → bounced straight back to the pending page,
+  looping forever) — fixed by exempting `profileSetup` from that gate.
+  Live DB/RLS-tested with a 2-SHG, 5-profile fixture set — all 12 checks
+  passed (member submits own request / denied submitting for another
+  member, member reads own request, unrelated member denied, the target
+  SHG's leader reads it, a different SHG's leader denied, staff reads it,
+  wrong-SHG leader's RPC call denied, correct leader's approve RPC sets
+  `profiles.shg_id` and flips status to `approved`, a second request's
+  reject RPC flips status to `rejected` while leaving `shg_id` null);
+  fixtures cleaned up and verified zero remnants. UI-tested two ways:
+  (a) since this feature is live-mode-only and demo mode intentionally
+  bypasses it, the new pages can't be exercised via the usual
+  flutter-web-demo browser technique — added `test/pages/
+  shg_join_approval_test.dart` instead (2 widget tests confirming both
+  pages render their demo-mode empty-state branch without throwing); (b)
+  regression-tested the demo-mode onboarding flow end-to-end on a fresh
+  browser tab (cleared `localStorage`, walked Profile Setup → Role Select
+  → Dashboard) to confirm the shared `app_state.dart`/`router.dart`
+  changes didn't disturb the existing demo flow — Role Select still
+  rendered correctly, exactly as before. `flutter analyze` clean (same 12
+  pre-existing info-level issues, 0 new); full test suite (13 tests) passes.
+  Next: break the Reports module into the spec's named sub-reports.

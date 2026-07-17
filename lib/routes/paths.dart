@@ -4,6 +4,7 @@ class Paths {
   static const otp = '/otp';
   static const profileSetup = '/profile-setup';
   static const roleSelect = '/role-select';
+  static const shgApprovalPending = '/shg-approval-pending';
 
   static const dashboard = '/app/dashboard';
   static const shg = '/app/shg';
@@ -13,6 +14,7 @@ class Paths {
 
   static const shgMembers = '/app/shg/members';
   static const shgDocuments = '/app/shg/documents';
+  static const shgJoinRequests = '/app/shg/join-requests';
   static String shgMember(String id) => '/app/shg/members/$id';
 
   static const savings = '/app/savings';

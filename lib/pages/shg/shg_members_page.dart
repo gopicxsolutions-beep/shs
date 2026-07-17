@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg.dart';
+import '../../models/types.dart';
 import '../../repositories/shg_repository.dart';
 import '../../routes/paths.dart';
 import '../../state/app_state.dart';
+import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
@@ -29,7 +31,16 @@ class ShgMembersPage extends StatelessWidget {
     final shgId = appState.profile?.shgId;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Members'),
+      appBar: PageHeader(
+        title: 'Members',
+        right: appState.user.role == Role.leader
+            ? IconButton(
+                tooltip: 'Join requests',
+                icon: Icon(Icons.person_add_alt_1_rounded, color: Brand.c600),
+                onPressed: () => context.go(Paths.shgJoinRequests),
+              )
+            : null,
+      ),
       body: AppAsyncBuilder<List<Member>>(
         future: () => repo.fetchMembers(shgId),
         builder: (context, members) {

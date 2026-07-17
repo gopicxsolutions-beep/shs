@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState, Session;
 import '../models/profile.dart';
 import '../models/types.dart';
+import '../repositories/shg_join_request_repository.dart';
 import '../services/auth_service.dart';
 import '../services/profile_repository.dart';
 import '../services/supabase_service.dart';
@@ -19,12 +20,14 @@ import '../services/supabase_service.dart';
 ///    [defaultUser]'s role, so the 5 dashboards stay explorable without a
 ///    backend (matches the previous `restore()`/`setRole()` behavior).
 class AppState extends ChangeNotifier {
-  AppState({AuthService? authService, ProfileRepository? profileRepository})
+  AppState({AuthService? authService, ProfileRepository? profileRepository, ShgJoinRequestRepository? joinRequestRepository})
       : _authService = authService ?? AuthService(),
-        _profileRepository = profileRepository ?? ProfileRepository();
+        _profileRepository = profileRepository ?? ProfileRepository(),
+        _joinRequestRepository = joinRequestRepository ?? ShgJoinRequestRepository();
 
   final AuthService _authService;
   final ProfileRepository _profileRepository;
+  final ShgJoinRequestRepository _joinRequestRepository;
   StreamSubscription<AuthState>? _authSub;
 
   Language language = Language.en;
@@ -32,6 +35,16 @@ class AppState extends ChangeNotifier {
   Session? _session;
   Profile? _profile;
   ShgSearchResult? _pendingShg;
+
+  // Live mode only — true from the moment a fresh profile is created until
+  // Role Select completes. Without this, `hasProfile` (just `_profile !=
+  // null`) flips true the instant completeProfileSetup() runs, and the
+  // router's "fully onboarded, leave auth flow" branch fires before Role
+  // Select ever renders — the same bug already found and fixed for demo
+  // mode (see the two-flag split below), but never fixed for live mode
+  // since real phone OTP can't complete in this environment and this path
+  // was never actually exercised. See docs/DEVELOPMENT_PROGRESS.md.
+  bool _needsRoleSelection = false;
 
   // Demo mode mirrors the real two-step gate (session, then profile) with
   // two independent flags — collapsing them into one previously caused
@@ -57,6 +70,17 @@ class AppState extends ChangeNotifier {
   bool get hasProfile => SupabaseService.isConfigured ? _profile != null : _legacyOnboarded;
 
   bool get isAuthenticated => hasSession && hasProfile;
+
+  /// Live mode only — a fresh profile exists but Role Select hasn't run
+  /// yet this session.
+  bool get needsRoleSelection => SupabaseService.isConfigured && _needsRoleSelection;
+
+  /// Live mode only — a member's SHG join request hasn't been approved
+  /// yet (`profiles.shg_id` is still null). Scoped to the `member` role
+  /// since the spec's "Select SHG → Approval by Leader" workflow is about
+  /// a rank-and-file member joining, not the role-preview personas
+  /// (leader/crp/clf/admin) this app's Role Select otherwise offers.
+  bool get needsShgApproval => SupabaseService.isConfigured && _profile != null && _profile!.role == 'member' && _profile!.shgId == null;
 
   Profile? get profile => _profile;
   ShgSearchResult? get pendingShg => _pendingShg;
@@ -145,13 +169,19 @@ class AppState extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    // shgId is deliberately NOT passed here — membership only takes effect
+    // once the SHG's leader approves the join request below (see
+    // needsShgApproval).
     _profile = await _profileRepository.upsertMyProfile(
       name: name,
       mobile: _session?.user.phone,
       role: 'member',
-      shgId: _pendingShg?.id,
       village: village,
     );
+    if (_pendingShg != null) {
+      await _joinRequestRepository.submit(memberId: _profile!.id, shgId: _pendingShg!.id);
+    }
+    _needsRoleSelection = true;
     notifyListeners();
   }
 
@@ -160,6 +190,7 @@ class AppState extends ChangeNotifier {
       if (_profile == null) return;
       await _profileRepository.updateRole(role.name);
       _profile = _profile!.copyWith(role: role.name);
+      _needsRoleSelection = false;
       notifyListeners();
       return;
     }
@@ -183,6 +214,7 @@ class AppState extends ChangeNotifier {
       await _authService.signOut();
       _profile = null;
       _pendingShg = null;
+      _needsRoleSelection = false;
     } else {
       _legacySessionStarted = false;
       _legacyOnboarded = false;

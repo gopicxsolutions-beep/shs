@@ -12,6 +12,7 @@ import '../pages/auth/login_page.dart';
 import '../pages/auth/otp_page.dart';
 import '../pages/auth/profile_setup_page.dart';
 import '../pages/auth/role_select_page.dart';
+import '../pages/auth/shg_approval_pending_page.dart';
 import '../pages/auth/splash_page.dart';
 import '../pages/announcements/announcement_detail_page.dart';
 import '../pages/announcements/announcements_home_page.dart';
@@ -58,6 +59,7 @@ import '../pages/schemes/schemes_home_page.dart';
 import '../pages/shg/member_detail_page.dart';
 import '../pages/shg/shg_documents_page.dart';
 import '../pages/shg/shg_home_page.dart';
+import '../pages/shg/shg_join_requests_page.dart';
 import '../pages/shg/shg_members_page.dart';
 import '../pages/support/support_chat_page.dart';
 import '../pages/support/support_faq_page.dart';
@@ -90,6 +92,19 @@ GoRouter buildRouter(AppState appState) {
         return onboarding ? null : Paths.profileSetup;
       }
 
+      // Profile just created (live mode) — Role Select hasn't run yet.
+      if (appState.needsRoleSelection) {
+        return state.matchedLocation == Paths.roleSelect ? null : Paths.roleSelect;
+      }
+
+      // Member's SHG join request hasn't been approved by their leader yet.
+      // profileSetup stays reachable too, so a rejected member can pick a
+      // different SHG and submit a new request instead of being stuck.
+      if (appState.needsShgApproval) {
+        final allowed = state.matchedLocation == Paths.shgApprovalPending || state.matchedLocation == Paths.profileSetup;
+        return allowed ? null : Paths.shgApprovalPending;
+      }
+
       // Fully onboarded — keep out of the auth flow.
       if (onAuthFlow) return Paths.dashboard;
       return null;
@@ -100,6 +115,7 @@ GoRouter buildRouter(AppState appState) {
       GoRoute(path: Paths.otp, builder: (context, state) => OtpPage(phone: state.extra as String?)),
       GoRoute(path: Paths.profileSetup, builder: (context, state) => const ProfileSetupPage()),
       GoRoute(path: Paths.roleSelect, builder: (context, state) => const RoleSelectPage()),
+      GoRoute(path: Paths.shgApprovalPending, builder: (context, state) => const ShgApprovalPendingPage()),
       ShellRoute(
         builder: (context, state, child) => AppShell(location: state.matchedLocation, child: child),
         routes: [
@@ -110,6 +126,7 @@ GoRouter buildRouter(AppState appState) {
           comingSoon(Paths.profile, 'Profile'),
           GoRoute(path: Paths.shgMembers, builder: (context, state) => const ShgMembersPage()),
           GoRoute(path: Paths.shgDocuments, builder: (context, state) => const ShgDocumentsPage()),
+          GoRoute(path: Paths.shgJoinRequests, builder: (context, state) => const ShgJoinRequestsPage()),
           GoRoute(path: Paths.savings, builder: (context, state) => const SavingsHomePage()),
           GoRoute(path: Paths.savingsEntry, builder: (context, state) => const SavingsEntryPage()),
           GoRoute(path: Paths.savingsHistory, builder: (context, state) => const SavingsHistoryPage()),
