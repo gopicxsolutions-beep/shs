@@ -1,0 +1,88 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../routes/paths.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/colors.dart';
+import '../../widgets/app_button.dart';
+
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _controller = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    final valid = _controller.text.length >= 10;
+    return Scaffold(
+      backgroundColor: Neutral.c50,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
+          child: Column(
+            children: [
+              Container(
+                width: 64, height: 64,
+                decoration: BoxDecoration(
+                  color: Brand.c600, borderRadius: BorderRadius.circular(24),
+                  boxShadow: [BoxShadow(color: Brand.c600.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 8))],
+                ),
+                child: const Icon(Icons.phone_iphone_rounded, color: Colors.white, size: 28),
+              ),
+              const SizedBox(height: 20),
+              Text('Welcome back', style: AppTheme.display(22)),
+              const SizedBox(height: 6),
+              Text('Enter your registered mobile number to continue', textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
+              const SizedBox(height: 28),
+              Container(
+                decoration: BoxDecoration(border: Border.all(color: Neutral.c200), borderRadius: BorderRadius.circular(12), color: Colors.white),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Row(
+                  children: [
+                    Text('+91', style: AppTheme.sans(14, weight: FontWeight.w600, color: Neutral.c500)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        keyboardType: TextInputType.number,
+                        maxLength: 10,
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(border: InputBorder.none, counterText: '', hintText: '98765 43210'),
+                        style: AppTheme.sans(14),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              AppButton(
+                label: 'Send OTP',
+                fullWidth: true,
+                size: ButtonSize.lg,
+                onPressed: valid ? () => context.go(Paths.otp) : null,
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: Brand.c50, borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.verified_user_rounded, size: 16, color: Brand.c600),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text('Your data is protected under DAY-NRLM guidelines. We never share your Aadhaar details.', style: AppTheme.sans(11, color: Brand.c700))),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Text('By continuing you agree to the Terms of Service & Privacy Policy', textAlign: TextAlign.center, style: AppTheme.sans(11, color: Neutral.c400)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

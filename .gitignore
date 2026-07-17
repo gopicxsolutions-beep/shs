@@ -32,3 +32,7 @@ ios/.symlinks/
 # Logs
 logs
 *.log
+
+# Local secrets (Supabase keys, etc.) — never commit
+.env.json
+*.env
