@@ -17,23 +17,41 @@ check after an async gap, double-underscore lambda params).
 **Resolved**: A live Supabase project (`pccbwfmlhpvieetetrpx`) is connected —
 see the "Live Supabase project" section below.
 
-**Known limitation — browser automation vs. Flutter web**: the `flutter-web` dev
-server (`.claude/launch.json`) runs and renders correctly (verified via
-screenshot at a proper mobile viewport, and Supabase does initialize against the
-live project), and real button taps work via the Browser pane. But **typing into
-Flutter web `TextField`s via generic browser automation does not work** — Flutter
-web (CanvasKit renderer) owns its own text-editing state machine; neither
-coordinate-based `type`/`key` actions nor manually dispatching DOM `InputEvent`s
-on the hidden native `<input>` sync into Flutter's internal state. (Flutter's
-accessibility semantics tree *can* be activated by clicking the tiny
-`flt-semantics-placeholder` element at viewport (0,0), which makes `read_page`
-return real `textbox`/`button` roles — useful for finding elements — but
-`form_input` fills only the semantics-layer shadow element, not the real one
-Flutter listens to.) **Do not keep fighting this** — for real automated E2E
-coverage, use Flutter's own `integration_test` package (drives the app through
-Flutter's widget/finder APIs, not raw DOM events) or `flutter drive`, not browser
-automation tools. This is the recommended next step for the "comprehensive
-end-to-end testing" requirement once enough modules exist to make it worthwhile.
+**Resolved — browser automation of Flutter web DOES work, with the right technique**:
+the `flutter-web` dev server (`.claude/launch.json`) runs correctly and Supabase
+initializes against the live project. Typing into Flutter web `TextField`s
+(CanvasKit renderer) initially seemed impossible — `type`/`key` with coordinate
+clicks and manual DOM `InputEvent` dispatch on the hidden native `<input>` both
+failed silently. The actual fix, in order:
+1. Activate Flutter's accessibility semantics tree once per page load: find
+   and click `flt-semantics-placeholder` (a ~1px element near viewport origin) —
+   `document.querySelector('flt-semantics-placeholder').click()` via
+   `javascript_tool`. Without this, Flutter doesn't create proper focusable
+   proxy elements at all.
+2. Click the field by **coordinate**, not by accessibility `ref` (ref-based
+   clicks didn't reliably trigger Flutter's focus handling in testing, even
+   with semantics on).
+3. **Verify real focus** before typing — check
+   `document.activeElement.tagName` is `INPUT` via `javascript_tool`. If it's
+   not, the click didn't land on Flutter's real hidden input and nothing
+   typed afterward will register.
+4. Type using the `computer` tool's `key` action with **individual real
+   keystrokes** (e.g. `key text:"9"` then `key text:"8"`, or one call with
+   space-separated sequential keys like `"7 6 5 4"` — these are sequential
+   presses, not a combo). The `type` action and any JS-based `.value` /
+   `InputEvent` injection do NOT sync into Flutter's internal editing state —
+   only genuine dispatched keyboard events do.
+Verified end-to-end this way: typed a full phone number into Login, tapped
+Send OTP, and watched the **real** `signInWithOtp` call fail against the live
+project (no SMS provider configured — expected) with the app's error-handling
+UI correctly catching it and showing "Could not send OTP. Please check the
+number and try again." Also verified live: navigating directly to a protected
+route (`#/app/dashboard`) with no session correctly redirects to Splash (the
+router's auth guard, `lib/routes/router.dart`, working against real state).
+For deeper coverage Flutter's own `integration_test` package is still the more
+robust long-term answer, but the above unblocks real interactive UI testing
+in the meantime — use it for the golden-path flows of new modules, not just
+the DB-level RLS testing.
 
 ## Architecture pattern (replicate this for every remaining module)
 
@@ -191,12 +209,14 @@ leader-approve), Meetings (leader-only schedule, shared read), My SHG
 (shared roster read, cross-tenant SHG isolation). All passed — no real RLS
 gaps found, only test-harness bugs of my own making (documented in point 3).
 
-**Caveat**: this proves the database/RLS layer is correct end-to-end, but
-doesn't exercise the Flutter UI layer itself (button-tap navigation and
-static rendering are separately verified in the Browser pane; text-entry
-flows are only verified by code review, per the browser-automation
-limitation above). For true UI-level E2E, use Flutter's `integration_test`
-package eventually.
+This DB-level testing proves the schema/RLS layer end-to-end. **Also test the
+live UI** for each module's golden path in the Browser pane against the
+`flutter-web` dev server, using the real-typing technique documented in
+"Environment status" above (activate semantics, click by coordinate, verify
+`document.activeElement`, type via real sequential `key` presses) — don't
+settle for DB-only testing when the UI layer can genuinely be exercised too.
+For deeper/regression-proof coverage, Flutter's own `integration_test`
+package is still the more robust long-term answer.
 
 ## Session log
 
@@ -242,3 +262,15 @@ package eventually.
   the same way — leader-only write correctly denied for members, shared
   read works. All test fixtures cleaned up after each round (verified zero
   remnants). Next: Livelihoods module.
+- **2026-07-17 (cont'd)**: User asked to also test the live preview (not just
+  DB-level). Cracked the Flutter-web browser-automation problem — full UI
+  testing (typing included) does work, documented in detail above (activate
+  semantics, coordinate click, verify real focus, real sequential keystrokes).
+  Verified live: typed a full phone number on Login, tapped Send OTP, watched
+  the real Supabase call fail gracefully (no SMS provider configured — expected)
+  with correct error UI; verified the router's auth guard live by navigating
+  directly to a protected route while unauthenticated and confirming redirect
+  to Splash. This supersedes the earlier "browser automation doesn't work"
+  conclusion — use real UI testing for golden paths going forward, alongside
+  the DB-level RLS testing. Next: Livelihoods module, with both testing modes
+  applied.
