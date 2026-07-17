@@ -17,7 +17,6 @@ import '../pages/auth/shg_approval_pending_page.dart';
 import '../pages/auth/splash_page.dart';
 import '../pages/announcements/announcement_detail_page.dart';
 import '../pages/announcements/announcements_home_page.dart';
-import '../pages/common/coming_soon.dart';
 import '../pages/dashboard/dashboard_page.dart';
 import '../pages/financial/financial_ledger_page.dart';
 import '../pages/livelihood/livelihood_detail_page.dart';
@@ -43,6 +42,9 @@ import '../pages/meetings/meetings_home_page.dart';
 import '../pages/payments/payments_home_page.dart';
 import '../pages/payments/payments_history_page.dart';
 import '../pages/payments/payments_qr_page.dart';
+import '../pages/profile/language_page.dart';
+import '../pages/profile/profile_page.dart';
+import '../pages/profile/settings_page.dart';
 import '../pages/reports/attendance_report_page.dart';
 import '../pages/reports/federation_growth_page.dart';
 import '../pages/reports/federation_recovery_page.dart';
@@ -64,6 +66,7 @@ import '../pages/schemes/scheme_detail_page.dart';
 import '../pages/schemes/scheme_eligibility_page.dart';
 import '../pages/schemes/scheme_tracking_page.dart';
 import '../pages/schemes/schemes_home_page.dart';
+import '../pages/services/services_page.dart';
 import '../pages/shg/member_detail_page.dart';
 import '../pages/shg/shg_documents_page.dart';
 import '../pages/shg/shg_home_page.dart';
@@ -83,8 +86,6 @@ import '../state/app_state.dart';
 import 'paths.dart';
 
 GoRouter buildRouter(AppState appState) {
-  GoRoute comingSoon(String path, String title) => GoRoute(path: path, builder: (context, state) => ComingSoonPage(title: title));
-
   return GoRouter(
     initialLocation: Paths.splash,
     refreshListenable: appState,
@@ -129,9 +130,9 @@ GoRouter buildRouter(AppState appState) {
         routes: [
           GoRoute(path: Paths.dashboard, builder: (context, state) => const DashboardPage()),
           GoRoute(path: Paths.shg, builder: (context, state) => const ShgHomePage()),
-          comingSoon(Paths.services, 'Services'),
+          GoRoute(path: Paths.services, builder: (context, state) => const ServicesPage()),
           GoRoute(path: Paths.marketplace, builder: (context, state) => const MarketplaceHomePage()),
-          comingSoon(Paths.profile, 'Profile'),
+          GoRoute(path: Paths.profile, builder: (context, state) => const ProfilePage()),
           GoRoute(path: Paths.shgMembers, builder: (context, state) => const ShgMembersPage()),
           GoRoute(path: Paths.shgDocuments, builder: (context, state) => const ShgDocumentsPage()),
           GoRoute(path: Paths.shgJoinRequests, builder: (context, state) => const ShgJoinRequestsPage()),
@@ -199,8 +200,8 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.reportsFederationGrowth, builder: (context, state) => const FederationGrowthPage()),
           GoRoute(path: Paths.analytics, builder: (context, state) => const AnalyticsDashboardPage()),
           GoRoute(path: Paths.analyticsShgList, builder: (context, state) => const AnalyticsShgListPage()),
-          comingSoon(Paths.profileSettings, 'Settings'),
-          comingSoon(Paths.profileLanguage, 'Language'),
+          GoRoute(path: Paths.profileSettings, builder: (context, state) => const SettingsPage()),
+          GoRoute(path: Paths.profileLanguage, builder: (context, state) => const LanguagePage()),
           GoRoute(path: Paths.adminUsers, builder: (context, state) => const AdminUsersPage()),
           GoRoute(path: Paths.adminSchemes, builder: (context, state) => const AdminSchemesPage()),
           GoRoute(path: Paths.adminMonitoring, builder: (context, state) => const AdminMonitoringPage()),
