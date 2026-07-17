@@ -83,12 +83,18 @@ import '../pages/training/course_detail_page.dart';
 import '../pages/training/course_quiz_page.dart';
 import '../pages/training/training_home_page.dart';
 import '../state/app_state.dart';
+import '../widgets/error_screen.dart';
 import 'paths.dart';
 
 GoRouter buildRouter(AppState appState) {
   return GoRouter(
     initialLocation: Paths.splash,
     refreshListenable: appState,
+    errorBuilder: (context, state) => AppErrorScreen(
+      title: 'Page not found',
+      message: "The page you're looking for doesn't exist or may have moved.",
+      onRetry: () => context.go(Paths.dashboard),
+    ),
     redirect: (context, state) {
       final onAuthFlow = !state.matchedLocation.startsWith('/app');
 
