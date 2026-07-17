@@ -137,7 +137,7 @@ Meetings, etc.:
 | Training | ✅ done | Model, repository, 4 screens (catalog, course detail, quiz, certificates). Quiz is a small generic 3-question set (not tied to specific course content — no quiz-content table in the schema), passing ≥2/3 marks the course certified; documented as a placeholder. Live-tested DB/RLS (own-progress insert, deny-progress-for-another-member, deny-direct-catalog-edit, shared shg visibility) and UI (progress bars, radio quiz, disabled-in-demo-mode submit) |
 | Digital payments | ✅ done | `PaymentProcessor` abstraction (`lib/services/payment_processor.dart`) with a `MockPaymentProcessor` that always succeeds and synthesizes a reference — swapping in a real gateway later is a one-file change. 3 screens (home, scan & pay, history). Live-tested DB/RLS: payments are **private to the owning member**, not shared shg-wide like savings/loans (deliberate — confirmed correct), deny-recording-for-another-member also confirmed. UI-tested: amount entry, mode chips, disabled-in-demo-mode Pay button |
 | Announcements | ✅ done | Model, repository, 2 screens (home list with unread-dot indicator + leader/staff-only post dialog, detail with read-receipt tracking via `announcement_reads`). Global (`shg_id is null`) + shg-scoped announcements merged via `.or()` query. Live-tested DB/RLS (member-post denied, leader-post allowed, shared shg read visibility, own read-receipt insert allowed, marking another member's receipt denied) and UI (list + detail render correctly in demo mode, member correctly sees no post button) |
-| Support (chat/voice/FAQ/tickets) | ⬜ not started | `support_tickets` + `support_messages`; voice support needs an external STT/TTS API — abstract behind an interface, mock for now |
+| Support (chat/voice/FAQ/tickets) | ✅ done | Model, dual-mode repository, 5 screens (hub, full ticket list, raise-ticket form, ticket detail/chat thread with staff status-change menu, FAQ accordion) + `VoiceSupportService` abstraction (`MockVoiceSupportService` cycles canned Q&A pairs) for the record→transcribe→answer flow, wired incl. `/app/support/ticket/:id`. Tickets are private per-member, visible to staff (crp/clf/admin) — staff see all tickets with the member's name shown; member sees only their own. Live-tested DB/RLS (own-ticket insert, deny-insert-for-another-member, own-ticket read, deny-read-for-non-owner-non-staff, staff-can-read-any, own-message insert, deny-message-for-non-owner-non-staff, staff-can-message-any, own-status-update, deny-status-update-for-non-owner-non-staff, staff-can-update-any — 10/10 passed) and UI (hub, ticket list, chat bubbles with correct mine/theirs alignment, raise-ticket form validation, FAQ accordion, voice support page all render correctly) |
 | AI Advisors (financial/scheme/market) | ⬜ not started | `ai_advisor_logs` table exists. **External LLM API is out of scope until keys are supplied** — build a `AiAdvisorService` interface with a canned/mock implementation now, swap in a real provider later |
 | Reports | ⬜ not started | `report_snapshots`; snapshots are meant to be generated server-side (Edge Function) — for now, repository can compute on-the-fly client-side from live tables as a placeholder |
 | Analytics | ⬜ not started | `analytics_kpis`; CRP/CLF/Admin dashboards already show a version of this from mock data — needs a real repository |
@@ -386,3 +386,32 @@ package is still the more robust long-term answer.
   the golden path on a fresh tab: list renders with unread dots, detail
   page renders title/date/body, member correctly has no post button
   (demo-mode auto-session as "Lakshmi", SHG Member). Next: Support module.
+- **2026-07-18 (cont'd)**: Built the full Support module (model, dual-mode
+  repository, 5 screens, `VoiceSupportService`/`MockVoiceSupportService`
+  abstraction). Tickets are private per-member but staff (crp/clf/admin)
+  can see and act on all of them — the same list/detail screens serve both
+  audiences by branching the query on `isStaff`, avoiding a separate staff
+  inbox. `flutter analyze` clean (same 9 pre-existing info-level lints, 0
+  new issues). Live-tested DB/RLS with a 3-profile fixture set (member A,
+  member B, staff) — all 10 checks passed (own-ticket insert, deny
+  insert-for-another-member, own-ticket read, deny read for a non-owner
+  non-staff member, staff-can-read-any, own-message insert, deny message
+  for a non-owner non-staff member, staff-can-message-any, own
+  status-update, staff-can-update-any); fixtures cleaned up and verified
+  zero remnants. Confirmed the `flutter-web-demo` server had gone stale
+  again (running but built before this iteration's new files — it never
+  hot-reloads) — restarted it, and this time even a *single* `navigate()`
+  call on the tab `preview_start` had just opened reproduced the same
+  orphaned-connection freeze from the Announcements iteration, confirming
+  that gotcha is real and not a one-off: `tabs_create` + one `navigate()`
+  on the fresh tab booted cleanly instead. UI-tested the golden path: hub
+  (quick-access tiles + ticket list), ticket detail (chat bubbles correctly
+  aligned mine-right/theirs-left with sender labels), raise-ticket form
+  (empty-subject validation error rendered correctly), FAQ accordion
+  (expands to show the answer), and the voice support page (mic button +
+  idle label render; the mock transcribe→answer tap flow render-verified
+  but not click-verified — this session's resized browser viewport
+  (412×915) produced a screenshot/click coordinate mismatch not seen on
+  the default viewport size, so exact-coordinate taps landed inconsistently;
+  worth avoiding `resize_window` on the demo tab in future iterations
+  unless truly needed). Next: AI Advisors module.

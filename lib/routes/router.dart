@@ -47,6 +47,12 @@ import '../pages/shg/member_detail_page.dart';
 import '../pages/shg/shg_documents_page.dart';
 import '../pages/shg/shg_home_page.dart';
 import '../pages/shg/shg_members_page.dart';
+import '../pages/support/support_chat_page.dart';
+import '../pages/support/support_faq_page.dart';
+import '../pages/support/support_home_page.dart';
+import '../pages/support/support_ticket_detail_page.dart';
+import '../pages/support/support_ticket_form_page.dart';
+import '../pages/support/support_voice_page.dart';
 import '../pages/training/certificates_page.dart';
 import '../pages/training/course_detail_page.dart';
 import '../pages/training/course_quiz_page.dart';
@@ -124,11 +130,11 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.paymentsQr, builder: (context, state) => const PaymentsQrPage()),
           GoRoute(path: Paths.paymentsHistory, builder: (context, state) => const PaymentsHistoryPage()),
           GoRoute(path: Paths.announcements, builder: (context, state) => const AnnouncementsHomePage()),
-          comingSoon(Paths.support, 'Support'),
-          comingSoon(Paths.supportChat, 'Chat Support'),
-          comingSoon(Paths.supportVoice, 'Voice Support'),
-          comingSoon(Paths.supportFaq, 'FAQs'),
-          comingSoon(Paths.supportTicket, 'Raise a Ticket'),
+          GoRoute(path: Paths.support, builder: (context, state) => const SupportHomePage()),
+          GoRoute(path: Paths.supportChat, builder: (context, state) => const SupportChatPage()),
+          GoRoute(path: Paths.supportVoice, builder: (context, state) => const SupportVoicePage()),
+          GoRoute(path: Paths.supportFaq, builder: (context, state) => const SupportFaqPage()),
+          GoRoute(path: Paths.supportTicket, builder: (context, state) => const SupportTicketFormPage()),
           comingSoon(Paths.aiHub, 'AI Advisors'),
           comingSoon(Paths.aiFinancialAdvisor, 'AI Financial Advisor'),
           comingSoon(Paths.aiSchemeRecommender, 'AI Scheme Recommender'),
@@ -155,6 +161,7 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: '/app/training/:id', builder: (context, state) => CourseDetailPage(courseId: state.pathParameters['id']!)),
           GoRoute(path: '/app/training/:id/quiz', builder: (context, state) => CourseQuizPage(courseId: state.pathParameters['id']!)),
           GoRoute(path: '/app/announcements/:id', builder: (context, state) => AnnouncementDetailPage(announcementId: state.pathParameters['id']!)),
+          GoRoute(path: '/app/support/ticket/:id', builder: (context, state) => SupportTicketDetailPage(ticketId: state.pathParameters['id']!)),
           GoRoute(path: '/app/analytics/shg/:id', builder: (context, state) => ComingSoonPage(title: 'SHG Analytics')),
         ],
       ),

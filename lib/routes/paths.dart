@@ -72,6 +72,7 @@ class Paths {
   static const supportVoice = '/app/support/voice';
   static const supportFaq = '/app/support/faq';
   static const supportTicket = '/app/support/ticket';
+  static String supportTicketDetail(String id) => '/app/support/ticket/$id';
 
   static const aiHub = '/app/ai';
   static const aiFinancialAdvisor = '/app/ai/financial-advisor';
