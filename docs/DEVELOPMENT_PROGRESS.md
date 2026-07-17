@@ -126,7 +126,7 @@ Meetings, etc.:
 | Marketplace (products/orders/reviews) | ✅ done | 6 screens (home, product detail, add product, orders, order detail, reviews). Live-tested DB/RLS (own-listing insert, deny-listing-as-another-seller, cross-shg browse, seller-only order status update) and UI (grid + product detail render correctly). Needs Supabase Storage for product images eventually (not wired) |
 | Government schemes | ✅ done | Model, repository, 4 screens (catalog, detail, eligibility checker, tracking). Eligibility checker is a client-side keyword-matching heuristic against each scheme's eligibility text, not a real rules engine — documented as a deliberate placeholder. Live-tested DB/RLS (own-application insert, deny-apply-for-another-member, deny-direct-catalog-edit) and UI (status badges render correctly, eligibility filter toggle verified to actually change results) |
 | Training | ✅ done | Model, repository, 4 screens (catalog, course detail, quiz, certificates). Quiz is a small generic 3-question set (not tied to specific course content — no quiz-content table in the schema), passing ≥2/3 marks the course certified; documented as a placeholder. Live-tested DB/RLS (own-progress insert, deny-progress-for-another-member, deny-direct-catalog-edit, shared shg visibility) and UI (progress bars, radio quiz, disabled-in-demo-mode submit) |
-| Digital payments | ⬜ not started | `payments` table; **external payment gateway is out of scope until keys are supplied** — build the full UI/DB flow with a mock "processor" abstraction (see External APIs section below) |
+| Digital payments | ✅ done | `PaymentProcessor` abstraction (`lib/services/payment_processor.dart`) with a `MockPaymentProcessor` that always succeeds and synthesizes a reference — swapping in a real gateway later is a one-file change. 3 screens (home, scan & pay, history). Live-tested DB/RLS: payments are **private to the owning member**, not shared shg-wide like savings/loans (deliberate — confirmed correct), deny-recording-for-another-member also confirmed. UI-tested: amount entry, mode chips, disabled-in-demo-mode Pay button |
 | Announcements | 🟡 partial | List already reads mock data on dashboards; needs its own repository + detail screen + read-receipt tracking via `announcement_reads` |
 | Support (chat/voice/FAQ/tickets) | ⬜ not started | `support_tickets` + `support_messages`; voice support needs an external STT/TTS API — abstract behind an interface, mock for now |
 | AI Advisors (financial/scheme/market) | ⬜ not started | `ai_advisor_logs` table exists. **External LLM API is out of scope until keys are supplied** — build a `AiAdvisorService` interface with a canned/mock implementation now, swap in a real provider later |
@@ -351,3 +351,11 @@ package is still the more robust long-term answer.
   documented above (point 5) so it isn't re-diagnosed from scratch next
   time. Verified the full course list → detail → quiz flow renders and
   behaves correctly once past that. Next: Digital Payments module.
+- **2026-07-18 (cont'd)**: Built the full Digital Payments module (mock
+  processor abstraction + 3 screens). `flutter analyze` clean. Live-tested
+  DB/RLS — all 4 checks passed, confirming payments are correctly private
+  per-member (not shg-shared like most other modules). The demo server
+  (port 5001) had actually died between iterations (not just slow to boot
+  — `preview_list` showed it missing entirely); a plain restart fixed it.
+  UI-tested payments home, scan & pay form (amount entry + mode chips both
+  verified interactive), all correct. Next: Announcements module.

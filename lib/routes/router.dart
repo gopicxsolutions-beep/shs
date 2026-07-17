@@ -28,6 +28,9 @@ import '../pages/meetings/meeting_mom_page.dart';
 import '../pages/meetings/meeting_qr_page.dart';
 import '../pages/meetings/meeting_schedule_page.dart';
 import '../pages/meetings/meetings_home_page.dart';
+import '../pages/payments/payments_home_page.dart';
+import '../pages/payments/payments_history_page.dart';
+import '../pages/payments/payments_qr_page.dart';
 import '../pages/savings/savings_entry_page.dart';
 import '../pages/savings/savings_group_report_page.dart';
 import '../pages/savings/savings_history_page.dart';
@@ -115,9 +118,9 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.schemeTracking, builder: (context, state) => const SchemeTrackingPage()),
           GoRoute(path: Paths.training, builder: (context, state) => const TrainingHomePage()),
           GoRoute(path: Paths.trainingCertificates, builder: (context, state) => const CertificatesPage()),
-          comingSoon(Paths.payments, 'Digital Payments'),
-          comingSoon(Paths.paymentsQr, 'Scan & Pay'),
-          comingSoon(Paths.paymentsHistory, 'Payment History'),
+          GoRoute(path: Paths.payments, builder: (context, state) => const PaymentsHomePage()),
+          GoRoute(path: Paths.paymentsQr, builder: (context, state) => const PaymentsQrPage()),
+          GoRoute(path: Paths.paymentsHistory, builder: (context, state) => const PaymentsHistoryPage()),
           comingSoon(Paths.announcements, 'Announcements'),
           comingSoon(Paths.support, 'Support'),
           comingSoon(Paths.supportChat, 'Chat Support'),
