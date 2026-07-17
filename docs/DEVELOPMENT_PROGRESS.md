@@ -114,8 +114,8 @@ Meetings, etc.:
 | My SHG (members/documents) | ✅ done | Model, repository, 4 screens (shg home/members list/member detail/documents), wired incl. `/app/shg/members/:id`. Document upload is metadata-only — actual file upload needs a Supabase Storage bucket + file-picker plugin (neither wired yet) |
 | Financial records (cashbook/ledger/bank/audit) | ✅ done | One shared `FinancialLedgerPage(entryType, title)` screen reused across all 4 routes (they're identical shape, just filtered by `entry_type`) + add-entry dialog with running-balance calc. Live-tested: leader-only write denied for member, shared read works |
 | Livelihoods | ✅ done | Model, repository, 3 screens (home/entry/detail with Update Progress dialog). Live-tested DB/RLS + full UI golden path (see session log) — found and fixed a real Role-Select-skip bug in the process |
-| Marketplace (products/orders/reviews) | 🟡 built, DB test pending | Model, repository, 6 screens (home, product detail, add product, orders, order detail, reviews). `flutter analyze` clean. **DB/RLS live testing blocked by a sandbox-wide network outage** (DNS resolution failing for all external hosts, confirmed not Supabase-specific) — retry once connectivity returns, then mark done. Needs Supabase Storage for product images eventually (not wired) |
-| Government schemes | ⬜ not started | Catalog + `scheme_applications`; eligibility checker can be client-side rule evaluation for now |
+| Marketplace (products/orders/reviews) | ✅ done | 6 screens (home, product detail, add product, orders, order detail, reviews). Live-tested DB/RLS (own-listing insert, deny-listing-as-another-seller, cross-shg browse, seller-only order status update) and UI (grid + product detail render correctly). Needs Supabase Storage for product images eventually (not wired) |
+| Government schemes | ✅ done | Model, repository, 4 screens (catalog, detail, eligibility checker, tracking). Eligibility checker is a client-side keyword-matching heuristic against each scheme's eligibility text, not a real rules engine — documented as a deliberate placeholder. Live-tested DB/RLS (own-application insert, deny-apply-for-another-member, deny-direct-catalog-edit) and UI (status badges render correctly, eligibility filter toggle verified to actually change results) |
 | Training | ⬜ not started | `training_courses` + `course_progress`; quiz screen needs a quiz-content model (not in schema yet — add if needed) |
 | Digital payments | ⬜ not started | `payments` table; **external payment gateway is out of scope until keys are supplied** — build the full UI/DB flow with a mock "processor" abstraction (see External APIs section below) |
 | Announcements | 🟡 partial | List already reads mock data on dashboards; needs its own repository + detail screen + read-receipt tracking via `announcement_reads` |
@@ -202,6 +202,15 @@ during this session — recreate them each time, they aren't saved to a file):
 5. **Clean up every fixture row afterward** (`delete from ... where shg_id =
    '11111111-...'` across every table touched, plus the `auth.users` rows) —
    verify zero rows remain. Never leave synthetic data in the live project.
+6. **When you need a scalar (e.g. a generated id) back from a SELECT for use
+   in a later query, don't rely on `(Invoke-Sql "select id from ...").id`.**
+   PowerShell 5.1 deserializes a 1-row JSON array result inconsistently vs.
+   a 2+-row one (sometimes unwrapped to a bare object, sometimes an array
+   needing `[0]`), and got this wrong twice, producing confusing empty-string
+   UUID errors downstream. Use a `Get-Scalar` helper that always wraps the
+   query in `select json_agg(t)::text from (<query>) t` and parses the JSON
+   string with `ConvertFrom-Json` — this guarantees a consistent array shape
+   every time, regardless of row count.
 
 Verified this way already: Savings (own-entry insert, deny-insert-for-others,
 leader-only verify, shared read), Loans (self-apply, deny-self-approve,
@@ -308,3 +317,15 @@ package is still the more robust long-term answer.
   in the meantime since `flutter analyze` and local file work don't need
   network — will circle back and finish Marketplace's DB testing once the
   outage clears.
+- **2026-07-18 (cont'd)**: Network recovered. Built the full Government
+  Schemes module (4 screens including a keyword-heuristic eligibility
+  checker) while waiting, `flutter analyze` clean. Finished the deferred
+  Marketplace DB/RLS tests plus new Schemes tests — all correct (own-listing
+  insert, deny-as-another-seller, cross-shg browse, seller-only order
+  status update, own-application insert, deny-apply-for-another-member,
+  deny-direct-catalog-edit). Hit and fixed the PowerShell scalar-extraction
+  bug documented above (point 6) along the way. Live-tested both modules'
+  UI on the demo server — grid/detail rendering, disabled-in-demo-mode
+  buttons, and the eligibility filter actually changing results when a
+  toggle flips, all confirmed correct. All fixtures cleaned up (verified
+  zero remnants). Next: Training module.

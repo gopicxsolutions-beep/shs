@@ -34,6 +34,10 @@ import '../pages/savings/savings_history_page.dart';
 import '../pages/savings/savings_home_page.dart';
 import '../pages/savings/savings_ledger_page.dart';
 import '../pages/savings/savings_statement_page.dart';
+import '../pages/schemes/scheme_detail_page.dart';
+import '../pages/schemes/scheme_eligibility_page.dart';
+import '../pages/schemes/scheme_tracking_page.dart';
+import '../pages/schemes/schemes_home_page.dart';
 import '../pages/shg/member_detail_page.dart';
 import '../pages/shg/shg_documents_page.dart';
 import '../pages/shg/shg_home_page.dart';
@@ -102,9 +106,9 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.marketplaceAddProduct, builder: (context, state) => const AddProductPage()),
           GoRoute(path: Paths.marketplaceOrders, builder: (context, state) => const MarketplaceOrdersPage()),
           GoRoute(path: Paths.marketplaceReviews, builder: (context, state) => const MarketplaceReviewsPage()),
-          comingSoon(Paths.schemes, 'Government Schemes'),
-          comingSoon(Paths.schemeEligibility, 'Eligibility Checker'),
-          comingSoon(Paths.schemeTracking, 'Application Tracking'),
+          GoRoute(path: Paths.schemes, builder: (context, state) => const SchemesHomePage()),
+          GoRoute(path: Paths.schemeEligibility, builder: (context, state) => const SchemeEligibilityPage()),
+          GoRoute(path: Paths.schemeTracking, builder: (context, state) => const SchemeTrackingPage()),
           comingSoon(Paths.training, 'Training'),
           comingSoon(Paths.trainingCertificates, 'Certificates'),
           comingSoon(Paths.payments, 'Digital Payments'),
@@ -138,7 +142,7 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: '/app/livelihood/:id', builder: (context, state) => LivelihoodDetailPage(activityId: state.pathParameters['id']!)),
           GoRoute(path: '/app/marketplace/product/:id', builder: (context, state) => ProductDetailPage(productId: state.pathParameters['id']!)),
           GoRoute(path: '/app/marketplace/orders/:id', builder: (context, state) => OrderDetailPage(orderId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/schemes/:id', builder: (context, state) => ComingSoonPage(title: 'Scheme Detail')),
+          GoRoute(path: '/app/schemes/:id', builder: (context, state) => SchemeDetailPage(schemeId: state.pathParameters['id']!)),
           GoRoute(path: '/app/training/:id', builder: (context, state) => ComingSoonPage(title: 'Course Detail')),
           GoRoute(path: '/app/training/:id/quiz', builder: (context, state) => ComingSoonPage(title: 'Course Quiz')),
           GoRoute(path: '/app/announcements/:id', builder: (context, state) => ComingSoonPage(title: 'Announcement')),
