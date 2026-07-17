@@ -84,6 +84,7 @@ class _OtpPageState extends State<OtpPage> {
     });
     try {
       await _authService.verifyOtp(_phone, code);
+      if (!mounted) return;
       final appState = context.read<AppState>();
       await appState.refreshProfile();
       if (!mounted) return;

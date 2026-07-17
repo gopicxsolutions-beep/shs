@@ -1,0 +1,136 @@
+import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../data/members.dart' as mock_members;
+import '../data/meetings.dart' as mock;
+import '../models/meeting.dart';
+import '../services/supabase_service.dart';
+
+/// Backed by `public.meetings` + related tables when Supabase is configured;
+/// falls back to `lib/data/meetings.dart` / `lib/data/members.dart` otherwise
+/// (same dual-mode pattern as [SavingsRepository]).
+class MeetingRepository {
+  SupabaseClient get _client => SupabaseService.instance.client;
+  bool get _live => SupabaseService.isConfigured;
+
+  Future<List<Meeting>> fetchForShg(String? shgId) async {
+    if (!_live || shgId == null) return _mockMeetings();
+    final rows = await _client.from('meetings').select().eq('shg_id', shgId).order('meeting_date', ascending: false);
+    return (rows as List).map((r) => Meeting.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
+  Future<Meeting?> fetchById(String id) async {
+    if (!_live) {
+      final matches = _mockMeetings().where((m) => m.id == id);
+      return matches.isEmpty ? null : matches.first;
+    }
+    final row = await _client.from('meetings').select().eq('id', id).maybeSingle();
+    return row == null ? null : Meeting.fromMap(row);
+  }
+
+  Future<void> schedule({
+    required String? shgId,
+    required DateTime date,
+    required String time,
+    required String venue,
+    required String agenda,
+  }) async {
+    if (!_live || shgId == null) return;
+    await _client.from('meetings').insert({
+      'shg_id': shgId,
+      'meeting_date': date.toIso8601String().split('T').first,
+      'meeting_time': time,
+      'venue': venue,
+      'agenda': agenda,
+      'status': 'upcoming',
+    });
+  }
+
+  Future<void> setStatus(String id, String status) async {
+    if (!_live) return;
+    await _client.from('meetings').update({'status': status}).eq('id', id);
+  }
+
+  /// The SHG's member roster (id + name) — used to build attendance sheets.
+  Future<List<(String id, String name)>> fetchRoster(String? shgId) async {
+    if (!_live || shgId == null) {
+      return mock_members.members.map((m) => (m.id, m.name)).toList();
+    }
+    final rows = await _client.from('profiles').select('id, name').eq('shg_id', shgId).order('name');
+    return (rows as List).map((r) => (r['id'] as String, r['name'] as String)).toList();
+  }
+
+  /// Full roster merged with this meeting's attendance rows (absent by
+  /// default for anyone not yet marked).
+  Future<List<AttendanceRow>> fetchAttendance(String meetingId, String? shgId) async {
+    final roster = await fetchRoster(shgId);
+    if (!_live) {
+      return roster.map((m) => AttendanceRow(memberId: m.$1, memberName: m.$2, present: true)).toList();
+    }
+    final rows = await _client.from('meeting_attendance').select('member_id, present').eq('meeting_id', meetingId);
+    final presentById = <String, bool>{for (final r in rows as List) r['member_id'] as String: r['present'] as bool? ?? false};
+    return roster.map((m) => AttendanceRow(memberId: m.$1, memberName: m.$2, present: presentById[m.$1] ?? false)).toList();
+  }
+
+  Future<void> markAttendance(String meetingId, String memberId, bool present) async {
+    if (!_live) return;
+    await _client.from('meeting_attendance').upsert({
+      'meeting_id': meetingId,
+      'member_id': memberId,
+      'present': present,
+      'marked_at': DateTime.now().toIso8601String(),
+    }, onConflict: 'meeting_id,member_id');
+  }
+
+  Future<MeetingMinutes?> fetchLatestMinutes(String meetingId) async {
+    if (!_live) return null;
+    final rows = await _client.from('meeting_minutes').select().eq('meeting_id', meetingId).order('created_at', ascending: false).limit(1);
+    final list = rows as List;
+    return list.isEmpty ? null : MeetingMinutes.fromMap(list.first as Map<String, dynamic>);
+  }
+
+  Future<void> saveMinutes(String meetingId, List<String> decisions) async {
+    if (!_live) return;
+    await _client.from('meeting_minutes').insert({'meeting_id': meetingId, 'decisions': decisions});
+  }
+
+  Future<List<MeetingActionItem>> fetchActionItems(String meetingId) async {
+    if (!_live) return const [];
+    final rows = await _client.from('meeting_action_items').select('*, profiles(name)').eq('meeting_id', meetingId).order('due_date');
+    return (rows as List).map((r) => MeetingActionItem.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> addActionItem(String meetingId, String task, {String? ownerId, DateTime? dueDate}) async {
+    if (!_live) return;
+    await _client.from('meeting_action_items').insert({
+      'meeting_id': meetingId,
+      'task': task,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (dueDate != null) 'due_date': dueDate.toIso8601String().split('T').first,
+    });
+  }
+
+  Future<void> toggleActionItem(String id, bool done) async {
+    if (!_live) return;
+    await _client.from('meeting_action_items').update({'done': done}).eq('id', id);
+  }
+
+  List<Meeting> _mockMeetings() => mock.meetings
+      .map((m) => Meeting(
+            id: m.id,
+            shgId: 'demo-shg',
+            date: _parseMockDate(m.date),
+            time: m.time,
+            venue: m.venue,
+            agenda: m.agenda,
+            status: m.status,
+          ))
+      .toList();
+
+  DateTime _parseMockDate(String s) {
+    try {
+      return DateFormat('dd MMM yyyy').parse(s);
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+}

@@ -260,7 +260,7 @@ class _ShgSearchSheetState extends State<_ShgSearchSheet> {
                         ? Center(child: Text('No SHGs found', style: AppTheme.sans(13, color: Neutral.c400)))
                         : ListView.separated(
                             itemCount: _results.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            separatorBuilder: (_, _) => const SizedBox(height: 8),
                             itemBuilder: (context, i) {
                               final shg = _results[i];
                               return AppCard(

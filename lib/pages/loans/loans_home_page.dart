@@ -8,7 +8,6 @@ import '../../models/types.dart';
 import '../../repositories/loan_repository.dart';
 import '../../routes/paths.dart';
 import '../../state/app_state.dart';
-import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
 import '../../widgets/app_card.dart';

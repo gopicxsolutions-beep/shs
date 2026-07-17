@@ -4,20 +4,36 @@ This file is the durable cross-session record for the "build every module end-to
 on Supabase" effort. Each work session should read this file first, pick up the next
 `pending` module, and update this file before ending.
 
-## Environment constraints (read this first)
+## Environment status
 
-This dev environment has **no Flutter SDK installed** (the `flutter` PATH entry is
-stale — `C:\flutter` does not exist on disk) and **no live Supabase project**
-connected (only `.env.json.example` is present, no real `.env.json`). That means:
+**Resolved**: Flutter SDK 3.44.6 is now installed at `C:\flutter` (was missing —
+stale PATH entry — fixed by downloading via `curl.exe`, NOT `Invoke-WebRequest`,
+which throttles large downloads to ~0.24 MB/s due to progress-bar rendering
+overhead in Windows PowerShell 5.1). `flutter pub get` and `flutter analyze` both
+run cleanly now — 0 errors/warnings on the foundation + Savings + Loans modules
+(a handful of trivial info-level lints fixed: unused import, missing `mounted`
+check after an async gap, double-underscore lambda params).
 
-- `flutter analyze`, `flutter test`, `flutter pub get`, `flutter run` cannot be
-  executed here. All code so far has been verified by careful manual read-through
-  against the actual widget/package APIs in this repo, not by compiling.
-- No SQL migration has been applied to a real Postgres instance — the RLS policies
-  in `0002_rls_policies.sql` are unexecuted against a live database.
-- **Before trusting this code in production**: run `flutter pub get && flutter
-  analyze` and `supabase db push` (or paste the migrations into the SQL editor) in
-  an environment that actually has the toolchain, then fix whatever surfaces.
+**Resolved**: A live Supabase project (`pccbwfmlhpvieetetrpx`) is connected —
+see the "Live Supabase project" section below.
+
+**Known limitation — browser automation vs. Flutter web**: the `flutter-web` dev
+server (`.claude/launch.json`) runs and renders correctly (verified via
+screenshot at a proper mobile viewport, and Supabase does initialize against the
+live project), and real button taps work via the Browser pane. But **typing into
+Flutter web `TextField`s via generic browser automation does not work** — Flutter
+web (CanvasKit renderer) owns its own text-editing state machine; neither
+coordinate-based `type`/`key` actions nor manually dispatching DOM `InputEvent`s
+on the hidden native `<input>` sync into Flutter's internal state. (Flutter's
+accessibility semantics tree *can* be activated by clicking the tiny
+`flt-semantics-placeholder` element at viewport (0,0), which makes `read_page`
+return real `textbox`/`button` roles — useful for finding elements — but
+`form_input` fills only the semantics-layer shadow element, not the real one
+Flutter listens to.) **Do not keep fighting this** — for real automated E2E
+coverage, use Flutter's own `integration_test` package (drives the app through
+Flutter's widget/finder APIs, not raw DOM events) or `flutter drive`, not browser
+automation tools. This is the recommended next step for the "comprehensive
+end-to-end testing" requirement once enough modules exist to make it worthwhile.
 
 ## Architecture pattern (replicate this for every remaining module)
 
@@ -76,7 +92,7 @@ Meetings, etc.:
 | Onboarding (Login/OTP/Profile Setup/Role Select) | ✅ done | Real phone-OTP via Supabase Auth; profile setup persists to `profiles`; SHG search via `shg_directory` view |
 | Savings | ✅ done | Model, repository, 5 screens (home/entry/history/ledger[realtime]/statement/group-report), wired in router |
 | Loans | ✅ done | Model, repository, 5 screens (home/apply/approval/tracking/detail with payment recording), wired in router incl. `/app/loans/:id` |
-| Meetings | ⬜ not started | Schedule / attendance / QR check-in / MoM / action items |
+| Meetings | ✅ done | Model, repository, 6 screens (home/schedule/attendance roster/self check-in/detail/MoM with decisions+action items), wired incl. `/app/meetings/:id` and `/app/meetings/:id/mom`. QR check-in is real attendance-marking logic behind a tap, not a camera scanner (no camera plugin in pubspec yet) |
 | My SHG (members/documents) | ⬜ not started | Member list + detail, document list (Supabase Storage for uploads) |
 | Financial records (cashbook/ledger/bank/audit) | ⬜ not started | Backed by `financial_ledger` table |
 | Livelihoods | ⬜ not started | `livelihood_activities` table |
@@ -147,3 +163,16 @@ password.
   Got real Supabase project credentials from the user; wired `.env.json`
   (client-safe values only); migration push blocked on network/account issues
   documented above. Next: Meetings module, and resolve the migration push.
+- **2026-07-17 (cont'd)**: Flutter SDK finished installing (fixed the slow
+  download — see environment status above). Got a Supabase personal access
+  token from the user and pushed both migrations live via the Management API.
+  Ran `flutter analyze` for the first time — 0 errors on the foundation +
+  Savings + Loans modules (fixed a handful of trivial lints). Started the
+  `flutter-web` dev server and verified it live in the Browser pane: renders
+  correctly, Supabase initializes against the real project, real button
+  navigation works; documented the browser-automation-vs-Flutter-web-text-input
+  limitation above. Built the full Meetings module (6 screens) — `flutter
+  analyze` caught one real bug during development (passed a non-existent
+  `decoration` param to `AppTheme.sans()`, fixed by using `.copyWith()`
+  instead), confirming the analyze-every-module habit is worth keeping.
+  Next: My SHG (members/documents) or Financial Records module.

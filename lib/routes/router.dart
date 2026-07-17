@@ -12,6 +12,12 @@ import '../pages/loans/loan_approval_page.dart';
 import '../pages/loans/loan_detail_page.dart';
 import '../pages/loans/loan_tracking_page.dart';
 import '../pages/loans/loans_home_page.dart';
+import '../pages/meetings/meeting_attendance_page.dart';
+import '../pages/meetings/meeting_detail_page.dart';
+import '../pages/meetings/meeting_mom_page.dart';
+import '../pages/meetings/meeting_qr_page.dart';
+import '../pages/meetings/meeting_schedule_page.dart';
+import '../pages/meetings/meetings_home_page.dart';
 import '../pages/savings/savings_entry_page.dart';
 import '../pages/savings/savings_group_report_page.dart';
 import '../pages/savings/savings_history_page.dart';
@@ -69,10 +75,10 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.loanApply, builder: (context, state) => const LoanApplyPage()),
           GoRoute(path: Paths.loanApproval, builder: (context, state) => const LoanApprovalPage()),
           GoRoute(path: Paths.loanTracking, builder: (context, state) => const LoanTrackingPage()),
-          comingSoon(Paths.meetings, 'Meetings'),
-          comingSoon(Paths.meetingSchedule, 'Schedule Meeting'),
-          comingSoon(Paths.meetingAttendance, 'Attendance'),
-          comingSoon(Paths.meetingQr, 'QR Attendance'),
+          GoRoute(path: Paths.meetings, builder: (context, state) => const MeetingsHomePage()),
+          GoRoute(path: Paths.meetingSchedule, builder: (context, state) => const MeetingSchedulePage()),
+          GoRoute(path: Paths.meetingAttendance, builder: (context, state) => const MeetingAttendancePage()),
+          GoRoute(path: Paths.meetingQr, builder: (context, state) => const MeetingQrPage()),
           comingSoon(Paths.financialCashbook, 'Cashbook'),
           comingSoon(Paths.financialLedger, 'General Ledger'),
           comingSoon(Paths.financialBank, 'Bank Reconciliation'),
@@ -113,8 +119,8 @@ GoRouter buildRouter(AppState appState) {
           comingSoon(Paths.adminMonitoring, 'System Monitoring'),
           GoRoute(path: '/app/shg/members/:id', builder: (context, state) => ComingSoonPage(title: 'Member Detail')),
           GoRoute(path: '/app/loans/:id', builder: (context, state) => LoanDetailPage(loanId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/meetings/:id', builder: (context, state) => ComingSoonPage(title: 'Meeting Detail')),
-          GoRoute(path: '/app/meetings/:id/mom', builder: (context, state) => ComingSoonPage(title: 'Minutes of Meeting')),
+          GoRoute(path: '/app/meetings/:id', builder: (context, state) => MeetingDetailPage(meetingId: state.pathParameters['id']!)),
+          GoRoute(path: '/app/meetings/:id/mom', builder: (context, state) => MeetingMomPage(meetingId: state.pathParameters['id']!)),
           GoRoute(path: '/app/livelihood/:id', builder: (context, state) => ComingSoonPage(title: 'Activity Detail')),
           GoRoute(path: '/app/marketplace/product/:id', builder: (context, state) => ComingSoonPage(title: 'Product Detail')),
           GoRoute(path: '/app/marketplace/orders/:id', builder: (context, state) => ComingSoonPage(title: 'Order Detail')),
