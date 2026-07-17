@@ -42,6 +42,14 @@ class AiHubPage extends StatelessWidget {
             subtitle: 'Pricing & selling tips for your products',
             onTap: () => context.go(Paths.aiMarketAdvisor),
           ),
+          const SizedBox(height: 12),
+          _AdvisorCard(
+            icon: Icons.mic_rounded,
+            tone: TileTone.sky,
+            title: 'Voice Assistant',
+            subtitle: 'Ask in Telugu, Hindi or English — hands-free',
+            onTap: () => context.go(Paths.aiVoiceAssistant),
+          ),
         ],
       ),
     );

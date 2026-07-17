@@ -5,6 +5,7 @@ import '../pages/admin/admin_schemes_page.dart';
 import '../pages/admin/admin_users_page.dart';
 import '../pages/ai/ai_advisor_chat_page.dart';
 import '../pages/ai/ai_hub_page.dart';
+import '../pages/ai/ai_voice_assistant_page.dart';
 import '../pages/analytics/analytics_dashboard_page.dart';
 import '../pages/analytics/analytics_shg_detail_page.dart';
 import '../pages/analytics/analytics_shg_list_page.dart';
@@ -184,6 +185,7 @@ GoRouter buildRouter(AppState appState) {
             path: Paths.aiMarketAdvisor,
             builder: (context, state) => const AiAdvisorChatPage(advisorType: 'market', title: 'Market Advisor', hint: 'Ask about pricing, demand, or selling your products.'),
           ),
+          GoRoute(path: Paths.aiVoiceAssistant, builder: (context, state) => const AiVoiceAssistantPage()),
           GoRoute(path: Paths.reports, builder: (context, state) => const ReportsHubPage()),
           GoRoute(path: Paths.reportsMember, builder: (context, state) => const MemberReportPage()),
           GoRoute(path: Paths.reportsLoanStatement, builder: (context, state) => const LoanStatementPage()),

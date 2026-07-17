@@ -80,6 +80,7 @@ class Paths {
   static const aiFinancialAdvisor = '/app/ai/financial-advisor';
   static const aiSchemeRecommender = '/app/ai/scheme-recommender';
   static const aiMarketAdvisor = '/app/ai/market-advisor';
+  static const aiVoiceAssistant = '/app/ai/voice-assistant';
 
   static const reports = '/app/reports';
   static const reportsMember = '/app/reports/member';
