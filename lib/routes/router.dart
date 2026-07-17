@@ -2,6 +2,9 @@ import 'package:go_router/go_router.dart';
 import '../layout/app_shell.dart';
 import '../pages/ai/ai_advisor_chat_page.dart';
 import '../pages/ai/ai_hub_page.dart';
+import '../pages/analytics/analytics_dashboard_page.dart';
+import '../pages/analytics/analytics_shg_detail_page.dart';
+import '../pages/analytics/analytics_shg_list_page.dart';
 import '../pages/auth/login_page.dart';
 import '../pages/auth/otp_page.dart';
 import '../pages/auth/profile_setup_page.dart';
@@ -158,8 +161,8 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.reportsMember, builder: (context, state) => const MemberReportPage()),
           GoRoute(path: Paths.reportsShg, builder: (context, state) => const ShgReportPage()),
           GoRoute(path: Paths.reportsFederation, builder: (context, state) => const FederationReportPage()),
-          comingSoon(Paths.analytics, 'Analytics'),
-          comingSoon(Paths.analyticsShgList, 'SHGs Monitoring'),
+          GoRoute(path: Paths.analytics, builder: (context, state) => const AnalyticsDashboardPage()),
+          GoRoute(path: Paths.analyticsShgList, builder: (context, state) => const AnalyticsShgListPage()),
           comingSoon(Paths.profileSettings, 'Settings'),
           comingSoon(Paths.profileLanguage, 'Language'),
           comingSoon(Paths.adminUsers, 'Manage Users'),
@@ -177,7 +180,7 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: '/app/training/:id/quiz', builder: (context, state) => CourseQuizPage(courseId: state.pathParameters['id']!)),
           GoRoute(path: '/app/announcements/:id', builder: (context, state) => AnnouncementDetailPage(announcementId: state.pathParameters['id']!)),
           GoRoute(path: '/app/support/ticket/:id', builder: (context, state) => SupportTicketDetailPage(ticketId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/analytics/shg/:id', builder: (context, state) => ComingSoonPage(title: 'SHG Analytics')),
+          GoRoute(path: '/app/analytics/shg/:id', builder: (context, state) => AnalyticsShgDetailPage(shgId: state.pathParameters['id']!)),
         ],
       ),
     ],
