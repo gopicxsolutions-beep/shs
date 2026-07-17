@@ -75,7 +75,7 @@ Meetings, etc.:
 | Foundation (RLS, services, AppState, auth) | ✅ done | `0002_rls_policies.sql`, `lib/services/*`, `lib/state/app_state.dart`, auth pages |
 | Onboarding (Login/OTP/Profile Setup/Role Select) | ✅ done | Real phone-OTP via Supabase Auth; profile setup persists to `profiles`; SHG search via `shg_directory` view |
 | Savings | ✅ done | Model, repository, 5 screens (home/entry/history/ledger[realtime]/statement/group-report), wired in router |
-| Loans | ⬜ not started | Apply / approval / tracking / detail. Mirrors Savings pattern closely — do this one next |
+| Loans | ✅ done | Model, repository, 5 screens (home/apply/approval/tracking/detail with payment recording), wired in router incl. `/app/loans/:id` |
 | Meetings | ⬜ not started | Schedule / attendance / QR check-in / MoM / action items |
 | My SHG (members/documents) | ⬜ not started | Member list + detail, document list (Supabase Storage for uploads) |
 | Financial records (cashbook/ledger/bank/audit) | ⬜ not started | Backed by `financial_ledger` table |
@@ -108,10 +108,40 @@ small interface in `lib/services/` with:
 None of these exist yet — build them alongside their module (e.g. `AiAdvisorService`
 when building the AI Advisors module), not speculatively ahead of time.
 
+## Live Supabase project
+
+A real project now exists: `pccbwfmlhpvieetetrpx` (URL in the gitignored
+`.env.json`, which is populated with the URL + anon key only). **Migrations are
+NOT yet applied to it.** Two blockers found while trying:
+
+1. This sandbox can only reach the internet over HTTPS (443) — confirmed by
+   direct TCP tests. Both direct Postgres (`5432`) and the connection pooler
+   (`6543`) are unreachable, so `supabase db push` cannot run from here (it
+   needs a real Postgres wire-protocol connection). This matches the warning
+   already at the top of `0001_init_schema.sql`.
+2. The Supabase CLI on this machine is logged into a different account (one
+   that owns an unrelated "humanproof" project) than the account that owns
+   `pccbwfmlhpvieetetrpx`, so `supabase link` also fails on privileges even
+   before the network issue would matter.
+
+**Next session should either**: (a) check if the user ran `supabase db push`
+themselves and the schema is now live — if so, everything in this repo should
+work against it as-is — or (b) if they provided a Supabase **personal access
+token** (Management API token, not anon/service key), use it to push the SQL
+via `POST https://api.supabase.com/v1/projects/{ref}/database/query` over
+HTTPS instead of a direct DB connection. Never write the DB password or
+service-role key into any repo file — both were shared in chat and should be
+treated as sensitive (recommend the user rotate the DB password).
+
 ## Session log
 
 - **2026-07-17**: Built the foundation (RLS policies for all 27 tables, Supabase
   service/repository layer, real phone-OTP auth wired into onboarding, session-
   aware `AppState`/router redirect logic) and the full Savings module (5 screens +
   realtime ledger). Established the model/repository/page pattern documented above.
-  Next: Loans module.
+- **2026-07-17 (cont'd)**: Built the full Loans module (5 screens: home, apply,
+  approval with EMI-entry dialog, tracking, detail with payment recording).
+  Started installing the Flutter SDK locally (was missing — stale PATH entry).
+  Got real Supabase project credentials from the user; wired `.env.json`
+  (client-safe values only); migration push blocked on network/account issues
+  documented above. Next: Meetings module, and resolve the migration push.

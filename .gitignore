@@ -36,3 +36,7 @@ logs
 # Local secrets (Supabase keys, etc.) — never commit
 .env.json
 *.env
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
