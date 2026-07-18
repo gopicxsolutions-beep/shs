@@ -161,6 +161,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                     IconButton(
                       icon: _sending ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(Icons.send_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
                       onPressed: SupabaseService.isConfigured && !_sending ? () => _send(memberId) : null,
+                      tooltip: 'Send message',
                     ),
                   ],
                 ),

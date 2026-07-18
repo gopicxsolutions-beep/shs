@@ -98,6 +98,7 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                         IconButton(
                           icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
                           onPressed: SupabaseService.isConfigured ? _addDecision : null,
+                          tooltip: 'Add decision',
                         ),
                       ]),
                     ],
@@ -150,6 +151,7 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                           IconButton(
                             icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
                             onPressed: SupabaseService.isConfigured ? _addActionItem : null,
+                            tooltip: 'Add action item',
                           ),
                         ]),
                       ),

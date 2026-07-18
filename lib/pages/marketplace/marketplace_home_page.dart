@@ -22,7 +22,7 @@ class MarketplaceHomePage extends StatelessWidget {
     return Scaffold(
       appBar: PageHeader(
         title: 'Marketplace',
-        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.marketplaceAddProduct)),
+        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.marketplaceAddProduct), tooltip: 'Add product'),
       ),
       body: AppAsyncBuilder<List<Product>>(
         future: repo.fetchProducts,

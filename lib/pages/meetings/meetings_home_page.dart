@@ -37,7 +37,7 @@ class MeetingsHomePage extends StatelessWidget {
       appBar: PageHeader(
         title: 'Meetings',
         right: isLeaderOrStaff
-            ? IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.meetingSchedule))
+            ? IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.meetingSchedule), tooltip: 'Schedule meeting')
             : null,
       ),
       body: AppAsyncBuilder<List<Meeting>>(

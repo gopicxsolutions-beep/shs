@@ -36,7 +36,7 @@ class LivelihoodHomePage extends StatelessWidget {
     return Scaffold(
       appBar: PageHeader(
         title: 'Livelihoods',
-        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.livelihoodEntry)),
+        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.livelihoodEntry), tooltip: 'Add activity'),
       ),
       body: AppAsyncBuilder<List<LivelihoodActivity>>(
         future: () => isLeaderOrStaff ? repo.fetchForShg(shgId) : repo.fetchForMember(memberId),

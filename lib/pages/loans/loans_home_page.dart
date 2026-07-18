@@ -40,7 +40,7 @@ class LoansHomePage extends StatelessWidget {
     return Scaffold(
       appBar: PageHeader(
         title: 'Loans',
-        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.loanApply)),
+        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.loanApply), tooltip: 'Apply for a loan'),
       ),
       body: AppAsyncBuilder<List<Loan>>(
         future: () => isLeaderOrStaff ? repo.fetchForShg(shgId) : repo.fetchForMember(memberId),

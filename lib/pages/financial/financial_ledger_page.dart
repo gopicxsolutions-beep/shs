@@ -40,6 +40,7 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
         right: isLeaderOrStaff
             ? IconButton(
                 icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
+                tooltip: 'Add entry',
                 onPressed: !SupabaseService.isConfigured
                     ? null
                     : () async {

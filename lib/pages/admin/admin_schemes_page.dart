@@ -94,6 +94,7 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
             ? IconButton(
                 icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
                 onPressed: SupabaseService.isConfigured ? _addScheme : null,
+                tooltip: 'Add scheme',
               )
             : null,
       ),
@@ -127,6 +128,7 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
                         IconButton(
                           icon: Icon(Icons.delete_outline_rounded, color: SupabaseService.isConfigured ? Accent.red500 : Neutral.c300),
                           onPressed: SupabaseService.isConfigured ? () => _deleteScheme(s) : null,
+                          tooltip: 'Delete ${s.name}',
                         ),
                     ],
                   ),

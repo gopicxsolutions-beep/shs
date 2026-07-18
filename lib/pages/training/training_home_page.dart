@@ -38,7 +38,7 @@ class TrainingHomePage extends StatelessWidget {
     return Scaffold(
       appBar: PageHeader(
         title: 'Training',
-        right: IconButton(icon: const Icon(Icons.workspace_premium_rounded, color: Brand.c600), onPressed: () => context.go(Paths.trainingCertificates)),
+        right: IconButton(icon: const Icon(Icons.workspace_premium_rounded, color: Brand.c600), onPressed: () => context.go(Paths.trainingCertificates), tooltip: 'My certificates'),
       ),
       body: AppAsyncBuilder<_TrainingData>(
         future: () async {

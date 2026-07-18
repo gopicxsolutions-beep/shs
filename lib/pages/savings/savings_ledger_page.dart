@@ -35,7 +35,7 @@ class SavingsLedgerPage extends StatelessWidget {
       appBar: PageHeader(
         title: 'Savings Ledger',
         subtitle: live ? 'Live' : null,
-        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.savingsEntry)),
+        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.savingsEntry), tooltip: 'Add savings'),
       ),
       body: live
           ? StreamBuilder<List<SavingsEntry>>(

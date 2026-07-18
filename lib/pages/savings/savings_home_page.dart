@@ -35,6 +35,7 @@ class SavingsHomePage extends StatelessWidget {
         right: IconButton(
           icon: const Icon(Icons.add_circle_rounded, color: Brand.c600),
           onPressed: () => context.go(Paths.savingsEntry),
+          tooltip: 'Add savings',
         ),
       ),
       body: AppAsyncBuilder<List<SavingsEntry>>(

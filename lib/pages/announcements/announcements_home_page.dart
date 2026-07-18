@@ -95,6 +95,7 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
             ? IconButton(
                 icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
                 onPressed: SupabaseService.isConfigured ? () => _post(shgId, memberId) : null,
+                tooltip: 'Post announcement',
               )
             : null,
       ),

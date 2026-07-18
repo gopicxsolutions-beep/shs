@@ -132,6 +132,7 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
                 IconButton(
                   icon: _asking ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(Icons.send_rounded, color: Brand.c600),
                   onPressed: _asking ? null : () => _ask(memberId),
+                  tooltip: 'Send',
                 ),
               ],
             ),

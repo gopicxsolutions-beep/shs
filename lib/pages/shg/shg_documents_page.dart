@@ -65,6 +65,7 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
             ? IconButton(
                 icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
                 onPressed: SupabaseService.isConfigured ? () => _addDocument(shgId) : null,
+                tooltip: 'Add document',
               )
             : null,
       ),

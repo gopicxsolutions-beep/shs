@@ -102,6 +102,7 @@ class _QrScannerPageState extends State<_QrScannerPage> {
             builder: (context, state, child) => IconButton(
               icon: Icon(state.torchState == TorchState.on ? Icons.flash_on_rounded : Icons.flash_off_rounded),
               onPressed: state.torchState == TorchState.unavailable ? null : () => _controller.toggleTorch(),
+              tooltip: state.torchState == TorchState.on ? 'Turn off flashlight' : 'Turn on flashlight',
             ),
           ),
         ],
