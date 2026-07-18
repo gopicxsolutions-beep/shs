@@ -60,12 +60,20 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
       _asking = true;
     });
     _query.clear();
-    final response = await _repo.ask(memberId: memberId, advisorType: widget.advisorType, query: text);
-    if (!mounted) return;
-    setState(() {
-      _entries.add(_ChatEntry(mine: false, text: response));
-      _asking = false;
-    });
+    try {
+      final response = await _repo.ask(memberId: memberId, advisorType: widget.advisorType, query: text);
+      if (!mounted) return;
+      setState(() {
+        _entries.add(_ChatEntry(mine: false, text: response));
+        _asking = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _entries.add(const _ChatEntry(mine: false, text: 'Sorry, something went wrong. Please try again.'));
+        _asking = false;
+      });
+    }
   }
 
   @override
@@ -120,6 +128,8 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
                 Expanded(
                   child: TextField(
                     controller: _query,
+                    maxLength: 500,
+                    textInputAction: TextInputAction.send,
                     style: AppTheme.sans(13),
                     decoration: InputDecoration(
                       hintText: 'Ask a question…',
@@ -127,6 +137,7 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
                       fillColor: Neutral.c50,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      counterText: '',
                     ),
                     onSubmitted: (_) => _ask(memberId),
                   ),

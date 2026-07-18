@@ -129,8 +129,10 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
                       child: TextField(
                         controller: _amount,
                         keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                        textInputAction: TextInputAction.done,
+                        maxLength: 7,
                         style: AppTheme.display(22),
-                        decoration: const InputDecoration(border: InputBorder.none, hintText: '0'),
+                        decoration: const InputDecoration(border: InputBorder.none, hintText: '0', counterText: ''),
                         onChanged: (_) => setState(() => _error = null),
                       ),
                     ),

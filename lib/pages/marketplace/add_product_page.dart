@@ -114,9 +114,9 @@ class _AddProductPageState extends State<AddProductPage> {
             _field('Description', _description, hint: 'Describe your product', maxLength: 500, textInputAction: TextInputAction.next),
             const SizedBox(height: 12),
             Row(children: [
-              Expanded(child: _field('Price (₹)', _price, hint: '0', keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, textInputAction: TextInputAction.next)),
+              Expanded(child: _field('Price (₹)', _price, hint: '0', keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, textInputAction: TextInputAction.next, maxLength: 9)),
               const SizedBox(width: 12),
-              Expanded(child: _field('Stock', _stock, hint: '0', keyboardType: TextInputType.number, inputFormatters: wholeNumberInputFormatters, textInputAction: TextInputAction.done)),
+              Expanded(child: _field('Stock', _stock, hint: '0', keyboardType: TextInputType.number, inputFormatters: wholeNumberInputFormatters, textInputAction: TextInputAction.done, maxLength: 6)),
             ]),
             const SizedBox(height: 12),
             AppCard(

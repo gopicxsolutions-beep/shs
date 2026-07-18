@@ -55,6 +55,10 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
         ));
         _key.currentState?.reload();
       }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update this role. Please try again.')));
+      }
     } finally {
       if (mounted) setState(() => _changingRoleFor = null);
     }

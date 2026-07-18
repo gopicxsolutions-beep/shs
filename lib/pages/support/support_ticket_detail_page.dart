@@ -168,11 +168,15 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                       child: TextField(
                         controller: _message,
                         enabled: SupabaseService.isConfigured,
+                        maxLength: 500,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _send(memberId),
                         style: AppTheme.sans(13),
                         decoration: InputDecoration(
                           hintText: SupabaseService.isConfigured ? 'Type a message…' : 'Demo mode — replies disabled',
                           filled: true,
                           fillColor: Neutral.c50,
+                          counterText: '',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         ),

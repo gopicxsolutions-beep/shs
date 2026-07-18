@@ -48,6 +48,11 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
       await _repo.saveMinutes(widget.meetingId, next);
       _decisions = next;
       _minutesKey.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        _decisionController.text = text;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not save this decision. Please try again.')));
+      }
     } finally {
       if (mounted) setState(() => _savingDecision = false);
     }
@@ -62,6 +67,11 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
     try {
       await _repo.addActionItem(widget.meetingId, text, dueDate: DateTime.now().add(const Duration(days: 7)));
       if (mounted) _actionsKey.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        _taskController.text = text;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not save this action item. Please try again.')));
+      }
     } finally {
       if (mounted) setState(() => _savingActionItem = false);
     }

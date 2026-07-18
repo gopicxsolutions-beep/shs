@@ -67,6 +67,10 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
         ));
         _key.currentState?.reload();
       }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not add this scheme. Please try again.')));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -89,6 +93,10 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
     try {
       await _repo.deleteScheme(s.id);
       if (mounted) _key.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not delete this scheme. Please try again.')));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

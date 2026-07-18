@@ -47,26 +47,34 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
       _transcript = null;
       _answer = null;
     });
-    final command = await _service.listen(_language);
-    if (!mounted) return;
-    setState(() {
-      _transcript = command.transcript;
-      _state = _AssistantState.thinking;
-    });
+    try {
+      final command = await _service.listen(_language);
+      if (!mounted) return;
+      setState(() {
+        _transcript = command.transcript;
+        _state = _AssistantState.thinking;
+      });
 
-    final appState = context.read<AppState>();
-    final memberId = appState.profile?.id;
-    final shgId = appState.profile?.shgId;
-    final answer = await _resolve(command.intent, memberId, shgId);
-    if (!mounted) return;
-    setState(() {
-      _answer = answer;
-      _state = _AssistantState.answered;
-    });
+      final appState = context.read<AppState>();
+      final memberId = appState.profile?.id;
+      final shgId = appState.profile?.shgId;
+      final answer = await _resolve(command.intent, memberId, shgId);
+      if (!mounted) return;
+      setState(() {
+        _answer = answer;
+        _state = _AssistantState.answered;
+      });
 
-    if (command.intent == VoiceIntent.addSavings && mounted) {
-      await Future.delayed(const Duration(milliseconds: 900));
-      if (mounted) context.go(Paths.savingsEntry);
+      if (command.intent == VoiceIntent.addSavings && mounted) {
+        await Future.delayed(const Duration(milliseconds: 900));
+        if (mounted) context.go(Paths.savingsEntry);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _answer = 'Sorry, something went wrong. Please try again.';
+        _state = _AssistantState.answered;
+      });
     }
   }
 

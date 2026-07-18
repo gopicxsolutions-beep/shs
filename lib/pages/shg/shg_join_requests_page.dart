@@ -36,6 +36,10 @@ class _ShgJoinRequestsPageState extends State<ShgJoinRequestsPage> {
         ));
         _key.currentState?.reload();
       }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not process this request. Please try again.')));
+      }
     } finally {
       if (mounted) setState(() => _deciding = null);
     }

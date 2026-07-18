@@ -32,6 +32,8 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
       await _repo.apply(schemeId: widget.schemeId, memberId: memberId);
       _appKey.currentState?.reload();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Application submitted')));
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not submit this application. Please try again.')));
     } finally {
       if (mounted) setState(() => _applying = false);
     }

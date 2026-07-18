@@ -13,20 +13,24 @@ import '../../widgets/input_formatters.dart';
 
 const _statusOptions = ['planned', 'active', 'completed'];
 
-class LivelihoodDetailPage extends StatelessWidget {
+class LivelihoodDetailPage extends StatefulWidget {
   final String activityId;
   const LivelihoodDetailPage({super.key, required this.activityId});
+  @override
+  State<LivelihoodDetailPage> createState() => _LivelihoodDetailPageState();
+}
+
+class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
+  final _repo = LivelihoodRepository();
+  final _key = GlobalKey<AppAsyncBuilderState<LivelihoodActivity?>>();
 
   @override
   Widget build(BuildContext context) {
-    final repo = LivelihoodRepository();
-    final key = GlobalKey<AppAsyncBuilderState<LivelihoodActivity?>>();
-
     return Scaffold(
       appBar: const PageHeader(title: 'Activity Detail'),
       body: AppAsyncBuilder<LivelihoodActivity?>(
-        key: key,
-        future: () => repo.fetchById(activityId),
+        key: _key,
+        future: () => _repo.fetchById(widget.activityId),
         builder: (context, activity) {
           if (activity == null) {
             return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This activity could not be found');
@@ -61,7 +65,7 @@ class LivelihoodDetailPage extends StatelessWidget {
               AppButton(
                 label: 'Update Progress',
                 fullWidth: true,
-                onPressed: !SupabaseService.isConfigured ? null : () => _updateProgress(context, repo, activity, key),
+                onPressed: !SupabaseService.isConfigured ? null : () => _updateProgress(context, activity),
               ),
             ],
           );
@@ -81,7 +85,7 @@ class LivelihoodDetailPage extends StatelessWidget {
         ),
       );
 
-  Future<void> _updateProgress(BuildContext context, LivelihoodRepository repo, LivelihoodActivity activity, GlobalKey<AppAsyncBuilderState<LivelihoodActivity?>> key) async {
+  Future<void> _updateProgress(BuildContext context, LivelihoodActivity activity) async {
     final revenueController = TextEditingController(text: '${activity.revenue}');
     var status = activity.status;
     String? error;
@@ -95,7 +99,14 @@ class LivelihoodDetailPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(controller: revenueController, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, decoration: const InputDecoration(prefixText: '₹', labelText: 'Revenue to date')),
+              TextField(
+                controller: revenueController,
+                keyboardType: TextInputType.number,
+                inputFormatters: decimalAmountInputFormatters,
+                textInputAction: TextInputAction.done,
+                maxLength: 9,
+                decoration: const InputDecoration(prefixText: '₹', labelText: 'Revenue to date', counterText: ''),
+              ),
               const SizedBox(height: 12),
               DropdownButton<String>(
                 value: status,
@@ -125,7 +136,7 @@ class LivelihoodDetailPage extends StatelessWidget {
                         submitting = true;
                       });
                       try {
-                        await repo.updateProgress(activity.id, revenue: revenue, status: status);
+                        await _repo.updateProgress(activity.id, revenue: revenue, status: status);
                         if (context.mounted) Navigator.of(context).pop(true);
                       } catch (_) {
                         setState(() {
@@ -140,6 +151,6 @@ class LivelihoodDetailPage extends StatelessWidget {
         ),
       ),
     );
-    if (saved == true) key.currentState?.reload();
+    if (saved == true) _key.currentState?.reload();
   }
 }

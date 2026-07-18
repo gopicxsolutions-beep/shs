@@ -40,19 +40,24 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Add document record'),
-        content: TextField(controller: _nameController, maxLength: 100, decoration: const InputDecoration(hintText: 'Document name')),
+        content: TextField(controller: _nameController, maxLength: 100, textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'Document name')),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
           FilledButton(onPressed: () => Navigator.of(context).pop(_nameController.text.trim()), child: const Text('Add')),
         ],
       ),
     );
+    if (!mounted) return;
     _nameController.clear();
     if (name == null || name.isEmpty) return;
     setState(() => _busy = true);
     try {
       await _repo.addDocument(shgId: shgId, name: name, type: 'PDF');
       if (mounted) _key.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not add this document. Please try again.')));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

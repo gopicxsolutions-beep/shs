@@ -34,19 +34,31 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _loadPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _notifyMeetings = prefs.getBool(_notifyMeetingsKey) ?? true;
-      _notifySavings = prefs.getBool(_notifySavingsKey) ?? true;
-      _notifyAnnouncements = prefs.getBool(_notifyAnnouncementsKey) ?? true;
-      _loaded = true;
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      setState(() {
+        _notifyMeetings = prefs.getBool(_notifyMeetingsKey) ?? true;
+        _notifySavings = prefs.getBool(_notifySavingsKey) ?? true;
+        _notifyAnnouncements = prefs.getBool(_notifyAnnouncementsKey) ?? true;
+        _loaded = true;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loaded = true);
+    }
   }
 
   Future<void> _setPref(String key, bool value, void Function(bool) apply) async {
     setState(() => apply(value));
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(key, value);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(key, value);
+    } catch (_) {
+      if (mounted) {
+        setState(() => apply(!value));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not save this preference. Please try again.')));
+      }
+    }
   }
 
   @override

@@ -26,6 +26,8 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
     final appState = context.read<AppState>();
     _repo.fetchForShg(appState.profile?.shgId, appState.profile?.id).then((list) {
       if (mounted) setState(() => _unread = list.where((a) => !a.read).length);
+    }).catchError((_) {
+      // unread count is a nice-to-have; failing to load it should not disrupt the dashboard
     });
   }
 

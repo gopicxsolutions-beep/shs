@@ -27,7 +27,7 @@ Future<bool?> showFinancialEntryDialog(
           children: [
             TextField(controller: descController, maxLength: 200, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'Description')),
             const SizedBox(height: 12),
-            TextField(controller: amountController, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, textInputAction: TextInputAction.done, decoration: const InputDecoration(prefixText: '₹', hintText: 'Amount')),
+            TextField(controller: amountController, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, textInputAction: TextInputAction.done, maxLength: 9, decoration: const InputDecoration(prefixText: '₹', hintText: 'Amount', counterText: '')),
             const SizedBox(height: 12),
             SegmentedButton<bool>(
               segments: const [

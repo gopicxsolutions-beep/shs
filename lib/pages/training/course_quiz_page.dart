@@ -55,6 +55,10 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passed! Certificate earned.')));
         context.go(Paths.trainingDetail(widget.courseId));
       }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not save your certificate. Please try again.')));
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

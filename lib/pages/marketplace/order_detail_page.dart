@@ -21,13 +21,14 @@ class OrderDetailPage extends StatefulWidget {
 
 class _OrderDetailPageState extends State<OrderDetailPage> {
   final _repo = MarketplaceRepository();
+  final _key = GlobalKey<AppAsyncBuilderState<MarketOrder?>>();
   bool _updating = false;
 
-  Future<void> _updateStatus(MarketOrder order, String status, GlobalKey<AppAsyncBuilderState<MarketOrder?>> key) async {
+  Future<void> _updateStatus(MarketOrder order, String status) async {
     setState(() => _updating = true);
     try {
       await _repo.updateOrderStatus(order.id, status);
-      if (mounted) key.currentState?.reload();
+      if (mounted) _key.currentState?.reload();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update the order status. Please try again.')));
@@ -39,15 +40,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = _repo;
-    final orderId = widget.orderId;
-    final key = GlobalKey<AppAsyncBuilderState<MarketOrder?>>();
-
     return Scaffold(
       appBar: const PageHeader(title: 'Order Detail'),
       body: AppAsyncBuilder<MarketOrder?>(
-        key: key,
-        future: () => repo.fetchOrderById(orderId),
+        key: _key,
+        future: () => _repo.fetchOrderById(widget.orderId),
         builder: (context, order) {
           if (order == null) {
             return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This order could not be found');
@@ -84,7 +81,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   return ChoiceChip(
                     label: Text(e.value),
                     selected: selected,
-                    onSelected: !reachable ? null : (_) => _updateStatus(order, e.value, key),
+                    onSelected: !reachable ? null : (_) => _updateStatus(order, e.value),
                     selectedColor: Brand.c50,
                     labelStyle: AppTheme.sans(12, weight: FontWeight.w600, color: selected ? Brand.c700 : Neutral.c600),
                     backgroundColor: Colors.white,

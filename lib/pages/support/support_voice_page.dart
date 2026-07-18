@@ -13,13 +13,14 @@ enum _VoiceState { idle, listening, thinking, answered }
 /// speech recognition and synthesis itself are simulated. See
 /// docs/DEVELOPMENT_PROGRESS.md's "External API abstraction plan".
 class SupportVoicePage extends StatefulWidget {
-  const SupportVoicePage({super.key});
+  final VoiceSupportService? service;
+  const SupportVoicePage({super.key, this.service});
   @override
   State<SupportVoicePage> createState() => _SupportVoicePageState();
 }
 
 class _SupportVoicePageState extends State<SupportVoicePage> {
-  final VoiceSupportService _service = MockVoiceSupportService();
+  late final VoiceSupportService _service = widget.service ?? MockVoiceSupportService();
   _VoiceState _state = _VoiceState.idle;
   String? _question;
   String? _answer;
@@ -30,18 +31,26 @@ class _SupportVoicePageState extends State<SupportVoicePage> {
       _question = null;
       _answer = null;
     });
-    final question = await _service.transcribe();
-    if (!mounted) return;
-    setState(() {
-      _question = question;
-      _state = _VoiceState.thinking;
-    });
-    final answer = await _service.answer(question);
-    if (!mounted) return;
-    setState(() {
-      _answer = answer;
-      _state = _VoiceState.answered;
-    });
+    try {
+      final question = await _service.transcribe();
+      if (!mounted) return;
+      setState(() {
+        _question = question;
+        _state = _VoiceState.thinking;
+      });
+      final answer = await _service.answer(question);
+      if (!mounted) return;
+      setState(() {
+        _answer = answer;
+        _state = _VoiceState.answered;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _answer = 'Sorry, something went wrong. Please try again.';
+        _state = _VoiceState.answered;
+      });
+    }
   }
 
   @override

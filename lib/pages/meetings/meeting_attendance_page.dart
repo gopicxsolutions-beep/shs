@@ -113,6 +113,7 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                                             : (v) async {
                                                 try {
                                                   await _repo.markAttendance(meeting.id, row.memberId, v);
+                                                  if (!context.mounted) return;
                                                   setState(() {
                                                     roster[i] = AttendanceRow(memberId: row.memberId, memberName: row.memberName, present: v);
                                                   });

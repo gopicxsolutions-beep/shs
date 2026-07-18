@@ -62,13 +62,19 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
     if (saved != true || name.text.trim().isEmpty) return;
-    await _profileRepo.upsertMyProfile(name: name.text.trim(), role: profile.role, village: village.text.trim());
-    if (!mounted) return;
-    await context.read<AppState>().refreshProfile();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(SupabaseService.isConfigured ? 'Profile updated' : 'Demo mode — not saved (connect Supabase to persist)'),
-    ));
+    try {
+      await _profileRepo.upsertMyProfile(name: name.text.trim(), role: profile.role, village: village.text.trim());
+      if (!mounted) return;
+      await context.read<AppState>().refreshProfile();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(SupabaseService.isConfigured ? 'Profile updated' : 'Demo mode — not saved (connect Supabase to persist)'),
+      ));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update your profile. Please try again.')));
+      }
+    }
   }
 
   @override
@@ -131,7 +137,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 variant: ButtonVariant.outline,
                 fullWidth: true,
                 onPressed: () async {
-                  await context.read<AppState>().signOut();
+                  try {
+                    await context.read<AppState>().signOut();
+                  } catch (_) {
+                    // fall through — still navigate to splash below
+                  }
                   if (context.mounted) context.go(Paths.splash);
                 },
               ),
