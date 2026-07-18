@@ -16,9 +16,12 @@ class AppBadge extends StatelessWidget {
       BadgeTone.gold => (Gold.c50, Gold.c700),
       BadgeTone.success => (Accent.emerald50, Accent.emerald700),
       BadgeTone.warning => (Accent.amber50, Accent.amber700),
-      BadgeTone.danger => (Accent.red50, Accent.red600),
+      // red600/sky600 measure below the WCAG AA 4.5:1 contrast threshold for
+      // normal-sized text against their 50-tone backgrounds — bumped one
+      // shade darker (700) to pass.
+      BadgeTone.danger => (Accent.red50, Accent.red700),
       BadgeTone.neutral => (Neutral.c100, Neutral.c600),
-      BadgeTone.info => (Accent.sky50, Accent.sky600),
+      BadgeTone.info => (Accent.sky50, Accent.sky700),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

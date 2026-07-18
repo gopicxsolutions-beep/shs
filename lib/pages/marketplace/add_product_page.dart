@@ -78,7 +78,7 @@ class _AddProductPageState extends State<AddProductPage> {
     }
   }
 
-  Widget _field(String label, TextEditingController controller, {String? hint, TextInputType? keyboardType, List<TextInputFormatter>? inputFormatters, int? maxLength}) {
+  Widget _field(String label, TextEditingController controller, {String? hint, TextInputType? keyboardType, List<TextInputFormatter>? inputFormatters, int? maxLength, TextInputAction? textInputAction}) {
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,6 +90,7 @@ class _AddProductPageState extends State<AddProductPage> {
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,
             maxLength: maxLength,
+            textInputAction: textInputAction,
             style: AppTheme.sans(14),
             decoration: InputDecoration(border: InputBorder.none, hintText: hint, counterText: maxLength != null ? '' : null),
             onChanged: (_) => setState(() => _error = null),
@@ -108,14 +109,14 @@ class _AddProductPageState extends State<AddProductPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _field('Product name', _name, hint: 'e.g. Handwoven Cotton Saree', maxLength: 100),
+            _field('Product name', _name, hint: 'e.g. Handwoven Cotton Saree', maxLength: 100, textInputAction: TextInputAction.next),
             const SizedBox(height: 12),
-            _field('Description', _description, hint: 'Describe your product', maxLength: 500),
+            _field('Description', _description, hint: 'Describe your product', maxLength: 500, textInputAction: TextInputAction.next),
             const SizedBox(height: 12),
             Row(children: [
-              Expanded(child: _field('Price (₹)', _price, hint: '0', keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters)),
+              Expanded(child: _field('Price (₹)', _price, hint: '0', keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, textInputAction: TextInputAction.next)),
               const SizedBox(width: 12),
-              Expanded(child: _field('Stock', _stock, hint: '0', keyboardType: TextInputType.number, inputFormatters: wholeNumberInputFormatters)),
+              Expanded(child: _field('Stock', _stock, hint: '0', keyboardType: TextInputType.number, inputFormatters: wholeNumberInputFormatters, textInputAction: TextInputAction.done)),
             ]),
             const SizedBox(height: 12),
             AppCard(

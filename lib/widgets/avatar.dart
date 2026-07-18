@@ -7,11 +7,14 @@ class AppAvatar extends StatelessWidget {
   final Color? ringColor;
   const AppAvatar({super.key, required this.name, this.size = 40, this.ringColor});
 
+  // sky600/rose600 on their 50-tone backgrounds measure 3.84:1/4.28:1,
+  // both below the WCAG AA 4.5:1 threshold for normal-sized text (the
+  // initials text this palette colors) — sky700/rose700 pass at 5.57:1/5.72:1.
   static const _palette = [
     (Brand.c100, Brand.c700),
     (Gold.c100, Gold.c700),
-    (Accent.sky50, Accent.sky600),
-    (Accent.rose50, Accent.rose600),
+    (Accent.sky50, Accent.sky700),
+    (Accent.rose50, Accent.rose700),
     (Accent.violet100, Accent.violet600),
   ];
 

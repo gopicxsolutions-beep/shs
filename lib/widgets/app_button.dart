@@ -25,13 +25,17 @@ class AppButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final height = switch (size) { ButtonSize.sm => 32.0, ButtonSize.md => 44.0, ButtonSize.lg => 52.0 };
     final fontSize = switch (size) { ButtonSize.sm => 12.0, ButtonSize.md => 14.0, ButtonSize.lg => 15.0 };
+    // primary/gold/danger's original shades (Brand.c600, Gold.c500,
+    // Accent.red600-on-red50) measured 4.33:1 / 2.39:1 / 4.41:1 against
+    // their text color — all below the WCAG AA 4.5:1 threshold for
+    // normal-sized text. Bumped to shades that pass (6.14:1 / 5.30:1 / 5.91:1).
     final (bg, fg) = switch (variant) {
-      ButtonVariant.primary => (Brand.c600, Colors.white),
+      ButtonVariant.primary => (Brand.c700, Colors.white),
       ButtonVariant.secondary => (Brand.c50, Brand.c700),
       ButtonVariant.outline => (Colors.white, Neutral.c800),
       ButtonVariant.ghost => (Colors.transparent, Neutral.c700),
-      ButtonVariant.gold => (Gold.c500, Colors.white),
-      ButtonVariant.danger => (Accent.red50, Accent.red600),
+      ButtonVariant.gold => (Gold.c700, Colors.white),
+      ButtonVariant.danger => (Accent.red50, Accent.red700),
     };
     final child = Row(
       mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
