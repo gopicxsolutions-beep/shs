@@ -21,14 +21,17 @@ class PageHeader extends StatelessWidget implements PreferredSizeWidget {
         bottom: false,
         child: Row(
           children: [
-            InkWell(
-              onTap: onBack ?? () => Navigator.of(context).maybePop(),
-              borderRadius: BorderRadius.circular(999),
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 4)]),
-                child: const Icon(Icons.arrow_back, size: 18, color: Neutral.c700),
+            Tooltip(
+              message: 'Back',
+              child: InkWell(
+                onTap: onBack ?? () => Navigator.of(context).maybePop(),
+                borderRadius: BorderRadius.circular(999),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 4)]),
+                  child: const Icon(Icons.arrow_back, size: 18, color: Neutral.c700),
+                ),
               ),
             ),
             const SizedBox(width: 12),

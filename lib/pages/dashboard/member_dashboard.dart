@@ -303,18 +303,21 @@ class _MemberDashboardBody extends StatelessWidget {
                   ? Padding(padding: const EdgeInsets.all(16), child: Text('No announcements yet', style: AppTheme.sans(12, color: Neutral.c400)))
                   : Column(
                       children: data.announcements.map((a) {
-                        return InkWell(
-                          onTap: () => context.go(Paths.announcementDetail(a.id)),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              if (!a.read) Padding(padding: const EdgeInsets.only(top: 5, right: 8), child: Container(width: 6, height: 6, decoration: BoxDecoration(color: Brand.c500, shape: BoxShape.circle))),
-                              if (a.read) const SizedBox(width: 14),
-                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text(a.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c800)),
-                                Text(DateFormat('dd MMM yyyy').format(a.createdAt), style: AppTheme.sans(10, color: Neutral.c400)),
-                              ])),
-                            ]),
+                        return Semantics(
+                          label: a.read ? null : 'Unread',
+                          child: InkWell(
+                            onTap: () => context.go(Paths.announcementDetail(a.id)),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                if (!a.read) Padding(padding: const EdgeInsets.only(top: 5, right: 8), child: Container(width: 6, height: 6, decoration: BoxDecoration(color: Brand.c500, shape: BoxShape.circle))),
+                                if (a.read) const SizedBox(width: 14),
+                                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Text(a.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c800)),
+                                  Text(DateFormat('dd MMM yyyy').format(a.createdAt), style: AppTheme.sans(10, color: Neutral.c400)),
+                                ])),
+                              ]),
+                            ),
                           ),
                         );
                       }).toList(),

@@ -130,15 +130,18 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
           ),
           const SizedBox(height: 24),
           Center(
-            child: InkWell(
-              onTap: busy ? null : _listen,
-              borderRadius: BorderRadius.circular(48),
-              child: Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(color: _state == _AssistantState.listening ? Accent.red50 : Accent.sky50, shape: BoxShape.circle),
-                alignment: Alignment.center,
-                child: Icon(Icons.mic_rounded, size: 40, color: _state == _AssistantState.listening ? Accent.red600 : Accent.sky600),
+            child: Tooltip(
+              message: label,
+              child: InkWell(
+                onTap: busy ? null : _listen,
+                borderRadius: BorderRadius.circular(48),
+                child: Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(color: _state == _AssistantState.listening ? Accent.red50 : Accent.sky50, shape: BoxShape.circle),
+                  alignment: Alignment.center,
+                  child: Icon(Icons.mic_rounded, size: 40, color: _state == _AssistantState.listening ? Accent.red600 : Accent.sky600),
+                ),
               ),
             ),
           ),

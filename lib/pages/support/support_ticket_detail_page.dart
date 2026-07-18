@@ -130,7 +130,9 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                         itemBuilder: (context, i) {
                           final m = data.messages[i];
                           final mine = SupabaseService.isConfigured ? m.senderId == memberId : m.senderId == 'me';
-                          return Align(
+                          return Semantics(
+                            label: '${mine ? 'You' : (m.senderName ?? 'Staff')}: ${m.body}',
+                            child: Align(
                             alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 10),
@@ -151,6 +153,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                                   Text(m.body, style: AppTheme.sans(13, color: mine ? Colors.white : Neutral.c700)),
                                 ],
                               ),
+                            ),
                             ),
                           );
                         },

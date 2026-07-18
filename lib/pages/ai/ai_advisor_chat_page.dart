@@ -94,14 +94,17 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
                   itemCount: _entries.length,
                   itemBuilder: (context, i) {
                     final e = _entries[i];
-                    return Align(
-                      alignment: e.mine ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        constraints: const BoxConstraints(maxWidth: 280),
-                        decoration: BoxDecoration(color: e.mine ? Brand.c500 : Neutral.c100, borderRadius: BorderRadius.circular(14)),
-                        child: Text(e.text, style: AppTheme.sans(13, color: e.mine ? Colors.white : Neutral.c700)),
+                    return Semantics(
+                      label: '${e.mine ? 'You' : 'Advisor'}: ${e.text}',
+                      child: Align(
+                        alignment: e.mine ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          constraints: const BoxConstraints(maxWidth: 280),
+                          decoration: BoxDecoration(color: e.mine ? Brand.c500 : Neutral.c100, borderRadius: BorderRadius.circular(14)),
+                          child: Text(e.text, style: AppTheme.sans(13, color: e.mine ? Colors.white : Neutral.c700)),
+                        ),
                       ),
                     );
                   },

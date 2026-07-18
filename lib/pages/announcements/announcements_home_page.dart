@@ -119,23 +119,26 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
               final a = items[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: AppCard(
-                  onTap: () => context.go(Paths.announcementDetail(a.id)),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    if (!a.read) Padding(padding: const EdgeInsets.only(top: 5, right: 8), child: Container(width: 6, height: 6, decoration: BoxDecoration(color: Brand.c500, shape: BoxShape.circle))),
-                    if (a.read) const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(a.title, style: AppTheme.sans(13, weight: a.read ? FontWeight.w600 : FontWeight.w700)),
-                          const SizedBox(height: 2),
-                          Text(DateFormat('dd MMM yyyy').format(a.createdAt), style: AppTheme.sans(11, color: Neutral.c400)),
-                        ],
+                child: Semantics(
+                  label: a.read ? null : 'Unread',
+                  child: AppCard(
+                    onTap: () => context.go(Paths.announcementDetail(a.id)),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      if (!a.read) Padding(padding: const EdgeInsets.only(top: 5, right: 8), child: Container(width: 6, height: 6, decoration: BoxDecoration(color: Brand.c500, shape: BoxShape.circle))),
+                      if (a.read) const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(a.title, style: AppTheme.sans(13, weight: a.read ? FontWeight.w600 : FontWeight.w700)),
+                            const SizedBox(height: 2),
+                            Text(DateFormat('dd MMM yyyy').format(a.createdAt), style: AppTheme.sans(11, color: Neutral.c400)),
+                          ],
+                        ),
                       ),
-                    ),
-                    AppBadge(text: a.category, tone: _categoryTones[a.category] ?? BadgeTone.neutral),
-                  ]),
+                      AppBadge(text: a.category, tone: _categoryTones[a.category] ?? BadgeTone.neutral),
+                    ]),
+                  ),
                 ),
               );
             },

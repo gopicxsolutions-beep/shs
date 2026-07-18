@@ -71,26 +71,32 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
           ),
           Row(
             children: [
-              InkWell(
-                onTap: () => context.go(Paths.announcements),
-                borderRadius: BorderRadius.circular(999),
-                child: Container(
-                  width: 40, height: 40,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
-                  child: Stack(children: [
-                    const Center(child: Icon(Icons.notifications_rounded, color: Colors.white, size: 18)),
-                    if (unread > 0)
-                      Positioned(
-                        right: 8, top: 8,
-                        child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Gold.c400, shape: BoxShape.circle, border: Border.all(color: Brand.c600, width: 2))),
-                      ),
-                  ]),
+              Tooltip(
+                message: unread > 0 ? '$unread unread announcements' : 'Announcements',
+                child: InkWell(
+                  onTap: () => context.go(Paths.announcements),
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
+                    child: Stack(children: [
+                      const Center(child: Icon(Icons.notifications_rounded, color: Colors.white, size: 18)),
+                      if (unread > 0)
+                        Positioned(
+                          right: 8, top: 8,
+                          child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Gold.c400, shape: BoxShape.circle, border: Border.all(color: Brand.c600, width: 2))),
+                        ),
+                    ]),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
-              InkWell(
-                onTap: () => context.go(Paths.profile),
-                child: AppAvatar(name: user.name, size: 40, ringColor: Colors.white.withValues(alpha: 0.4)),
+              Tooltip(
+                message: 'Profile',
+                child: InkWell(
+                  onTap: () => context.go(Paths.profile),
+                  child: AppAvatar(name: user.name, size: 40, ringColor: Colors.white.withValues(alpha: 0.4)),
+                ),
               ),
             ],
           ),

@@ -58,15 +58,18 @@ class _SupportVoicePageState extends State<SupportVoicePage> {
         padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
         children: [
           Center(
-            child: InkWell(
-              onTap: _state == _VoiceState.listening || _state == _VoiceState.thinking ? null : _ask,
-              borderRadius: BorderRadius.circular(48),
-              child: Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(color: _state == _VoiceState.listening ? Accent.red50 : Brand.c50, shape: BoxShape.circle),
-                alignment: Alignment.center,
-                child: Icon(Icons.mic_rounded, size: 40, color: _state == _VoiceState.listening ? Accent.red600 : Brand.c600),
+            child: Tooltip(
+              message: label,
+              child: InkWell(
+                onTap: _state == _VoiceState.listening || _state == _VoiceState.thinking ? null : _ask,
+                borderRadius: BorderRadius.circular(48),
+                child: Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(color: _state == _VoiceState.listening ? Accent.red50 : Brand.c50, shape: BoxShape.circle),
+                  alignment: Alignment.center,
+                  child: Icon(Icons.mic_rounded, size: 40, color: _state == _VoiceState.listening ? Accent.red600 : Brand.c600),
+                ),
               ),
             ),
           ),

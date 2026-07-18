@@ -75,6 +75,9 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                   key: ValueKey(meeting.id),
                   future: () => _repo.fetchAttendance(meeting.id, shgId),
                   builder: (context, roster) {
+                    if (roster.isEmpty) {
+                      return const AppEmptyState(icon: Icons.groups_rounded, message: 'No members to mark attendance for');
+                    }
                     final presentCount = roster.where((r) => r.present).length;
                     return Column(
                       children: [
