@@ -18,6 +18,7 @@ class SavingsEntryPage extends StatefulWidget {
 }
 
 class _SavingsEntryPageState extends State<SavingsEntryPage> {
+  final _formKey = GlobalKey<FormState>();
   final _amount = TextEditingController();
   final _repo = SavingsRepository();
   String _mode = 'Cash';
@@ -27,6 +28,7 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
 
   static const _modes = ['Cash', 'UPI', 'Bank Transfer'];
   static const _frequencies = ['Weekly', 'Monthly', 'Daily'];
+  static const _maxAmount = 1000000;
 
   @override
   void dispose() {
@@ -34,12 +36,19 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
     super.dispose();
   }
 
+  String? _validateAmount(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return 'Enter an amount';
+    final amount = num.tryParse(trimmed);
+    if (amount == null) return 'Enter a valid number';
+    if (amount <= 0) return 'Amount must be greater than zero';
+    if (amount > _maxAmount) return 'Amount seems unusually large — please check and re-enter';
+    return null;
+  }
+
   Future<void> _submit() async {
-    final amount = num.tryParse(_amount.text);
-    if (amount == null || amount <= 0) {
-      setState(() => _error = 'Enter a valid amount');
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
+    final amount = num.parse(_amount.text.trim());
     setState(() {
       _saving = true;
       _error = null;
@@ -107,19 +116,23 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
                 children: [
                   Text('Amount', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                   const SizedBox(height: 6),
-                  Row(children: [
-                    Text('₹', style: AppTheme.display(22)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _amount,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: false),
-                        style: AppTheme.display(22),
-                        decoration: const InputDecoration(border: InputBorder.none, hintText: '0'),
-                        onChanged: (_) => setState(() => _error = null),
+                  Form(
+                    key: _formKey,
+                    child: Row(children: [
+                      Text('₹', style: AppTheme.display(22)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _amount,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                          style: AppTheme.display(22),
+                          decoration: const InputDecoration(border: InputBorder.none, hintText: '0'),
+                          validator: _validateAmount,
+                          onChanged: (_) => setState(() => _error = null),
+                        ),
                       ),
-                    ),
-                  ]),
+                    ]),
+                  ),
                 ],
               ),
             ),
