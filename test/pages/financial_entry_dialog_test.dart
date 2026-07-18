@@ -50,4 +50,17 @@ void main() {
     expect(find.text('Enter a valid amount'), findsOneWidget);
     expect(find.text('Add entry'), findsOneWidget);
   });
+
+  testWidgets('the description field enforces its 200-character maxLength', (tester) async {
+    await openDialog(tester);
+
+    final descriptionField = tester.widget<TextField>(find.byType(TextField).first);
+    expect(descriptionField.maxLength, 200, reason: 'Regression guard for the maxLength fix on this field');
+
+    await tester.enterText(find.byType(TextField).first, 'x' * 500);
+    await tester.pumpAndSettle();
+
+    final controller = descriptionField.controller!;
+    expect(controller.text.length, 200);
+  });
 }

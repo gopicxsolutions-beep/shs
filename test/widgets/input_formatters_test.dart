@@ -51,5 +51,14 @@ void main() {
       expect(apply('99a.50b').text, isNot(contains('a')));
       expect(apply('99a.50b').text, isNot(contains('b')));
     });
+
+    test('truncates more than 2 decimal places rather than accepting them', () {
+      expect(apply('99.5012345').text, isNot(matches(RegExp(r'\.\d{3,}'))), reason: 'no more than 2 digits should ever follow the decimal point');
+    });
+
+    test('handles an empty string without throwing', () {
+      expect(() => apply(''), returnsNormally);
+      expect(apply('').text, '');
+    });
   });
 }
