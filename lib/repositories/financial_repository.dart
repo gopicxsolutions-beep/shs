@@ -56,7 +56,7 @@ class FinancialRepository {
       'debit': debit,
       'credit': credit,
       'balance': newBalance,
-      if (createdBy != null) 'created_by': createdBy,
+      'created_by': ?createdBy,
     });
   }
 

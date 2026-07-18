@@ -55,9 +55,9 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(controller: _title, decoration: const InputDecoration(hintText: 'Title')),
+              TextField(controller: _title, maxLength: 100, decoration: const InputDecoration(hintText: 'Title')),
               const SizedBox(height: 12),
-              TextField(controller: _body, maxLines: 3, decoration: const InputDecoration(hintText: 'Details')),
+              TextField(controller: _body, maxLines: 3, maxLength: 1000, decoration: const InputDecoration(hintText: 'Details')),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,

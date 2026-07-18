@@ -40,7 +40,7 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Add document record'),
-        content: TextField(controller: _nameController, decoration: const InputDecoration(hintText: 'Document name')),
+        content: TextField(controller: _nameController, maxLength: 100, decoration: const InputDecoration(hintText: 'Document name')),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
           FilledButton(onPressed: () => Navigator.of(context).pop(_nameController.text.trim()), child: const Text('Add')),

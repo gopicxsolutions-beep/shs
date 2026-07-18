@@ -105,7 +105,8 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                           child: TextField(
                             controller: _decisionController,
                             style: AppTheme.sans(13),
-                            decoration: const InputDecoration(border: InputBorder.none, hintText: 'Add a decision…'),
+                            maxLength: 300,
+                            decoration: const InputDecoration(border: InputBorder.none, hintText: 'Add a decision…', counterText: ''),
                             onSubmitted: (_) => _addDecision(),
                           ),
                         ),
@@ -164,7 +165,8 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                             child: TextField(
                               controller: _taskController,
                               style: AppTheme.sans(13),
-                              decoration: const InputDecoration(border: InputBorder.none, hintText: 'Add a task…'),
+                              maxLength: 300,
+                              decoration: const InputDecoration(border: InputBorder.none, hintText: 'Add a task…', counterText: ''),
                               onSubmitted: (_) => _addActionItem(),
                             ),
                           ),

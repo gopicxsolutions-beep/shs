@@ -71,7 +71,7 @@ class ShgRepository {
       'shg_id': shgId,
       'name': name,
       'type': type,
-      if (storagePath != null) 'storage_path': storagePath,
+      'storage_path': ?storagePath,
     });
   }
 

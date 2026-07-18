@@ -75,16 +75,22 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
                 children: [
                   Text('${qi + 1}. ${_questions[qi].text}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                   const SizedBox(height: 8),
-                  for (var oi = 0; oi < _questions[qi].options.length; oi++)
-                    RadioListTile<int>(
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                      value: oi,
-                      groupValue: _answers[qi],
-                      activeColor: Brand.c600,
-                      title: Text(_questions[qi].options[oi], style: AppTheme.sans(12)),
-                      onChanged: (v) => setState(() => _answers[qi] = v),
+                  RadioGroup<int>(
+                    groupValue: _answers[qi],
+                    onChanged: (v) => setState(() => _answers[qi] = v),
+                    child: Column(
+                      children: [
+                        for (var oi = 0; oi < _questions[qi].options.length; oi++)
+                          RadioListTile<int>(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            value: oi,
+                            activeColor: Brand.c600,
+                            title: Text(_questions[qi].options[oi], style: AppTheme.sans(12)),
+                          ),
+                      ],
                     ),
+                  ),
                 ],
               ),
             ),

@@ -56,7 +56,7 @@ class MarketplaceRepository {
     await _client.from('marketplace_orders').insert({
       'product_id': productId,
       'buyer_name': buyerName,
-      if (buyerId != null) 'buyer_id': buyerId,
+      'buyer_id': ?buyerId,
       'amount': amount,
       'status': 'new',
     });

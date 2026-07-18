@@ -93,8 +93,9 @@ class _SupportTicketFormPageState extends State<SupportTicketFormPage> {
                   TextField(
                     controller: _description,
                     maxLines: 4,
+                    maxLength: 1000,
                     style: AppTheme.sans(14),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'Give as much detail as you can'),
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'Give as much detail as you can', counterText: ''),
                   ),
                 ],
               ),

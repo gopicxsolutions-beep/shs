@@ -44,11 +44,11 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: _name, decoration: const InputDecoration(hintText: 'Scheme name')),
+            TextField(controller: _name, maxLength: 100, decoration: const InputDecoration(hintText: 'Scheme name')),
             const SizedBox(height: 12),
-            TextField(controller: _agency, decoration: const InputDecoration(hintText: 'Agency')),
+            TextField(controller: _agency, maxLength: 100, decoration: const InputDecoration(hintText: 'Agency')),
             const SizedBox(height: 12),
-            TextField(controller: _benefit, decoration: const InputDecoration(hintText: 'Benefit')),
+            TextField(controller: _benefit, maxLength: 300, decoration: const InputDecoration(hintText: 'Benefit')),
           ],
         ),
         actions: [

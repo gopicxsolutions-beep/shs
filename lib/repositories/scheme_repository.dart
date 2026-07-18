@@ -62,9 +62,9 @@ class SchemeRepository {
     if (!_live) return;
     await _client.from('schemes').insert({
       'name': name,
-      if (fullName != null) 'full_name': fullName,
-      if (agency != null) 'agency': agency,
-      if (benefit != null) 'benefit': benefit,
+      'full_name': ?fullName,
+      'agency': ?agency,
+      'benefit': ?benefit,
       'eligibility': eligibility,
     });
   }

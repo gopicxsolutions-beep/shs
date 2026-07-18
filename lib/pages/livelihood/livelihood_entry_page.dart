@@ -116,8 +116,9 @@ class _LivelihoodEntryPageState extends State<LivelihoodEntryPage> {
                   TextField(
                     controller: _description,
                     maxLines: 2,
+                    maxLength: 200,
                     style: AppTheme.sans(14),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Milch cow rearing — 2 cows'),
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Milch cow rearing — 2 cows', counterText: ''),
                     onChanged: (_) => setState(() => _error = null),
                   ),
                 ],

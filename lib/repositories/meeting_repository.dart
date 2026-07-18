@@ -124,7 +124,7 @@ class MeetingRepository {
     await _client.from('meeting_action_items').insert({
       'meeting_id': meetingId,
       'task': task,
-      if (ownerId != null) 'owner_id': ownerId,
+      'owner_id': ?ownerId,
       if (dueDate != null) 'due_date': dueDate.toIso8601String().split('T').first,
     });
   }

@@ -25,7 +25,7 @@ Future<bool?> showFinancialEntryDialog(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(controller: descController, decoration: const InputDecoration(hintText: 'Description')),
+            TextField(controller: descController, maxLength: 200, decoration: const InputDecoration(hintText: 'Description')),
             const SizedBox(height: 12),
             TextField(controller: amountController, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, decoration: const InputDecoration(prefixText: '₹', hintText: 'Amount')),
             const SizedBox(height: 12),

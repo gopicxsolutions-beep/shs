@@ -78,7 +78,7 @@ class _AddProductPageState extends State<AddProductPage> {
     }
   }
 
-  Widget _field(String label, TextEditingController controller, {String? hint, TextInputType? keyboardType, List<TextInputFormatter>? inputFormatters}) {
+  Widget _field(String label, TextEditingController controller, {String? hint, TextInputType? keyboardType, List<TextInputFormatter>? inputFormatters, int? maxLength}) {
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,8 +89,9 @@ class _AddProductPageState extends State<AddProductPage> {
             controller: controller,
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,
+            maxLength: maxLength,
             style: AppTheme.sans(14),
-            decoration: InputDecoration(border: InputBorder.none, hintText: hint),
+            decoration: InputDecoration(border: InputBorder.none, hintText: hint, counterText: maxLength != null ? '' : null),
             onChanged: (_) => setState(() => _error = null),
           ),
         ],
@@ -107,9 +108,9 @@ class _AddProductPageState extends State<AddProductPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _field('Product name', _name, hint: 'e.g. Handwoven Cotton Saree'),
+            _field('Product name', _name, hint: 'e.g. Handwoven Cotton Saree', maxLength: 100),
             const SizedBox(height: 12),
-            _field('Description', _description, hint: 'Describe your product'),
+            _field('Description', _description, hint: 'Describe your product', maxLength: 500),
             const SizedBox(height: 12),
             Row(children: [
               Expanded(child: _field('Price (₹)', _price, hint: '0', keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters)),

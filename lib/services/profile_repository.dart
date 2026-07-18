@@ -26,10 +26,10 @@ class ProfileRepository {
         .upsert({
           'id': uid,
           'name': name,
-          if (mobile != null) 'mobile': mobile,
+          'mobile': ?mobile,
           'role': role,
-          if (shgId != null) 'shg_id': shgId,
-          if (village != null) 'village': village,
+          'shg_id': ?shgId,
+          'village': ?village,
         })
         .select()
         .single();

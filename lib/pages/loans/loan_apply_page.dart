@@ -89,8 +89,9 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
                   TextField(
                     controller: _purpose,
                     maxLines: 2,
+                    maxLength: 200,
                     style: AppTheme.sans(14),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Dairy — buy milch cow'),
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Dairy — buy milch cow', counterText: ''),
                     onChanged: (_) => setState(() => _error = null),
                   ),
                 ],
