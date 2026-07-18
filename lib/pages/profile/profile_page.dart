@@ -50,9 +50,9 @@ class _ProfilePageState extends State<ProfilePage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: name, maxLength: 100, decoration: InputDecoration(hintText: l10n.profileName)),
+            TextField(controller: name, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.profileName)),
             const SizedBox(height: 12),
-            TextField(controller: village, maxLength: 100, decoration: InputDecoration(hintText: l10n.profileVillage)),
+            TextField(controller: village, maxLength: 100, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.profileVillage)),
           ],
         ),
         actions: [

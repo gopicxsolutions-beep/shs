@@ -112,8 +112,10 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
                   const SizedBox(height: 6),
                   TextField(
                     controller: _venue,
+                    maxLength: 150,
+                    textInputAction: TextInputAction.next,
                     style: AppTheme.sans(14),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Anganwadi Centre, Kondapur'),
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Anganwadi Centre, Kondapur', counterText: ''),
                     onChanged: (_) => setState(() => _error = null),
                   ),
                 ],
@@ -129,8 +131,10 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
                   TextField(
                     controller: _agenda,
                     maxLines: 2,
+                    maxLength: 300,
+                    textInputAction: TextInputAction.done,
                     style: AppTheme.sans(14),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Monthly savings review & loan applications'),
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Monthly savings review & loan applications', counterText: ''),
                   ),
                 ],
               ),

@@ -38,7 +38,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     super.dispose();
   }
 
-  Widget _field(String label, {String? placeholder, TextEditingController? controller}) {
+  Widget _field(String label, {String? placeholder, TextEditingController? controller, TextInputAction? textInputAction}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -51,6 +51,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           alignment: Alignment.centerLeft,
           child: TextField(
             controller: controller,
+            textInputAction: textInputAction,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(border: InputBorder.none, hintText: placeholder),
             style: AppTheme.sans(14),
@@ -127,15 +128,15 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
               const SizedBox(height: 6),
               Text(l10n.profileSetupSubtitle, textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
               const SizedBox(height: 28),
-              _field(l10n.fieldFullName, placeholder: 'e.g. Lakshmi Devi', controller: _name),
+              _field(l10n.fieldFullName, placeholder: 'e.g. Lakshmi Devi', controller: _name, textInputAction: TextInputAction.next),
               const SizedBox(height: 14),
               Row(children: [
-                Expanded(child: _field(l10n.profileVillage, placeholder: 'Kondapur', controller: _village)),
+                Expanded(child: _field(l10n.profileVillage, placeholder: 'Kondapur', controller: _village, textInputAction: TextInputAction.next)),
                 const SizedBox(width: 12),
-                Expanded(child: _field(l10n.fieldMandal, placeholder: 'Hanamkonda', controller: _mandal)),
+                Expanded(child: _field(l10n.fieldMandal, placeholder: 'Hanamkonda', controller: _mandal, textInputAction: TextInputAction.next)),
               ]),
               const SizedBox(height: 14),
-              _field(l10n.fieldDistrict, placeholder: 'Warangal', controller: _district),
+              _field(l10n.fieldDistrict, placeholder: 'Warangal', controller: _district, textInputAction: TextInputAction.done),
               const SizedBox(height: 14),
               Text(l10n.yourShg, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
               const SizedBox(height: 6),
