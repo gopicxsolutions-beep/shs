@@ -1,11 +1,11 @@
 {
-    "name": "shg_saathi",
-    "short_name": "shg_saathi",
+    "name": "SHG Saathi",
+    "short_name": "SHG Saathi",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0E8A66",
+    "theme_color": "#0E8A66",
+    "description": "SHG Saathi — savings, loans, meetings, and marketplace for Self-Help Groups.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
