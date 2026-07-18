@@ -65,22 +65,20 @@ class AnalyticsRepository {
       return mock.shgsForMonitoring.map((g) => ShgHealth(id: g.id, name: g.name, village: g.village, grade: g.grade, memberCount: g.members, totalSavings: g.savings, healthScore: g.health.toDouble())).toList();
     }
     final shgs = await _client.from('shgs').select('id, name, village, grade').order('name');
-    final results = <ShgHealth>[];
-    for (final r in shgs as List) {
-      final map = r as Map<String, dynamic>;
-      final id = map['id'] as String;
-      final report = await _reportRepo.fetchShgReport(id);
-      results.add(ShgHealth(
-        id: id,
-        name: map['name'] as String,
-        village: map['village'] as String? ?? '',
-        grade: map['grade'] as String?,
-        memberCount: report.memberCount,
-        totalSavings: report.totalSavings,
-        healthScore: report.avgAttendancePct,
-      ));
-    }
-    return results;
+    final rows = (shgs as List).cast<Map<String, dynamic>>();
+    final reports = await Future.wait(rows.map((map) => _reportRepo.fetchShgReport(map['id'] as String)));
+    return [
+      for (var i = 0; i < rows.length; i++)
+        ShgHealth(
+          id: rows[i]['id'] as String,
+          name: rows[i]['name'] as String,
+          village: rows[i]['village'] as String? ?? '',
+          grade: rows[i]['grade'] as String?,
+          memberCount: reports[i].memberCount,
+          totalSavings: reports[i].totalSavings,
+          healthScore: reports[i].avgAttendancePct,
+        ),
+    ];
   }
 
   Future<ShgHealth?> fetchShgDetail(String shgId) async {

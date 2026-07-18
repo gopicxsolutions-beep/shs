@@ -53,6 +53,16 @@ class MarketplaceRepository {
 
   Future<void> placeOrder({required String productId, required String buyerName, required String? buyerId, required num amount}) async {
     if (!_live) return;
+    // Best-effort stock decrement — no RPC/transaction available, so this
+    // isn't atomic with the order insert below, but it's still far better
+    // than never decrementing at all (which let stock == 0 products keep
+    // selling indefinitely despite the UI gating "Buy" on stock > 0).
+    final product = await _client.from('marketplace_products').select('stock').eq('id', productId).maybeSingle();
+    final stock = product?['stock'] as int?;
+    if (stock == null || stock <= 0) {
+      throw StateError('This item is out of stock.');
+    }
+    await _client.from('marketplace_products').update({'stock': stock - 1}).eq('id', productId);
     await _client.from('marketplace_orders').insert({
       'product_id': productId,
       'buyer_name': buyerName,

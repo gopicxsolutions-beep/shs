@@ -28,6 +28,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   final _profileRepository = ProfileRepository();
   ShgSearchResult? _selectedShg;
   bool _saving = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -80,11 +81,15 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _ShgSearchSheet(repository: _profileRepository),
     );
+    if (!mounted) return;
     if (result != null) setState(() => _selectedShg = result);
   }
 
   Future<void> _continue() async {
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     final appState = context.read<AppState>();
     if (_selectedShg != null && SupabaseService.isConfigured) {
       appState.setPendingShg(_selectedShg!);
@@ -97,6 +102,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         district: _district.text.trim().isNotEmpty ? _district.text.trim() : _selectedShg?.district,
       );
       if (mounted) context.go(Paths.roleSelect);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Could not save your profile. Please try again.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -166,6 +173,10 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                         Text(l10n.searchSelectShg, style: AppTheme.sans(14, color: Neutral.c500)),
                       ]),
               ),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(_error!, style: AppTheme.sans(12, color: Accent.red600)),
+              ],
               const SizedBox(height: 24),
               AppButton(
                 label: _saving ? l10n.profileSetupSaving : l10n.profileSetupContinue,

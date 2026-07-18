@@ -82,9 +82,13 @@ class _LoginPageState extends State<LoginPage> {
                       child: TextField(
                         controller: _controller,
                         keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
                         inputFormatters: wholeNumberInputFormatters,
                         maxLength: 10,
                         onChanged: (_) => setState(() {}),
+                        onSubmitted: (_) {
+                          if (_controller.text.length >= 10 && !_sending) _submit();
+                        },
                         decoration: const InputDecoration(border: InputBorder.none, counterText: '', hintText: '98765 43210'),
                         style: AppTheme.sans(14),
                       ),

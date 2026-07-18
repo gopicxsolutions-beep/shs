@@ -11,7 +11,7 @@ class AppProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pct = (value / max).clamp(0.0, 1.0);
+    final pct = max <= 0 ? 0.0 : (value / max).clamp(0.0, 1.0);
     final color = switch (tone) {
       ProgressTone.brand => Brand.c500,
       ProgressTone.gold => Gold.c500,

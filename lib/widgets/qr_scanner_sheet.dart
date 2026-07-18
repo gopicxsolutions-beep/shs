@@ -53,7 +53,7 @@ class _QrScannerPageState extends State<_QrScannerPage> {
   }
 
   void _onDetect(BarcodeCapture capture) {
-    if (_handled || capture.barcodes.isEmpty) return;
+    if (_handled || !mounted || capture.barcodes.isEmpty) return;
     final code = capture.barcodes.first.rawValue;
     if (code == null || code.isEmpty) return;
     _handled = true;
@@ -78,7 +78,13 @@ class _QrScannerPageState extends State<_QrScannerPage> {
               const SizedBox(height: 8),
               Text('You can still enter details manually.', textAlign: TextAlign.center, style: AppTheme.sans(12, color: Colors.white54)),
               const SizedBox(height: 20),
-              FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Enter manually instead')),
+              FilledButton(
+                onPressed: () {
+                  _handled = true;
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Enter manually instead'),
+              ),
             ],
           ),
         ),
@@ -94,14 +100,17 @@ class _QrScannerPageState extends State<_QrScannerPage> {
         title: Text(widget.title),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              _handled = true;
+              Navigator.of(context).pop();
+            },
             child: const Text('Manual entry', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
           ),
           ValueListenableBuilder<MobileScannerState>(
             valueListenable: _controller,
             builder: (context, state, child) => IconButton(
               icon: Icon(state.torchState == TorchState.on ? Icons.flash_on_rounded : Icons.flash_off_rounded),
-              onPressed: state.torchState == TorchState.unavailable ? null : () => _controller.toggleTorch(),
+              onPressed: state.torchState == TorchState.unavailable ? null : () => _controller.toggleTorch().catchError((_) {}),
               tooltip: state.torchState == TorchState.on ? 'Turn off flashlight' : 'Turn on flashlight',
             ),
           ),

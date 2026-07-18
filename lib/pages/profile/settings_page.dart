@@ -26,6 +26,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _notifyMeetings = true;
   bool _notifySavings = true;
   bool _notifyAnnouncements = true;
+  bool _switchingRole = false;
 
   @override
   void initState() {
@@ -58,6 +59,20 @@ class _SettingsPageState extends State<SettingsPage> {
         setState(() => apply(!value));
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not save this preference. Please try again.')));
       }
+    }
+  }
+
+  Future<void> _switchRole(AppState appState, Role role) async {
+    if (_switchingRole) return;
+    setState(() => _switchingRole = true);
+    try {
+      await appState.setRole(role);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not switch role. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _switchingRole = false);
     }
   }
 
@@ -118,7 +133,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: roles.map((r) {
                       final selected = r.id == appState.user.role;
                       return InkWell(
-                        onTap: selected ? null : () => appState.setRole(r.id),
+                        onTap: selected || _switchingRole ? null : () => _switchRole(appState, r.id),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           child: Row(children: [

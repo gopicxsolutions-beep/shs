@@ -28,9 +28,16 @@ class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
   Future<void> _checkStatus() async {
     setState(() => _checking = true);
     final appState = context.read<AppState>();
-    await appState.refreshProfile();
-    await _key.currentState?.reload();
-    if (mounted) setState(() => _checking = false);
+    try {
+      await appState.refreshProfile();
+      await _key.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not check status. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
   }
 
   @override
@@ -88,7 +95,12 @@ class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: () async {
-                      await context.read<AppState>().signOut();
+                      try {
+                        await context.read<AppState>().signOut();
+                      } catch (_) {
+                        // Fall through to navigate regardless — local session
+                        // state is cleared even if the remote sign-out call fails.
+                      }
                       if (context.mounted) context.go(Paths.splash);
                     },
                     child: Text(l10n.actionSignOut, style: AppTheme.sans(13, color: Neutral.c500)),

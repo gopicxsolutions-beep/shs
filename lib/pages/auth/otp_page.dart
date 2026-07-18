@@ -26,6 +26,7 @@ class _OtpPageState extends State<OtpPage> {
   Timer? _timer;
   int _resendSeconds = 30;
   bool _verifying = false;
+  bool _resending = false;
   String? _error;
 
   String get _phone => widget.phone ?? '+91 98765 43210';
@@ -65,12 +66,15 @@ class _OtpPageState extends State<OtpPage> {
   }
 
   Future<void> _resend() async {
-    if (_resendSeconds > 0 || !SupabaseService.isConfigured) return;
+    if (_resendSeconds > 0 || _resending || !SupabaseService.isConfigured) return;
+    setState(() => _resending = true);
     try {
       await _authService.sendOtp(_phone);
-      _startResendTimer();
+      if (mounted) _startResendTimer();
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not resend the code. Please try again.');
+    } finally {
+      if (mounted) setState(() => _resending = false);
     }
   }
 
@@ -136,6 +140,7 @@ class _OtpPageState extends State<OtpPage> {
                         focusNode: _focus[i],
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
+                        textInputAction: i < 5 ? TextInputAction.next : TextInputAction.done,
                         inputFormatters: wholeNumberInputFormatters,
                         maxLength: 1,
                         style: AppTheme.sans(18, weight: FontWeight.w700),
@@ -157,7 +162,7 @@ class _OtpPageState extends State<OtpPage> {
               ],
               const SizedBox(height: 20),
               InkWell(
-                onTap: _resend,
+                onTap: _resendSeconds > 0 || _resending ? null : _resend,
                 child: Text.rich(
                   TextSpan(style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600), children: [
                     if (_resendSeconds > 0) ...[

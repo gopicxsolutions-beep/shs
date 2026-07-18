@@ -58,7 +58,7 @@ class TrendRepository {
       final present = map['present'] == true;
       byMonth[key] = (current.$1 + (present ? 1 : 0), current.$2 + 1);
     }
-    final sortedKeys = byMonth.keys.toList()..sort();
+    final sortedKeys = _lastSixMonths(byMonth.keys);
     return sortedKeys.map((k) {
       final (present, total) = byMonth[k]!;
       final pct = total == 0 ? 0.0 : (present / total) * 100;
@@ -75,8 +75,17 @@ class TrendRepository {
       final key = DateFormat('yyyy-MM').format(DateTime.parse(dateStr));
       byMonth[key] = (byMonth[key] ?? 0) + (map[valueKey] as num);
     }
-    final sortedKeys = byMonth.keys.toList()..sort();
+    final sortedKeys = _lastSixMonths(byMonth.keys);
     return sortedKeys.map((k) => MonthlyPoint(DateFormat('MMM').format(DateFormat('yyyy-MM').parse(k)), byMonth[k]!)).toList();
+  }
+
+  /// Caps each series to the last 6 calendar months, matching the class
+  /// doc comment's promise — without this, data spanning >12 months
+  /// produces duplicate "MMM" labels (e.g. two "Jan" points) since only
+  /// the month name (not the year) is ever shown on the chart axis.
+  List<String> _lastSixMonths(Iterable<String> keys) {
+    final sorted = keys.toList()..sort();
+    return sorted.length <= 6 ? sorted : sorted.sublist(sorted.length - 6);
   }
 
   List<MonthlyPoint> _mockTrend(List<num> values) {

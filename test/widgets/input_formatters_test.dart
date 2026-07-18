@@ -60,5 +60,27 @@ void main() {
       expect(() => apply(''), returnsNormally);
       expect(apply('').text, '');
     });
+
+    test('rejects an invalid keystroke without truncating prior valid input', () {
+      // Regression: a plain FilteringTextInputFormatter.allow() with an
+      // anchored (^) pattern only ever matches once at the start of the
+      // string, so everything after the first match gets silently dropped
+      // rather than just the offending character — e.g. typing a second "."
+      // into "99.5" would previously collapse the field down to "99" instead
+      // of leaving "99.5" untouched.
+      final formatter = decimalAmountInputFormatters.single;
+      const oldValue = TextEditingValue(text: '99.5', selection: TextSelection.collapsed(offset: 4));
+      const newValue = TextEditingValue(text: '99.5.', selection: TextSelection.collapsed(offset: 5));
+      final result = formatter.formatEditUpdate(oldValue, newValue);
+      expect(result.text, '99.5');
+    });
+
+    test('rejects a third decimal digit without truncating to the whole-number part', () {
+      final formatter = decimalAmountInputFormatters.single;
+      const oldValue = TextEditingValue(text: '12.34', selection: TextSelection.collapsed(offset: 5));
+      const newValue = TextEditingValue(text: '12.345', selection: TextSelection.collapsed(offset: 6));
+      final result = formatter.formatEditUpdate(oldValue, newValue);
+      expect(result.text, '12.34');
+    });
   });
 }

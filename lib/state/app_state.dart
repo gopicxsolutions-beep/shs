@@ -35,6 +35,7 @@ class AppState extends ChangeNotifier {
   Session? _session;
   Profile? _profile;
   ShgSearchResult? _pendingShg;
+  int _profileLoadGeneration = 0;
 
   // Live mode only — true from the moment a fresh profile is created until
   // Role Select completes. Without this, `hasProfile` (just `_profile !=
@@ -126,6 +127,7 @@ class AppState extends ChangeNotifier {
     _authSub = _authService.onAuthStateChange.listen((state) async {
       _session = state.session;
       if (_session == null) {
+        _profileLoadGeneration++;
         _profile = null;
       } else {
         await _loadProfile();
@@ -136,10 +138,14 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _loadProfile() async {
+    final generation = ++_profileLoadGeneration;
     try {
-      _profile = await _profileRepository.fetchMyProfile();
+      final profile = await _profileRepository.fetchMyProfile();
+      if (generation == _profileLoadGeneration) _profile = profile;
     } catch (_) {
-      _profile = null;
+      // Leave any previously-loaded profile in place — a transient fetch
+      // failure shouldn't wipe a valid profile and bounce an already
+      // onboarded user back into the onboarding flow.
     }
   }
 
@@ -178,20 +184,32 @@ class AppState extends ChangeNotifier {
       role: 'member',
       village: village,
     );
+    // Flip the routing flags and notify BEFORE the (separate) join-request
+    // submit — if that submit fails, the router still sees a consistent
+    // "profile created, needs role selection" state instead of a
+    // half-finished one (hasProfile=true but needsRoleSelection=false,
+    // which would silently skip Role Select on the next unrelated
+    // notifyListeners()). The caller still sees the thrown exception.
+    _needsRoleSelection = true;
+    notifyListeners();
     if (_pendingShg != null) {
       await _joinRequestRepository.submit(memberId: _profile!.id, shgId: _pendingShg!.id);
     }
-    _needsRoleSelection = true;
-    notifyListeners();
   }
 
   Future<void> setRole(Role role) async {
     if (SupabaseService.isConfigured) {
-      if (_profile == null) return;
+      final profileId = _profile?.id;
+      if (profileId == null) return;
       await _profileRepository.updateRole(role.name);
-      _profile = _profile!.copyWith(role: role.name);
-      _needsRoleSelection = false;
-      notifyListeners();
+      // _profile may have been cleared by a concurrent sign-out while the
+      // update above was in flight — only apply the result if it's still
+      // the same profile, instead of force-unwrapping a possibly-null value.
+      if (_profile?.id == profileId) {
+        _profile = _profile!.copyWith(role: role.name);
+        _needsRoleSelection = false;
+        notifyListeners();
+      }
       return;
     }
     _legacyRole = role;
@@ -212,6 +230,7 @@ class AppState extends ChangeNotifier {
   Future<void> signOut() async {
     if (SupabaseService.isConfigured) {
       await _authService.signOut();
+      _profileLoadGeneration++;
       _profile = null;
       _pendingShg = null;
       _needsRoleSelection = false;

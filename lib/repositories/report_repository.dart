@@ -34,7 +34,12 @@ class ReportRepository {
 
     final completedMeetings = await _client.from('meetings').select('id').eq('shg_id', shgId).eq('status', 'completed');
     final meetingsTotal = (completedMeetings as List).length;
-    final attendance = await _client.from('meeting_attendance').select('present, meetings!inner(status)').eq('member_id', memberId).eq('meetings.status', 'completed');
+    final attendance = await _client
+        .from('meeting_attendance')
+        .select('present, meetings!inner(shg_id, status)')
+        .eq('member_id', memberId)
+        .eq('meetings.shg_id', shgId)
+        .eq('meetings.status', 'completed');
     final meetingsAttended = (attendance as List).where((r) => (r as Map<String, dynamic>)['present'] == true).length;
 
     return MemberReport(
