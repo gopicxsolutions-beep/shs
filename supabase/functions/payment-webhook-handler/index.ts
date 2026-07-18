@@ -14,9 +14,27 @@
 // (reference, status, signature) are illustrative placeholders; the real
 // shape depends on which gateway is chosen and must be adjusted together
 // with the signature-verification step below.
+//
+// Signature verification: implements the HMAC-SHA256-over-raw-body scheme
+// most gateways use (Razorpay, Cashfree, Stripe-style). The signature
+// header name (`x-webhook-signature`) and encoding (hex) are the common
+// default but gateway-specific — adjust both to match whichever real
+// gateway is wired in. Comparison is constant-time to avoid a timing side
+// channel on the secret.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+async function verifySignature(rawBody: string, signatureHex: string, secret: string): Promise<boolean> {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(rawBody));
+  const expectedHex = Array.from(new Uint8Array(mac)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  if (expectedHex.length !== signatureHex.length) return false;
+  // Constant-time compare — avoid short-circuiting on the first mismatched byte.
+  let diff = 0;
+  for (let i = 0; i < expectedHex.length; i++) diff |= expectedHex.charCodeAt(i) ^ signatureHex.charCodeAt(i);
+  return diff === 0;
+}
 
 serve(async (req) => {
   try {
@@ -26,12 +44,13 @@ serve(async (req) => {
     }
 
     const signature = req.headers.get('x-webhook-signature');
-    // TODO: verify `signature` against the raw request body using the real
-    // gateway's HMAC scheme before trusting the payload — left unimplemented
-    // since the exact scheme depends on which gateway is chosen.
     if (!signature) throw new Error('missing webhook signature');
 
-    const payload = await req.json();
+    const rawBody = await req.text();
+    const validSignature = await verifySignature(rawBody, signature, webhookSecret);
+    if (!validSignature) throw new Error('invalid webhook signature');
+
+    const payload = JSON.parse(rawBody);
     const { reference, status } = payload as { reference?: string; status?: string };
     if (!reference || !status) throw new Error('reference and status are required in the webhook payload');
 
