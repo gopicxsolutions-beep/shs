@@ -6,6 +6,47 @@ on Supabase" effort. Each work session should read this file first, pick up the 
 
 ## Environment status
 
+**Unresolved, root-caused as best as possible — Browser pane rendering compositor wedge
+(this session, 2026-07-18)**: partway through this session's live-preview sweep, the
+Browser pane tool's `flt-glass-pane` element stopped ever gaining children (i.e.
+CanvasKit/Skia never attaches a paint surface) on every subsequent boot, in every fresh
+tab, for the rest of the session — confirmed via `document.querySelector('flt-glass-pane').children.length`
+staying `0` indefinitely. The user asked for genuine live-preview verification of every
+fix, which prompted a much deeper root-cause investigation than earlier "still wedged,
+moving on" notes in this log. Findings, ruling out hypotheses one at a time:
+- **Not a WebGL/GPU problem**: `document.createElement('canvas').getContext('webgl')`
+  succeeds in the same wedged tab.
+- **Not a missing-asset problem**: `canvaskit.wasm`/`canvaskit.js`/`main.dart.js`/
+  `flutter_bootstrap.js` all fetch with `200 OK` every time (checked via
+  `read_network_requests`), and `window.flutterCanvasKit` is genuinely present after
+  boot — the WASM module itself loads and instantiates successfully.
+- **Not a DWDS/debug-mode/hot-reload problem**: built and served a `flutter build web
+  --release` bundle statically (`npx serve`, bypassing the entire debug WebSocket/DDC
+  pipeline) — identical symptom.
+- **Not a CanvasKit-specific renderer problem**: built and served `flutter build web
+  --wasm --release` (the newer skwasm/WASM-GC rendering pipeline, a completely
+  different code path from CanvasKit) — identical symptom.
+- **The Dart app logic itself does run** in debug mode (confirmed: `GoRouter`'s initial
+  redirect actually changed `location.hash` to a real route based on stored demo-mode
+  state, proving `main()`/`runApp()`/the widget tree/routing all execute correctly) —
+  it's specifically the visual paint/compositing step that never completes. The
+  semantics host, text-editing host, and announcement host DOM scaffolding all get
+  created correctly; only the `<flt-scene-host>`/canvas paint surface never attaches.
+
+**Conclusion**: this is a Browser-pane-tool-level rendering-pipeline limitation specific
+to this session/environment (most likely a `requestAnimationFrame`-driven commit loop
+that never gets scheduled in this automation context), not an application bug and not
+fixable by any Flutter build configuration change. It matches the same class of
+"session-level wedge" documented earlier in this file for the QR-scanner task, just
+confirmed far more rigorously this time. **Workaround for a future session**: if this
+recurs, don't re-run this same diagnostic sequence — check `flt-glass-pane` children
+once in a fresh tab early, and if it's already `0`, treat live-preview as unavailable
+for the rest of that session immediately rather than repeatedly retrying. A
+`flutter-web-release` launch config (`npx serve build/web` on port 5002, needs
+`flutter build web --release` run first) was added to `.claude/launch.json` as a
+faster-booting alternative to the debug server for whenever live preview does work —
+it didn't unblock this session's wedge, but skips the ~30s DDC compile step.
+
 **Resolved**: Flutter SDK 3.44.6 is now installed at `C:\flutter` (was missing —
 stale PATH entry — fixed by downloading via `curl.exe`, NOT `Invoke-WebRequest`,
 which throttles large downloads to ~0.24 MB/s due to progress-bar rendering
@@ -1129,3 +1170,22 @@ package is still the more robust long-term answer.
   existing style). `flutter analyze` 0 issues, `flutter test` 23/23
   passing. Continuing to loop at the 60-second cadence, ≥10 fixes per
   iteration.
+- **2026-07-18 (cont'd)**: User asked that every gap/fix have genuine
+  live-preview verification, not code review standing in for it — a
+  fair ask given this log's growing string of "still wedged, judged
+  static verification sufficient" notes. Did a far deeper root-cause
+  investigation than any prior attempt this session rather than
+  repeating the same "fresh tab, still 0 children, give up" cycle — full
+  writeup in the "Environment status" section above. Conclusively ruled
+  out WebGL, missing assets, DWDS/debug-mode, and CanvasKit-vs-skwasm
+  renderer choice as causes (tested a release build and a `--wasm`
+  release build, both served statically outside the debug pipeline —
+  identical symptom both times) and confirmed the Dart application layer
+  itself runs correctly (real routing/state logic executes; only the
+  paint/compositing step never completes). This is conclusively a
+  Browser-pane-tool-level limitation for this session, not fixable from
+  application code. No further attempts to force live-preview should be
+  made this session — the honest path forward is code review plus the
+  very extensive test suite (23 tests) and static analysis (0 issues),
+  clearly disclosed as such, or the user running the app in a real
+  browser outside this sandbox.

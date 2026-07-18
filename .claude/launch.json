@@ -12,6 +12,12 @@
       "runtimeExecutable": "flutter",
       "runtimeArgs": ["run", "-d", "chrome", "--web-port=5001"],
       "port": 5001
+    },
+    {
+      "name": "flutter-web-release",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "serve", "-l", "5002", "build/web"],
+      "port": 5002
     }
   ]
 }
