@@ -23,6 +23,7 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
   final _name = TextEditingController();
   final _agency = TextEditingController();
   final _benefit = TextEditingController();
+  bool _busy = false;
 
   @override
   void dispose() {
@@ -57,12 +58,17 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
       ),
     );
     if (confirmed != true || _name.text.trim().isEmpty) return;
-    await _repo.createScheme(name: _name.text.trim(), agency: _agency.text.trim(), benefit: _benefit.text.trim());
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(SupabaseService.isConfigured ? 'Scheme added' : 'Demo mode — scheme not saved (connect Supabase to persist)'),
-      ));
-      _key.currentState?.reload();
+    setState(() => _busy = true);
+    try {
+      await _repo.createScheme(name: _name.text.trim(), agency: _agency.text.trim(), benefit: _benefit.text.trim());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(SupabaseService.isConfigured ? 'Scheme added' : 'Demo mode — scheme not saved (connect Supabase to persist)'),
+        ));
+        _key.currentState?.reload();
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -79,8 +85,13 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
       ),
     );
     if (confirmed != true) return;
-    await _repo.deleteScheme(s.id);
-    if (mounted) _key.currentState?.reload();
+    setState(() => _busy = true);
+    try {
+      await _repo.deleteScheme(s.id);
+      if (mounted) _key.currentState?.reload();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -92,8 +103,8 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
         title: 'Manage Schemes',
         right: isAdmin
             ? IconButton(
-                icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
-                onPressed: SupabaseService.isConfigured ? _addScheme : null,
+                icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured && !_busy ? Brand.c600 : Neutral.c300),
+                onPressed: SupabaseService.isConfigured && !_busy ? _addScheme : null,
                 tooltip: 'Add scheme',
               )
             : null,
@@ -126,8 +137,8 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
                       ),
                       if (isAdmin)
                         IconButton(
-                          icon: Icon(Icons.delete_outline_rounded, color: SupabaseService.isConfigured ? Accent.red500 : Neutral.c300),
-                          onPressed: SupabaseService.isConfigured ? () => _deleteScheme(s) : null,
+                          icon: Icon(Icons.delete_outline_rounded, color: SupabaseService.isConfigured && !_busy ? Accent.red500 : Neutral.c300),
+                          onPressed: SupabaseService.isConfigured && !_busy ? () => _deleteScheme(s) : null,
                           tooltip: 'Delete ${s.name}',
                         ),
                     ],

@@ -27,6 +27,8 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
   final GlobalKey<AppAsyncBuilderState<MeetingMinutes?>> _minutesKey = GlobalKey();
   final GlobalKey<AppAsyncBuilderState<List<MeetingActionItem>>> _actionsKey = GlobalKey();
   List<String> _decisions = [];
+  bool _savingDecision = false;
+  bool _savingActionItem = false;
 
   @override
   void dispose() {
@@ -36,21 +38,33 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
   }
 
   Future<void> _addDecision() async {
+    if (_savingDecision) return;
     final text = _decisionController.text.trim();
     if (text.isEmpty) return;
-    _decisions = [..._decisions, text];
+    setState(() => _savingDecision = true);
+    final next = [..._decisions, text];
     _decisionController.clear();
-    await _repo.saveMinutes(widget.meetingId, _decisions);
-    _minutesKey.currentState?.reload();
-    setState(() {});
+    try {
+      await _repo.saveMinutes(widget.meetingId, next);
+      _decisions = next;
+      _minutesKey.currentState?.reload();
+    } finally {
+      if (mounted) setState(() => _savingDecision = false);
+    }
   }
 
   Future<void> _addActionItem() async {
+    if (_savingActionItem) return;
     final text = _taskController.text.trim();
     if (text.isEmpty) return;
+    setState(() => _savingActionItem = true);
     _taskController.clear();
-    await _repo.addActionItem(widget.meetingId, text, dueDate: DateTime.now().add(const Duration(days: 7)));
-    _actionsKey.currentState?.reload();
+    try {
+      await _repo.addActionItem(widget.meetingId, text, dueDate: DateTime.now().add(const Duration(days: 7)));
+      if (mounted) _actionsKey.currentState?.reload();
+    } finally {
+      if (mounted) setState(() => _savingActionItem = false);
+    }
   }
 
   @override
@@ -96,8 +110,8 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
-                          onPressed: SupabaseService.isConfigured ? _addDecision : null,
+                          icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured && !_savingDecision ? Brand.c600 : Neutral.c300),
+                          onPressed: SupabaseService.isConfigured && !_savingDecision ? _addDecision : null,
                           tooltip: 'Add decision',
                         ),
                       ]),
@@ -149,8 +163,8 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
-                            onPressed: SupabaseService.isConfigured ? _addActionItem : null,
+                            icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured && !_savingActionItem ? Brand.c600 : Neutral.c300),
+                            onPressed: SupabaseService.isConfigured && !_savingActionItem ? _addActionItem : null,
                             tooltip: 'Add action item',
                           ),
                         ]),

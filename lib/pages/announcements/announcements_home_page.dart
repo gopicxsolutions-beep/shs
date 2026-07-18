@@ -34,6 +34,7 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
   final _title = TextEditingController();
   final _body = TextEditingController();
   String _category = 'Circular';
+  bool _busy = false;
 
   static const _categories = ['Circular', 'Meeting', 'Training', 'Scheme'];
 
@@ -75,10 +76,15 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
       ),
     );
     if (confirmed != true || _title.text.trim().isEmpty) return;
-    await _repo.post(shgId: shgId, createdBy: createdBy, title: _title.text.trim(), body: _body.text.trim(), category: _category);
-    _title.clear();
-    _body.clear();
-    _key.currentState?.reload();
+    setState(() => _busy = true);
+    try {
+      await _repo.post(shgId: shgId, createdBy: createdBy, title: _title.text.trim(), body: _body.text.trim(), category: _category);
+      _title.clear();
+      _body.clear();
+      if (mounted) _key.currentState?.reload();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -93,8 +99,8 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
         title: 'Announcements',
         right: isLeaderOrStaff
             ? IconButton(
-                icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
-                onPressed: SupabaseService.isConfigured ? () => _post(shgId, memberId) : null,
+                icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured && !_busy ? Brand.c600 : Neutral.c300),
+                onPressed: SupabaseService.isConfigured && !_busy ? () => _post(shgId, memberId) : null,
                 tooltip: 'Post announcement',
               )
             : null,
