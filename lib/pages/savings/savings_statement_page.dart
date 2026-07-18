@@ -30,9 +30,9 @@ class SavingsStatementPage extends StatelessWidget {
           // Statement reads oldest → newest with a running balance.
           final chronological = entries.reversed.toList();
           final closingBalance = chronological.fold<num>(0, (sum, e) => sum + e.amount);
-          var running = 0;
+          num running = 0;
           final rows = chronological.map((e) {
-            running += e.amount.round();
+            running += e.amount;
             return (e, running);
           }).toList();
 
@@ -97,7 +97,7 @@ class SavingsStatementPage extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text('+₹${e.amount}', style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
-                                Text('₹$balance', style: AppTheme.sans(11, color: Neutral.c500)),
+                                Text('₹${NumberFormat('#,##0').format(balance)}', style: AppTheme.sans(11, color: Neutral.c500)),
                               ],
                             ),
                           ],

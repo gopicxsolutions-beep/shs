@@ -24,6 +24,7 @@ class MeetingAttendancePage extends StatefulWidget {
 class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
   final _repo = MeetingRepository();
   Meeting? _selected;
+  final _updating = <String>{};
 
   @override
   Widget build(BuildContext context) {
@@ -108,9 +109,10 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                                       Switch(
                                         value: row.present,
                                         activeThumbColor: Brand.c600,
-                                        onChanged: !SupabaseService.isConfigured
+                                        onChanged: !SupabaseService.isConfigured || _updating.contains(row.memberId)
                                             ? null
                                             : (v) async {
+                                                setState(() => _updating.add(row.memberId));
                                                 try {
                                                   await _repo.markAttendance(meeting.id, row.memberId, v);
                                                   if (!context.mounted) return;
@@ -121,6 +123,8 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                                                   if (context.mounted) {
                                                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update attendance. Please try again.')));
                                                   }
+                                                } finally {
+                                                  if (context.mounted) setState(() => _updating.remove(row.memberId));
                                                 }
                                               },
                                       ),

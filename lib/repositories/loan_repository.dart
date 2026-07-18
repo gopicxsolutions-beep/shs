@@ -93,7 +93,10 @@ class LoanRepository {
         .map((rows) => rows.map(Loan.fromMap).toList());
   }
 
-  List<Loan> _mockLoans() => mock.loans
+  // Reversed so demo mode matches the live query's `created_at desc` order
+  // (newest first) — the mock list is declared oldest-disbursed-first, with
+  // the still-pending applications (no disbursedOn yet) last.
+  List<Loan> _mockLoans() => mock.loans.reversed
       .map((l) => Loan(
             id: l.id,
             memberId: l.id,

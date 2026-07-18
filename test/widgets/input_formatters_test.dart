@@ -1,4 +1,4 @@
-import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shg_saathi/widgets/input_formatters.dart';
 
@@ -81,6 +81,79 @@ void main() {
       const newValue = TextEditingValue(text: '12.345', selection: TextSelection.collapsed(offset: 6));
       final result = formatter.formatEditUpdate(oldValue, newValue);
       expect(result.text, '12.34');
+    });
+  });
+
+  group('OtpBoxFormatter', () {
+    // Regression: a plain `maxLength: 1` field silently truncates a pasted
+    // multi-digit code (e.g. copied whole from an SMS) down to its first
+    // character. This formatter should still show only 1 digit in the box
+    // that received the paste, but distribute the rest across the following
+    // boxes (verified via the controllers it was given).
+    late List<TextEditingController> controllers;
+    late List<FocusNode> focusNodes;
+    late int filledCount;
+
+    setUp(() {
+      controllers = List.generate(6, (_) => TextEditingController());
+      focusNodes = List.generate(6, (_) => FocusNode());
+      filledCount = 0;
+    });
+
+    tearDown(() {
+      for (final c in controllers) {
+        c.dispose();
+      }
+      for (final f in focusNodes) {
+        f.dispose();
+      }
+    });
+
+    test('a single typed digit passes through untouched', () {
+      final formatter = OtpBoxFormatter(index: 0, controllers: controllers, focusNodes: focusNodes, onFilled: () => filledCount++);
+      const oldValue = TextEditingValue(text: '');
+      const newValue = TextEditingValue(text: '7', selection: TextSelection.collapsed(offset: 1));
+      final result = formatter.formatEditUpdate(oldValue, newValue);
+      expect(result.text, '7');
+    });
+
+    test('pasting a full code into the first box only shows its own first digit', () {
+      final formatter = OtpBoxFormatter(index: 0, controllers: controllers, focusNodes: focusNodes, onFilled: () => filledCount++);
+      const oldValue = TextEditingValue(text: '');
+      const newValue = TextEditingValue(text: '123456', selection: TextSelection.collapsed(offset: 6));
+      final result = formatter.formatEditUpdate(oldValue, newValue);
+      expect(result.text, '1', reason: 'this box must still show exactly 1 character, not the whole pasted string');
+    });
+
+    test('pasting a full code distributes the remaining digits to the following boxes', () async {
+      final formatter = OtpBoxFormatter(index: 0, controllers: controllers, focusNodes: focusNodes, onFilled: () => filledCount++);
+      const oldValue = TextEditingValue(text: '');
+      const newValue = TextEditingValue(text: '123456', selection: TextSelection.collapsed(offset: 6));
+      formatter.formatEditUpdate(oldValue, newValue);
+      // The distribution runs in a microtask, after formatEditUpdate returns.
+      await Future.microtask(() {});
+
+      expect(controllers.map((c) => c.text).toList(), ['1', '2', '3', '4', '5', '6']);
+      expect(filledCount, 1);
+    });
+
+    test('a paste that starts mid-row only fills up to the last box, without index overflow', () async {
+      final formatter = OtpBoxFormatter(index: 4, controllers: controllers, focusNodes: focusNodes, onFilled: () => filledCount++);
+      const oldValue = TextEditingValue(text: '');
+      const newValue = TextEditingValue(text: '89', selection: TextSelection.collapsed(offset: 2));
+      expect(() => formatter.formatEditUpdate(oldValue, newValue), returnsNormally);
+      await Future.microtask(() {});
+
+      expect(controllers[4].text, '8');
+      expect(controllers[5].text, '9');
+    });
+
+    test('non-digit characters in a paste are stripped before distribution', () {
+      final formatter = OtpBoxFormatter(index: 0, controllers: controllers, focusNodes: focusNodes, onFilled: () => filledCount++);
+      const oldValue = TextEditingValue(text: '');
+      const newValue = TextEditingValue(text: '12-34', selection: TextSelection.collapsed(offset: 5));
+      final result = formatter.formatEditUpdate(oldValue, newValue);
+      expect(result.text, '1');
     });
   });
 }

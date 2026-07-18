@@ -141,7 +141,7 @@ class _OtpPageState extends State<OtpPage> {
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         textInputAction: i < 5 ? TextInputAction.next : TextInputAction.done,
-                        inputFormatters: wholeNumberInputFormatters,
+                        inputFormatters: [OtpBoxFormatter(index: i, controllers: _digits, focusNodes: _focus, onFilled: () => setState(() {}))],
                         maxLength: 1,
                         style: AppTheme.sans(18, weight: FontWeight.w700),
                         decoration: InputDecoration(

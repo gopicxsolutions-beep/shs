@@ -13,7 +13,19 @@ class SchemeRepository {
 
   Future<List<Scheme>> fetchSchemes() async {
     if (!_live) {
-      return mock.schemes.map((s) => Scheme(id: s.id, name: s.name, fullName: s.fullName, agency: s.agency, benefit: s.benefit, eligibility: s.eligibility, deadline: _parseMockDate(s.deadline))).toList();
+      final list = mock.schemes
+          .map((s) => Scheme(id: s.id, name: s.name, fullName: s.fullName, agency: s.agency, benefit: s.benefit, eligibility: s.eligibility, deadline: _parseMockDate(s.deadline)))
+          .toList();
+      // Match the live query's `order('deadline')` — ascending by soonest
+      // deadline, with no-deadline schemes sorted last (Postgres' default
+      // NULLS LAST for ascending order).
+      list.sort((a, b) {
+        if (a.deadline == null && b.deadline == null) return 0;
+        if (a.deadline == null) return 1;
+        if (b.deadline == null) return -1;
+        return a.deadline!.compareTo(b.deadline!);
+      });
+      return list;
     }
     final rows = await _client.from('schemes').select().order('deadline');
     return (rows as List).map((r) => Scheme.fromMap(r as Map<String, dynamic>)).toList();

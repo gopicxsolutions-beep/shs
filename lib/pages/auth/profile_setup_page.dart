@@ -205,6 +205,7 @@ class _ShgSearchSheetState extends State<_ShgSearchSheet> {
   List<ShgSearchResult> _results = [];
   bool _loading = false;
   String? _error;
+  int _searchGeneration = 0;
 
   @override
   void initState() {
@@ -225,14 +226,18 @@ class _ShgSearchSheetState extends State<_ShgSearchSheet> {
   }
 
   Future<void> _search(String value) async {
+    // A later keystroke can start a second search before an earlier one's
+    // response arrives; only the most recent request may write its results,
+    // so a slow stale response can't clobber what the user is now seeing.
+    final generation = ++_searchGeneration;
     setState(() => _loading = true);
     try {
       final results = await widget.repository.searchShgs(value);
-      if (mounted) setState(() => _results = results);
+      if (mounted && generation == _searchGeneration) setState(() => _results = results);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not load SHGs. Please try again.');
+      if (mounted && generation == _searchGeneration) setState(() => _error = 'Could not load SHGs. Please try again.');
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && generation == _searchGeneration) setState(() => _loading = false);
     }
   }
 
