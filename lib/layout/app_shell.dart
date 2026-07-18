@@ -59,27 +59,32 @@ class _BottomNav extends StatelessWidget {
                 child: InkWell(
                   onTap: () => GoRouter.of(context).go(item.to),
                   child: item.center
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Transform.translate(
-                              offset: const Offset(0, -14),
-                              child: Container(
-                                width: 52,
-                                height: 52,
-                                decoration: BoxDecoration(
-                                  color: active ? Brand.c700 : Brand.c600,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [BoxShadow(color: Brand.c600.withValues(alpha: 0.5), blurRadius: 16, offset: const Offset(0, 6))],
+                      ? OverflowBox(
+                          maxHeight: double.infinity,
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Transform.translate(
+                                offset: const Offset(0, -14),
+                                child: Container(
+                                  width: 52,
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    color: active ? Brand.c700 : Brand.c600,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [BoxShadow(color: Brand.c600.withValues(alpha: 0.5), blurRadius: 16, offset: const Offset(0, 6))],
+                                  ),
+                                  child: Icon(item.icon, color: Colors.white, size: 24),
                                 ),
-                                child: Icon(item.icon, color: Colors.white, size: 24),
                               ),
-                            ),
-                            Transform.translate(
-                              offset: const Offset(0, -10),
-                              child: Text(item.label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: active ? Brand.c600 : Neutral.c500)),
-                            ),
-                          ],
+                              Transform.translate(
+                                offset: const Offset(0, -10),
+                                child: Text(item.label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: active ? Brand.c600 : Neutral.c500)),
+                              ),
+                            ],
+                          ),
                         )
                       : Column(
                           mainAxisAlignment: MainAxisAlignment.center,

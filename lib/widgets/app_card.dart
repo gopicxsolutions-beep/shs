@@ -21,7 +21,7 @@ class AppCard extends StatelessWidget {
         border: Border.all(color: borderColor ?? Neutral.c100.withValues(alpha: 0.6)),
         boxShadow: cardShadow,
       ),
-      child: child,
+      child: Material(type: MaterialType.transparency, child: child),
     );
     if (onTap == null) return content;
     return InkWell(
