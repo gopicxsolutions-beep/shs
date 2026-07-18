@@ -57,7 +57,7 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
             children: [
               TextField(controller: _title, maxLength: 100, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'Title')),
               const SizedBox(height: 12),
-              TextField(controller: _body, maxLines: 3, maxLength: 1000, decoration: const InputDecoration(hintText: 'Details')),
+              TextField(controller: _body, maxLines: 3, maxLength: 1000, textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'Details')),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -76,12 +76,19 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
       ),
     );
     if (confirmed != true || _title.text.trim().isEmpty) return;
+    if (!mounted) return;
     setState(() => _busy = true);
     try {
       await _repo.post(shgId: shgId, createdBy: createdBy, title: _title.text.trim(), body: _body.text.trim(), category: _category);
       _title.clear();
       _body.clear();
       if (mounted) _key.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not post this announcement. Please try again.')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

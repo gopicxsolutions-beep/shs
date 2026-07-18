@@ -87,7 +87,17 @@ class _LedgerList extends StatelessWidget {
                       child: OutlinedButton(
                         onPressed: !SupabaseService.isConfigured
                             ? null
-                            : () => repo.verifyEntry(e.id),
+                            : () async {
+                                try {
+                                  await repo.verifyEntry(e.id);
+                                } catch (_) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Could not verify this entry. Please try again.')),
+                                    );
+                                  }
+                                }
+                              },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           side: BorderSide(color: Brand.c500),

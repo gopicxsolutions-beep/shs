@@ -11,23 +11,28 @@ import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/list_row.dart';
 
-class SavingsHistoryPage extends StatelessWidget {
+class SavingsHistoryPage extends StatefulWidget {
   const SavingsHistoryPage({super.key});
+  @override
+  State<SavingsHistoryPage> createState() => _SavingsHistoryPageState();
+}
+
+class _SavingsHistoryPageState extends State<SavingsHistoryPage> {
+  final _repo = SavingsRepository();
+  final _key = GlobalKey<AppAsyncBuilderState<List<SavingsEntry>>>();
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
-    final repo = SavingsRepository();
     final memberId = appState.profile?.id;
-    final key = GlobalKey<AppAsyncBuilderState<List<SavingsEntry>>>();
 
     return Scaffold(
       appBar: const PageHeader(title: 'Savings History'),
       body: RefreshIndicator(
-        onRefresh: () => key.currentState?.reload() ?? Future.value(),
+        onRefresh: () => _key.currentState?.reload() ?? Future.value(),
         child: AppAsyncBuilder<List<SavingsEntry>>(
-          key: key,
-          future: () => repo.fetchForMember(memberId),
+          key: _key,
+          future: () => _repo.fetchForMember(memberId),
           builder: (context, entries) {
             if (entries.isEmpty) {
               return ListView(children: const [AppEmptyState(icon: Icons.history_rounded, message: 'No savings history yet')]);

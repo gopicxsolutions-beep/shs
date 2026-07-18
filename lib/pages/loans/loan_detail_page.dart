@@ -14,20 +14,24 @@ import '../../widgets/input_formatters.dart';
 import '../../widgets/progress_bar.dart';
 import '../../widgets/section_header.dart';
 
-class LoanDetailPage extends StatelessWidget {
+class LoanDetailPage extends StatefulWidget {
   final String loanId;
   const LoanDetailPage({super.key, required this.loanId});
+  @override
+  State<LoanDetailPage> createState() => _LoanDetailPageState();
+}
+
+class _LoanDetailPageState extends State<LoanDetailPage> {
+  final _repo = LoanRepository();
+  final _key = GlobalKey<AppAsyncBuilderState<Loan?>>();
 
   @override
   Widget build(BuildContext context) {
-    final repo = LoanRepository();
-    final key = GlobalKey<AppAsyncBuilderState<Loan?>>();
-
     return Scaffold(
       appBar: const PageHeader(title: 'Loan Detail'),
       body: AppAsyncBuilder<Loan?>(
-        key: key,
-        future: () => repo.fetchById(loanId),
+        key: _key,
+        future: () => _repo.fetchById(widget.loanId),
         builder: (context, loan) {
           if (loan == null) {
             return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This loan could not be found');
@@ -70,13 +74,13 @@ class LoanDetailPage extends StatelessWidget {
                 AppButton(
                   label: 'Record Payment',
                   fullWidth: true,
-                  onPressed: !SupabaseService.isConfigured ? null : () => _recordPayment(context, repo, loan, key),
+                  onPressed: !SupabaseService.isConfigured ? null : () => _recordPayment(context, loan),
                 ),
               ],
               const SizedBox(height: 24),
               const SectionHeader(title: 'Payment History'),
               AppAsyncBuilder<List<LoanPayment>>(
-                future: () => repo.fetchPayments(loanId),
+                future: () => _repo.fetchPayments(widget.loanId),
                 builder: (context, payments) {
                   if (payments.isEmpty) {
                     return const AppEmptyState(icon: Icons.receipt_long_rounded, message: 'No payments recorded yet');
@@ -115,7 +119,7 @@ class LoanDetailPage extends StatelessWidget {
         ),
       );
 
-  Future<void> _recordPayment(BuildContext context, LoanRepository repo, Loan loan, GlobalKey<AppAsyncBuilderState<Loan?>> key) async {
+  Future<void> _recordPayment(BuildContext context, Loan loan) async {
     final controller = TextEditingController(text: '${loan.emi}');
     String? error;
     var submitting = false;
@@ -128,7 +132,14 @@ class LoanDetailPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(controller: controller, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, decoration: const InputDecoration(prefixText: '₹')),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                inputFormatters: decimalAmountInputFormatters,
+                textInputAction: TextInputAction.done,
+                maxLength: 7,
+                decoration: const InputDecoration(prefixText: '₹', counterText: ''),
+              ),
               if (error != null) ...[
                 const SizedBox(height: 12),
                 Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
@@ -152,7 +163,7 @@ class LoanDetailPage extends StatelessWidget {
                       });
                       try {
                         final newOutstanding = (loan.outstanding - amount).clamp(0, loan.amount);
-                        await repo.recordPayment(loan.id, amount, newOutstanding);
+                        await _repo.recordPayment(loan.id, amount, newOutstanding);
                         if (context.mounted) Navigator.of(context).pop(true);
                       } catch (_) {
                         setState(() {
@@ -167,6 +178,6 @@ class LoanDetailPage extends StatelessWidget {
         ),
       ),
     );
-    if (recorded == true) key.currentState?.reload();
+    if (recorded == true) _key.currentState?.reload();
   }
 }

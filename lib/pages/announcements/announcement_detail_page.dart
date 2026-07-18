@@ -38,7 +38,13 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
       body: AppAsyncBuilder<Announcement?>(
         future: () async {
           final a = await _repo.fetchById(widget.announcementId, memberId);
-          if (a != null) await _repo.markRead(widget.announcementId, memberId);
+          if (a != null) {
+            try {
+              await _repo.markRead(widget.announcementId, memberId);
+            } catch (_) {
+              // read-receipt failure must not hide successfully-loaded content
+            }
+          }
           return a;
         },
         builder: (context, a) {
