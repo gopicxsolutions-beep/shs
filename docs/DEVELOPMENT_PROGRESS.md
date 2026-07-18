@@ -1271,3 +1271,38 @@ package is still the more robust long-term answer.
   in earlier iterations. `flutter analyze` 0 issues, `flutter test`
   66/66 passing (up from 65). Continuing to loop at the 60-second
   cadence, ≥10 fixes per iteration, static verification only.
+- **2026-07-18 (cont'd) — loop stopped, credential-free gaps exhausted**:
+  This iteration thoroughly investigated 4 more categories and found
+  zero genuine new bugs, each ruled out with real evidence rather than
+  assumed clean: (1) missing `Key`s on the 22 `ListView.builder` usages
+  across the app — checked for the actual risk conditions (reorderable/
+  dismissible lists, or list items owning their own
+  `TextEditingController`/`AnimationController`) and found neither
+  anywhere in the codebase, so Flutter's default type+position
+  reconciliation is genuinely safe here, not a live bug; (2) date/time
+  UTC-vs-local mismatches — found only one `DateFormat` call anywhere
+  with an actual time component (`admin_monitoring_page.dart`'s
+  `checkedAt`), traced it to always being set via client-side
+  `DateTime.now()` (already local, never parsed from a UTC DB
+  timestamp), so no conversion bug exists; (3) more regression tests for
+  this session's remaining untested fixes — found the obvious
+  candidates (`meeting_attendance_page.dart`, `course_detail_page.dart`,
+  etc.) all hit the same `SupabaseService.isConfigured` demo-data-vs-
+  live-button architectural conflict already disclosed and left alone
+  twice earlier this session, not a new problem to solve; (4)
+  `BuildContext` usage across `await` gaps without a `mounted` check — a
+  scripted sweep found zero violations, confirming this codebase has
+  been consistently applying the `mounted` guard from the start (and
+  `flutter analyze`'s `use_build_context_synchronously` lint, part of
+  the enabled `flutter_lints` set, is already at zero). Combined with
+  `dart fix --dry-run` reporting "Nothing to fix!" and `flutter analyze`
+  already at 0 — this is a legitimate, well-substantiated signal that
+  the easy credential-free gaps for this codebase are genuinely
+  exhausted, not a case of not looking hard enough. Per the standing
+  instruction not to pad with trivial/cosmetic changes once real gaps
+  run out, **stopped the self-paced loop** here rather than manufacture
+  a 10th finding. See the session summary given directly to the user
+  for the full accounting of what remains blocked on real credentials
+  or user input (payment gateway, real voice STT, the Storage service-
+  role-key cleanup, the logo file, and i18n coverage beyond auth/
+  settings chrome).
