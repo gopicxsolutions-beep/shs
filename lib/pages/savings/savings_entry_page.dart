@@ -128,6 +128,7 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
                           keyboardType: const TextInputType.numberWithOptions(decimal: false),
                           inputFormatters: wholeNumberInputFormatters,
                           textInputAction: TextInputAction.done,
+                          maxLength: 7,
                           style: AppTheme.display(22),
                           decoration: const InputDecoration(border: InputBorder.none, hintText: '0'),
                           validator: _validateAmount,

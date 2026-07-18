@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show AuthState, Session;
 import '../models/profile.dart';
 import '../models/types.dart';
 import '../repositories/shg_join_request_repository.dart';
+import '../repositories/shg_repository.dart';
 import '../services/auth_service.dart';
 import '../services/profile_repository.dart';
 import '../services/supabase_service.dart';
@@ -20,14 +21,16 @@ import '../services/supabase_service.dart';
 ///    [defaultUser]'s role, so the 5 dashboards stay explorable without a
 ///    backend (matches the previous `restore()`/`setRole()` behavior).
 class AppState extends ChangeNotifier {
-  AppState({AuthService? authService, ProfileRepository? profileRepository, ShgJoinRequestRepository? joinRequestRepository})
+  AppState({AuthService? authService, ProfileRepository? profileRepository, ShgJoinRequestRepository? joinRequestRepository, ShgRepository? shgRepository})
       : _authService = authService ?? AuthService(),
         _profileRepository = profileRepository ?? ProfileRepository(),
-        _joinRequestRepository = joinRequestRepository ?? ShgJoinRequestRepository();
+        _joinRequestRepository = joinRequestRepository ?? ShgJoinRequestRepository(),
+        _shgRepository = shgRepository ?? ShgRepository();
 
   final AuthService _authService;
   final ProfileRepository _profileRepository;
   final ShgJoinRequestRepository _joinRequestRepository;
+  final ShgRepository _shgRepository;
   StreamSubscription<AuthState>? _authSub;
 
   Language language = Language.en;
@@ -35,6 +38,12 @@ class AppState extends ChangeNotifier {
   Session? _session;
   Profile? _profile;
   ShgSearchResult? _pendingShg;
+  // The real SHG name for `_profile!.shgId`, fetched once the profile loads
+  // — `_pendingShg` only ever reflects the SHG picked during onboarding and
+  // is never repopulated on later sessions, so `user.shgName` fell back to
+  // `defaultUser.shgName` (a hardcoded demo placeholder) for every returning
+  // approved member. See `user` getter below.
+  String? _shgName;
   int _profileLoadGeneration = 0;
 
   // Live mode only — true from the moment a fresh profile is created until
@@ -45,6 +54,15 @@ class AppState extends ChangeNotifier {
   // mode (see the two-flag split below), but never fixed for live mode
   // since real phone OTP can't complete in this environment and this path
   // was never actually exercised. See docs/DEVELOPMENT_PROGRESS.md.
+  //
+  // This field's in-memory default (false) is indistinguishable from
+  // "already completed", so a page reload between completeProfileSetup()
+  // and setRole() used to permanently strand the user (router sees
+  // hasProfile=true + needsRoleSelection=false + needsShgApproval=true and
+  // locks them on ShgApprovalPendingPage with no request behind it, and no
+  // route back to Role Select). `_loadProfile()` now restores this from a
+  // SharedPreferences flag written by `_persistRoleSelectionPending()`
+  // instead of relying purely on this in-memory default.
   bool _needsRoleSelection = false;
 
   // Demo mode mirrors the real two-step gate (session, then profile) with
@@ -94,7 +112,7 @@ class AppState extends ChangeNotifier {
         name: _profile!.name,
         mobile: _profile!.mobile ?? defaultUser.mobile,
         role: role,
-        shgName: _pendingShg?.name ?? defaultUser.shgName,
+        shgName: _shgName ?? _pendingShg?.name ?? defaultUser.shgName,
         village: _profile!.village ?? defaultUser.village,
       );
     }
@@ -141,11 +159,46 @@ class AppState extends ChangeNotifier {
     final generation = ++_profileLoadGeneration;
     try {
       final profile = await _profileRepository.fetchMyProfile();
-      if (generation == _profileLoadGeneration) _profile = profile;
+      if (generation != _profileLoadGeneration) return;
+      _profile = profile;
     } catch (_) {
       // Leave any previously-loaded profile in place — a transient fetch
       // failure shouldn't wipe a valid profile and bounce an already
       // onboarded user back into the onboarding flow.
+      return;
+    }
+    final profile = _profile;
+    if (profile == null) {
+      _shgName = null;
+      return;
+    }
+    try {
+      // Non-critical enrichment: the real SHG name (see `_shgName` doc
+      // above) and whether Role Select was already completed for this
+      // profile in a previous session (see `_persistRoleSelectionPending`
+      // doc above `_needsRoleSelection`). A failure here must not affect
+      // the already-loaded `_profile`, so it's isolated in its own
+      // try/catch rather than sharing the one above.
+      final prefs = await SharedPreferences.getInstance();
+      final shg = profile.shgId != null ? await _shgRepository.fetchShg(profile.shgId) : null;
+      if (generation != _profileLoadGeneration) return;
+      _needsRoleSelection = prefs.getBool(_roleSelectionPendingKey(profile.id)) ?? _needsRoleSelection;
+      _shgName = shg?.name;
+    } catch (_) {
+      // Best-effort enrichment only — leave existing values in place.
+    }
+  }
+
+  String _roleSelectionPendingKey(String profileId) => 'shg_role_selection_pending_$profileId';
+
+  Future<void> _persistRoleSelectionPending(String profileId, bool pending) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_roleSelectionPendingKey(profileId), pending);
+    } catch (_) {
+      // Best-effort — worst case this falls back to the pre-fix behavior
+      // (role-selection-pending state not surviving a reload) rather than
+      // throwing out of a routing-critical state transition.
     }
   }
 
@@ -192,6 +245,7 @@ class AppState extends ChangeNotifier {
     // notifyListeners()). The caller still sees the thrown exception.
     _needsRoleSelection = true;
     notifyListeners();
+    await _persistRoleSelectionPending(_profile!.id, true);
     if (_pendingShg != null) {
       await _joinRequestRepository.submit(memberId: _profile!.id, shgId: _pendingShg!.id);
     }
@@ -209,6 +263,7 @@ class AppState extends ChangeNotifier {
         _profile = _profile!.copyWith(role: role.name);
         _needsRoleSelection = false;
         notifyListeners();
+        await _persistRoleSelectionPending(profileId, false);
       }
       return;
     }
@@ -233,6 +288,7 @@ class AppState extends ChangeNotifier {
       _profileLoadGeneration++;
       _profile = null;
       _pendingShg = null;
+      _shgName = null;
       _needsRoleSelection = false;
     } else {
       _legacySessionStarted = false;

@@ -44,7 +44,7 @@ Future<bool?> showFinancialEntryDialog(
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
           FilledButton(
             onPressed: submitting
                 ? null
@@ -73,10 +73,12 @@ Future<bool?> showFinancialEntryDialog(
                       );
                       if (context.mounted) Navigator.of(context).pop(true);
                     } catch (_) {
-                      setState(() {
-                        submitting = false;
-                        error = 'Could not save this entry. Please try again.';
-                      });
+                      if (context.mounted) {
+                        setState(() {
+                          submitting = false;
+                          error = 'Could not save this entry. Please try again.';
+                        });
+                      }
                     }
                   },
             child: Text(submitting ? 'Adding…' : 'Add'),

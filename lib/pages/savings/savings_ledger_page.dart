@@ -58,13 +58,22 @@ class SavingsLedgerPage extends StatelessWidget {
   }
 }
 
-class _LedgerList extends StatelessWidget {
+class _LedgerList extends StatefulWidget {
   final List<SavingsEntry> entries;
   final SavingsRepository repo;
   const _LedgerList({required this.entries, required this.repo});
 
   @override
+  State<_LedgerList> createState() => _LedgerListState();
+}
+
+class _LedgerListState extends State<_LedgerList> {
+  final _verifying = <String>{};
+
+  @override
   Widget build(BuildContext context) {
+    final entries = widget.entries;
+    final repo = widget.repo;
     if (entries.isEmpty) {
       return const AppEmptyState(icon: Icons.fact_check_rounded, message: 'No savings entries recorded yet');
     }
@@ -73,6 +82,7 @@ class _LedgerList extends StatelessWidget {
       itemCount: entries.length,
       itemBuilder: (context, i) {
         final e = entries[i];
+        final verifying = _verifying.contains(e.id);
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: AppCard(
@@ -85,9 +95,10 @@ class _LedgerList extends StatelessWidget {
                   ? SizedBox(
                       height: 30,
                       child: OutlinedButton(
-                        onPressed: !SupabaseService.isConfigured
+                        onPressed: !SupabaseService.isConfigured || verifying
                             ? null
                             : () async {
+                                setState(() => _verifying.add(e.id));
                                 try {
                                   await repo.verifyEntry(e.id);
                                 } catch (_) {
@@ -96,6 +107,8 @@ class _LedgerList extends StatelessWidget {
                                       const SnackBar(content: Text('Could not verify this entry. Please try again.')),
                                     );
                                   }
+                                } finally {
+                                  if (mounted) setState(() => _verifying.remove(e.id));
                                 }
                               },
                         style: OutlinedButton.styleFrom(
@@ -103,7 +116,7 @@ class _LedgerList extends StatelessWidget {
                           side: BorderSide(color: Brand.c500),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: Text('₹${e.amount} · Verify', style: AppTheme.sans(11, weight: FontWeight.w700, color: Brand.c600)),
+                        child: Text(verifying ? 'Verifying…' : '₹${e.amount} · Verify', style: AppTheme.sans(11, weight: FontWeight.w700, color: Brand.c600)),
                       ),
                     )
                   : Column(

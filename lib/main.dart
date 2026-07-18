@@ -53,7 +53,14 @@ class _ShgSaathiAppState extends State<ShgSaathiApp> {
   void initState() {
     super.initState();
     _router = buildRouter(_appState);
-    _appState.init().then((_) => setState(() => _ready = true));
+    // A failure here (e.g. SharedPreferences unavailable) must still flip
+    // `_ready` — otherwise the app is stuck on the splash spinner forever
+    // with no way for the user to recover.
+    _appState.init().then((_) {
+      if (mounted) setState(() => _ready = true);
+    }).catchError((_) {
+      if (mounted) setState(() => _ready = true);
+    });
   }
 
   @override

@@ -121,7 +121,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
             FilledButton(
               onPressed: submitting
                   ? null
@@ -139,10 +139,12 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
                         await _repo.updateProgress(activity.id, revenue: revenue, status: status);
                         if (context.mounted) Navigator.of(context).pop(true);
                       } catch (_) {
-                        setState(() {
-                          submitting = false;
-                          error = 'Could not save this update. Please try again.';
-                        });
+                        if (context.mounted) {
+                          setState(() {
+                            submitting = false;
+                            error = 'Could not save this update. Please try again.';
+                          });
+                        }
                       }
                     },
               child: Text(submitting ? 'Saving…' : 'Save'),

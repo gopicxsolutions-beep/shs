@@ -334,25 +334,35 @@ class _SavingsTrendChart extends StatelessWidget {
   final List<MonthlyTotal> trend;
   const _SavingsTrendChart({required this.trend});
 
+  String get _semanticLabel {
+    final parts = trend.map((t) => '${t.label} ${t.total.toStringAsFixed(0)}').join(', ');
+    return 'Savings trend chart: $parts';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (trend.isEmpty) return const SizedBox();
-    return LineChart(
-      LineChartData(
-        gridData: const FlGridData(show: false),
-        titlesData: const FlTitlesData(show: false),
-        borderData: FlBorderData(show: false),
-        lineTouchData: const LineTouchData(enabled: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: [for (var i = 0; i < trend.length; i++) FlSpot(i.toDouble(), trend[i].total.toDouble())],
-            isCurved: true,
-            color: Brand.c600,
-            barWidth: 2,
-            dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(show: true, color: Brand.c500.withValues(alpha: 0.18)),
+    return Semantics(
+      label: _semanticLabel,
+      child: ExcludeSemantics(
+        child: LineChart(
+          LineChartData(
+            gridData: const FlGridData(show: false),
+            titlesData: const FlTitlesData(show: false),
+            borderData: FlBorderData(show: false),
+            lineTouchData: const LineTouchData(enabled: false),
+            lineBarsData: [
+              LineChartBarData(
+                spots: [for (var i = 0; i < trend.length; i++) FlSpot(i.toDouble(), trend[i].total.toDouble())],
+                isCurved: true,
+                color: Brand.c600,
+                barWidth: 2,
+                dotData: const FlDotData(show: false),
+                belowBarData: BarAreaData(show: true, color: Brand.c500.withValues(alpha: 0.18)),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

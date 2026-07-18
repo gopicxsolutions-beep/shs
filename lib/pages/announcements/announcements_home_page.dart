@@ -80,9 +80,10 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
     setState(() => _busy = true);
     try {
       await _repo.post(shgId: shgId, createdBy: createdBy, title: _title.text.trim(), body: _body.text.trim(), category: _category);
+      if (!mounted) return;
       _title.clear();
       _body.clear();
-      if (mounted) _key.currentState?.reload();
+      _key.currentState?.reload();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -29,7 +29,16 @@ class _SavingsHistoryPageState extends State<SavingsHistoryPage> {
     return Scaffold(
       appBar: const PageHeader(title: 'Savings History'),
       body: RefreshIndicator(
-        onRefresh: () => _key.currentState?.reload() ?? Future.value(),
+        onRefresh: () async {
+          try {
+            await _key.currentState?.reload();
+          } catch (_) {
+            // The FutureBuilder inside AppAsyncBuilder already surfaces this
+            // failure with its own retry UI — swallow it here so it isn't
+            // also reported as an unhandled async exception by
+            // RefreshIndicator's separate listener on the same future.
+          }
+        },
         child: AppAsyncBuilder<List<SavingsEntry>>(
           key: _key,
           future: () => _repo.fetchForMember(memberId),

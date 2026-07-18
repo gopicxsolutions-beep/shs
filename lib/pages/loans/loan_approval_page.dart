@@ -21,6 +21,7 @@ class LoanApprovalPage extends StatefulWidget {
 class _LoanApprovalPageState extends State<LoanApprovalPage> {
   final _repo = LoanRepository();
   final _key = GlobalKey<AppAsyncBuilderState<List<Loan>>>();
+  final _rejecting = <String>{};
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +43,7 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
             itemCount: pending.length,
             itemBuilder: (context, i) {
               final l = pending[i];
+              final rejecting = _rejecting.contains(l.id);
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: AppCard(
@@ -68,9 +70,10 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                       Row(children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: !SupabaseService.isConfigured
+                            onPressed: !SupabaseService.isConfigured || rejecting
                                 ? null
                                 : () async {
+                                    setState(() => _rejecting.add(l.id));
                                     try {
                                       await _repo.reject(l.id);
                                       _key.currentState?.reload();
@@ -80,6 +83,8 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                                           const SnackBar(content: Text('Could not reject this application. Please try again.')),
                                         );
                                       }
+                                    } finally {
+                                      if (mounted) setState(() => _rejecting.remove(l.id));
                                     }
                                   },
                             style: OutlinedButton.styleFrom(
@@ -87,7 +92,7 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                               foregroundColor: Accent.red600,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            child: const Text('Reject'),
+                            child: Text(rejecting ? 'Rejecting…' : 'Reject'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -141,7 +146,7 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
             FilledButton(
               onPressed: submitting
                   ? null
@@ -159,10 +164,12 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                         await _repo.approve(l.id, emi: emi, nextDueDate: DateTime.now().add(const Duration(days: 30)));
                         if (context.mounted) Navigator.of(context).pop(true);
                       } catch (_) {
-                        setState(() {
-                          submitting = false;
-                          error = 'Could not approve this loan. Please try again.';
-                        });
+                        if (context.mounted) {
+                          setState(() {
+                            submitting = false;
+                            error = 'Could not approve this loan. Please try again.';
+                          });
+                        }
                       }
                     },
               child: Text(submitting ? 'Approving…' : 'Approve'),

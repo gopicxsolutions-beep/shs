@@ -147,7 +147,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
             FilledButton(
               onPressed: submitting
                   ? null
@@ -166,10 +166,12 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                         await _repo.recordPayment(loan.id, amount, newOutstanding);
                         if (context.mounted) Navigator.of(context).pop(true);
                       } catch (_) {
-                        setState(() {
-                          submitting = false;
-                          error = 'Could not record this payment. Please try again.';
-                        });
+                        if (context.mounted) {
+                          setState(() {
+                            submitting = false;
+                            error = 'Could not record this payment. Please try again.';
+                          });
+                        }
                       }
                     },
               child: Text(submitting ? 'Recording…' : 'Record'),

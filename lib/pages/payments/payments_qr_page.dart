@@ -10,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/input_formatters.dart';
 import '../../widgets/qr_scanner_sheet.dart';
 
 /// Scans a UPI-style QR code (`upi://pay?pa=...&pn=...&am=...`) and prefills
@@ -129,6 +130,7 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
                       child: TextField(
                         controller: _amount,
                         keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                        inputFormatters: wholeNumberInputFormatters,
                         textInputAction: TextInputAction.done,
                         maxLength: 7,
                         style: AppTheme.display(22),

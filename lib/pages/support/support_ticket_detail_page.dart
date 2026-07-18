@@ -51,6 +51,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
     setState(() => _sending = true);
     try {
       await _repo.sendMessage(ticketId: widget.ticketId, senderId: memberId, body: _message.text.trim());
+      if (!mounted) return;
       _message.clear();
       await _key.currentState?.reload();
     } catch (_) {
