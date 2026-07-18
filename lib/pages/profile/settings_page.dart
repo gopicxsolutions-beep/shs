@@ -120,7 +120,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Center(child: Text('${l10n.settingsAppVersion}: SHG Saathi v1.0.0', style: AppTheme.sans(11, color: Neutral.c400))),
+                Center(child: Text('${l10n.settingsAppVersion}: NavaSakhi v1.0.0', style: AppTheme.sans(11, color: Neutral.c400))),
               ],
             ),
     );

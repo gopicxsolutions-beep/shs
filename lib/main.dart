@@ -66,7 +66,7 @@ class _ShgSaathiAppState extends State<ShgSaathiApp> {
       child: AnimatedBuilder(
         animation: _appState,
         builder: (context, _) => MaterialApp.router(
-          title: 'SHG Saathi',
+          title: 'NavaSakhi',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.data,
           routerConfig: _router,

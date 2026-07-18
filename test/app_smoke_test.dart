@@ -25,7 +25,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Get Started'), findsOneWidget);
-    expect(find.textContaining('Empowering Self-Help'), findsOneWidget);
+    expect(find.textContaining('Empowering Women'), findsOneWidget);
 
     await tester.tap(find.text('Get Started'));
     await tester.pumpAndSettle();

@@ -1,4 +1,4 @@
-# SHG Saathi — Mobile App for Self-Help Groups
+# NavaSakhi — Mobile App for Self-Help Groups
 
 A native mobile app for a Self-Help Group (SHG) management platform, covering all five user roles (Member, Leader/President, Community Resource Person, Cluster Level Federation, Administrator) and every feature tab from the product spec — savings, loans, meetings, financial records, livelihoods, marketplace, government schemes, training, digital payments, announcements, AI-powered advisors, reports, and analytics.
 

@@ -1,11 +1,11 @@
 {
-    "name": "SHG Saathi",
-    "short_name": "SHG Saathi",
+    "name": "NavaSakhi",
+    "short_name": "NavaSakhi",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0E8A66",
     "theme_color": "#0E8A66",
-    "description": "SHG Saathi — savings, loans, meetings, and marketplace for Self-Help Groups.",
+    "description": "NavaSakhi — AI-Enabled Digital Platform for Self-Help Groups and Women-Led Microenterprises.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -34,13 +34,13 @@ class SplashPage extends StatelessWidget {
                       child: const Icon(Icons.eco_rounded, color: Colors.white),
                     ),
                     const SizedBox(width: 8),
-                    Text('SHG SAATHI', style: AppTheme.sans(13, weight: FontWeight.w600, color: Colors.white.withValues(alpha: 0.8))),
+                    Text('NAVASAKHI', style: AppTheme.sans(13, weight: FontWeight.w600, color: Colors.white.withValues(alpha: 0.8))),
                   ],
                 ),
                 const SizedBox(height: 40),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Empowering Self-Help\nGroups, together.', style: AppTheme.display(30, color: Colors.white, weight: FontWeight.w700), textAlign: TextAlign.left),
+                  child: Text('Empowering Women.\nTransforming Communities.', style: AppTheme.display(30, color: Colors.white, weight: FontWeight.w700), textAlign: TextAlign.left),
                 ),
                 const SizedBox(height: 12),
                 Align(
