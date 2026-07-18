@@ -10,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/input_formatters.dart';
 
 class LoanApplyPage extends StatefulWidget {
   const LoanApplyPage({super.key});
@@ -109,6 +110,7 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
                       child: TextField(
                         controller: _amount,
                         keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                        inputFormatters: wholeNumberInputFormatters,
                         style: AppTheme.display(22),
                         decoration: const InputDecoration(border: InputBorder.none, hintText: '0'),
                         onChanged: (_) => setState(() => _error = null),

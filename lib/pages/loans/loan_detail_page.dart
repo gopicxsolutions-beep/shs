@@ -10,6 +10,7 @@ import '../../widgets/app_badge.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
+import '../../widgets/input_formatters.dart';
 import '../../widgets/progress_bar.dart';
 import '../../widgets/section_header.dart';
 
@@ -127,7 +128,7 @@ class LoanDetailPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(controller: controller, keyboardType: TextInputType.number, decoration: const InputDecoration(prefixText: '₹')),
+              TextField(controller: controller, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, decoration: const InputDecoration(prefixText: '₹')),
               if (error != null) ...[
                 const SizedBox(height: 12),
                 Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),

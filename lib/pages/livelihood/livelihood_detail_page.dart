@@ -9,6 +9,7 @@ import '../../widgets/app_badge.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
+import '../../widgets/input_formatters.dart';
 
 const _statusOptions = ['planned', 'active', 'completed'];
 
@@ -94,7 +95,7 @@ class LivelihoodDetailPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(controller: revenueController, keyboardType: TextInputType.number, decoration: const InputDecoration(prefixText: '₹', labelText: 'Revenue to date')),
+              TextField(controller: revenueController, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, decoration: const InputDecoration(prefixText: '₹', labelText: 'Revenue to date')),
               const SizedBox(height: 12),
               DropdownButton<String>(
                 value: status,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../repositories/financial_repository.dart';
+import '../../widgets/input_formatters.dart';
 
 /// Returns `true` if an entry was added, so the caller can refresh its list.
 Future<bool?> showFinancialEntryDialog(
@@ -26,7 +27,7 @@ Future<bool?> showFinancialEntryDialog(
           children: [
             TextField(controller: descController, decoration: const InputDecoration(hintText: 'Description')),
             const SizedBox(height: 12),
-            TextField(controller: amountController, keyboardType: TextInputType.number, decoration: const InputDecoration(prefixText: '₹', hintText: 'Amount')),
+            TextField(controller: amountController, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, decoration: const InputDecoration(prefixText: '₹', hintText: 'Amount')),
             const SizedBox(height: 12),
             SegmentedButton<bool>(
               segments: const [

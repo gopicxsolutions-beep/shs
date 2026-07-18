@@ -10,6 +10,7 @@ import '../../theme/colors.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/avatar.dart';
+import '../../widgets/input_formatters.dart';
 
 class LoanApprovalPage extends StatelessWidget {
   const LoanApprovalPage({super.key});
@@ -112,7 +113,7 @@ class LoanApprovalPage extends StatelessWidget {
             children: [
               Text('Monthly EMI for ${l.memberName}', style: AppTheme.sans(12, color: Neutral.c500)),
               const SizedBox(height: 8),
-              TextField(controller: emiController, keyboardType: TextInputType.number, decoration: const InputDecoration(prefixText: '₹')),
+              TextField(controller: emiController, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, decoration: const InputDecoration(prefixText: '₹')),
               if (error != null) ...[
                 const SizedBox(height: 12),
                 Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),

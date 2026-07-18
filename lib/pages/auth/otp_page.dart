@@ -10,6 +10,7 @@ import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/input_formatters.dart';
 
 class OtpPage extends StatefulWidget {
   final String? phone;
@@ -135,6 +136,7 @@ class _OtpPageState extends State<OtpPage> {
                         focusNode: _focus[i],
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
+                        inputFormatters: wholeNumberInputFormatters,
                         maxLength: 1,
                         style: AppTheme.sans(18, weight: FontWeight.w700),
                         decoration: InputDecoration(

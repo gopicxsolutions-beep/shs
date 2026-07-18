@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
@@ -10,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/input_formatters.dart';
 
 class AddProductPage extends StatefulWidget {
   const AddProductPage({super.key});
@@ -76,7 +78,7 @@ class _AddProductPageState extends State<AddProductPage> {
     }
   }
 
-  Widget _field(String label, TextEditingController controller, {String? hint, TextInputType? keyboardType}) {
+  Widget _field(String label, TextEditingController controller, {String? hint, TextInputType? keyboardType, List<TextInputFormatter>? inputFormatters}) {
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,6 +88,7 @@ class _AddProductPageState extends State<AddProductPage> {
           TextField(
             controller: controller,
             keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
             style: AppTheme.sans(14),
             decoration: InputDecoration(border: InputBorder.none, hintText: hint),
             onChanged: (_) => setState(() => _error = null),
@@ -109,9 +112,9 @@ class _AddProductPageState extends State<AddProductPage> {
             _field('Description', _description, hint: 'Describe your product'),
             const SizedBox(height: 12),
             Row(children: [
-              Expanded(child: _field('Price (₹)', _price, hint: '0', keyboardType: TextInputType.number)),
+              Expanded(child: _field('Price (₹)', _price, hint: '0', keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters)),
               const SizedBox(width: 12),
-              Expanded(child: _field('Stock', _stock, hint: '0', keyboardType: TextInputType.number)),
+              Expanded(child: _field('Stock', _stock, hint: '0', keyboardType: TextInputType.number, inputFormatters: wholeNumberInputFormatters)),
             ]),
             const SizedBox(height: 12),
             AppCard(

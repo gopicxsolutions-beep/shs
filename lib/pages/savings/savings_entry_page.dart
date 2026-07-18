@@ -10,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/input_formatters.dart';
 
 class SavingsEntryPage extends StatefulWidget {
   const SavingsEntryPage({super.key});
@@ -125,6 +126,7 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
                         child: TextFormField(
                           controller: _amount,
                           keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                          inputFormatters: wholeNumberInputFormatters,
                           style: AppTheme.display(22),
                           decoration: const InputDecoration(border: InputBorder.none, hintText: '0'),
                           validator: _validateAmount,

@@ -10,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/input_formatters.dart';
 
 class LivelihoodEntryPage extends StatefulWidget {
   const LivelihoodEntryPage({super.key});
@@ -136,6 +137,7 @@ class _LivelihoodEntryPageState extends State<LivelihoodEntryPage> {
                       child: TextField(
                         controller: _investment,
                         keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                        inputFormatters: wholeNumberInputFormatters,
                         style: AppTheme.display(20),
                         decoration: const InputDecoration(border: InputBorder.none, hintText: '0'),
                         onChanged: (_) => setState(() => _error = null),

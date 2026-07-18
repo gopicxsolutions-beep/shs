@@ -7,6 +7,7 @@ import '../../services/supabase_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/input_formatters.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -81,6 +82,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: TextField(
                         controller: _controller,
                         keyboardType: TextInputType.number,
+                        inputFormatters: wholeNumberInputFormatters,
                         maxLength: 10,
                         onChanged: (_) => setState(() {}),
                         decoration: const InputDecoration(border: InputBorder.none, counterText: '', hintText: '98765 43210'),
