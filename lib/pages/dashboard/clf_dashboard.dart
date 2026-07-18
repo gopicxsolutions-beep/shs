@@ -1,19 +1,53 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/analytics.dart';
+import '../../models/analytics.dart';
+import '../../models/report.dart';
+import '../../repositories/analytics_repository.dart';
+import '../../repositories/report_repository.dart';
 import '../../routes/paths.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/async_state.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stat_card.dart';
+
+class _ClfDashboardData {
+  final PlatformKpis kpis;
+  final List<VillageShgGroup> villages;
+  const _ClfDashboardData({required this.kpis, required this.villages});
+}
 
 class CLFDashboard extends StatelessWidget {
   const CLFDashboard({super.key});
 
+  Future<_ClfDashboardData> _load() async {
+    final results = await Future.wait([
+      AnalyticsRepository().fetchPlatformKpis(),
+      ReportRepository().fetchVillageWiseShgs(),
+    ]);
+    return _ClfDashboardData(kpis: results[0] as PlatformKpis, villages: results[1] as List<VillageShgGroup>);
+  }
+
   @override
   Widget build(BuildContext context) {
+    return AppAsyncBuilder<_ClfDashboardData>(
+      future: _load,
+      builder: (context, data) => _ClfDashboardBody(data: data),
+    );
+  }
+}
+
+class _ClfDashboardBody extends StatelessWidget {
+  final _ClfDashboardData data;
+  const _ClfDashboardBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final kpis = data.kpis;
+    final villages = data.villages;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -22,9 +56,9 @@ class CLFDashboard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(children: [
-              Expanded(child: StatCard(label: 'Village Orgs', value: '${villageWiseSHGs.length}', tone: StatTone.brand, trend: '${Kpis.totalSHGs} SHGs total', icon: Icons.apartment_rounded)),
+              Expanded(child: StatCard(label: 'Village Orgs', value: '${villages.length}', tone: StatTone.brand, trend: '${kpis.totalShgs} SHGs total', icon: Icons.apartment_rounded)),
               const SizedBox(width: 12),
-              Expanded(child: StatCard(label: 'Total Savings', value: '₹${(Kpis.totalSavings / 10000000).toStringAsFixed(2)}Cr', tone: StatTone.gold, trend: 'Financial oversight', icon: Icons.savings_rounded)),
+              Expanded(child: StatCard(label: 'Total Savings', value: '₹${(kpis.totalSavings / 10000000).toStringAsFixed(2)}Cr', tone: StatTone.gold, trend: 'Financial oversight', icon: Icons.savings_rounded)),
             ]),
           ),
         ),
@@ -37,7 +71,7 @@ class CLFDashboard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Monitor Village Organisations', style: AppTheme.sans(14, weight: FontWeight.w700)),
-                Text('${villageWiseSHGs.length} villages · ${Kpis.totalSHGs} SHGs', style: AppTheme.sans(12, color: Neutral.c500)),
+                Text('${villages.length} villages · ${kpis.totalShgs} SHGs', style: AppTheme.sans(12, color: Neutral.c500)),
               ])),
               Icon(Icons.chevron_right, color: Neutral.c300),
             ]),
@@ -48,29 +82,31 @@ class CLFDashboard extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             SectionHeader(title: 'Village-wise SHGs', action: 'Federation reports', onAction: () => context.go(Paths.reportsFederation)),
             AppCard(
-              child: SizedBox(
-                height: 160,
-                child: BarChart(
-                  BarChartData(
-                    gridData: const FlGridData(show: false),
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(
-                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32, getTitlesWidget: (v, meta) {
-                        final i = v.toInt();
-                        if (i < 0 || i >= villageWiseSHGs.length) return const SizedBox();
-                        return Padding(padding: const EdgeInsets.only(top: 6), child: Text(villageWiseSHGs[i].village, style: AppTheme.sans(9, color: Neutral.c500)));
-                      })),
+              child: villages.isEmpty
+                  ? Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Text('No villages yet', style: AppTheme.sans(12, color: Neutral.c400)))
+                  : SizedBox(
+                      height: 160,
+                      child: BarChart(
+                        BarChartData(
+                          gridData: const FlGridData(show: false),
+                          borderData: FlBorderData(show: false),
+                          titlesData: FlTitlesData(
+                            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32, getTitlesWidget: (v, meta) {
+                              final i = v.toInt();
+                              if (i < 0 || i >= villages.length) return const SizedBox();
+                              return Padding(padding: const EdgeInsets.only(top: 6), child: Text(villages[i].village, style: AppTheme.sans(9, color: Neutral.c500)));
+                            })),
+                          ),
+                          barGroups: [
+                            for (var i = 0; i < villages.length; i++)
+                              BarChartGroupData(x: i, barRods: [BarChartRodData(toY: villages[i].shgCount.toDouble(), color: Brand.c500, width: 18, borderRadius: BorderRadius.circular(6))]),
+                          ],
+                        ),
+                      ),
                     ),
-                    barGroups: [
-                      for (var i = 0; i < villageWiseSHGs.length; i++)
-                        BarChartGroupData(x: i, barRods: [BarChartRodData(toY: villageWiseSHGs[i].shgs.toDouble(), color: Brand.c500, width: 18, borderRadius: BorderRadius.circular(6))]),
-                    ],
-                  ),
-                ),
-              ),
             ),
           ]),
         ),
@@ -84,7 +120,7 @@ class CLFDashboard extends StatelessWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('Loans Disbursed', style: AppTheme.sans(12, color: Neutral.c500)),
                     const SizedBox(height: 4),
-                    Text('₹${(Kpis.loansDisbursed / 10000000).toStringAsFixed(2)}Cr', style: AppTheme.display(16)),
+                    Text('₹${(kpis.loansDisbursed / 10000000).toStringAsFixed(2)}Cr', style: AppTheme.display(16)),
                   ]),
                 ),
               ),
@@ -94,7 +130,7 @@ class CLFDashboard extends StatelessWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('Recovery Rate', style: AppTheme.sans(12, color: Neutral.c500)),
                     const SizedBox(height: 4),
-                    Text('${Kpis.recoveryRate}%', style: AppTheme.display(16, color: Brand.c700)),
+                    Text('${kpis.recoveryRatePct.round()}%', style: AppTheme.display(16, color: Brand.c700)),
                   ]),
                 ),
               ),

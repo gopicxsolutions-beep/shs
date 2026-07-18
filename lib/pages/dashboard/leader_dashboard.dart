@@ -1,26 +1,79 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/loans.dart';
-import '../../data/meetings.dart';
-import '../../data/shg.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../models/loan.dart';
+import '../../models/meeting.dart';
+import '../../models/report.dart';
+import '../../models/shg.dart';
+import '../../repositories/loan_repository.dart';
+import '../../repositories/meeting_repository.dart';
+import '../../repositories/report_repository.dart';
+import '../../repositories/shg_repository.dart';
 import '../../routes/paths.dart';
+import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/async_state.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/icon_tile.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stat_card.dart';
 
+class _LeaderDashboardData {
+  final ShgReportData report;
+  final ShgProfile? shg;
+  final List<Loan> pendingLoans;
+  final List<Loan> overdueLoans;
+  final Meeting? upcomingMeeting;
+  const _LeaderDashboardData({required this.report, required this.shg, required this.pendingLoans, required this.overdueLoans, required this.upcomingMeeting});
+}
+
 class LeaderDashboard extends StatelessWidget {
   const LeaderDashboard({super.key});
 
+  Future<_LeaderDashboardData> _load(BuildContext context) async {
+    final shgId = context.read<AppState>().profile?.shgId;
+    final results = await Future.wait([
+      ReportRepository().fetchShgReport(shgId),
+      ShgRepository().fetchShg(shgId),
+      LoanRepository().fetchForShg(shgId),
+      MeetingRepository().fetchForShg(shgId),
+    ]);
+    final loans = results[2] as List<Loan>;
+    final meetings = results[3] as List<Meeting>;
+    final upcoming = meetings.where((m) => m.status == 'upcoming').toList();
+    return _LeaderDashboardData(
+      report: results[0] as ShgReportData,
+      shg: results[1] as ShgProfile?,
+      pendingLoans: loans.where((l) => l.status == 'pending').toList(),
+      overdueLoans: loans.where((l) => l.status == 'overdue').toList(),
+      upcomingMeeting: upcoming.isEmpty ? null : upcoming.first,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final pendingLoans = loans.where((l) => l.status == 'pending').toList();
-    final overdueLoans = loans.where((l) => l.status == 'overdue').toList();
-    final upcomingMeeting = meetings.where((m) => m.status == 'upcoming').isNotEmpty ? meetings.firstWhere((m) => m.status == 'upcoming') : null;
+    return AppAsyncBuilder<_LeaderDashboardData>(
+      future: () => _load(context),
+      builder: (context, data) => _LeaderDashboardBody(data: data),
+    );
+  }
+}
+
+class _LeaderDashboardBody extends StatelessWidget {
+  final _LeaderDashboardData data;
+  const _LeaderDashboardBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final report = data.report;
+    final pendingLoans = data.pendingLoans;
+    final overdueLoans = data.overdueLoans;
+    final upcomingMeeting = data.upcomingMeeting;
+    final recoveryPct = report.activeLoanCount > 0 ? ((1 - (overdueLoans.length / report.activeLoanCount)) * 100).round() : 100;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -30,9 +83,9 @@ class LeaderDashboard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(children: [
-              Expanded(child: StatCard(label: 'Group Savings', value: '₹${(ShgInfo.totalSavings / 100000).toStringAsFixed(1)}L', tone: StatTone.brand, trend: '${ShgInfo.memberCount} members', icon: Icons.account_balance_wallet_rounded)),
+              Expanded(child: StatCard(label: 'Group Savings', value: '₹${(report.totalSavings / 100000).toStringAsFixed(1)}L', tone: StatTone.brand, trend: '${report.memberCount} members', icon: Icons.account_balance_wallet_rounded)),
               const SizedBox(width: 12),
-              Expanded(child: StatCard(label: 'Loans Outstanding', value: '₹${(ShgInfo.totalLoans / 100000).toStringAsFixed(1)}L', tone: StatTone.gold, trend: '${overdueLoans.length} overdue', icon: Icons.account_balance_rounded)),
+              Expanded(child: StatCard(label: 'Loans Outstanding', value: '₹${(report.totalOutstanding / 100000).toStringAsFixed(1)}L', tone: StatTone.gold, trend: '${overdueLoans.length} overdue', icon: Icons.account_balance_rounded)),
             ]),
           ),
         ),
@@ -62,7 +115,14 @@ class LeaderDashboard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('${overdueLoans.length} Defaulter Alert${overdueLoans.length > 1 ? 's' : ''}', style: AppTheme.sans(14, weight: FontWeight.w700, color: Accent.red700)),
-                  Text('${overdueLoans.first.memberName} — EMI overdue since ${overdueLoans.first.nextDueDate}', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Accent.red500)),
+                  Text(
+                    overdueLoans.first.nextDueDate != null
+                        ? '${overdueLoans.first.memberName} — EMI overdue since ${DateFormat('dd MMM').format(overdueLoans.first.nextDueDate!)}'
+                        : '${overdueLoans.first.memberName} — EMI overdue',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.sans(12, color: Accent.red500),
+                  ),
                 ])),
                 InkWell(onTap: () => context.go(Paths.loanTracking), child: Text('View', style: AppTheme.sans(12, weight: FontWeight.w700, color: Accent.red600))),
               ]),
@@ -105,14 +165,14 @@ class LeaderDashboard extends StatelessWidget {
                     decoration: BoxDecoration(color: Brand.c50, borderRadius: BorderRadius.circular(12)),
                     alignment: Alignment.center,
                     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text(upcomingMeeting.date.split(' ').length > 1 ? upcomingMeeting.date.split(' ')[1] : '', style: AppTheme.sans(9, weight: FontWeight.w700, color: Brand.c700)),
-                      Text(upcomingMeeting.date.split(' ')[0], style: AppTheme.sans(15, weight: FontWeight.w700, color: Brand.c700)),
+                      Text(DateFormat('MMM').format(upcomingMeeting.date), style: AppTheme.sans(9, weight: FontWeight.w700, color: Brand.c700)),
+                      Text(DateFormat('dd').format(upcomingMeeting.date), style: AppTheme.sans(15, weight: FontWeight.w700, color: Brand.c700)),
                     ]),
                   ),
                   const SizedBox(width: 12),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(upcomingMeeting.agenda, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700)),
-                    Text('${upcomingMeeting.time} · ${upcomingMeeting.venue}', style: AppTheme.sans(11, color: Neutral.c500)),
+                    Text(upcomingMeeting.agenda ?? 'Meeting', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700)),
+                    Text('${upcomingMeeting.time ?? ''} · ${upcomingMeeting.venue ?? ''}', style: AppTheme.sans(11, color: Neutral.c500)),
                   ])),
                 ]),
               ),
@@ -123,11 +183,11 @@ class LeaderDashboard extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             SectionHeader(title: 'SHG Health'),
             Row(children: [
-              Expanded(child: _healthTile(ShgInfo.grade, 'Grading')),
+              Expanded(child: _healthTile(data.shg?.grade ?? '—', 'Grading')),
               const SizedBox(width: 12),
-              Expanded(child: _healthTile('96%', 'Attendance')),
+              Expanded(child: _healthTile('${report.avgAttendancePct.round()}%', 'Attendance')),
               const SizedBox(width: 12),
-              Expanded(child: _healthTile('94%', 'Recovery')),
+              Expanded(child: _healthTile('$recoveryPct%', 'Recovery')),
             ]),
           ]),
         ),

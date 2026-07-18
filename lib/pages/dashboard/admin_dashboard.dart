@@ -1,23 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/analytics.dart';
+import '../../models/analytics.dart';
+import '../../repositories/analytics_repository.dart';
 import '../../routes/paths.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/async_state.dart';
 import '../../widgets/icon_tile.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stat_card.dart';
 
+/// Illustrative-only placeholders with no backing table yet — documented
+/// the same way admin_monitoring_page.dart already documents its own
+/// placeholder metrics, rather than inventing fake schema semantics
+/// (there's no KYC-review or system-activity-log concept in the schema).
+const _systemUptime = '99.98%';
+const _trainingCompletion = 87;
+const _pendingVerificationCount = 3;
+const _recentActivity = [
+  ('New SHG registered', '2h ago', BadgeTone.success),
+  ('Scheme details updated', '5h ago', BadgeTone.info),
+  ('Scheduled backup completed', '1d ago', BadgeTone.neutral),
+];
+
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
 
-  static const _activity = [
-    ('New SHG "Gayatri SHG" registered', '2h ago', BadgeTone.success),
-    ('PMEGP scheme details updated', '5h ago', BadgeTone.info),
-    ('Scheduled backup completed', '1d ago', BadgeTone.neutral),
-  ];
+  @override
+  Widget build(BuildContext context) {
+    return AppAsyncBuilder<PlatformKpis>(
+      future: () => AnalyticsRepository().fetchPlatformKpis(),
+      builder: (context, kpis) => _AdminDashboardBody(kpis: kpis),
+    );
+  }
+}
+
+class _AdminDashboardBody extends StatelessWidget {
+  final PlatformKpis kpis;
+  const _AdminDashboardBody({required this.kpis});
 
   @override
   Widget build(BuildContext context) {
@@ -29,9 +51,9 @@ class AdminDashboard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(children: [
-              Expanded(child: StatCard(label: 'Total SHGs', value: '${Kpis.totalSHGs}', tone: StatTone.brand, trend: '${Kpis.activeMembers} members', icon: Icons.groups_rounded)),
+              Expanded(child: StatCard(label: 'Total SHGs', value: '${kpis.totalShgs}', tone: StatTone.brand, trend: '${kpis.activeMembers} members', icon: Icons.groups_rounded)),
               const SizedBox(width: 12),
-              Expanded(child: StatCard(label: 'System Uptime', value: '99.98%', tone: StatTone.ink, trend: 'All services normal', icon: Icons.dns_rounded)),
+              Expanded(child: StatCard(label: 'System Uptime', value: _systemUptime, tone: StatTone.ink, trend: 'All services normal', icon: Icons.dns_rounded)),
             ]),
           ),
         ),
@@ -59,7 +81,7 @@ class AdminDashboard extends StatelessWidget {
               Container(width: 40, height: 40, decoration: BoxDecoration(color: Accent.amber100, borderRadius: BorderRadius.circular(12)), child: Icon(Icons.shield_moon_rounded, color: Accent.amber600, size: 20)),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('3 accounts pending verification', style: AppTheme.sans(13, weight: FontWeight.w700, color: Accent.amber800)),
+                Text('$_pendingVerificationCount accounts pending verification', style: AppTheme.sans(13, weight: FontWeight.w700, color: Accent.amber800)),
                 Text('Aadhaar e-KYC review required', style: AppTheme.sans(12, color: Accent.amber600)),
               ])),
               InkWell(onTap: () => context.go(Paths.adminUsers), child: Text('Review', style: AppTheme.sans(12, weight: FontWeight.w700, color: Accent.amber700))),
@@ -76,7 +98,7 @@ class AdminDashboard extends StatelessWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('Loans Disbursed', style: AppTheme.sans(12, color: Neutral.c500)),
                     const SizedBox(height: 4),
-                    Text('₹${(Kpis.loansDisbursed / 10000000).toStringAsFixed(2)}Cr', style: AppTheme.display(16)),
+                    Text('₹${(kpis.loansDisbursed / 10000000).toStringAsFixed(2)}Cr', style: AppTheme.display(16)),
                   ]),
                 ),
               ),
@@ -86,7 +108,7 @@ class AdminDashboard extends StatelessWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('Training Completion', style: AppTheme.sans(12, color: Neutral.c500)),
                     const SizedBox(height: 4),
-                    Text('${Kpis.trainingCompletion}%', style: AppTheme.display(16, color: Brand.c700)),
+                    Text('$_trainingCompletion%', style: AppTheme.display(16, color: Brand.c700)),
                   ]),
                 ),
               ),
@@ -100,7 +122,7 @@ class AdminDashboard extends StatelessWidget {
             AppCard(
               padded: false,
               child: Column(
-                children: _activity.map((a) => Padding(
+                children: _recentActivity.map((a) => Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                         Expanded(child: Text(a.$1, style: AppTheme.sans(12, color: Neutral.c700))),

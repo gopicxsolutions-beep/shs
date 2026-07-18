@@ -1,34 +1,142 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/announcements.dart';
-import '../../data/loans.dart';
-import '../../data/meetings.dart';
-import '../../data/members.dart';
-import '../../data/savings.dart';
-import '../../data/schemes.dart';
-import '../../data/shg.dart';
-import '../../data/training.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../models/loan.dart';
+import '../../models/meeting.dart';
+import '../../models/report.dart';
+import '../../models/savings.dart';
+import '../../models/training.dart';
+import '../../repositories/announcement_repository.dart';
+import '../../repositories/loan_repository.dart';
+import '../../repositories/meeting_repository.dart';
+import '../../repositories/report_repository.dart';
+import '../../repositories/savings_repository.dart';
+import '../../repositories/scheme_repository.dart';
+import '../../repositories/training_repository.dart';
 import '../../routes/paths.dart';
+import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/async_state.dart';
 import '../../widgets/icon_tile.dart';
 import '../../widgets/progress_bar.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stat_card.dart';
 
+class _MemberDashboardData {
+  final MemberReport report;
+  final List<MonthlyTotal> savingsTrend;
+  final Loan? activeLoan;
+  final Meeting? upcomingMeeting;
+  final Course? inProgressCourse;
+  final int inProgressCoursePct;
+  final int newSchemesCount;
+  final List<_AnnouncementSummary> announcements;
+  const _MemberDashboardData({
+    required this.report,
+    required this.savingsTrend,
+    required this.activeLoan,
+    required this.upcomingMeeting,
+    required this.inProgressCourse,
+    required this.inProgressCoursePct,
+    required this.newSchemesCount,
+    required this.announcements,
+  });
+}
+
+class _AnnouncementSummary {
+  final String id;
+  final String title;
+  final DateTime createdAt;
+  final bool read;
+  const _AnnouncementSummary({required this.id, required this.title, required this.createdAt, required this.read});
+}
+
 class MemberDashboard extends StatelessWidget {
   const MemberDashboard({super.key});
 
+  Future<_MemberDashboardData> _load(BuildContext context) async {
+    final appState = context.read<AppState>();
+    final memberId = appState.profile?.id;
+    final shgId = appState.profile?.shgId;
+
+    final results = await Future.wait([
+      ReportRepository().fetchMemberReport(memberId: memberId, shgId: shgId),
+      SavingsRepository().fetchForMember(memberId),
+      LoanRepository().fetchForMember(memberId),
+      MeetingRepository().fetchForShg(shgId),
+      TrainingRepository().fetchCourses(),
+      TrainingRepository().fetchMyProgress(memberId),
+      SchemeRepository().fetchSchemes(),
+      SchemeRepository().fetchMyApplications(memberId),
+      AnnouncementRepository().fetchForShg(shgId, memberId),
+    ]);
+
+    final report = results[0] as MemberReport;
+    final savingsEntries = results[1] as List<SavingsEntry>;
+    final loans = results[2] as List<Loan>;
+    final meetings = results[3] as List<Meeting>;
+    final courses = results[4] as List<Course>;
+    final progress = results[5] as Map<String, CourseProgress>;
+    final schemes = results[6] as List<dynamic>;
+    final myApplications = results[7] as Map<String, dynamic>;
+    final announcements = results[8] as List<dynamic>;
+
+    final activeLoan = loans.where((l) => l.status == 'active' || l.status == 'overdue').firstOrNull;
+    final upcomingMeeting = meetings.where((m) => m.status == 'upcoming').firstOrNull;
+
+    Course? inProgressCourse;
+    int inProgressPct = 0;
+    for (final c in courses) {
+      final p = progress[c.id];
+      if (p != null && p.progress > 0 && p.progress < 100) {
+        inProgressCourse = c;
+        inProgressPct = p.progress;
+        break;
+      }
+    }
+
+    final newSchemesCount = schemes.where((s) => !myApplications.containsKey(s.id as String)).length;
+
+    return _MemberDashboardData(
+      report: report,
+      savingsTrend: SavingsRepository().monthlyTrend(savingsEntries),
+      activeLoan: activeLoan,
+      upcomingMeeting: upcomingMeeting,
+      inProgressCourse: inProgressCourse,
+      inProgressCoursePct: inProgressPct,
+      newSchemesCount: newSchemesCount,
+      announcements: announcements
+          .take(3)
+          .map((a) => _AnnouncementSummary(id: a.id as String, title: a.title as String, createdAt: a.createdAt as DateTime, read: a.read as bool))
+          .toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final myLoan = loans.where((l) => l.memberName == 'Lakshmi Devi' && l.status == 'active').firstOrNull;
-    final upcomingMeeting = meetings.where((m) => m.status == 'upcoming').firstOrNull;
-    final inProgressCourse = courses.where((c) => c.progress > 0 && c.progress < 100).firstOrNull;
-    final myAttendance = members.where((m) => m.name == 'Lakshmi Devi').firstOrNull?.attendance ?? 0;
-    final newSchemesCount = schemes.where((s) => s.status == 'not_applied').length;
+    return AppAsyncBuilder<_MemberDashboardData>(
+      future: () => _load(context),
+      builder: (context, data) => _MemberDashboardBody(data: data),
+    );
+  }
+}
+
+class _MemberDashboardBody extends StatelessWidget {
+  final _MemberDashboardData data;
+  const _MemberDashboardBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final report = data.report;
+    final myLoan = data.activeLoan;
+    final upcomingMeeting = data.upcomingMeeting;
+    final inProgressCourse = data.inProgressCourse;
+    final newSchemesCount = data.newSchemesCount;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -38,9 +146,9 @@ class MemberDashboard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(children: [
-              Expanded(child: StatCard(label: 'My Savings', value: '₹48,200', tone: StatTone.brand, trend: '+₹500 this week', icon: Icons.account_balance_wallet_rounded)),
+              Expanded(child: StatCard(label: 'My Savings', value: '₹${report.totalSavings}', tone: StatTone.brand, trend: '${report.savingsEntryCount} entries', icon: Icons.account_balance_wallet_rounded)),
               const SizedBox(width: 12),
-              Expanded(child: StatCard(label: 'Outstanding Loan', value: '₹22,000', tone: StatTone.gold, trend: 'Next EMI 10 Jul', icon: Icons.account_balance_rounded)),
+              Expanded(child: StatCard(label: 'Outstanding Loan', value: '₹${report.totalOutstanding}', tone: StatTone.gold, trend: myLoan?.nextDueDate != null ? 'Next EMI ${DateFormat('dd MMM').format(myLoan!.nextDueDate!)}' : 'No dues', icon: Icons.account_balance_rounded)),
             ]),
           ),
         ),
@@ -71,7 +179,7 @@ class MemberDashboard extends StatelessWidget {
                     Icon(Icons.event_available_rounded, size: 16, color: Brand.c600),
                     const SizedBox(width: 8),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('$myAttendance%', style: AppTheme.sans(14, weight: FontWeight.w700)),
+                      Text('${report.attendancePct.round()}%', style: AppTheme.sans(14, weight: FontWeight.w700)),
                       Text('Attendance', style: AppTheme.sans(10, color: Neutral.c500)),
                     ])),
                   ]),
@@ -102,13 +210,12 @@ class MemberDashboard extends StatelessWidget {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('₹48,200', style: AppTheme.display(22)),
-                    Text('Group total: ₹${ShgInfo.totalSavings}', style: AppTheme.sans(11, color: Neutral.c500)),
+                    Text('₹${report.totalSavings}', style: AppTheme.display(22)),
+                    Text(report.period, style: AppTheme.sans(11, color: Neutral.c500)),
                   ]),
-                  const AppBadge(text: '+18% YoY', tone: BadgeTone.success),
                 ]),
                 const SizedBox(height: 12),
-                SizedBox(height: 64, child: _SavingsTrendChart()),
+                SizedBox(height: 64, child: _SavingsTrendChart(trend: data.savingsTrend)),
               ]),
             ),
           ]),
@@ -130,7 +237,7 @@ class MemberDashboard extends StatelessWidget {
                   AppProgressBar(value: myLoan.amount - myLoan.outstanding, max: myLoan.amount, tone: ProgressTone.gold),
                   const SizedBox(height: 12),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    AppBadge(text: 'EMI ₹${myLoan.emi} due ${myLoan.nextDueDate}', tone: BadgeTone.warning, dot: true),
+                    AppBadge(text: myLoan.nextDueDate != null ? 'EMI ₹${myLoan.emi} due ${DateFormat('dd MMM').format(myLoan.nextDueDate!)}' : 'EMI ₹${myLoan.emi}', tone: BadgeTone.warning, dot: true),
                     InkWell(onTap: () => context.go(Paths.paymentsQr), child: Text('Pay now', style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600))),
                   ]),
                 ]),
@@ -146,9 +253,9 @@ class MemberDashboard extends StatelessWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [Icon(Icons.event_note_rounded, size: 14, color: Brand.c600), const SizedBox(width: 6), Text('MEETING ALERT', style: AppTheme.sans(10, weight: FontWeight.w700, color: Brand.c600))]),
                     const SizedBox(height: 8),
-                    Text(upcomingMeeting.date, style: AppTheme.sans(14, weight: FontWeight.w700)),
+                    Text(DateFormat('dd MMM yyyy').format(upcomingMeeting.date), style: AppTheme.sans(14, weight: FontWeight.w700)),
                     const SizedBox(height: 4),
-                    Text(upcomingMeeting.agenda, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppTheme.sans(11, color: Neutral.c500)),
+                    Text(upcomingMeeting.agenda ?? 'Meeting', maxLines: 2, overflow: TextOverflow.ellipsis, style: AppTheme.sans(11, color: Neutral.c500)),
                     const SizedBox(height: 8),
                     InkWell(onTap: () => context.go(Paths.meetings), child: Text('Details', style: AppTheme.sans(11, weight: FontWeight.w700, color: Brand.c600))),
                   ]),
@@ -163,7 +270,7 @@ class MemberDashboard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(inProgressCourse.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700)),
                     const SizedBox(height: 8),
-                    AppProgressBar(value: inProgressCourse.progress, tone: ProgressTone.gold),
+                    AppProgressBar(value: data.inProgressCoursePct, tone: ProgressTone.gold),
                     const SizedBox(height: 8),
                     InkWell(onTap: () => context.go(Paths.trainingDetail(inProgressCourse.id)), child: Text('Continue', style: AppTheme.sans(11, weight: FontWeight.w700, color: Gold.c600))),
                   ]),
@@ -180,7 +287,7 @@ class MemberDashboard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('AI Financial Advisor', style: AppTheme.sans(14, weight: FontWeight.w700)),
-                Text('Your credit score estimate: 742 (Good)', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500)),
+                Text('Ask about savings, loans & budgeting', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500)),
               ])),
               Text('View', style: AppTheme.sans(12, weight: FontWeight.w700, color: Accent.violet600)),
             ]),
@@ -192,24 +299,26 @@ class MemberDashboard extends StatelessWidget {
             SectionHeader(title: 'Recent Announcements', action: 'See all', onAction: () => context.go(Paths.announcements)),
             AppCard(
               padded: false,
-              child: Column(
-                children: announcements.take(3).map((a) {
-                  return InkWell(
-                    onTap: () => context.go(Paths.announcementDetail(a.id)),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        if (!a.read) Padding(padding: const EdgeInsets.only(top: 5, right: 8), child: Container(width: 6, height: 6, decoration: BoxDecoration(color: Brand.c500, shape: BoxShape.circle))),
-                        if (a.read) const SizedBox(width: 14),
-                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(a.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c800)),
-                          Text(a.date, style: AppTheme.sans(10, color: Neutral.c400)),
-                        ])),
-                      ]),
+              child: data.announcements.isEmpty
+                  ? Padding(padding: const EdgeInsets.all(16), child: Text('No announcements yet', style: AppTheme.sans(12, color: Neutral.c400)))
+                  : Column(
+                      children: data.announcements.map((a) {
+                        return InkWell(
+                          onTap: () => context.go(Paths.announcementDetail(a.id)),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              if (!a.read) Padding(padding: const EdgeInsets.only(top: 5, right: 8), child: Container(width: 6, height: 6, decoration: BoxDecoration(color: Brand.c500, shape: BoxShape.circle))),
+                              if (a.read) const SizedBox(width: 14),
+                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(a.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c800)),
+                                Text(DateFormat('dd MMM yyyy').format(a.createdAt), style: AppTheme.sans(10, color: Neutral.c400)),
+                              ])),
+                            ]),
+                          ),
+                        );
+                      }).toList(),
                     ),
-                  );
-                }).toList(),
-              ),
             ),
           ]),
         ),
@@ -219,8 +328,12 @@ class MemberDashboard extends StatelessWidget {
 }
 
 class _SavingsTrendChart extends StatelessWidget {
+  final List<MonthlyTotal> trend;
+  const _SavingsTrendChart({required this.trend});
+
   @override
   Widget build(BuildContext context) {
+    if (trend.isEmpty) return const SizedBox();
     return LineChart(
       LineChartData(
         gridData: const FlGridData(show: false),
@@ -229,7 +342,7 @@ class _SavingsTrendChart extends StatelessWidget {
         lineTouchData: const LineTouchData(enabled: false),
         lineBarsData: [
           LineChartBarData(
-            spots: [for (var i = 0; i < savingsMonthlyTrend.length; i++) FlSpot(i.toDouble(), savingsMonthlyTrend[i].$2.toDouble())],
+            spots: [for (var i = 0; i < trend.length; i++) FlSpot(i.toDouble(), trend[i].total.toDouble())],
             isCurved: true,
             color: Brand.c600,
             barWidth: 2,

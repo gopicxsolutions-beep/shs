@@ -1,22 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../data/announcements.dart';
 import '../../models/types.dart';
+import '../../repositories/announcement_repository.dart';
 import '../../routes/paths.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/avatar.dart';
 
-class DashboardTopBar extends StatelessWidget {
+class DashboardTopBar extends StatefulWidget {
   const DashboardTopBar({super.key});
+
+  @override
+  State<DashboardTopBar> createState() => _DashboardTopBarState();
+}
+
+class _DashboardTopBarState extends State<DashboardTopBar> {
+  final _repo = AnnouncementRepository();
+  int _unread = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final appState = context.read<AppState>();
+    _repo.fetchForShg(appState.profile?.shgId, appState.profile?.id).then((list) {
+      if (mounted) setState(() => _unread = list.where((a) => !a.read).length);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AppState>().user;
     final roleInfo = roleInfoFor(user.role);
-    final unread = announcements.where((a) => !a.read).length;
+    final unread = _unread;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 64),
       decoration: const BoxDecoration(
