@@ -83,7 +83,9 @@ class LivelihoodDetailPage extends StatelessWidget {
   Future<void> _updateProgress(BuildContext context, LivelihoodRepository repo, LivelihoodActivity activity, GlobalKey<AppAsyncBuilderState<LivelihoodActivity?>> key) async {
     final revenueController = TextEditingController(text: '${activity.revenue}');
     var status = activity.status;
-    final result = await showDialog<bool>(
+    String? error;
+    var submitting = false;
+    final saved = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
@@ -100,18 +102,43 @@ class LivelihoodDetailPage extends StatelessWidget {
                 items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                 onChanged: (v) => setState(() => status = v ?? status),
               ),
+              if (error != null) ...[
+                const SizedBox(height: 12),
+                Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+              ],
             ],
           ),
           actions: [
             TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Save')),
+            FilledButton(
+              onPressed: submitting
+                  ? null
+                  : () async {
+                      final revenue = num.tryParse(revenueController.text);
+                      if (revenue == null || revenue < 0) {
+                        setState(() => error = 'Enter a valid revenue amount');
+                        return;
+                      }
+                      setState(() {
+                        error = null;
+                        submitting = true;
+                      });
+                      try {
+                        await repo.updateProgress(activity.id, revenue: revenue, status: status);
+                        if (context.mounted) Navigator.of(context).pop(true);
+                      } catch (_) {
+                        setState(() {
+                          submitting = false;
+                          error = 'Could not save this update. Please try again.';
+                        });
+                      }
+                    },
+              child: Text(submitting ? 'Saving…' : 'Save'),
+            ),
           ],
         ),
       ),
     );
-    if (result != true) return;
-    final revenue = num.tryParse(revenueController.text) ?? activity.revenue;
-    await repo.updateProgress(activity.id, revenue: revenue, status: status);
-    key.currentState?.reload();
+    if (saved == true) key.currentState?.reload();
   }
 }

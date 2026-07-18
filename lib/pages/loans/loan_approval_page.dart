@@ -99,28 +99,57 @@ class LoanApprovalPage extends StatelessWidget {
   Future<void> _approve(BuildContext context, LoanRepository repo, Loan l, GlobalKey<AppAsyncBuilderState<List<Loan>>> key) async {
     final suggestedEmi = (l.amount / l.tenureMonths).ceil();
     final emiController = TextEditingController(text: '$suggestedEmi');
-    final confirmed = await showDialog<bool>(
+    String? error;
+    var submitting = false;
+    final approved = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Approve loan'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Monthly EMI for ${l.memberName}', style: AppTheme.sans(12, color: Neutral.c500)),
-            const SizedBox(height: 8),
-            TextField(controller: emiController, keyboardType: TextInputType.number, decoration: const InputDecoration(prefixText: '₹')),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Approve loan'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Monthly EMI for ${l.memberName}', style: AppTheme.sans(12, color: Neutral.c500)),
+              const SizedBox(height: 8),
+              TextField(controller: emiController, keyboardType: TextInputType.number, decoration: const InputDecoration(prefixText: '₹')),
+              if (error != null) ...[
+                const SizedBox(height: 12),
+                Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: submitting
+                  ? null
+                  : () async {
+                      final emi = num.tryParse(emiController.text);
+                      if (emi == null || emi <= 0) {
+                        setState(() => error = 'Enter a valid EMI amount');
+                        return;
+                      }
+                      setState(() {
+                        error = null;
+                        submitting = true;
+                      });
+                      try {
+                        await repo.approve(l.id, emi: emi, nextDueDate: DateTime.now().add(const Duration(days: 30)));
+                        if (context.mounted) Navigator.of(context).pop(true);
+                      } catch (_) {
+                        setState(() {
+                          submitting = false;
+                          error = 'Could not approve this loan. Please try again.';
+                        });
+                      }
+                    },
+              child: Text(submitting ? 'Approving…' : 'Approve'),
+            ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Approve')),
-        ],
       ),
     );
-    if (confirmed != true) return;
-    final emi = num.tryParse(emiController.text) ?? suggestedEmi;
-    await repo.approve(l.id, emi: emi, nextDueDate: DateTime.now().add(const Duration(days: 30)));
-    key.currentState?.reload();
+    if (approved == true) key.currentState?.reload();
   }
 }

@@ -116,22 +116,56 @@ class LoanDetailPage extends StatelessWidget {
 
   Future<void> _recordPayment(BuildContext context, LoanRepository repo, Loan loan, GlobalKey<AppAsyncBuilderState<Loan?>> key) async {
     final controller = TextEditingController(text: '${loan.emi}');
-    final confirmed = await showDialog<bool>(
+    String? error;
+    var submitting = false;
+    final recorded = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Record payment'),
-        content: TextField(controller: controller, keyboardType: TextInputType.number, decoration: const InputDecoration(prefixText: '₹')),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Record')),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Record payment'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(controller: controller, keyboardType: TextInputType.number, decoration: const InputDecoration(prefixText: '₹')),
+              if (error != null) ...[
+                const SizedBox(height: 12),
+                Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: submitting
+                  ? null
+                  : () async {
+                      final amount = num.tryParse(controller.text);
+                      if (amount == null || amount <= 0) {
+                        setState(() => error = 'Enter a valid amount');
+                        return;
+                      }
+                      setState(() {
+                        error = null;
+                        submitting = true;
+                      });
+                      try {
+                        final newOutstanding = (loan.outstanding - amount).clamp(0, loan.amount);
+                        await repo.recordPayment(loan.id, amount, newOutstanding);
+                        if (context.mounted) Navigator.of(context).pop(true);
+                      } catch (_) {
+                        setState(() {
+                          submitting = false;
+                          error = 'Could not record this payment. Please try again.';
+                        });
+                      }
+                    },
+              child: Text(submitting ? 'Recording…' : 'Record'),
+            ),
+          ],
+        ),
       ),
     );
-    if (confirmed != true) return;
-    final amount = num.tryParse(controller.text);
-    if (amount == null || amount <= 0) return;
-    final newOutstanding = (loan.outstanding - amount).clamp(0, loan.amount);
-    await repo.recordPayment(loan.id, amount, newOutstanding);
-    key.currentState?.reload();
+    if (recorded == true) key.currentState?.reload();
   }
 }

@@ -12,6 +12,8 @@ Future<bool?> showFinancialEntryDialog(
   final descController = TextEditingController();
   final amountController = TextEditingController();
   var isCredit = true;
+  String? error;
+  var submitting = false;
 
   return showDialog<bool>(
     context: context,
@@ -34,25 +36,49 @@ Future<bool?> showFinancialEntryDialog(
               selected: {isCredit},
               onSelectionChanged: (v) => setState(() => isCredit = v.first),
             ),
+            if (error != null) ...[
+              const SizedBox(height: 12),
+              Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+            ],
           ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
           FilledButton(
-            onPressed: () async {
-              final amount = num.tryParse(amountController.text);
-              if (descController.text.trim().isEmpty || amount == null || amount <= 0) return;
-              await repo.addEntry(
-                shgId: shgId,
-                createdBy: createdBy,
-                entryType: entryType,
-                description: descController.text.trim(),
-                debit: isCredit ? 0 : amount,
-                credit: isCredit ? amount : 0,
-              );
-              if (context.mounted) Navigator.of(context).pop(true);
-            },
-            child: const Text('Add'),
+            onPressed: submitting
+                ? null
+                : () async {
+                    final amount = num.tryParse(amountController.text);
+                    if (descController.text.trim().isEmpty) {
+                      setState(() => error = 'Enter a description');
+                      return;
+                    }
+                    if (amount == null || amount <= 0) {
+                      setState(() => error = 'Enter a valid amount');
+                      return;
+                    }
+                    setState(() {
+                      error = null;
+                      submitting = true;
+                    });
+                    try {
+                      await repo.addEntry(
+                        shgId: shgId,
+                        createdBy: createdBy,
+                        entryType: entryType,
+                        description: descController.text.trim(),
+                        debit: isCredit ? 0 : amount,
+                        credit: isCredit ? amount : 0,
+                      );
+                      if (context.mounted) Navigator.of(context).pop(true);
+                    } catch (_) {
+                      setState(() {
+                        submitting = false;
+                        error = 'Could not save this entry. Please try again.';
+                      });
+                    }
+                  },
+            child: Text(submitting ? 'Adding…' : 'Add'),
           ),
         ],
       ),

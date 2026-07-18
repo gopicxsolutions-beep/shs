@@ -30,6 +30,7 @@ class AdminUsersPage extends StatefulWidget {
 class _AdminUsersPageState extends State<AdminUsersPage> {
   final _repo = AdminRepository();
   final GlobalKey<AppAsyncBuilderState<List<Profile>>> _key = GlobalKey();
+  String? _changingRoleFor;
 
   Future<void> _changeRole(Profile user) async {
     final selected = await showDialog<Role>(
@@ -45,12 +46,17 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
       ),
     );
     if (selected == null) return;
-    await _repo.updateUserRole(user.id, selected.name);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(SupabaseService.isConfigured ? 'Role updated' : 'Demo mode — role not saved (connect Supabase to persist)'),
-      ));
-      _key.currentState?.reload();
+    setState(() => _changingRoleFor = user.id);
+    try {
+      await _repo.updateUserRole(user.id, selected.name);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(SupabaseService.isConfigured ? 'Role updated' : 'Demo mode — role not saved (connect Supabase to persist)'),
+        ));
+        _key.currentState?.reload();
+      }
+    } finally {
+      if (mounted) setState(() => _changingRoleFor = null);
     }
   }
 
@@ -72,10 +78,11 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
             itemCount: users.length,
             itemBuilder: (context, i) {
               final u = users[i];
+              final busy = _changingRoleFor == u.id;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: AppCard(
-                  onTap: isAdmin ? () => _changeRole(u) : null,
+                  onTap: isAdmin && !busy ? () => _changeRole(u) : null,
                   child: Row(children: [
                     AppAvatar(name: u.name, size: 40),
                     const SizedBox(width: 12),
