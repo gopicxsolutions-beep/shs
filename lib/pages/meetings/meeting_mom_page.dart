@@ -146,8 +146,14 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                             onChanged: !SupabaseService.isConfigured
                                 ? null
                                 : (v) async {
-                                    await _repo.toggleActionItem(item.id, v ?? false);
-                                    _actionsKey.currentState?.reload();
+                                    try {
+                                      await _repo.toggleActionItem(item.id, v ?? false);
+                                      if (mounted) _actionsKey.currentState?.reload();
+                                    } catch (_) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update this action item. Please try again.')));
+                                      }
+                                    }
                                   },
                           )),
                     if (isLeaderOrStaff)

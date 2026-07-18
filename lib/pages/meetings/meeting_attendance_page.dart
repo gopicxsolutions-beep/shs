@@ -108,10 +108,16 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                                         onChanged: !SupabaseService.isConfigured
                                             ? null
                                             : (v) async {
-                                                await _repo.markAttendance(meeting.id, row.memberId, v);
-                                                setState(() {
-                                                  roster[i] = AttendanceRow(memberId: row.memberId, memberName: row.memberName, present: v);
-                                                });
+                                                try {
+                                                  await _repo.markAttendance(meeting.id, row.memberId, v);
+                                                  setState(() {
+                                                    roster[i] = AttendanceRow(memberId: row.memberId, memberName: row.memberName, present: v);
+                                                  });
+                                                } catch (_) {
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update attendance. Please try again.')));
+                                                  }
+                                                }
                                               },
                                       ),
                                     ]),

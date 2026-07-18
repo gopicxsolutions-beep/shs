@@ -35,6 +35,10 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
     try {
       await _repo.markAttendance(meeting.id, memberId, true);
       if (mounted) setState(() => _checkedIn = true);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not check you in. Please try again.')));
+      }
     } finally {
       if (mounted) setState(() => _checkingIn = false);
     }

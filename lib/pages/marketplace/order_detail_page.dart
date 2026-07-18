@@ -12,13 +12,35 @@ import '../../widgets/async_state.dart';
 
 const _statusFlow = ['new', 'packed', 'shipped', 'delivered'];
 
-class OrderDetailPage extends StatelessWidget {
+class OrderDetailPage extends StatefulWidget {
   final String orderId;
   const OrderDetailPage({super.key, required this.orderId});
+  @override
+  State<OrderDetailPage> createState() => _OrderDetailPageState();
+}
+
+class _OrderDetailPageState extends State<OrderDetailPage> {
+  final _repo = MarketplaceRepository();
+  bool _updating = false;
+
+  Future<void> _updateStatus(MarketOrder order, String status, GlobalKey<AppAsyncBuilderState<MarketOrder?>> key) async {
+    setState(() => _updating = true);
+    try {
+      await _repo.updateOrderStatus(order.id, status);
+      if (mounted) key.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update the order status. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _updating = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final repo = MarketplaceRepository();
+    final repo = _repo;
+    final orderId = widget.orderId;
     final key = GlobalKey<AppAsyncBuilderState<MarketOrder?>>();
 
     return Scaffold(
@@ -58,16 +80,11 @@ class OrderDetailPage extends StatelessWidget {
                 runSpacing: 8,
                 children: _statusFlow.asMap().entries.map((e) {
                   final selected = e.key == currentIndex;
-                  final reachable = SupabaseService.isConfigured;
+                  final reachable = SupabaseService.isConfigured && !_updating;
                   return ChoiceChip(
                     label: Text(e.value),
                     selected: selected,
-                    onSelected: !reachable
-                        ? null
-                        : (_) async {
-                            await repo.updateOrderStatus(order.id, e.value);
-                            key.currentState?.reload();
-                          },
+                    onSelected: !reachable ? null : (_) => _updateStatus(order, e.value, key),
                     selectedColor: Brand.c50,
                     labelStyle: AppTheme.sans(12, weight: FontWeight.w600, color: selected ? Brand.c700 : Neutral.c600),
                     backgroundColor: Colors.white,

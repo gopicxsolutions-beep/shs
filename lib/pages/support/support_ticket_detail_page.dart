@@ -32,6 +32,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
   final _message = TextEditingController();
   final GlobalKey<AppAsyncBuilderState<_ThreadData>> _key = GlobalKey();
   bool _sending = false;
+  bool _changingStatus = false;
 
   @override
   void dispose() {
@@ -48,15 +49,32 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
   Future<void> _send(String? memberId) async {
     if (_message.text.trim().isEmpty || !SupabaseService.isConfigured) return;
     setState(() => _sending = true);
-    await _repo.sendMessage(ticketId: widget.ticketId, senderId: memberId, body: _message.text.trim());
-    _message.clear();
-    await _key.currentState?.reload();
-    if (mounted) setState(() => _sending = false);
+    try {
+      await _repo.sendMessage(ticketId: widget.ticketId, senderId: memberId, body: _message.text.trim());
+      _message.clear();
+      await _key.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not send this message. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   Future<void> _changeStatus(String status) async {
-    await _repo.updateStatus(widget.ticketId, status);
-    _key.currentState?.reload();
+    if (_changingStatus) return;
+    setState(() => _changingStatus = true);
+    try {
+      await _repo.updateStatus(widget.ticketId, status);
+      if (mounted) _key.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update the ticket status. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _changingStatus = false);
+    }
   }
 
   @override

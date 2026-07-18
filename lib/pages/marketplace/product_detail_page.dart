@@ -14,14 +14,38 @@ import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/section_header.dart';
 
-class ProductDetailPage extends StatelessWidget {
+class ProductDetailPage extends StatefulWidget {
   final String productId;
   const ProductDetailPage({super.key, required this.productId});
+  @override
+  State<ProductDetailPage> createState() => _ProductDetailPageState();
+}
+
+class _ProductDetailPageState extends State<ProductDetailPage> {
+  final _repo = MarketplaceRepository();
+  bool _placing = false;
+
+  Future<void> _placeOrder(Product product) async {
+    final appState = context.read<AppState>();
+    setState(() => _placing = true);
+    try {
+      await _repo.placeOrder(productId: product.id, buyerName: appState.user.name, buyerId: appState.profile?.id, amount: product.price);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order placed')));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not place this order. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _placing = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<AppState>();
-    final repo = MarketplaceRepository();
+    final repo = _repo;
+    final productId = widget.productId;
 
     return Scaffold(
       appBar: const PageHeader(title: 'Product'),
@@ -55,17 +79,10 @@ class ProductDetailPage extends StatelessWidget {
               if (product.description != null) Text(product.description!, style: AppTheme.sans(13, color: Neutral.c700)),
               const SizedBox(height: 20),
               AppButton(
-                label: 'Place Order',
+                label: _placing ? 'Placing…' : 'Place Order',
                 fullWidth: true,
                 size: ButtonSize.lg,
-                onPressed: !SupabaseService.isConfigured || product.stock <= 0
-                    ? null
-                    : () async {
-                        await repo.placeOrder(productId: product.id, buyerName: appState.user.name, buyerId: appState.profile?.id, amount: product.price);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order placed')));
-                        }
-                      },
+                onPressed: !SupabaseService.isConfigured || product.stock <= 0 || _placing ? null : () => _placeOrder(product),
               ),
               const SizedBox(height: 24),
               const SectionHeader(title: 'Reviews'),

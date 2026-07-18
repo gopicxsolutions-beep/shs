@@ -31,6 +31,22 @@ class CourseDetailPage extends StatefulWidget {
 class _CourseDetailPageState extends State<CourseDetailPage> {
   final _repo = TrainingRepository();
   final GlobalKey<AppAsyncBuilderState<_DetailData?>> _key = GlobalKey();
+  bool _updating = false;
+
+  Future<void> _continueCourse(int pct, String? memberId) async {
+    setState(() => _updating = true);
+    try {
+      final next = (pct + 50).clamp(0, 100);
+      await _repo.updateProgress(widget.courseId, memberId, next);
+      if (mounted) _key.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not save your progress. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _updating = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,16 +94,10 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
               const SizedBox(height: 20),
               if (!certified) ...[
                 AppButton(
-                  label: pct == 0 ? 'Start Course' : 'Continue',
+                  label: _updating ? 'Saving…' : (pct == 0 ? 'Start Course' : 'Continue'),
                   fullWidth: true,
                   size: ButtonSize.lg,
-                  onPressed: !SupabaseService.isConfigured
-                      ? null
-                      : () async {
-                          final next = (pct + 50).clamp(0, 100);
-                          await _repo.updateProgress(course.id, memberId, next);
-                          _key.currentState?.reload();
-                        },
+                  onPressed: !SupabaseService.isConfigured || _updating ? null : () => _continueCourse(pct, memberId),
                 ),
                 const SizedBox(height: 12),
                 AppButton(
