@@ -1,11 +1,30 @@
-/// Abstraction over a real LLM-backed advisor API. No real LLM key is wired
-/// yet — a production key would swap [MockAiAdvisorService] for a real
-/// implementation of this same interface without touching any call site.
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'supabase_service.dart';
+
+/// Abstraction over a real LLM-backed advisor API.
 /// See docs/DEVELOPMENT_PROGRESS.md's "External API abstraction plan".
 abstract class AiAdvisorService {
   /// [advisorType] is one of 'financial' | 'scheme' | 'market', matching
   /// the `ai_advisor_logs.advisor_type` check constraint.
   Future<String> ask({required String advisorType, required String query});
+}
+
+/// Calls the deployed `ai-advisor-proxy` Edge Function, which proxies to a
+/// real LLM (Groq's `llama-3.3-70b-versatile`) — the provider key stays
+/// server-side. Used whenever Supabase is configured; falls back to
+/// [MockAiAdvisorService] only in demo mode (see `AiAdvisorRepository`).
+class EdgeFunctionAiAdvisorService implements AiAdvisorService {
+  SupabaseClient get _client => SupabaseService.instance.client;
+
+  @override
+  Future<String> ask({required String advisorType, required String query}) async {
+    final res = await _client.functions.invoke('ai-advisor-proxy', body: {'advisor_type': advisorType, 'query': query});
+    final data = res.data as Map<String, dynamic>?;
+    if (data == null || data['ok'] != true) {
+      throw Exception('AI advisor request failed: ${data?['error'] ?? 'unknown error'}');
+    }
+    return data['response'] as String;
+  }
 }
 
 /// Keyword-matches the query against a small canned response set per

@@ -6,10 +6,11 @@ import '../services/supabase_service.dart';
 
 /// Backed by `public.ai_advisor_logs` when Supabase is configured; falls
 /// back to `lib/data/ai_advisors.dart` otherwise. The advisor call itself
-/// goes through [AiAdvisorService] (mocked until a real LLM key is
-/// supplied) — this repository only ever records the *result* of that call.
+/// goes through [AiAdvisorService] — [EdgeFunctionAiAdvisorService] (a real
+/// Groq-backed LLM) when Supabase is configured, [MockAiAdvisorService] in
+/// demo mode — this repository only ever records the *result* of that call.
 class AiAdvisorRepository {
-  AiAdvisorRepository({AiAdvisorService? service}) : _service = service ?? MockAiAdvisorService();
+  AiAdvisorRepository({AiAdvisorService? service}) : _service = service ?? (SupabaseService.isConfigured ? EdgeFunctionAiAdvisorService() : MockAiAdvisorService());
 
   final AiAdvisorService _service;
   SupabaseClient get _client => SupabaseService.instance.client;
