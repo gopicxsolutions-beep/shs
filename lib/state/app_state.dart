@@ -74,11 +74,15 @@ class AppState extends ChangeNotifier {
   bool _legacySessionStarted = false;
   bool _legacyOnboarded = false;
   Role _legacyRole = defaultUser.role;
+  String? _legacyName;
+  String? _legacyVillage;
 
   static const _roleKey = 'shg_role';
   static const _sessionKey = 'shg_session_started';
   static const _onboardedKey = 'shg_authenticated';
   static const _langKey = 'shg_language';
+  static const _nameKey = 'shg_demo_name';
+  static const _villageKey = 'shg_demo_village';
 
   /// A Supabase session exists (phone OTP verified), or — unconfigured —
   /// profile setup has been completed.
@@ -116,7 +120,7 @@ class AppState extends ChangeNotifier {
         village: _profile!.village ?? defaultUser.village,
       );
     }
-    return defaultUser.copyWith(role: _legacyRole);
+    return defaultUser.copyWith(role: _legacyRole, name: _legacyName, village: _legacyVillage);
   }
 
   /// Call once at app start (replaces the old `restore()`).
@@ -136,6 +140,8 @@ class AppState extends ChangeNotifier {
       }
       _legacySessionStarted = prefs.getBool(_sessionKey) ?? false;
       _legacyOnboarded = prefs.getBool(_onboardedKey) ?? false;
+      _legacyName = prefs.getString(_nameKey);
+      _legacyVillage = prefs.getString(_villageKey);
       notifyListeners();
       return;
     }
@@ -223,8 +229,15 @@ class AppState extends ChangeNotifier {
   }) async {
     if (!SupabaseService.isConfigured) {
       _legacySessionStarted = true;
+      // Demo mode has no real profile row to persist to, so without this
+      // the name/village typed here were silently discarded and the app
+      // kept showing the default "Lakshmi Devi" persona everywhere.
+      if (name.isNotEmpty) _legacyName = name;
+      if (village.isNotEmpty) _legacyVillage = village;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_sessionKey, true);
+      if (_legacyName != null) await prefs.setString(_nameKey, _legacyName!);
+      if (_legacyVillage != null) await prefs.setString(_villageKey, _legacyVillage!);
       notifyListeners();
       return;
     }
