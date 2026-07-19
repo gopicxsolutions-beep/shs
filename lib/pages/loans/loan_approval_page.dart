@@ -121,6 +121,7 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
   }
 
   Future<void> _approve(BuildContext context, Loan l) async {
+    final messenger = ScaffoldMessenger.of(context);
     final suggestedEmi = (l.amount / l.tenureMonths).ceil();
     final emiController = TextEditingController(text: '$suggestedEmi');
     String? error;
@@ -185,11 +186,9 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
     );
     if (approved == true) {
       _key.currentState?.reload();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(SupabaseService.isConfigured ? 'Loan approved' : 'Demo mode — not saved (connect Supabase to persist)')),
-        );
-      }
+      messenger.showSnackBar(
+        SnackBar(content: Text(SupabaseService.isConfigured ? 'Loan approved' : 'Demo mode — not saved (connect Supabase to persist)')),
+      );
     }
   }
 }

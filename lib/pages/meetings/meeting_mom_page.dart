@@ -48,6 +48,9 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
       await _repo.saveMinutes(widget.meetingId, next);
       _decisions = next;
       _minutesKey.currentState?.reload();
+      if (mounted && !SupabaseService.isConfigured) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo mode — not saved (connect Supabase to persist)')));
+      }
     } catch (_) {
       if (mounted) {
         _decisionController.text = text;
@@ -66,7 +69,12 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
     _taskController.clear();
     try {
       await _repo.addActionItem(widget.meetingId, text, dueDate: DateTime.now().add(const Duration(days: 7)));
-      if (mounted) _actionsKey.currentState?.reload();
+      if (mounted) {
+        _actionsKey.currentState?.reload();
+        if (!SupabaseService.isConfigured) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo mode — not saved (connect Supabase to persist)')));
+        }
+      }
     } catch (_) {
       if (mounted) {
         _taskController.text = text;
@@ -121,8 +129,8 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured && !_savingDecision ? Brand.c600 : Neutral.c300),
-                          onPressed: SupabaseService.isConfigured && !_savingDecision ? _addDecision : null,
+                          icon: Icon(Icons.add_circle_rounded, color: !_savingDecision ? Brand.c600 : Neutral.c300),
+                          onPressed: !_savingDecision ? _addDecision : null,
                           tooltip: 'Add decision',
                         ),
                       ]),
@@ -154,17 +162,15 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                               style: AppTheme.sans(13, weight: FontWeight.w600).copyWith(decoration: item.done ? TextDecoration.lineThrough : null),
                             ),
                             subtitle: item.dueDate != null ? Text('Due ${DateFormat('dd MMM yyyy').format(item.dueDate!)}', style: AppTheme.sans(11, color: Neutral.c500)) : null,
-                            onChanged: !SupabaseService.isConfigured
-                                ? null
-                                : (v) async {
-                                    try {
-                                      await _repo.toggleActionItem(item.id, v ?? false);
-                                      if (mounted) _actionsKey.currentState?.reload();
-                                    } catch (_) {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update this action item. Please try again.')));
-                                      }
-                                    }
+                            onChanged: (v) async {
+                              try {
+                                await _repo.toggleActionItem(item.id, v ?? false);
+                                if (mounted) _actionsKey.currentState?.reload();
+                              } catch (_) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update this action item. Please try again.')));
+                                }
+                              }
                                   },
                           )),
                     if (isLeaderOrStaff)
@@ -181,8 +187,8 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured && !_savingActionItem ? Brand.c600 : Neutral.c300),
-                            onPressed: SupabaseService.isConfigured && !_savingActionItem ? _addActionItem : null,
+                            icon: Icon(Icons.add_circle_rounded, color: !_savingActionItem ? Brand.c600 : Neutral.c300),
+                            onPressed: !_savingActionItem ? _addActionItem : null,
                             tooltip: 'Add action item',
                           ),
                         ]),

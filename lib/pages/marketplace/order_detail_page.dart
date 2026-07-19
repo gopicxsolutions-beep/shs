@@ -28,7 +28,12 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     setState(() => _updating = true);
     try {
       await _repo.updateOrderStatus(order.id, status);
-      if (mounted) _key.currentState?.reload();
+      if (mounted) {
+        _key.currentState?.reload();
+        if (!SupabaseService.isConfigured) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo mode — not saved (connect Supabase to persist)')));
+        }
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update the order status. Please try again.')));
@@ -77,7 +82,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                 runSpacing: 8,
                 children: _statusFlow.asMap().entries.map((e) {
                   final selected = e.key == currentIndex;
-                  final reachable = SupabaseService.isConfigured && !_updating;
+                  final reachable = !_updating;
                   return ChoiceChip(
                     label: Text(e.value),
                     selected: selected,

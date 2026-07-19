@@ -53,7 +53,12 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
     setState(() => _busy = true);
     try {
       await _repo.addDocument(shgId: shgId, name: name, type: 'PDF');
-      if (mounted) _key.currentState?.reload();
+      if (mounted) {
+        _key.currentState?.reload();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(SupabaseService.isConfigured ? 'Document added' : 'Demo mode — not saved (connect Supabase to persist)'),
+        ));
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not add this document. Please try again.')));
@@ -74,8 +79,8 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
         title: 'Documents',
         right: isLeaderOrStaff
             ? IconButton(
-                icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured && !_busy ? Brand.c600 : Neutral.c300),
-                onPressed: SupabaseService.isConfigured && !_busy ? () => _addDocument(shgId) : null,
+                icon: Icon(Icons.add_circle_rounded, color: !_busy ? Brand.c600 : Neutral.c300),
+                onPressed: !_busy ? () => _addDocument(shgId) : null,
                 tooltip: 'Add document',
               )
             : null,

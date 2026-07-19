@@ -92,7 +92,12 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
     setState(() => _busy = true);
     try {
       await _repo.deleteScheme(s.id);
-      if (mounted) _key.currentState?.reload();
+      if (mounted) {
+        _key.currentState?.reload();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(SupabaseService.isConfigured ? 'Scheme deleted' : 'Demo mode — not saved (connect Supabase to persist)'),
+        ));
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not delete this scheme. Please try again.')));
@@ -111,8 +116,8 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
         title: 'Manage Schemes',
         right: isAdmin
             ? IconButton(
-                icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured && !_busy ? Brand.c600 : Neutral.c300),
-                onPressed: SupabaseService.isConfigured && !_busy ? _addScheme : null,
+                icon: Icon(Icons.add_circle_rounded, color: !_busy ? Brand.c600 : Neutral.c300),
+                onPressed: !_busy ? _addScheme : null,
                 tooltip: 'Add scheme',
               )
             : null,
@@ -145,8 +150,8 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
                       ),
                       if (isAdmin)
                         IconButton(
-                          icon: Icon(Icons.delete_outline_rounded, color: SupabaseService.isConfigured && !_busy ? Accent.red500 : Neutral.c300),
-                          onPressed: SupabaseService.isConfigured && !_busy ? () => _deleteScheme(s) : null,
+                          icon: Icon(Icons.delete_outline_rounded, color: !_busy ? Accent.red500 : Neutral.c300),
+                          onPressed: !_busy ? () => _deleteScheme(s) : null,
                           tooltip: 'Delete ${s.name}',
                         ),
                     ],
