@@ -43,6 +43,11 @@ class TrendChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 24,
+                // Without a fixed interval, fl_chart auto-generates ticks at
+                // "nice" fractional positions (0, 0.5, 1, 1.5, ...) — each
+                // pair truncates to the same point index via value.toInt(),
+                // so every month label was rendered twice in a row.
+                interval: 1,
                 getTitlesWidget: (value, meta) {
                   final i = value.toInt();
                   if (i < 0 || i >= points.length) return const SizedBox();

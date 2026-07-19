@@ -19,10 +19,17 @@ class AnalyticsRepository {
 
   Future<PlatformKpis> fetchPlatformKpis() async {
     if (!_live) {
-      return const PlatformKpis(
-        totalShgs: mock.Kpis.totalSHGs,
+      // totalShgs/totalSavings are derived from the same village breakdown
+      // shown on the Federation "Village-wise SHGs" report, rather than the
+      // separate Kpis.totalSHGs/totalSavings constants — those had drifted
+      // out of sync (186 SHGs / ₹4.86Cr vs. the villages' actual 124 / ₹3.16Cr),
+      // so the CLF/Admin dashboard summary contradicted its own drill-down.
+      final totalShgs = mock.villageWiseSHGs.fold<int>(0, (s, v) => s + v.shgs);
+      final totalSavings = mock.villageWiseSHGs.fold<int>(0, (s, v) => s + v.savings);
+      return PlatformKpis(
+        totalShgs: totalShgs,
         activeMembers: mock.Kpis.activeMembers,
-        totalSavings: mock.Kpis.totalSavings,
+        totalSavings: totalSavings,
         loansDisbursed: mock.Kpis.loansDisbursed,
         recoveryRatePct: mock.Kpis.recoveryRate,
       );

@@ -10,10 +10,16 @@ class AnnouncementRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Demo mode has no backing table to persist read receipts to, so opening
+  // an announcement would otherwise never clear its "Unread" badge for the
+  // rest of the session. Static so it survives this repository being
+  // re-instantiated per page while the app is running.
+  static final Set<String> _locallyRead = {};
+
   Future<List<Announcement>> fetchForShg(String? shgId, String? memberId) async {
     if (!_live || shgId == null) {
       return mock.announcements
-          .map((a) => Announcement(id: a.id, title: a.title, body: a.body, category: a.category, createdAt: _parseMockDate(a.date), read: a.read))
+          .map((a) => Announcement(id: a.id, title: a.title, body: a.body, category: a.category, createdAt: _parseMockDate(a.date), read: a.read || _locallyRead.contains(a.id)))
           .toList();
     }
     final rows = await _client.from('announcements').select().or('shg_id.eq.$shgId,shg_id.is.null').order('created_at', ascending: false);
@@ -30,7 +36,7 @@ class AnnouncementRepository {
       final matches = mock.announcements.where((a) => a.id == id);
       if (matches.isEmpty) return null;
       final a = matches.first;
-      return Announcement(id: a.id, title: a.title, body: a.body, category: a.category, createdAt: _parseMockDate(a.date), read: a.read);
+      return Announcement(id: a.id, title: a.title, body: a.body, category: a.category, createdAt: _parseMockDate(a.date), read: a.read || _locallyRead.contains(a.id));
     }
     final row = await _client.from('announcements').select().eq('id', id).maybeSingle();
     if (row == null) return null;
@@ -39,7 +45,10 @@ class AnnouncementRepository {
   }
 
   Future<void> markRead(String announcementId, String? memberId) async {
-    if (!_live || memberId == null) return;
+    if (!_live || memberId == null) {
+      _locallyRead.add(announcementId);
+      return;
+    }
     await _client.from('announcement_reads').upsert({
       'announcement_id': announcementId,
       'member_id': memberId,
