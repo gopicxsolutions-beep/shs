@@ -1,6 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../data/meetings.dart' as mock_meetings;
 import '../models/report.dart';
 import '../services/supabase_service.dart';
+import 'loan_repository.dart';
+import 'savings_repository.dart';
+import 'shg_repository.dart';
 
 /// `public.report_snapshots` exists so an Edge Function can eventually
 /// generate these server-side and cache them (`report_snapshots_write_staff`
@@ -15,7 +19,27 @@ class ReportRepository {
 
   Future<MemberReport> fetchMemberReport({required String? memberId, required String? shgId}) async {
     if (!_live || memberId == null || shgId == null) {
-      return const MemberReport(totalSavings: 48200, savingsEntryCount: 12, totalOutstanding: 22000, activeLoanCount: 1, meetingsAttended: 10, meetingsTotal: 12, period: 'All time');
+      // Computed from the same mock data the Savings/Loans/Meetings pages
+      // show, rather than a fixed snapshot, so this doesn't drift out of
+      // sync with what tapping through to those pages actually displays.
+      final savings = await SavingsRepository().fetchForMember(memberId);
+      final loans = await LoanRepository().fetchForMember(memberId);
+      final totalSavings = savings.fold<num>(0, (s, e) => s + e.amount);
+      final activeLoans = loans.where((l) => l.status == 'active' || l.status == 'overdue').toList();
+      final totalOutstanding = activeLoans.fold<num>(0, (s, l) => s + l.outstanding);
+      // Mock meetings carry no per-member attendance, so the demo persona is
+      // treated as present at every completed meeting — same assumption
+      // MeetingRepository.fetchAttendanceHistory's demo branch makes.
+      final completedMeetings = mock_meetings.meetings.where((m) => m.status == 'completed').length;
+      return MemberReport(
+        totalSavings: totalSavings,
+        savingsEntryCount: savings.length,
+        totalOutstanding: totalOutstanding,
+        activeLoanCount: activeLoans.length,
+        meetingsAttended: completedMeetings,
+        meetingsTotal: completedMeetings,
+        period: 'All time',
+      );
     }
     final savings = await _client.from('savings_entries').select('amount').eq('member_id', memberId);
     final totalSavings = (savings as List).fold<num>(0, (s, r) => s + ((r as Map<String, dynamic>)['amount'] as num));
@@ -55,7 +79,27 @@ class ReportRepository {
 
   Future<ShgReportData> fetchShgReport(String? shgId) async {
     if (!_live || shgId == null) {
-      return const ShgReportData(memberCount: 14, totalSavings: 612500, totalOutstanding: 184000, activeLoanCount: 6, avgAttendancePct: 82, period: 'All time');
+      // Computed from the same mock data the Members/Savings/Loans pages
+      // show, rather than a fixed snapshot, so this doesn't drift out of
+      // sync with what tapping through to those pages actually displays.
+      final savings = await SavingsRepository().fetchForShg(shgId);
+      final loans = await LoanRepository().fetchForShg(shgId);
+      final totalSavings = savings.fold<num>(0, (s, e) => s + e.amount);
+      final activeLoans = loans.where((l) => l.status == 'active' || l.status == 'overdue').toList();
+      final totalOutstanding = activeLoans.fold<num>(0, (s, l) => s + l.outstanding);
+      final memberCount = (await ShgRepository().fetchMembers(shgId)).length;
+      final completedMeetings = mock_meetings.meetings.where((m) => m.status == 'completed');
+      final attendedSum = completedMeetings.fold<int>(0, (s, m) => s + m.attendance);
+      final totalSum = completedMeetings.fold<int>(0, (s, m) => s + m.total);
+      final avgAttendancePct = totalSum == 0 ? 0.0 : (attendedSum / totalSum) * 100;
+      return ShgReportData(
+        memberCount: memberCount,
+        totalSavings: totalSavings,
+        totalOutstanding: totalOutstanding,
+        activeLoanCount: activeLoans.length,
+        avgAttendancePct: avgAttendancePct,
+        period: 'All time',
+      );
     }
     final members = await _client.from('profiles').select('id').eq('shg_id', shgId);
     final memberCount = (members as List).length;

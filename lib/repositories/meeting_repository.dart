@@ -76,7 +76,12 @@ class MeetingRepository {
   /// `lib/pages/reports/attendance_report_page.dart`).
   Future<List<MemberAttendanceRecord>> fetchAttendanceHistory(String? memberId, String? shgId) async {
     if (!_live || memberId == null || shgId == null) {
-      return _mockMeetings().map((m) => MemberAttendanceRecord(meetingDate: m.date, venue: m.venue, present: true)).toList();
+      // Only completed meetings — an upcoming one hasn't happened yet, so
+      // there's nothing to have attended.
+      return _mockMeetings()
+          .where((m) => m.status == 'completed')
+          .map((m) => MemberAttendanceRecord(meetingDate: m.date, venue: m.venue, present: true))
+          .toList();
     }
     final meetings = await _client.from('meetings').select('id, meeting_date, venue').eq('shg_id', shgId).eq('status', 'completed').order('meeting_date', ascending: false);
     final meetingList = meetings as List;
