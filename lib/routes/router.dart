@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import '../layout/app_shell.dart';
+import '../models/types.dart';
 import '../pages/admin/admin_monitoring_page.dart';
 import '../pages/admin/admin_schemes_page.dart';
 import '../pages/admin/admin_users_page.dart';
@@ -87,6 +88,26 @@ import '../state/app_state.dart';
 import '../widgets/error_screen.dart';
 import 'paths.dart';
 
+const _leaderOrStaff = {Role.leader, Role.crp, Role.clf, Role.admin};
+const _federationStaff = {Role.crp, Role.clf, Role.admin};
+
+/// Screens the UI only ever links to from a leader/staff/admin-only nav
+/// item, but which were previously reachable by ANY authenticated role via
+/// direct URL — a member could open Loan Approvals, Admin > Manage Users,
+/// etc. and see (and, for Loan Approvals, act on) data meant for other
+/// roles. Checked by matchedLocation prefix since several of these are
+/// section roots with their own sub-routes (e.g. every /app/admin/* page).
+const _roleRestrictedPrefixes = <(String, Set<Role>)>[
+  ('/app/loans/approval', _leaderOrStaff),
+  ('/app/meetings/schedule', _leaderOrStaff),
+  ('/app/meetings/attendance', _leaderOrStaff),
+  ('/app/shg/join-requests', {Role.leader}),
+  ('/app/reports/shg', _leaderOrStaff),
+  ('/app/reports/federation', _federationStaff),
+  ('/app/analytics', _federationStaff),
+  ('/app/admin', {Role.admin}),
+];
+
 GoRouter buildRouter(AppState appState) {
   return GoRouter(
     initialLocation: Paths.splash,
@@ -123,6 +144,13 @@ GoRouter buildRouter(AppState appState) {
 
       // Fully onboarded — keep out of the auth flow.
       if (onAuthFlow) return Paths.dashboard;
+
+      // Fully onboarded but this screen is restricted to other roles.
+      for (final (prefix, allowedRoles) in _roleRestrictedPrefixes) {
+        if (state.matchedLocation.startsWith(prefix) && !allowedRoles.contains(appState.user.role)) {
+          return Paths.dashboard;
+        }
+      }
       return null;
     },
     routes: [
