@@ -13,8 +13,23 @@ class LoanRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Demo mode has no backing table, so applying/approving/rejecting/paying
+  // would otherwise never show anywhere — track them here so they survive
+  // for the rest of the session, mirroring
+  // AnnouncementRepository._locallyRead. _locallyUpdated overrides an
+  // existing mock loan's fields (by id); _locallyApplied holds brand-new
+  // applications not present in the mock catalog at all.
+  static final List<Loan> _locallyApplied = [];
+  static final Map<String, Loan> _locallyUpdated = {};
+  static final Map<String, List<LoanPayment>> _locallyPayments = {};
+
+  List<Loan> _demoLoans() => [
+        ..._mockLoans().map((l) => _locallyUpdated[l.id] ?? l),
+        ..._locallyApplied,
+      ];
+
   Future<List<Loan>> fetchForShg(String? shgId) async {
-    if (!_live || shgId == null) return _mockLoans();
+    if (!_live || shgId == null) return _demoLoans();
     final rows = await _client.from('loans').select('*, profiles(name)').eq('shg_id', shgId).order('created_at', ascending: false);
     return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
   }
@@ -26,7 +41,7 @@ class LoanRepository {
     // otherwise a member would see the whole SHG's loans as their own, and a
     // leader opening any member's detail page would see the same mixed
     // total for every member.
-    if (!_live || memberId == null) return _mockLoans().where((l) => l.memberName == _demoMemberName(memberId)).toList();
+    if (!_live || memberId == null) return _demoLoans().where((l) => l.memberName == _demoMemberName(memberId)).toList();
     final rows = await _client.from('loans').select('*, profiles(name)').eq('member_id', memberId).order('created_at', ascending: false);
     return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
   }
@@ -39,7 +54,7 @@ class LoanRepository {
 
   Future<Loan?> fetchById(String id) async {
     if (!_live) {
-      final matches = _mockLoans().where((l) => l.id == id);
+      final matches = _demoLoans().where((l) => l.id == id);
       return matches.isEmpty ? null : matches.first;
     }
     final row = await _client.from('loans').select('*, profiles(name)').eq('id', id).maybeSingle();
@@ -53,7 +68,23 @@ class LoanRepository {
     required num amount,
     required int tenureMonths,
   }) async {
-    if (!_live || memberId == null || shgId == null) return;
+    if (!_live) {
+      _locallyApplied.add(Loan(
+        id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+        memberId: memberId ?? 'me',
+        memberName: _demoMemberName(memberId),
+        purpose: purpose,
+        amount: amount,
+        outstanding: amount,
+        emi: 0,
+        tenureMonths: tenureMonths,
+        disbursedOn: null,
+        status: 'pending',
+        nextDueDate: null,
+      ));
+      return;
+    }
+    if (memberId == null || shgId == null) return;
     await _client.from('loans').insert({
       'member_id': memberId,
       'shg_id': shgId,
@@ -67,7 +98,25 @@ class LoanRepository {
   }
 
   Future<void> approve(String id, {required num emi, required DateTime nextDueDate}) async {
-    if (!_live) return;
+    if (!_live) {
+      final current = _demoLoans().where((l) => l.id == id);
+      if (current.isEmpty) return;
+      final l = current.first;
+      _locallyUpdated[id] = Loan(
+        id: l.id,
+        memberId: l.memberId,
+        memberName: l.memberName,
+        purpose: l.purpose,
+        amount: l.amount,
+        outstanding: l.outstanding,
+        emi: emi,
+        tenureMonths: l.tenureMonths,
+        disbursedOn: DateTime.now(),
+        status: 'active',
+        nextDueDate: nextDueDate,
+      );
+      return;
+    }
     await _client.from('loans').update({
       'status': 'active',
       'disbursed_on': DateTime.now().toIso8601String().split('T').first,
@@ -77,12 +126,30 @@ class LoanRepository {
   }
 
   Future<void> reject(String id) async {
-    if (!_live) return;
+    if (!_live) {
+      final current = _demoLoans().where((l) => l.id == id);
+      if (current.isEmpty) return;
+      final l = current.first;
+      _locallyUpdated[id] = Loan(
+        id: l.id,
+        memberId: l.memberId,
+        memberName: l.memberName,
+        purpose: l.purpose,
+        amount: l.amount,
+        outstanding: l.outstanding,
+        emi: l.emi,
+        tenureMonths: l.tenureMonths,
+        disbursedOn: l.disbursedOn,
+        status: 'rejected',
+        nextDueDate: l.nextDueDate,
+      );
+      return;
+    }
     await _client.from('loans').update({'status': 'rejected'}).eq('id', id);
   }
 
   Future<List<LoanPayment>> fetchPayments(String loanId) async {
-    if (!_live) return const [];
+    if (!_live) return _locallyPayments[loanId] ?? const [];
     final rows = await _client.from('loan_payments').select().eq('loan_id', loanId).order('paid_on', ascending: false);
     return (rows as List).map((r) => LoanPayment.fromMap(r as Map<String, dynamic>)).toList();
   }
@@ -90,7 +157,32 @@ class LoanRepository {
   /// Records an EMI payment and updates the loan's outstanding balance,
   /// closing it once fully repaid.
   Future<void> recordPayment(String loanId, num amount, num newOutstanding) async {
-    if (!_live) return;
+    if (!_live) {
+      _locallyPayments.putIfAbsent(loanId, () => []).insert(0, LoanPayment(
+            id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+            loanId: loanId,
+            amount: amount,
+            paidOn: DateTime.now(),
+          ));
+      final current = _demoLoans().where((l) => l.id == loanId);
+      if (current.isNotEmpty) {
+        final l = current.first;
+        _locallyUpdated[loanId] = Loan(
+          id: l.id,
+          memberId: l.memberId,
+          memberName: l.memberName,
+          purpose: l.purpose,
+          amount: l.amount,
+          outstanding: newOutstanding,
+          emi: l.emi,
+          tenureMonths: l.tenureMonths,
+          disbursedOn: l.disbursedOn,
+          status: newOutstanding <= 0 ? 'closed' : l.status,
+          nextDueDate: l.nextDueDate,
+        );
+      }
+      return;
+    }
     await _client.from('loan_payments').insert({'loan_id': loanId, 'amount': amount});
     await _client.from('loans').update({
       'outstanding': newOutstanding,

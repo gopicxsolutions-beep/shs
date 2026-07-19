@@ -24,6 +24,7 @@ class LoanDetailPage extends StatefulWidget {
 class _LoanDetailPageState extends State<LoanDetailPage> {
   final _repo = LoanRepository();
   final _key = GlobalKey<AppAsyncBuilderState<Loan?>>();
+  final _paymentsKey = GlobalKey<AppAsyncBuilderState<List<LoanPayment>>>();
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +81,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
               const SizedBox(height: 24),
               const SectionHeader(title: 'Payment History'),
               AppAsyncBuilder<List<LoanPayment>>(
+                key: _paymentsKey,
                 future: () => _repo.fetchPayments(widget.loanId),
                 builder: (context, payments) {
                   if (payments.isEmpty) {
