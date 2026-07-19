@@ -25,7 +25,7 @@ class LoanRepository {
 
   List<Loan> _demoLoans() => [
         ..._mockLoans().map((l) => _locallyUpdated[l.id] ?? l),
-        ..._locallyApplied,
+        ..._locallyApplied.map((l) => _locallyUpdated[l.id] ?? l),
       ];
 
   Future<List<Loan>> fetchForShg(String? shgId) async {

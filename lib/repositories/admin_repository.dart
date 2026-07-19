@@ -21,10 +21,15 @@ class AdminRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Demo mode has no backing table, so a role change would otherwise revert
+  // the instant the user list reloads — track it here so it survives for
+  // the rest of the session, mirroring AnnouncementRepository._locallyRead.
+  static final Map<String, String> _locallyUpdatedRoles = {};
+
   Future<List<Profile>> fetchAllUsers() async {
     if (!_live) {
       return mock.members
-          .map((m) => Profile(id: m.id, name: m.name, mobile: m.mobile, role: _mockRoleMap[m.role] ?? 'member', shgId: 'demo-shg', village: null))
+          .map((m) => Profile(id: m.id, name: m.name, mobile: m.mobile, role: _locallyUpdatedRoles[m.id] ?? _mockRoleMap[m.role] ?? 'member', shgId: 'demo-shg', village: null))
           .toList();
     }
     final rows = await _client.from('profiles').select().order('name');
@@ -32,7 +37,10 @@ class AdminRepository {
   }
 
   Future<void> updateUserRole(String userId, String role) async {
-    if (!_live) return;
+    if (!_live) {
+      _locallyUpdatedRoles[userId] = role;
+      return;
+    }
     await _client.from('profiles').update({'role': role}).eq('id', userId);
   }
 

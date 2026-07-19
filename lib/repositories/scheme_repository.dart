@@ -16,11 +16,20 @@ class SchemeRepository {
   // session, mirroring AnnouncementRepository._locallyRead.
   static final Set<String> _locallyApplied = {};
 
+  // Same idea for admin catalog CRUD — adding/editing/deleting a scheme
+  // would otherwise silently revert the moment the catalog reloads.
+  static final List<Scheme> _locallyAddedSchemes = [];
+  static final Set<String> _locallyDeletedSchemes = {};
+  static final Map<String, Scheme> _locallyUpdatedSchemes = {};
+
   Future<List<Scheme>> fetchSchemes() async {
     if (!_live) {
       final list = mock.schemes
+          .where((s) => !_locallyDeletedSchemes.contains(s.id))
           .map((s) => Scheme(id: s.id, name: s.name, fullName: s.fullName, agency: s.agency, benefit: s.benefit, eligibility: s.eligibility, deadline: _parseMockDate(s.deadline)))
-          .toList();
+          .map((s) => _locallyUpdatedSchemes[s.id] ?? s)
+          .toList()
+        ..addAll(_locallyAddedSchemes);
       // Match the live query's `order('deadline')` — ascending by soonest
       // deadline, with no-deadline schemes sorted last (Postgres' default
       // NULLS LAST for ascending order).
@@ -80,7 +89,17 @@ class SchemeRepository {
   /// Admin-only catalog management (enforced server-side by
   /// `schemes_write_admin`).
   Future<void> createScheme({required String name, String? fullName, String? agency, String? benefit, List<String> eligibility = const []}) async {
-    if (!_live) return;
+    if (!_live) {
+      _locallyAddedSchemes.add(Scheme(
+        id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+        name: name,
+        fullName: fullName,
+        agency: agency,
+        benefit: benefit,
+        eligibility: eligibility,
+      ));
+      return;
+    }
     await _client.from('schemes').insert({
       'name': name,
       'full_name': ?fullName,
@@ -91,7 +110,18 @@ class SchemeRepository {
   }
 
   Future<void> updateScheme(String id, {required String name, String? fullName, String? agency, String? benefit}) async {
-    if (!_live) return;
+    if (!_live) {
+      final current = (await fetchSchemes()).where((s) => s.id == id);
+      final eligibility = current.isEmpty ? const <String>[] : current.first.eligibility;
+      final updated = Scheme(id: id, name: name, fullName: fullName, agency: agency, benefit: benefit, eligibility: eligibility);
+      final addedIdx = _locallyAddedSchemes.indexWhere((s) => s.id == id);
+      if (addedIdx != -1) {
+        _locallyAddedSchemes[addedIdx] = updated;
+      } else {
+        _locallyUpdatedSchemes[id] = updated;
+      }
+      return;
+    }
     await _client.from('schemes').update({
       'name': name,
       'full_name': fullName,
@@ -101,7 +131,11 @@ class SchemeRepository {
   }
 
   Future<void> deleteScheme(String id) async {
-    if (!_live) return;
+    if (!_live) {
+      _locallyAddedSchemes.removeWhere((s) => s.id == id);
+      _locallyDeletedSchemes.add(id);
+      return;
+    }
     await _client.from('schemes').delete().eq('id', id);
   }
 

@@ -13,8 +13,13 @@ class SavingsRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Demo mode has no backing table, so a submitted entry would otherwise
+  // vanish the instant the ledger reloads — track it here so it survives
+  // for the rest of the session, mirroring AnnouncementRepository._locallyRead.
+  static final List<SavingsEntry> _locallyAdded = [];
+
   Future<List<SavingsEntry>> fetchForShg(String? shgId) async {
-    if (!_live || shgId == null) return _mockEntries();
+    if (!_live || shgId == null) return [..._locallyAdded.reversed, ..._mockEntries()];
     final rows = await _client
         .from('savings_entries')
         .select('*, profiles(name)')
@@ -30,7 +35,13 @@ class SavingsRepository {
     // everyone's — otherwise a member would see the whole SHG's savings
     // ledger as their own, and a leader opening any member's detail page
     // would see the same mixed total for every member.
-    if (!_live || memberId == null) return _mockEntries().where((e) => e.memberName == _demoMemberName(memberId)).toList();
+    if (!_live || memberId == null) {
+      final name = _demoMemberName(memberId);
+      return [
+        ..._locallyAdded.where((e) => e.memberName == name).toList().reversed,
+        ..._mockEntries().where((e) => e.memberName == name),
+      ];
+    }
     final rows = await _client
         .from('savings_entries')
         .select('*, profiles(name)')
@@ -46,7 +57,20 @@ class SavingsRepository {
     required String mode,
     required String frequency,
   }) async {
-    if (!_live || memberId == null || shgId == null) return;
+    if (!_live) {
+      _locallyAdded.add(SavingsEntry(
+        id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+        memberId: memberId ?? 'me',
+        memberName: _demoMemberName(memberId),
+        date: DateTime.now(),
+        amount: amount,
+        mode: mode,
+        frequency: frequency,
+        status: 'pending',
+      ));
+      return;
+    }
+    if (memberId == null || shgId == null) return;
     await _client.from('savings_entries').insert({
       'member_id': memberId,
       'shg_id': shgId,

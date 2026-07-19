@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/marketplace.dart' as mock;
 import '../models/marketplace.dart';
+import '../models/types.dart';
 import '../services/supabase_service.dart';
 
 /// Backed by `public.marketplace_products` / `_orders` / `_reviews` when
@@ -19,21 +20,26 @@ class MarketplaceRepository {
   // so every locally-placed order simply shows up in the one Orders inbox.
   static final List<MarketOrder> _locallyPlaced = [];
 
+  // Demo mode has no backing table, so a listed product would otherwise
+  // vanish the instant the catalog reloads — track it here so it survives
+  // for the rest of the session, mirroring AnnouncementRepository._locallyRead.
+  static final List<Product> _locallyAddedProducts = [];
+
   Future<List<Product>> fetchProducts() async {
-    if (!_live) return _mockProducts();
+    if (!_live) return [..._locallyAddedProducts.reversed, ..._mockProducts()];
     final rows = await _client.from('marketplace_products').select('*, profiles(name)').order('created_at', ascending: false);
     return (rows as List).map((r) => Product.fromMap(r as Map<String, dynamic>)).toList();
   }
 
   Future<List<Product>> fetchMyProducts(String? sellerId) async {
-    if (!_live || sellerId == null) return _mockProducts();
+    if (!_live || sellerId == null) return [..._locallyAddedProducts.reversed, ..._mockProducts()];
     final rows = await _client.from('marketplace_products').select('*, profiles(name)').eq('seller_id', sellerId).order('created_at', ascending: false);
     return (rows as List).map((r) => Product.fromMap(r as Map<String, dynamic>)).toList();
   }
 
   Future<Product?> fetchProductById(String id) async {
     if (!_live) {
-      final matches = _mockProducts().where((p) => p.id == id);
+      final matches = [..._locallyAddedProducts, ..._mockProducts()].where((p) => p.id == id);
       return matches.isEmpty ? null : matches.first;
     }
     final row = await _client.from('marketplace_products').select('*, profiles(name)').eq('id', id).maybeSingle();
@@ -48,7 +54,20 @@ class MarketplaceRepository {
     required int stock,
     required String category,
   }) async {
-    if (!_live || sellerId == null) return;
+    if (!_live) {
+      _locallyAddedProducts.add(Product(
+        id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+        sellerId: sellerId ?? 'me',
+        sellerName: defaultUser.name,
+        name: name,
+        description: description,
+        price: price,
+        stock: stock,
+        category: category,
+      ));
+      return;
+    }
+    if (sellerId == null) return;
     await _client.from('marketplace_products').insert({
       'seller_id': sellerId,
       'name': name,
@@ -113,7 +132,14 @@ class MarketplaceRepository {
   }
 
   Future<void> updateOrderStatus(String id, String status) async {
-    if (!_live) return;
+    if (!_live) {
+      final idx = _locallyPlaced.indexWhere((o) => o.id == id);
+      if (idx != -1) {
+        final o = _locallyPlaced[idx];
+        _locallyPlaced[idx] = MarketOrder(id: o.id, productId: o.productId, productName: o.productName, buyerName: o.buyerName, amount: o.amount, status: status, orderDate: o.orderDate);
+      }
+      return;
+    }
     await _client.from('marketplace_orders').update({'status': status}).eq('id', id);
   }
 

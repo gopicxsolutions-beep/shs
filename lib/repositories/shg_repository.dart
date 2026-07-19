@@ -12,6 +12,11 @@ class ShgRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Demo mode has no backing table, so an added document would otherwise
+  // vanish the instant the list reloads — track it here so it survives for
+  // the rest of the session, mirroring AnnouncementRepository._locallyRead.
+  static final List<ShgDocument> _locallyAdded = [];
+
   Future<ShgProfile?> fetchShg(String? shgId) async {
     if (!_live || shgId == null) {
       return ShgProfile(
@@ -55,7 +60,10 @@ class ShgRepository {
 
   Future<List<ShgDocument>> fetchDocuments(String? shgId) async {
     if (!_live || shgId == null) {
-      return mock.documents.map((d) => ShgDocument(id: d.id, name: d.name, type: d.type, size: d.size, createdAt: _parseMockDate(d.date))).toList();
+      return [
+        ..._locallyAdded.reversed,
+        ...mock.documents.map((d) => ShgDocument(id: d.id, name: d.name, type: d.type, size: d.size, createdAt: _parseMockDate(d.date))),
+      ];
     }
     final rows = await _client.from('shg_documents').select().eq('shg_id', shgId).order('created_at', ascending: false);
     return (rows as List).map((r) => ShgDocument.fromMap(r as Map<String, dynamic>)).toList();
@@ -66,7 +74,11 @@ class ShgRepository {
   /// docs/DEVELOPMENT_PROGRESS.md); this persists the record once a
   /// `storagePath` is available from that upload step.
   Future<void> addDocument({required String? shgId, required String name, required String type, String? storagePath}) async {
-    if (!_live || shgId == null) return;
+    if (!_live) {
+      _locallyAdded.add(ShgDocument(id: 'local-${DateTime.now().microsecondsSinceEpoch}', name: name, type: type, createdAt: DateTime.now()));
+      return;
+    }
+    if (shgId == null) return;
     await _client.from('shg_documents').insert({
       'shg_id': shgId,
       'name': name,

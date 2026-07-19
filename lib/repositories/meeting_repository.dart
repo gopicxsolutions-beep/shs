@@ -15,15 +15,20 @@ class MeetingRepository {
   // Keyed by "$meetingId:$memberId" — see fetchAttendance/markAttendance.
   static final Map<String, bool> _locallyMarked = {};
 
+  // Demo mode has no backing table, so a scheduled meeting would otherwise
+  // vanish the instant the list reloads — track it here so it survives for
+  // the rest of the session, mirroring AnnouncementRepository._locallyRead.
+  static final List<Meeting> _locallyScheduled = [];
+
   Future<List<Meeting>> fetchForShg(String? shgId) async {
-    if (!_live || shgId == null) return _mockMeetings();
+    if (!_live || shgId == null) return [..._locallyScheduled.reversed, ..._mockMeetings()];
     final rows = await _client.from('meetings').select().eq('shg_id', shgId).order('meeting_date', ascending: false);
     return (rows as List).map((r) => Meeting.fromMap(r as Map<String, dynamic>)).toList();
   }
 
   Future<Meeting?> fetchById(String id) async {
     if (!_live) {
-      final matches = _mockMeetings().where((m) => m.id == id);
+      final matches = [..._locallyScheduled, ..._mockMeetings()].where((m) => m.id == id);
       return matches.isEmpty ? null : matches.first;
     }
     final row = await _client.from('meetings').select().eq('id', id).maybeSingle();
@@ -37,7 +42,19 @@ class MeetingRepository {
     required String venue,
     required String agenda,
   }) async {
-    if (!_live || shgId == null) return;
+    if (!_live) {
+      _locallyScheduled.add(Meeting(
+        id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+        shgId: shgId ?? 'demo-shg',
+        date: date,
+        time: time,
+        venue: venue,
+        agenda: agenda,
+        status: 'upcoming',
+      ));
+      return;
+    }
+    if (shgId == null) return;
     await _client.from('meetings').insert({
       'shg_id': shgId,
       'meeting_date': date.toIso8601String().split('T').first,
@@ -84,10 +101,13 @@ class MeetingRepository {
   Future<List<MemberAttendanceRecord>> fetchAttendanceHistory(String? memberId, String? shgId) async {
     if (!_live || memberId == null || shgId == null) {
       // Only completed meetings — an upcoming one hasn't happened yet, so
-      // there's nothing to have attended.
+      // there's nothing to have attended. Consults the same `_locallyMarked`
+      // map fetchAttendance() reads, so a leader's mark on a completed
+      // meeting is reflected here too, instead of this report silently
+      // disagreeing with what the leader just set.
       return _mockMeetings()
           .where((m) => m.status == 'completed')
-          .map((m) => MemberAttendanceRecord(meetingDate: m.date, venue: m.venue, present: true))
+          .map((m) => MemberAttendanceRecord(meetingDate: m.date, venue: m.venue, present: _locallyMarked['${m.id}:$memberId'] ?? true))
           .toList();
     }
     final meetings = await _client.from('meetings').select('id, meeting_date, venue').eq('shg_id', shgId).eq('status', 'completed').order('meeting_date', ascending: false);
