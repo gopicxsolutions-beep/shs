@@ -124,7 +124,11 @@ class _LeaderDashboardBody extends StatelessWidget {
                     style: AppTheme.sans(12, color: Accent.red500),
                   ),
                 ])),
-                InkWell(onTap: () => context.go(Paths.loanTracking), child: Text('View', style: AppTheme.sans(12, weight: FontWeight.w700, color: Accent.red600))),
+                // Paths.loanTracking always shows the signed-in user's own
+                // loans, not the SHG's — for a leader tapping "View" here
+                // that was showing their own unrelated loan instead of the
+                // actual defaulting member's. Route to that loan directly.
+                InkWell(onTap: () => context.go(Paths.loanDetail(overdueLoans.first.id)), child: Text('View', style: AppTheme.sans(12, weight: FontWeight.w700, color: Accent.red600))),
               ]),
             ),
           ),
