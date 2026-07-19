@@ -27,6 +27,7 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
   String? _error;
 
   static const _tenureOptions = [6, 12, 18, 24];
+  static const _maxAmount = 1000000;
 
   @override
   void dispose() {
@@ -43,6 +44,10 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
     }
     if (amount == null || amount <= 0) {
       setState(() => _error = 'Enter a valid amount');
+      return;
+    }
+    if (amount > _maxAmount) {
+      setState(() => _error = 'Amount seems unusually large — please check and re-enter');
       return;
     }
     setState(() {
