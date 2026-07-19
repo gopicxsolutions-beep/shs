@@ -70,13 +70,18 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                       Row(children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: !SupabaseService.isConfigured || rejecting
+                            onPressed: rejecting
                                 ? null
                                 : () async {
                                     setState(() => _rejecting.add(l.id));
                                     try {
                                       await _repo.reject(l.id);
                                       _key.currentState?.reload();
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text(SupabaseService.isConfigured ? 'Application rejected' : 'Demo mode — not saved (connect Supabase to persist)')),
+                                        );
+                                      }
                                     } catch (_) {
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
@@ -98,7 +103,7 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: FilledButton(
-                            onPressed: !SupabaseService.isConfigured ? null : () => _approve(context, l),
+                            onPressed: () => _approve(context, l),
                             style: FilledButton.styleFrom(backgroundColor: Brand.c600, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                             child: const Text('Approve'),
                           ),
@@ -178,6 +183,13 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
         ),
       ),
     );
-    if (approved == true) _key.currentState?.reload();
+    if (approved == true) {
+      _key.currentState?.reload();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(SupabaseService.isConfigured ? 'Loan approved' : 'Demo mode — not saved (connect Supabase to persist)')),
+        );
+      }
+    }
   }
 }

@@ -30,11 +30,20 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
   bool _checkedIn = false;
 
   Future<void> _checkIn(Meeting meeting, String? memberId) async {
-    if (memberId == null) return;
+    // A real memberId is required to persist in live mode, but demo mode
+    // never has one (AppState.profile is always null there) and its
+    // markAttendance() no-ops regardless of the id passed — so only bail
+    // out when live mode actually needs a real id to write.
+    if (memberId == null && SupabaseService.isConfigured) return;
     setState(() => _checkingIn = true);
     try {
-      await _repo.markAttendance(meeting.id, memberId, true);
-      if (mounted) setState(() => _checkedIn = true);
+      await _repo.markAttendance(meeting.id, memberId ?? 'demo-member', true);
+      if (mounted) {
+        setState(() => _checkedIn = true);
+        if (!SupabaseService.isConfigured) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo mode — check-in not saved (connect Supabase to persist)')));
+        }
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not check you in. Please try again.')));
@@ -97,14 +106,14 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
                     icon: Icons.qr_code_scanner_rounded,
                     fullWidth: true,
                     size: ButtonSize.lg,
-                    onPressed: !SupabaseService.isConfigured || _checkingIn ? null : () => _scanAndCheckIn(meeting, memberId),
+                    onPressed: _checkingIn ? null : () => _scanAndCheckIn(meeting, memberId),
                   ),
                   const SizedBox(height: 10),
                   AppButton(
                     label: _checkingIn ? 'Checking in…' : 'Check In Without Scanning',
                     variant: ButtonVariant.outline,
                     fullWidth: true,
-                    onPressed: !SupabaseService.isConfigured || _checkingIn ? null : () => _checkIn(meeting, memberId),
+                    onPressed: _checkingIn ? null : () => _checkIn(meeting, memberId),
                   ),
                 ],
               ],

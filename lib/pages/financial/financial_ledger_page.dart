@@ -39,14 +39,19 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
         title: widget.title,
         right: isLeaderOrStaff
             ? IconButton(
-                icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
+                icon: Icon(Icons.add_circle_rounded, color: Brand.c600),
                 tooltip: 'Add entry',
-                onPressed: !SupabaseService.isConfigured
-                    ? null
-                    : () async {
-                        final added = await showFinancialEntryDialog(context, _repo, shgId: shgId, createdBy: appState.profile?.id, entryType: widget.entryType);
-                        if (added == true) _key.currentState?.reload();
-                      },
+                onPressed: () async {
+                  final added = await showFinancialEntryDialog(context, _repo, shgId: shgId, createdBy: appState.profile?.id, entryType: widget.entryType);
+                  if (added == true) {
+                    _key.currentState?.reload();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(SupabaseService.isConfigured ? 'Entry added' : 'Demo mode — not saved (connect Supabase to persist)')),
+                      );
+                    }
+                  }
+                },
               )
             : null,
       ),

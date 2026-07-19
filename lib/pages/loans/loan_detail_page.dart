@@ -74,7 +74,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                 AppButton(
                   label: 'Record Payment',
                   fullWidth: true,
-                  onPressed: !SupabaseService.isConfigured ? null : () => _recordPayment(context, loan),
+                  onPressed: () => _recordPayment(context, loan),
                 ),
               ],
               const SizedBox(height: 24),
@@ -180,6 +180,13 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
         ),
       ),
     );
-    if (recorded == true) _key.currentState?.reload();
+    if (recorded == true) {
+      _key.currentState?.reload();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(SupabaseService.isConfigured ? 'Payment recorded' : 'Demo mode — not saved (connect Supabase to persist)')),
+        );
+      }
+    }
   }
 }

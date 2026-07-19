@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
 import '../../models/meeting.dart';
 import '../../repositories/meeting_repository.dart';
-import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -109,7 +108,7 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                                       Switch(
                                         value: row.present,
                                         activeThumbColor: Brand.c600,
-                                        onChanged: !SupabaseService.isConfigured || _updating.contains(row.memberId)
+                                        onChanged: _updating.contains(row.memberId)
                                             ? null
                                             : (v) async {
                                                 setState(() => _updating.add(row.memberId));

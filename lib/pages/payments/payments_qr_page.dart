@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
 import '../../repositories/payment_repository.dart';
 import '../../routes/paths.dart';
-import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -177,7 +176,7 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
               label: _paying ? 'Processing…' : 'Pay Now',
               fullWidth: true,
               size: ButtonSize.lg,
-              onPressed: !SupabaseService.isConfigured || _paying ? null : _pay,
+              onPressed: _paying ? null : _pay,
             ),
           ],
         ),

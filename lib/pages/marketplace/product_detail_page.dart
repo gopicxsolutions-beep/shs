@@ -31,7 +31,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     try {
       await _repo.placeOrder(productId: product.id, buyerName: appState.user.name, buyerId: appState.profile?.id, amount: product.price);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order placed')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(SupabaseService.isConfigured ? 'Order placed' : 'Demo mode — order not saved (connect Supabase to persist)')),
+        );
       }
     } catch (_) {
       if (mounted) {
@@ -82,7 +84,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 label: _placing ? 'Placing…' : 'Place Order',
                 fullWidth: true,
                 size: ButtonSize.lg,
-                onPressed: !SupabaseService.isConfigured || product.stock <= 0 || _placing ? null : () => _placeOrder(product),
+                onPressed: product.stock <= 0 || _placing ? null : () => _placeOrder(product),
               ),
               const SizedBox(height: 24),
               const SectionHeader(title: 'Reviews'),

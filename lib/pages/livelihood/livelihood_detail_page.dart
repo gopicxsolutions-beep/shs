@@ -65,7 +65,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
               AppButton(
                 label: 'Update Progress',
                 fullWidth: true,
-                onPressed: !SupabaseService.isConfigured ? null : () => _updateProgress(context, activity),
+                onPressed: () => _updateProgress(context, activity),
               ),
             ],
           );
@@ -153,6 +153,13 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
         ),
       ),
     );
-    if (saved == true) _key.currentState?.reload();
+    if (saved == true) {
+      _key.currentState?.reload();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(SupabaseService.isConfigured ? 'Progress updated' : 'Demo mode — not saved (connect Supabase to persist)')),
+        );
+      }
+    }
   }
 }

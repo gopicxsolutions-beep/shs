@@ -38,7 +38,12 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     try {
       final next = (pct + 50).clamp(0, 100);
       await _repo.updateProgress(widget.courseId, memberId, next);
-      if (mounted) _key.currentState?.reload();
+      if (mounted) {
+        _key.currentState?.reload();
+        if (!SupabaseService.isConfigured) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo mode — progress not saved (connect Supabase to persist)')));
+        }
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not save your progress. Please try again.')));

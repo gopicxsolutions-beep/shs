@@ -31,7 +31,11 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
     try {
       await _repo.apply(schemeId: widget.schemeId, memberId: memberId);
       _appKey.currentState?.reload();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Application submitted')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(SupabaseService.isConfigured ? 'Application submitted' : 'Demo mode — not saved (connect Supabase to persist)')),
+        );
+      }
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not submit this application. Please try again.')));
     } finally {
@@ -109,7 +113,7 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
                     label: _applying ? 'Submitting…' : 'Apply Now',
                     fullWidth: true,
                     size: ButtonSize.lg,
-                    onPressed: !SupabaseService.isConfigured || _applying ? null : () => _apply(memberId),
+                    onPressed: _applying ? null : () => _apply(memberId),
                   );
                 },
               ),

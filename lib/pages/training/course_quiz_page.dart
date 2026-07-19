@@ -52,7 +52,9 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
     try {
       await _repo.markCertified(widget.courseId, appState.profile?.id);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passed! Certificate earned.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(SupabaseService.isConfigured ? 'Passed! Certificate earned.' : 'Passed! Demo mode — certificate not saved (connect Supabase to persist)')),
+        );
         context.go(Paths.trainingDetail(widget.courseId));
       }
     } catch (_) {
@@ -104,7 +106,7 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
             label: _submitting ? 'Submitting…' : 'Submit Quiz',
             fullWidth: true,
             size: ButtonSize.lg,
-            onPressed: allAnswered && !_submitting && SupabaseService.isConfigured ? _submit : null,
+            onPressed: allAnswered && !_submitting ? _submit : null,
           ),
         ],
       ),
