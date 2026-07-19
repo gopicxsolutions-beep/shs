@@ -11,6 +11,11 @@ class SchemeRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Demo mode has no backing table, so applying to a scheme would otherwise
+  // never show anywhere — track it here so it survives for the rest of the
+  // session, mirroring AnnouncementRepository._locallyRead.
+  static final Set<String> _locallyApplied = {};
+
   Future<List<Scheme>> fetchSchemes() async {
     if (!_live) {
       final list = mock.schemes
@@ -45,8 +50,9 @@ class SchemeRepository {
   Future<Map<String, SchemeApplication>> fetchMyApplications(String? memberId) async {
     if (!_live || memberId == null) {
       final byStatus = <String, SchemeApplication>{};
-      for (final s in mock.schemes.where((s) => s.status != 'not_applied')) {
-        byStatus[s.id] = SchemeApplication(id: s.id, schemeId: s.id, status: s.status, appliedOn: DateTime.now());
+      for (final s in mock.schemes.where((s) => s.status != 'not_applied' || _locallyApplied.contains(s.id))) {
+        final status = s.status == 'not_applied' ? 'applied' : s.status;
+        byStatus[s.id] = SchemeApplication(id: s.id, schemeId: s.id, status: status, appliedOn: DateTime.now());
       }
       return byStatus;
     }
@@ -60,7 +66,10 @@ class SchemeRepository {
   }
 
   Future<void> apply({required String schemeId, required String? memberId}) async {
-    if (!_live || memberId == null) return;
+    if (!_live) {
+      _locallyApplied.add(schemeId);
+      return;
+    }
     await _client.from('scheme_applications').insert({
       'scheme_id': schemeId,
       'member_id': memberId,

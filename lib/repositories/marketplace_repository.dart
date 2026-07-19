@@ -11,6 +11,14 @@ class MarketplaceRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Demo mode has no backing table, so a placed order would otherwise
+  // vanish the instant the orders list reloads — track it here so it
+  // survives for the rest of the session, mirroring
+  // AnnouncementRepository._locallyRead. There's no real seller/buyer
+  // identity split in demo mode (both collapse to the one demo persona),
+  // so every locally-placed order simply shows up in the one Orders inbox.
+  static final List<MarketOrder> _locallyPlaced = [];
+
   Future<List<Product>> fetchProducts() async {
     if (!_live) return _mockProducts();
     final rows = await _client.from('marketplace_products').select('*, profiles(name)').order('created_at', ascending: false);
@@ -52,7 +60,19 @@ class MarketplaceRepository {
   }
 
   Future<void> placeOrder({required String productId, required String buyerName, required String? buyerId, required num amount}) async {
-    if (!_live) return;
+    if (!_live) {
+      final matches = _mockProducts().where((p) => p.id == productId);
+      _locallyPlaced.add(MarketOrder(
+        id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+        productId: productId,
+        productName: matches.isEmpty ? productId : matches.first.name,
+        buyerName: buyerName,
+        amount: amount,
+        status: 'new',
+        orderDate: DateTime.now(),
+      ));
+      return;
+    }
     // Best-effort stock decrement — no RPC/transaction available, so this
     // isn't atomic with the order insert below, but it's still far better
     // than never decrementing at all (which let stock == 0 products keep
@@ -74,7 +94,7 @@ class MarketplaceRepository {
 
   /// Orders for products this seller listed.
   Future<List<MarketOrder>> fetchOrdersForSeller(String? sellerId) async {
-    if (!_live || sellerId == null) return const [];
+    if (!_live || sellerId == null) return _locallyPlaced.reversed.toList();
     final rows = await _client
         .from('marketplace_orders')
         .select('*, marketplace_products!inner(name, seller_id)')
@@ -84,7 +104,10 @@ class MarketplaceRepository {
   }
 
   Future<MarketOrder?> fetchOrderById(String id) async {
-    if (!_live) return null;
+    if (!_live) {
+      final matches = _locallyPlaced.where((o) => o.id == id);
+      return matches.isEmpty ? null : matches.first;
+    }
     final row = await _client.from('marketplace_orders').select('*, marketplace_products(name)').eq('id', id).maybeSingle();
     return row == null ? null : MarketOrder.fromMap(row);
   }

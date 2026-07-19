@@ -5,6 +5,7 @@ import '../services/supabase_service.dart';
 import 'loan_repository.dart';
 import 'savings_repository.dart';
 import 'shg_repository.dart';
+import 'trend_repository.dart';
 
 /// `public.report_snapshots` exists so an Edge Function can eventually
 /// generate these server-side and cache them (`report_snapshots_write_staff`
@@ -88,10 +89,15 @@ class ReportRepository {
       final activeLoans = loans.where((l) => l.status == 'active' || l.status == 'overdue').toList();
       final totalOutstanding = activeLoans.fold<num>(0, (s, l) => s + l.outstanding);
       final memberCount = (await ShgRepository().fetchMembers(shgId)).length;
-      final completedMeetings = mock_meetings.meetings.where((m) => m.status == 'completed');
-      final attendedSum = completedMeetings.fold<int>(0, (s, m) => s + m.attendance);
-      final totalSum = completedMeetings.fold<int>(0, (s, m) => s + m.total);
-      final avgAttendancePct = totalSum == 0 ? 0.0 : (attendedSum / totalSum) * 100;
+      // Derived from the same monthly points the Performance Report's own
+      // trend chart plots (TrendRepository.attendanceTrend), rather than
+      // recomputed independently from the raw meeting records — two
+      // separate calculations here previously drifted apart (88% headline
+      // vs a ~83% trend-chart average) since they read different fields.
+      final attendancePoints = await TrendRepository().attendanceTrend(shgId: shgId);
+      final avgAttendancePct = attendancePoints.isEmpty
+          ? 0.0
+          : attendancePoints.fold<num>(0, (s, p) => s + p.value) / attendancePoints.length;
       return ShgReportData(
         memberCount: memberCount,
         totalSavings: totalSavings,

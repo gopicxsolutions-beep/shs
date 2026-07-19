@@ -12,6 +12,9 @@ class MeetingRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Keyed by "$meetingId:$memberId" — see fetchAttendance/markAttendance.
+  static final Map<String, bool> _locallyMarked = {};
+
   Future<List<Meeting>> fetchForShg(String? shgId) async {
     if (!_live || shgId == null) return _mockMeetings();
     final rows = await _client.from('meetings').select().eq('shg_id', shgId).order('meeting_date', ascending: false);
@@ -64,7 +67,11 @@ class MeetingRepository {
   Future<List<AttendanceRow>> fetchAttendance(String meetingId, String? shgId) async {
     final roster = await fetchRoster(shgId);
     if (!_live) {
-      return roster.map((m) => AttendanceRow(memberId: m.$1, memberName: m.$2, present: true)).toList();
+      // Demo mode has no backing table, so a mark would otherwise revert to
+      // "everyone present" the instant this page reloads — track it here so
+      // it survives for the rest of the session, mirroring
+      // AnnouncementRepository._locallyRead.
+      return roster.map((m) => AttendanceRow(memberId: m.$1, memberName: m.$2, present: _locallyMarked['$meetingId:${m.$1}'] ?? true)).toList();
     }
     final rows = await _client.from('meeting_attendance').select('member_id, present').eq('meeting_id', meetingId);
     final presentById = <String, bool>{for (final r in rows as List) r['member_id'] as String: r['present'] as bool? ?? false};
@@ -97,7 +104,10 @@ class MeetingRepository {
   }
 
   Future<void> markAttendance(String meetingId, String memberId, bool present) async {
-    if (!_live) return;
+    if (!_live) {
+      _locallyMarked['$meetingId:$memberId'] = present;
+      return;
+    }
     await _client.from('meeting_attendance').upsert({
       'meeting_id': meetingId,
       'member_id': memberId,
