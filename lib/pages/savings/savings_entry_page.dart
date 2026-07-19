@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
+import '../../models/shg.dart';
+import '../../models/types.dart';
 import '../../repositories/savings_repository.dart';
+import '../../repositories/shg_repository.dart';
 import '../../routes/paths.dart';
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
@@ -22,14 +25,39 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
   final _formKey = GlobalKey<FormState>();
   final _amount = TextEditingController();
   final _repo = SavingsRepository();
+  final _shgRepo = ShgRepository();
   String _mode = 'Cash';
   String _frequency = 'Weekly';
   bool _saving = false;
   String? _error;
+  List<Member> _members = [];
+  String? _selectedMemberId;
+  bool _loadingMembers = true;
 
   static const _modes = ['Cash', 'UPI', 'Bank Transfer'];
   static const _frequencies = ['Weekly', 'Monthly', 'Daily'];
   static const _maxAmount = 1000000;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMembers();
+  }
+
+  Future<void> _loadMembers() async {
+    final appState = context.read<AppState>();
+    if (appState.user.role == Role.member) {
+      setState(() => _loadingMembers = false);
+      return;
+    }
+    final members = await _shgRepo.fetchMembers(appState.profile?.shgId);
+    if (mounted) {
+      setState(() {
+        _members = members;
+        _loadingMembers = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -49,15 +77,20 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final appState = context.read<AppState>();
+    final isLeaderOrStaff = appState.user.role != Role.member;
+    if (isLeaderOrStaff && _selectedMemberId == null) {
+      setState(() => _error = 'Select a member');
+      return;
+    }
     final amount = num.parse(_amount.text.trim());
     setState(() {
       _saving = true;
       _error = null;
     });
-    final appState = context.read<AppState>();
     try {
       await _repo.addEntry(
-        memberId: appState.profile?.id,
+        memberId: isLeaderOrStaff ? _selectedMemberId : appState.profile?.id,
         shgId: appState.profile?.shgId,
         amount: amount,
         mode: _mode,
@@ -111,6 +144,7 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isLeaderOrStaff = context.watch<AppState>().user.role != Role.member;
     return Scaffold(
       appBar: const PageHeader(title: 'Add Savings'),
       body: SingleChildScrollView(
@@ -118,6 +152,31 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (isLeaderOrStaff) ...[
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Member', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                    const SizedBox(height: 8),
+                    _loadingMembers
+                        ? const SizedBox(
+                            height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : DropdownButtonFormField<String>(
+                            initialValue: _selectedMemberId,
+                            isExpanded: true,
+                            decoration: const InputDecoration(border: InputBorder.none, hintText: 'Select a member'),
+                            items: _members.map((m) => DropdownMenuItem(value: m.id, child: Text(m.name))).toList(),
+                            onChanged: (v) => setState(() {
+                              _selectedMemberId = v;
+                              _error = null;
+                            }),
+                          ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

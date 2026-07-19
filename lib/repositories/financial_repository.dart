@@ -10,12 +10,18 @@ class FinancialRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Demo mode has no backing table, so a submitted entry would otherwise
+  // vanish the instant the ledger reloads — track it here so it survives
+  // for the rest of the session, mirroring AnnouncementRepository._locallyRead.
+  static final List<FinancialEntry> _locallyAdded = [];
+
   Future<List<FinancialEntry>> fetchForShg(String? shgId, String entryType) async {
     if (!_live || shgId == null) {
-      return mock.financialLedgerEntries
+      final mockEntries = mock.financialLedgerEntries
           .where((e) => e.entryType == entryType)
-          .map((e) => FinancialEntry(id: e.id, entryType: e.entryType, description: e.description, debit: e.debit, credit: e.credit, balance: e.balance, date: _parseMockDate(e.date)))
-          .toList();
+          .map((e) => FinancialEntry(id: e.id, entryType: e.entryType, description: e.description, debit: e.debit, credit: e.credit, balance: e.balance, date: _parseMockDate(e.date)));
+      final localEntries = _locallyAdded.where((e) => e.entryType == entryType).toList().reversed;
+      return [...localEntries, ...mockEntries];
     }
     final rows = await _client
         .from('financial_ledger')
@@ -37,7 +43,19 @@ class FinancialRepository {
     required num debit,
     required num credit,
   }) async {
-    if (!_live || shgId == null) return;
+    if (!_live || shgId == null) {
+      final previousBalance = _demoLastBalance(entryType);
+      _locallyAdded.add(FinancialEntry(
+        id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+        entryType: entryType,
+        description: description,
+        debit: debit,
+        credit: credit,
+        balance: previousBalance + credit - debit,
+        date: DateTime.now(),
+      ));
+      return;
+    }
     final last = await _client
         .from('financial_ledger')
         .select('balance')
@@ -66,5 +84,12 @@ class FinancialRepository {
     } catch (_) {
       return DateTime.now();
     }
+  }
+
+  num _demoLastBalance(String entryType) {
+    final local = _locallyAdded.where((e) => e.entryType == entryType);
+    if (local.isNotEmpty) return local.last.balance;
+    final mockMatch = mock.financialLedgerEntries.where((e) => e.entryType == entryType);
+    return mockMatch.isEmpty ? 0 : mockMatch.first.balance;
   }
 }

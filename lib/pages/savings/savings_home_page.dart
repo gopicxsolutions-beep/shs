@@ -72,7 +72,7 @@ class SavingsHomePage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconTile(onTap: () => context.go(Paths.savingsEntry), icon: Icons.add_circle_rounded, label: 'Add Savings', tone: TileTone.brand),
-                  IconTile(onTap: () => context.go(Paths.savingsHistory), icon: Icons.history_rounded, label: 'History', tone: TileTone.sky),
+                  IconTile(onTap: () => context.go(isLeaderOrStaff ? Paths.savingsLedger : Paths.savingsHistory), icon: Icons.history_rounded, label: 'History', tone: TileTone.sky),
                   IconTile(onTap: () => context.go(Paths.savingsStatement), icon: Icons.receipt_long_rounded, label: 'Statement', tone: TileTone.violet),
                   IconTile(
                     onTap: () => context.go(isLeaderOrStaff ? Paths.savingsLedger : Paths.savingsGroupReport),

@@ -10,6 +10,11 @@ class TrainingRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Demo mode has no backing table, so passing a quiz would otherwise never
+  // show as certified anywhere — track it here so it survives for the rest
+  // of the session, mirroring AnnouncementRepository._locallyRead.
+  static final Set<String> _locallyCertified = {};
+
   Future<List<Course>> fetchCourses() async {
     if (!_live) return mock.courses.map((c) => Course(id: c.id, title: c.title, topic: c.topic, format: c.format, duration: c.duration)).toList();
     final rows = await _client.from('training_courses').select().order('created_at');
@@ -29,7 +34,12 @@ class TrainingRepository {
 
   Future<Map<String, CourseProgress>> fetchMyProgress(String? memberId) async {
     if (!_live || memberId == null) {
-      return {for (final c in mock.courses) c.id: CourseProgress(courseId: c.id, progress: c.progress, certified: c.certified)};
+      return {
+        for (final c in mock.courses)
+          c.id: _locallyCertified.contains(c.id)
+              ? CourseProgress(courseId: c.id, progress: 100, certified: true)
+              : CourseProgress(courseId: c.id, progress: c.progress, certified: c.certified),
+      };
     }
     final rows = await _client.from('course_progress').select().eq('member_id', memberId);
     return {for (final r in rows as List) (r as Map<String, dynamic>)['course_id'] as String: CourseProgress.fromMap(r)};
@@ -46,7 +56,10 @@ class TrainingRepository {
 
   /// Called after passing the quiz — marks the course complete + certified.
   Future<void> markCertified(String courseId, String? memberId) async {
-    if (!_live || memberId == null) return;
+    if (!_live) {
+      _locallyCertified.add(courseId);
+      return;
+    }
     await _client.from('course_progress').upsert({
       'course_id': courseId,
       'member_id': memberId,
