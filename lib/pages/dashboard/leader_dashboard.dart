@@ -196,10 +196,15 @@ class _LeaderDashboardBody extends StatelessWidget {
   }
 
   Widget _healthTile(String value, String label) => AppCard(
-        child: Column(children: [
-          Text(value, style: AppTheme.display(16, color: Brand.c700)),
-          const SizedBox(height: 2),
-          Text(label, style: AppTheme.sans(10, color: Neutral.c500)),
-        ]),
+        child: Semantics(
+          label: '$label: $value',
+          child: ExcludeSemantics(
+            child: Column(children: [
+              Text(value, style: AppTheme.display(16, color: Brand.c700)),
+              const SizedBox(height: 2),
+              Text(label, style: AppTheme.sans(10, color: Neutral.c500)),
+            ]),
+          ),
+        ),
       );
 }

@@ -105,7 +105,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 Row(children: [
                                   Text(r.reviewerName, style: AppTheme.sans(12, weight: FontWeight.w700)),
                                   const SizedBox(width: 8),
-                                  Row(children: List.generate(5, (i) => Icon(i < r.rating ? Icons.star_rounded : Icons.star_border_rounded, size: 14, color: Gold.c500))),
+                                  Semantics(
+                                    label: '${r.rating} out of 5 stars',
+                                    child: ExcludeSemantics(
+                                      child: Row(children: List.generate(5, (i) => Icon(i < r.rating ? Icons.star_rounded : Icons.star_border_rounded, size: 14, color: Gold.c500))),
+                                    ),
+                                  ),
                                 ]),
                                 if (r.comment != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(r.comment!, style: AppTheme.sans(12, color: Neutral.c600))),
                               ],

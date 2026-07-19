@@ -138,7 +138,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                 inputFormatters: decimalAmountInputFormatters,
                 textInputAction: TextInputAction.done,
                 maxLength: 7,
-                decoration: const InputDecoration(prefixText: '₹', counterText: ''),
+                decoration: const InputDecoration(prefixText: '₹', labelText: 'Payment amount', counterText: ''),
               ),
               if (error != null) ...[
                 const SizedBox(height: 12),

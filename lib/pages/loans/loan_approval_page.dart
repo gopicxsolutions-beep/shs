@@ -142,7 +142,7 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                 inputFormatters: decimalAmountInputFormatters,
                 textInputAction: TextInputAction.done,
                 maxLength: 7,
-                decoration: const InputDecoration(prefixText: '₹', counterText: ''),
+                decoration: const InputDecoration(prefixText: '₹', labelText: 'Monthly EMI', counterText: ''),
               ),
               if (error != null) ...[
                 const SizedBox(height: 12),
