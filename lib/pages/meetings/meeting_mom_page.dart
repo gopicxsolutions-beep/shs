@@ -27,6 +27,7 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
   final GlobalKey<AppAsyncBuilderState<MeetingMinutes?>> _minutesKey = GlobalKey();
   final GlobalKey<AppAsyncBuilderState<List<MeetingActionItem>>> _actionsKey = GlobalKey();
   List<String> _decisions = [];
+  List<MeetingActionItem> _actionItems = [];
   bool _savingDecision = false;
   bool _savingActionItem = false;
 
@@ -46,10 +47,17 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
     _decisionController.clear();
     try {
       await _repo.saveMinutes(widget.meetingId, next);
-      _decisions = next;
-      _minutesKey.currentState?.reload();
-      if (mounted && !SupabaseService.isConfigured) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo mode — not saved (connect Supabase to persist)')));
+      if (mounted) {
+        // In demo mode, reload() re-runs fetchLatestMinutes(), which
+        // no-ops and returns null — that overwrote _decisions right back
+        // to empty the instant it was added. Only reload where the fetch
+        // will actually reflect what was just persisted.
+        if (SupabaseService.isConfigured) {
+          _minutesKey.currentState?.reload();
+        } else {
+          setState(() => _decisions = next);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo mode — not saved (connect Supabase to persist)')));
+        }
       }
     } catch (_) {
       if (mounted) {
@@ -68,10 +76,19 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
     setState(() => _savingActionItem = true);
     _taskController.clear();
     try {
-      await _repo.addActionItem(widget.meetingId, text, dueDate: DateTime.now().add(const Duration(days: 7)));
+      final dueDate = DateTime.now().add(const Duration(days: 7));
+      await _repo.addActionItem(widget.meetingId, text, dueDate: dueDate);
       if (mounted) {
-        _actionsKey.currentState?.reload();
-        if (!SupabaseService.isConfigured) {
+        // Same issue as decisions: fetchActionItems() always returns an
+        // empty list in demo mode, so reloading would immediately hide the
+        // item that was just "added". Track it locally instead.
+        if (SupabaseService.isConfigured) {
+          _actionsKey.currentState?.reload();
+        } else {
+          setState(() => _actionItems = [
+                ..._actionItems,
+                MeetingActionItem(id: 'local-${DateTime.now().microsecondsSinceEpoch}', meetingId: widget.meetingId, task: text, dueDate: dueDate, done: false),
+              ]);
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo mode — not saved (connect Supabase to persist)')));
         }
       }
@@ -144,16 +161,20 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
           const SectionHeader(title: 'Action Items'),
           AppAsyncBuilder<List<MeetingActionItem>>(
             key: _actionsKey,
-            future: () => _repo.fetchActionItems(widget.meetingId),
+            future: () async {
+              final items = await _repo.fetchActionItems(widget.meetingId);
+              _actionItems = items;
+              return items;
+            },
             builder: (context, items) {
               return AppCard(
                 padded: false,
                 child: Column(
                   children: [
-                    if (items.isEmpty)
+                    if (_actionItems.isEmpty)
                       Padding(padding: const EdgeInsets.all(16), child: Text('No action items yet', style: AppTheme.sans(12, color: Neutral.c400)))
                     else
-                      ...items.map((item) => CheckboxListTile(
+                      ..._actionItems.map((item) => CheckboxListTile(
                             value: item.done,
                             activeColor: Brand.c600,
                             controlAffinity: ListTileControlAffinity.leading,
@@ -165,13 +186,32 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                             onChanged: (v) async {
                               try {
                                 await _repo.toggleActionItem(item.id, v ?? false);
-                                if (mounted) _actionsKey.currentState?.reload();
+                                if (mounted) {
+                                  if (SupabaseService.isConfigured) {
+                                    _actionsKey.currentState?.reload();
+                                  } else {
+                                    setState(() {
+                                      final idx = _actionItems.indexWhere((i) => i.id == item.id);
+                                      if (idx != -1) {
+                                        _actionItems[idx] = MeetingActionItem(
+                                          id: item.id,
+                                          meetingId: item.meetingId,
+                                          task: item.task,
+                                          ownerId: item.ownerId,
+                                          ownerName: item.ownerName,
+                                          dueDate: item.dueDate,
+                                          done: v ?? false,
+                                        );
+                                      }
+                                    });
+                                  }
+                                }
                               } catch (_) {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update this action item. Please try again.')));
                                 }
                               }
-                                  },
+                            },
                           )),
                     if (isLeaderOrStaff)
                       Padding(

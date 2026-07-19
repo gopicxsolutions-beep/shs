@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../data/analytics.dart' as mock_analytics;
 import '../data/members.dart' as mock;
 import '../models/admin.dart';
 import '../models/profile.dart';
@@ -37,7 +38,13 @@ class AdminRepository {
 
   Future<SystemHealth> fetchSystemHealth() async {
     if (!_live) {
-      return SystemHealth(totalUsers: mock.members.length, totalShgs: 1, totalSavingsEntries: 48, totalLoans: 6, pendingLoans: 1, checkedAt: DateTime.now());
+      // totalUsers/totalShgs mirror the same platform-wide figures the
+      // Admin dashboard shows (Kpis.activeMembers, the village breakdown's
+      // SHG count) rather than this demo persona's own single-SHG roster
+      // (12 members, 1 SHG) — that mismatch (2142 vs 12, 124 vs 1) made
+      // System Monitoring directly contradict the dashboard one tap away.
+      final totalShgs = mock_analytics.villageWiseSHGs.fold<int>(0, (s, v) => s + v.shgs);
+      return SystemHealth(totalUsers: mock_analytics.Kpis.activeMembers, totalShgs: totalShgs, totalSavingsEntries: 48, totalLoans: 6, pendingLoans: 1, checkedAt: DateTime.now());
     }
     final users = await _client.from('profiles').select('id');
     final shgs = await _client.from('shgs').select('id');
