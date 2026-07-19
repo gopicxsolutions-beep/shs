@@ -1,6 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/livelihood.dart' as mock;
+import '../data/members.dart' as mock_members;
 import '../models/livelihood.dart';
+import '../models/types.dart';
 import '../services/supabase_service.dart';
 
 /// Backed by `public.livelihood_activities` when Supabase is configured;
@@ -16,7 +18,11 @@ class LivelihoodRepository {
   }
 
   Future<List<LivelihoodActivity>> fetchForMember(String? memberId) async {
-    if (!_live || memberId == null) return _mockActivities();
+    // Demo mode has no real per-member session, so `_mockActivities()` is
+    // scoped to the requested member's own activities (resolved to a name
+    // since the mock data keys on memberName, not id) rather than returning
+    // everyone's.
+    if (!_live || memberId == null) return _mockActivities().where((a) => a.memberName == _demoMemberName(memberId)).toList();
     final rows = await _client.from('livelihood_activities').select('*, profiles(name)').eq('member_id', memberId).order('created_at', ascending: false);
     return (rows as List).map((r) => LivelihoodActivity.fromMap(r as Map<String, dynamic>)).toList();
   }
@@ -52,6 +58,12 @@ class LivelihoodRepository {
   Future<void> updateProgress(String id, {required num revenue, required String status}) async {
     if (!_live) return;
     await _client.from('livelihood_activities').update({'revenue': revenue, 'status': status}).eq('id', id);
+  }
+
+  String _demoMemberName(String? memberId) {
+    if (memberId == null) return defaultUser.name;
+    final match = mock_members.members.where((m) => m.id == memberId);
+    return match.isEmpty ? defaultUser.name : match.first.name;
   }
 
   List<LivelihoodActivity> _mockActivities() => mock.livelihoodActivities

@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import '../layout/app_shell.dart';
 import '../pages/admin/admin_monitoring_page.dart';
@@ -211,19 +212,66 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.adminUsers, builder: (context, state) => const AdminUsersPage()),
           GoRoute(path: Paths.adminSchemes, builder: (context, state) => const AdminSchemesPage()),
           GoRoute(path: Paths.adminMonitoring, builder: (context, state) => const AdminMonitoringPage()),
-          GoRoute(path: '/app/shg/members/:id', builder: (context, state) => MemberDetailPage(memberId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/loans/:id', builder: (context, state) => LoanDetailPage(loanId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/meetings/:id', builder: (context, state) => MeetingDetailPage(meetingId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/meetings/:id/mom', builder: (context, state) => MeetingMomPage(meetingId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/livelihood/:id', builder: (context, state) => LivelihoodDetailPage(activityId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/marketplace/product/:id', builder: (context, state) => ProductDetailPage(productId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/marketplace/orders/:id', builder: (context, state) => OrderDetailPage(orderId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/schemes/:id', builder: (context, state) => SchemeDetailPage(schemeId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/training/:id', builder: (context, state) => CourseDetailPage(courseId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/training/:id/quiz', builder: (context, state) => CourseQuizPage(courseId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/announcements/:id', builder: (context, state) => AnnouncementDetailPage(announcementId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/support/ticket/:id', builder: (context, state) => SupportTicketDetailPage(ticketId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/analytics/shg/:id', builder: (context, state) => AnalyticsShgDetailPage(shgId: state.pathParameters['id']!)),
+          // Each of the routes below is keyed on its :id path parameter.
+          // Without a ValueKey, go_router reuses the same Element when
+          // navigating between two matches of the same route pattern (e.g.
+          // one member's detail page to another's), so a page whose state
+          // fetches data in initState (like AppAsyncBuilder) would keep
+          // showing the first id's data after an in-app navigation.
+          GoRoute(
+            path: '/app/shg/members/:id',
+            builder: (context, state) => MemberDetailPage(key: ValueKey(state.pathParameters['id']), memberId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/loans/:id',
+            builder: (context, state) => LoanDetailPage(key: ValueKey(state.pathParameters['id']), loanId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/meetings/:id',
+            builder: (context, state) => MeetingDetailPage(key: ValueKey(state.pathParameters['id']), meetingId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/meetings/:id/mom',
+            builder: (context, state) => MeetingMomPage(key: ValueKey(state.pathParameters['id']), meetingId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/livelihood/:id',
+            builder: (context, state) => LivelihoodDetailPage(key: ValueKey(state.pathParameters['id']), activityId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/marketplace/product/:id',
+            builder: (context, state) => ProductDetailPage(key: ValueKey(state.pathParameters['id']), productId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/marketplace/orders/:id',
+            builder: (context, state) => OrderDetailPage(key: ValueKey(state.pathParameters['id']), orderId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/schemes/:id',
+            builder: (context, state) => SchemeDetailPage(key: ValueKey(state.pathParameters['id']), schemeId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/training/:id',
+            builder: (context, state) => CourseDetailPage(key: ValueKey(state.pathParameters['id']), courseId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/training/:id/quiz',
+            builder: (context, state) => CourseQuizPage(key: ValueKey(state.pathParameters['id']), courseId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/announcements/:id',
+            builder: (context, state) =>
+                AnnouncementDetailPage(key: ValueKey(state.pathParameters['id']), announcementId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/support/ticket/:id',
+            builder: (context, state) =>
+                SupportTicketDetailPage(key: ValueKey(state.pathParameters['id']), ticketId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/analytics/shg/:id',
+            builder: (context, state) => AnalyticsShgDetailPage(key: ValueKey(state.pathParameters['id']), shgId: state.pathParameters['id']!),
+          ),
         ],
       ),
     ],

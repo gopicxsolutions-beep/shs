@@ -1,7 +1,9 @@
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/loans.dart' as mock;
+import '../data/members.dart' as mock_members;
 import '../models/loan.dart';
+import '../models/types.dart';
 import '../services/supabase_service.dart';
 
 /// Backed by `public.loans` / `public.loan_payments` when Supabase is
@@ -18,9 +20,21 @@ class LoanRepository {
   }
 
   Future<List<Loan>> fetchForMember(String? memberId) async {
-    if (!_live || memberId == null) return _mockLoans();
+    // Demo mode has no real per-member session, so `_mockLoans()` is scoped
+    // to the requested member's own loans (resolved to a name since the mock
+    // data keys on memberName, not id) rather than returning everyone's —
+    // otherwise a member would see the whole SHG's loans as their own, and a
+    // leader opening any member's detail page would see the same mixed
+    // total for every member.
+    if (!_live || memberId == null) return _mockLoans().where((l) => l.memberName == _demoMemberName(memberId)).toList();
     final rows = await _client.from('loans').select('*, profiles(name)').eq('member_id', memberId).order('created_at', ascending: false);
     return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
+  String _demoMemberName(String? memberId) {
+    if (memberId == null) return defaultUser.name;
+    final match = mock_members.members.where((m) => m.id == memberId);
+    return match.isEmpty ? defaultUser.name : match.first.name;
   }
 
   Future<Loan?> fetchById(String id) async {

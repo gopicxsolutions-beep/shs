@@ -1,7 +1,9 @@
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../data/members.dart' as mock_members;
 import '../data/savings.dart' as mock;
 import '../models/savings.dart';
+import '../models/types.dart';
 import '../services/supabase_service.dart';
 
 /// Backed by `public.savings_entries` when Supabase is configured; falls
@@ -22,7 +24,13 @@ class SavingsRepository {
   }
 
   Future<List<SavingsEntry>> fetchForMember(String? memberId) async {
-    if (!_live || memberId == null) return _mockEntries();
+    // Demo mode has no real per-member session, so `_mockEntries()` is
+    // scoped to the requested member's own entries (resolved to a name
+    // since the mock data keys on memberName, not id) rather than returning
+    // everyone's — otherwise a member would see the whole SHG's savings
+    // ledger as their own, and a leader opening any member's detail page
+    // would see the same mixed total for every member.
+    if (!_live || memberId == null) return _mockEntries().where((e) => e.memberName == _demoMemberName(memberId)).toList();
     final rows = await _client
         .from('savings_entries')
         .select('*, profiles(name)')
@@ -74,6 +82,12 @@ class SavingsRepository {
     return sortedKeys
         .map((k) => MonthlyTotal(DateFormat('MMM').format(DateFormat('yyyy-MM').parse(k)), byMonth[k]!))
         .toList();
+  }
+
+  String _demoMemberName(String? memberId) {
+    if (memberId == null) return defaultUser.name;
+    final match = mock_members.members.where((m) => m.id == memberId);
+    return match.isEmpty ? defaultUser.name : match.first.name;
   }
 
   List<SavingsEntry> _mockEntries() => mock.savingsEntries
