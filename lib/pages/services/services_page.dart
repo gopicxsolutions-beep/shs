@@ -41,7 +41,10 @@ class ServicesPage extends StatelessWidget {
     _Service(Icons.school_rounded, 'Training', TileTone.gold, Paths.training),
     _Service(Icons.support_agent_rounded, 'Support', TileTone.rose, Paths.support),
     _Service(Icons.smart_toy_rounded, 'AI Advisors', TileTone.sky, Paths.aiHub),
-    _Service(Icons.campaign_rounded, 'Announcements', TileTone.brand, Paths.announcements),
+    // Soft hyphen (U+00AD) gives the 2-line label a sensible break point
+    // instead of an arbitrary mid-word cut when this single long word
+    // doesn't fit on one line at the grid's fixed tile width.
+    _Service(Icons.campaign_rounded, 'Announce­ments', TileTone.brand, Paths.announcements),
   ];
 
   static const _insights = <_Service>[

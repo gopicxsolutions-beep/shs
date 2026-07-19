@@ -68,7 +68,9 @@ class ShgHomePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _row('Village Organisation', shg.vo ?? '—'),
+                    // Soft hyphen gives the narrow label column a sensible
+                    // break point instead of an arbitrary mid-word cut.
+                    _row('Village Organi­sation', shg.vo ?? '—'),
                     const SizedBox(height: 8),
                     _row('CLF', shg.clf ?? '—'),
                     const SizedBox(height: 8),
@@ -100,10 +102,11 @@ class ShgHomePage extends StatelessWidget {
   }
 
   Widget _row(String label, String value) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppTheme.sans(12, color: Neutral.c500)),
-          Text(value, style: AppTheme.sans(12, weight: FontWeight.w700)),
+          Expanded(child: Text(label, style: AppTheme.sans(12, color: Neutral.c500))),
+          const SizedBox(width: 8),
+          Text(value, style: AppTheme.sans(12, weight: FontWeight.w700), textAlign: TextAlign.right),
         ],
       );
 }
