@@ -63,10 +63,14 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
         agenda: _agenda.text.trim(),
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        // Navigate first, then show on the captured messenger — showing
+        // before navigating drops the SnackBar, since context.go() replaces
+        // this page's Scaffold before it ever gets a frame to render.
+        final messenger = ScaffoldMessenger.of(context);
+        context.go(Paths.meetings);
+        messenger.showSnackBar(SnackBar(
           content: Text(SupabaseService.isConfigured ? 'Meeting scheduled' : 'Demo mode — meeting not saved (connect Supabase to persist)'),
         ));
-        context.go(Paths.meetings);
       }
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not schedule this meeting. Please try again.');

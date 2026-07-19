@@ -52,10 +52,14 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
     try {
       await _repo.markCertified(widget.courseId, appState.profile?.id);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        // Navigate first, then show on the captured messenger — showing
+        // before navigating drops the SnackBar, since context.go() replaces
+        // this page's Scaffold before it ever gets a frame to render.
+        final messenger = ScaffoldMessenger.of(context);
+        context.go(Paths.trainingDetail(widget.courseId));
+        messenger.showSnackBar(
           SnackBar(content: Text(SupabaseService.isConfigured ? 'Passed! Certificate earned.' : 'Passed! Demo mode — certificate not saved (connect Supabase to persist)')),
         );
-        context.go(Paths.trainingDetail(widget.courseId));
       }
     } catch (_) {
       if (mounted) {

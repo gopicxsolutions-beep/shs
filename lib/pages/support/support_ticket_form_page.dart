@@ -48,10 +48,14 @@ class _SupportTicketFormPageState extends State<SupportTicketFormPage> {
         description: _description.text.trim(),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      // Navigate first, then show on the captured messenger — showing
+      // before navigating drops the SnackBar, since context.go() replaces
+      // this page's Scaffold before it ever gets a frame to render.
+      final messenger = ScaffoldMessenger.of(context);
+      context.go(ticketId != null ? Paths.supportTicketDetail(ticketId) : Paths.supportChat);
+      messenger.showSnackBar(SnackBar(
         content: Text(SupabaseService.isConfigured ? 'Ticket raised' : 'Demo mode — ticket not saved (connect Supabase to persist)'),
       ));
-      context.go(ticketId != null ? Paths.supportTicketDetail(ticketId) : Paths.supportChat);
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not raise this ticket. Please try again.');
     } finally {

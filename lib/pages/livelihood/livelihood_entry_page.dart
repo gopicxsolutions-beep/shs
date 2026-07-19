@@ -59,10 +59,14 @@ class _LivelihoodEntryPageState extends State<LivelihoodEntryPage> {
         investment: investment,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        // Navigate first, then show on the captured messenger — showing
+        // before navigating drops the SnackBar, since context.go() replaces
+        // this page's Scaffold before it ever gets a frame to render.
+        final messenger = ScaffoldMessenger.of(context);
+        context.go(Paths.livelihood);
+        messenger.showSnackBar(SnackBar(
           content: Text(SupabaseService.isConfigured ? 'Activity added' : 'Demo mode — activity not saved (connect Supabase to persist)'),
         ));
-        context.go(Paths.livelihood);
       }
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not save this activity. Please try again.');

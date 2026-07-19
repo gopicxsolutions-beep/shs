@@ -64,10 +64,17 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
         frequency: _frequency,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        // Showing the SnackBar before navigating away silently drops it —
+        // context.go() replaces this page's Scaffold before the SnackBar
+        // ever gets a frame to render, so the demo-mode disclosure below
+        // never reached the user. Capturing the messenger and navigating
+        // first, then showing on the (still-live, app-root) messenger,
+        // fixes that.
+        final messenger = ScaffoldMessenger.of(context);
+        context.go(Paths.savings);
+        messenger.showSnackBar(SnackBar(
           content: Text(SupabaseService.isConfigured ? 'Savings entry submitted for verification' : 'Demo mode — entry not saved (connect Supabase to persist)'),
         ));
-        context.go(Paths.savings);
       }
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not save this entry. Please try again.');

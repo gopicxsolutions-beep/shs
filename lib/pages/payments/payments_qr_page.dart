@@ -76,10 +76,14 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
     try {
       final result = await _repo.pay(memberId: appState.profile?.id, amount: amount, mode: _mode);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        // Navigate first, then show on the captured messenger — showing
+        // before navigating drops the SnackBar, since context.go() replaces
+        // this page's Scaffold before it ever gets a frame to render.
+        final messenger = ScaffoldMessenger.of(context);
+        context.go(Paths.payments);
+        messenger.showSnackBar(SnackBar(
           content: Text(result.success ? 'Payment successful · Ref ${result.reference}' : 'Payment failed'),
         ));
-        context.go(Paths.payments);
       }
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not process this payment. Please try again.');

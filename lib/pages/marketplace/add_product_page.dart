@@ -66,10 +66,14 @@ class _AddProductPageState extends State<AddProductPage> {
         category: _category,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        // Navigate first, then show on the captured messenger — showing
+        // before navigating drops the SnackBar, since context.go() replaces
+        // this page's Scaffold before it ever gets a frame to render.
+        final messenger = ScaffoldMessenger.of(context);
+        context.go(Paths.marketplace);
+        messenger.showSnackBar(SnackBar(
           content: Text(SupabaseService.isConfigured ? 'Product listed' : 'Demo mode — product not saved (connect Supabase to persist)'),
         ));
-        context.go(Paths.marketplace);
       }
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not list this product. Please try again.');
