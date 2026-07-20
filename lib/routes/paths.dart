@@ -104,4 +104,5 @@ class Paths {
   static const adminUsers = '/app/admin/users';
   static const adminSchemes = '/app/admin/schemes';
   static const adminMonitoring = '/app/admin/monitoring';
+  static const adminShgs = '/app/admin/shgs';
 }

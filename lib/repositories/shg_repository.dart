@@ -17,6 +17,54 @@ class ShgRepository {
   // the rest of the session, mirroring AnnouncementRepository._locallyRead.
   static final List<ShgDocument> _locallyAdded = [];
 
+  // Same idea for admin-created SHGs (see AdminShgsPage) — created via
+  // createShg(), listed in fetchAllShgs() alongside the one fixed demo SHG.
+  static final List<ShgProfile> _locallyAddedShgs = [];
+
+  /// Every SHG in the catalog — backs AdminShgsPage. `shgs_insert_staff`
+  /// already permits any staff role to create one, so this needed no schema
+  /// change; the client simply never had a UI for it (see AdminShgsPage's
+  /// doc comment for why that mattered more than it sounds).
+  Future<List<ShgProfile>> fetchAllShgs() async {
+    if (!_live) {
+      return [
+        ShgProfile(
+          id: 'demo-shg',
+          name: mock.ShgInfo.name,
+          village: mock.ShgInfo.village,
+          mandal: mock.ShgInfo.mandal,
+          district: mock.ShgInfo.district,
+          state: mock.ShgInfo.state,
+          grade: mock.ShgInfo.grade,
+        ),
+        ..._locallyAddedShgs,
+      ];
+    }
+    final rows = await _client.from('shgs').select().order('name');
+    return (rows as List).map((r) => ShgProfile.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> createShg({required String name, String? village, String? mandal, String? district, String? state}) async {
+    if (!_live) {
+      _locallyAddedShgs.add(ShgProfile(
+        id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+        name: name,
+        village: village,
+        mandal: mandal,
+        district: district,
+        state: state,
+      ));
+      return;
+    }
+    await _client.from('shgs').insert({
+      'name': name,
+      'village': ?village,
+      'mandal': ?mandal,
+      'district': ?district,
+      'state': ?state,
+    });
+  }
+
   Future<ShgProfile?> fetchShg(String? shgId) async {
     if (!_live || shgId == null) {
       return ShgProfile(

@@ -4,6 +4,7 @@ import '../layout/app_shell.dart';
 import '../models/types.dart';
 import '../pages/admin/admin_monitoring_page.dart';
 import '../pages/admin/admin_schemes_page.dart';
+import '../pages/admin/admin_shgs_page.dart';
 import '../pages/admin/admin_users_page.dart';
 import '../pages/ai/ai_advisor_chat_page.dart';
 import '../pages/ai/ai_hub_page.dart';
@@ -240,6 +241,7 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.adminUsers, builder: (context, state) => const AdminUsersPage()),
           GoRoute(path: Paths.adminSchemes, builder: (context, state) => const AdminSchemesPage()),
           GoRoute(path: Paths.adminMonitoring, builder: (context, state) => const AdminMonitoringPage()),
+          GoRoute(path: Paths.adminShgs, builder: (context, state) => const AdminShgsPage()),
           // Each of the routes below is keyed on its :id path parameter.
           // Without a ValueKey, go_router reuses the same Element when
           // navigating between two matches of the same route pattern (e.g.

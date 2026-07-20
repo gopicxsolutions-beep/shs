@@ -59,14 +59,19 @@ class _AdminDashboardBody extends StatelessWidget {
         ),
         Transform.translate(
           offset: const Offset(0, -28),
-          child: Padding(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconTile(onTap: () => context.go(Paths.adminUsers), icon: Icons.groups_rounded, label: 'Users', tone: TileTone.brand),
+                const SizedBox(width: 12),
+                IconTile(onTap: () => context.go(Paths.adminShgs), icon: Icons.apartment_rounded, label: 'SHGs', tone: TileTone.rose),
+                const SizedBox(width: 12),
                 IconTile(onTap: () => context.go(Paths.adminSchemes), icon: Icons.settings_suggest_rounded, label: 'Schemes', tone: TileTone.gold),
+                const SizedBox(width: 12),
                 IconTile(onTap: () => context.go(Paths.adminMonitoring), icon: Icons.dns_rounded, label: 'Monitoring', tone: TileTone.sky),
+                const SizedBox(width: 12),
                 IconTile(onTap: () => context.go(Paths.reportsFederation), icon: Icons.bar_chart_rounded, label: 'Reports', tone: TileTone.violet),
               ],
             ),
