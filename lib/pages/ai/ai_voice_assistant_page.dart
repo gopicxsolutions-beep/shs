@@ -37,9 +37,17 @@ class AiVoiceAssistantPage extends StatefulWidget {
 class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
   final VoiceRecognitionService _service = MockVoiceRecognitionService();
   _AssistantState _state = _AssistantState.idle;
-  Language _language = Language.te;
+  late Language _language;
   String? _transcript;
   String? _answer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Defaults to the member's actual app language instead of always
+    // opening on Telugu regardless of their real preference.
+    _language = context.read<AppState>().language;
+  }
 
   Future<void> _listen() async {
     setState(() {
