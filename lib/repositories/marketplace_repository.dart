@@ -32,7 +32,8 @@ class MarketplaceRepository {
   }
 
   Future<List<Product>> fetchMyProducts(String? sellerId) async {
-    if (!_live || sellerId == null) return [..._locallyAddedProducts.reversed, ..._mockProducts()];
+    if (!_live) return [..._locallyAddedProducts.reversed, ..._mockProducts()];
+    if (sellerId == null) return [];
     final rows = await _client.from('marketplace_products').select('*, profiles(name)').eq('seller_id', sellerId).order('created_at', ascending: false);
     return (rows as List).map((r) => Product.fromMap(r as Map<String, dynamic>)).toList();
   }
@@ -113,7 +114,8 @@ class MarketplaceRepository {
 
   /// Orders for products this seller listed.
   Future<List<MarketOrder>> fetchOrdersForSeller(String? sellerId) async {
-    if (!_live || sellerId == null) return _locallyPlaced.reversed.toList();
+    if (!_live) return _locallyPlaced.reversed.toList();
+    if (sellerId == null) return [];
     final rows = await _client
         .from('marketplace_orders')
         .select('*, marketplace_products!inner(name, seller_id)')
@@ -145,7 +147,8 @@ class MarketplaceRepository {
 
   /// Reviews across every product this seller lists.
   Future<List<Review>> fetchReviewsForSeller(String? sellerId) async {
-    if (!_live || sellerId == null) return mock.marketplaceReviews.map((r) => Review(id: r.id, productId: r.productId, reviewerName: r.reviewerName, rating: r.rating, comment: r.comment)).toList();
+    if (!_live) return mock.marketplaceReviews.map((r) => Review(id: r.id, productId: r.productId, reviewerName: r.reviewerName, rating: r.rating, comment: r.comment)).toList();
+    if (sellerId == null) return [];
     final rows = await _client
         .from('marketplace_reviews')
         .select('*, marketplace_products!inner(seller_id)')

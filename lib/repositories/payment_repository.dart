@@ -23,12 +23,13 @@ class PaymentRepository {
   static final List<Payment> _locallyAdded = [];
 
   Future<List<Payment>> fetchHistory(String? memberId) async {
-    if (!_live || memberId == null) {
+    if (!_live) {
       return [
         ..._locallyAdded.reversed,
         ...mock.paymentsHistory.map((p) => Payment(id: p.id, amount: p.amount, mode: p.mode, reference: p.reference, status: p.status, createdAt: _parseMockDate(p.date))),
       ];
     }
+    if (memberId == null) return [];
     final rows = await _client.from('payments').select().eq('member_id', memberId).order('created_at', ascending: false);
     return (rows as List).map((r) => Payment.fromMap(r as Map<String, dynamic>)).toList();
   }

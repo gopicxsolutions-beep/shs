@@ -66,8 +66,10 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
                 ),
                 const SizedBox(height: 8),
                 Text('Namaste, ${user.name.split(' ').first} 🙏', style: AppTheme.display(18, color: Colors.white)),
-                const SizedBox(height: 2),
-                Text(user.shgName, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.7))),
+                if (user.shgName.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(user.shgName, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.7))),
+                ],
               ],
             ),
           ),

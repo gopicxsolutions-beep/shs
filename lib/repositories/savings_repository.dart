@@ -19,7 +19,8 @@ class SavingsRepository {
   static final List<SavingsEntry> _locallyAdded = [];
 
   Future<List<SavingsEntry>> fetchForShg(String? shgId) async {
-    if (!_live || shgId == null) return [..._locallyAdded.reversed, ..._mockEntries()];
+    if (!_live) return [..._locallyAdded.reversed, ..._mockEntries()];
+    if (shgId == null) return [];
     final rows = await _client
         .from('savings_entries')
         .select('*, profiles(name)')
@@ -35,13 +36,14 @@ class SavingsRepository {
     // everyone's — otherwise a member would see the whole SHG's savings
     // ledger as their own, and a leader opening any member's detail page
     // would see the same mixed total for every member.
-    if (!_live || memberId == null) {
+    if (!_live) {
       final name = _demoMemberName(memberId);
       return [
         ..._locallyAdded.where((e) => e.memberName == name).toList().reversed,
         ..._mockEntries().where((e) => e.memberName == name),
       ];
     }
+    if (memberId == null) return [];
     final rows = await _client
         .from('savings_entries')
         .select('*, profiles(name)')

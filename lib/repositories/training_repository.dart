@@ -33,7 +33,7 @@ class TrainingRepository {
   }
 
   Future<Map<String, CourseProgress>> fetchMyProgress(String? memberId) async {
-    if (!_live || memberId == null) {
+    if (!_live) {
       return {
         for (final c in mock.courses)
           c.id: _locallyCertified.contains(c.id)
@@ -41,6 +41,7 @@ class TrainingRepository {
               : CourseProgress(courseId: c.id, progress: c.progress, certified: c.certified),
       };
     }
+    if (memberId == null) return {};
     final rows = await _client.from('course_progress').select().eq('member_id', memberId);
     return {for (final r in rows as List) (r as Map<String, dynamic>)['course_id'] as String: CourseProgress.fromMap(r)};
   }

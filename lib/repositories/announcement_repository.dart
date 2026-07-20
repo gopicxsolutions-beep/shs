@@ -17,12 +17,17 @@ class AnnouncementRepository {
   static final Set<String> _locallyRead = {};
 
   Future<List<Announcement>> fetchForShg(String? shgId, String? memberId) async {
-    if (!_live || shgId == null) {
+    if (!_live) {
       return mock.announcements
           .map((a) => Announcement(id: a.id, title: a.title, body: a.body, category: a.category, createdAt: _parseMockDate(a.date), read: a.read || _locallyRead.contains(a.id)))
           .toList();
     }
-    final rows = await _client.from('announcements').select().or('shg_id.eq.$shgId,shg_id.is.null').order('created_at', ascending: false);
+    // A live staff account without an SHG still has none of its own to
+    // scope to, but should still see federation-wide announcements
+    // (shg_id is null) rather than falling back to demo content.
+    final rows = shgId == null
+        ? await _client.from('announcements').select().filter('shg_id', 'is', null).order('created_at', ascending: false)
+        : await _client.from('announcements').select().or('shg_id.eq.$shgId,shg_id.is.null').order('created_at', ascending: false);
     final readRows = memberId == null ? [] : await _client.from('announcement_reads').select('announcement_id').eq('member_id', memberId);
     final readIds = {for (final r in readRows) (r as Map<String, dynamic>)['announcement_id'] as String};
     return (rows as List).map((r) {

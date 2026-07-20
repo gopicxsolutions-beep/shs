@@ -16,13 +16,14 @@ class FinancialRepository {
   static final List<FinancialEntry> _locallyAdded = [];
 
   Future<List<FinancialEntry>> fetchForShg(String? shgId, String entryType) async {
-    if (!_live || shgId == null) {
+    if (!_live) {
       final mockEntries = mock.financialLedgerEntries
           .where((e) => e.entryType == entryType)
           .map((e) => FinancialEntry(id: e.id, entryType: e.entryType, description: e.description, debit: e.debit, credit: e.credit, balance: e.balance, date: _parseMockDate(e.date)));
       final localEntries = _locallyAdded.where((e) => e.entryType == entryType).toList().reversed;
       return [...localEntries, ...mockEntries];
     }
+    if (shgId == null) return [];
     final rows = await _client
         .from('financial_ledger')
         .select()
@@ -43,7 +44,7 @@ class FinancialRepository {
     required num debit,
     required num credit,
   }) async {
-    if (!_live || shgId == null) {
+    if (!_live) {
       final previousBalance = _demoLastBalance(entryType);
       _locallyAdded.add(FinancialEntry(
         id: 'local-${DateTime.now().microsecondsSinceEpoch}',
@@ -56,6 +57,7 @@ class FinancialRepository {
       ));
       return;
     }
+    if (shgId == null) return;
     final last = await _client
         .from('financial_ledger')
         .select('balance')

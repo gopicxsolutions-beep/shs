@@ -27,7 +27,8 @@ class LivelihoodRepository {
       ];
 
   Future<List<LivelihoodActivity>> fetchForShg(String? shgId) async {
-    if (!_live || shgId == null) return _demoActivities();
+    if (!_live) return _demoActivities();
+    if (shgId == null) return [];
     final rows = await _client.from('livelihood_activities').select('*, profiles(name)').eq('shg_id', shgId).order('created_at', ascending: false);
     return (rows as List).map((r) => LivelihoodActivity.fromMap(r as Map<String, dynamic>)).toList();
   }
@@ -37,7 +38,8 @@ class LivelihoodRepository {
     // scoped to the requested member's own activities (resolved to a name
     // since the mock data keys on memberName, not id) rather than returning
     // everyone's.
-    if (!_live || memberId == null) return _demoActivities().where((a) => a.memberName == _demoMemberName(memberId)).toList();
+    if (!_live) return _demoActivities().where((a) => a.memberName == _demoMemberName(memberId)).toList();
+    if (memberId == null) return [];
     final rows = await _client.from('livelihood_activities').select('*, profiles(name)').eq('member_id', memberId).order('created_at', ascending: false);
     return (rows as List).map((r) => LivelihoodActivity.fromMap(r as Map<String, dynamic>)).toList();
   }

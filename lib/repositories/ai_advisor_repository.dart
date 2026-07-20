@@ -17,12 +17,13 @@ class AiAdvisorRepository {
   bool get _live => SupabaseService.isConfigured;
 
   Future<List<AiAdvisorLog>> fetchHistory({required String? memberId, required String advisorType}) async {
-    if (!_live || memberId == null) {
+    if (!_live) {
       return mock.mockAdvisorLogs
           .where((l) => l.advisorType == advisorType)
           .map((l) => AiAdvisorLog(id: '${l.advisorType}-${l.query.hashCode}', memberId: 'me', advisorType: l.advisorType, query: l.query, response: l.response, createdAt: DateTime.now()))
           .toList();
     }
+    if (memberId == null) return [];
     final rows = await _client.from('ai_advisor_logs').select().eq('member_id', memberId).eq('advisor_type', advisorType).order('created_at');
     return (rows as List).map((r) => AiAdvisorLog.fromMap(r as Map<String, dynamic>)).toList();
   }

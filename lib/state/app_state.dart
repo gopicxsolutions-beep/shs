@@ -116,7 +116,11 @@ class AppState extends ChangeNotifier {
         name: _profile!.name,
         mobile: _profile!.mobile ?? defaultUser.mobile,
         role: role,
-        shgName: _shgName ?? _pendingShg?.name ?? defaultUser.shgName,
+        // No demo-name fallback here: a live staff account genuinely has no
+        // SHG (see profile_setup_page.dart), and showing "Sri Durga Mahila
+        // SHG" — the hardcoded demo persona's SHG — under a real admin's
+        // name would misrepresent live data as if it were theirs.
+        shgName: _shgName ?? _pendingShg?.name ?? '',
         village: _profile!.village ?? defaultUser.village,
       );
     }

@@ -66,7 +66,7 @@ class ShgRepository {
   }
 
   Future<ShgProfile?> fetchShg(String? shgId) async {
-    if (!_live || shgId == null) {
+    if (!_live) {
       return ShgProfile(
         id: 'demo-shg',
         name: mock.ShgInfo.name,
@@ -83,14 +83,19 @@ class ShgRepository {
         vo: mock.ShgInfo.vo,
       );
     }
+    // A live staff account (admin/crp/clf) legitimately has no SHG — see
+    // profile_setup_page.dart. Callers (e.g. ProfilePage's "Not yet
+    // approved" fallback) rely on null here, not on demo data standing in.
+    if (shgId == null) return null;
     final row = await _client.from('shgs').select().eq('id', shgId).maybeSingle();
     return row == null ? null : ShgProfile.fromMap(row);
   }
 
   Future<List<Member>> fetchMembers(String? shgId) async {
-    if (!_live || shgId == null) {
+    if (!_live) {
       return mock_members.members.map((m) => Member(id: m.id, name: m.name, mobile: m.mobile, role: m.role.toLowerCase(), village: null)).toList();
     }
+    if (shgId == null) return [];
     final rows = await _client.from('profiles').select().eq('shg_id', shgId).order('name');
     return (rows as List).map((r) => Member.fromMap(r as Map<String, dynamic>)).toList();
   }
@@ -107,12 +112,13 @@ class ShgRepository {
   }
 
   Future<List<ShgDocument>> fetchDocuments(String? shgId) async {
-    if (!_live || shgId == null) {
+    if (!_live) {
       return [
         ..._locallyAdded.reversed,
         ...mock.documents.map((d) => ShgDocument(id: d.id, name: d.name, type: d.type, size: d.size, createdAt: _parseMockDate(d.date))),
       ];
     }
+    if (shgId == null) return [];
     final rows = await _client.from('shg_documents').select().eq('shg_id', shgId).order('created_at', ascending: false);
     return (rows as List).map((r) => ShgDocument.fromMap(r as Map<String, dynamic>)).toList();
   }

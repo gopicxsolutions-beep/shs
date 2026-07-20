@@ -57,7 +57,7 @@ class SchemeRepository {
   /// Maps scheme id → the current member's application status (only for
   /// schemes they've applied to).
   Future<Map<String, SchemeApplication>> fetchMyApplications(String? memberId) async {
-    if (!_live || memberId == null) {
+    if (!_live) {
       final byStatus = <String, SchemeApplication>{};
       for (final s in mock.schemes.where((s) => s.status != 'not_applied' || _locallyApplied.contains(s.id))) {
         final status = s.status == 'not_applied' ? 'applied' : s.status;
@@ -65,6 +65,7 @@ class SchemeRepository {
       }
       return byStatus;
     }
+    if (memberId == null) return {};
     final rows = await _client.from('scheme_applications').select().eq('member_id', memberId);
     final byScheme = <String, SchemeApplication>{};
     for (final r in rows as List) {

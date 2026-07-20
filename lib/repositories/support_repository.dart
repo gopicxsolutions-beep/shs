@@ -18,13 +18,16 @@ class SupportRepository {
   static final List<SupportTicket> _locallyAdded = [];
 
   Future<List<SupportTicket>> fetchTickets({required String? memberId, required bool isStaff}) async {
-    if (!_live || memberId == null) {
+    if (!_live) {
       final mockTickets = mock.mockTickets
           .map((t) => SupportTicket(id: t.id, memberId: memberId ?? 'me', subject: t.subject, description: t.description, status: t.status, createdAt: _parseMockDate(t.date)));
       return [..._locallyAdded.reversed, ...mockTickets];
     }
     var query = _client.from('support_tickets').select('*, profiles(name)');
-    if (!isStaff) query = query.eq('member_id', memberId);
+    if (!isStaff) {
+      if (memberId == null) return [];
+      query = query.eq('member_id', memberId);
+    }
     final rows = await query.order('created_at', ascending: false);
     return (rows as List).map((r) => SupportTicket.fromMap(r as Map<String, dynamic>)).toList();
   }

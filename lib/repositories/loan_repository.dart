@@ -29,7 +29,8 @@ class LoanRepository {
       ];
 
   Future<List<Loan>> fetchForShg(String? shgId) async {
-    if (!_live || shgId == null) return _demoLoans();
+    if (!_live) return _demoLoans();
+    if (shgId == null) return [];
     final rows = await _client.from('loans').select('*, profiles(name)').eq('shg_id', shgId).order('created_at', ascending: false);
     return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
   }
@@ -41,7 +42,8 @@ class LoanRepository {
     // otherwise a member would see the whole SHG's loans as their own, and a
     // leader opening any member's detail page would see the same mixed
     // total for every member.
-    if (!_live || memberId == null) return _demoLoans().where((l) => l.memberName == _demoMemberName(memberId)).toList();
+    if (!_live) return _demoLoans().where((l) => l.memberName == _demoMemberName(memberId)).toList();
+    if (memberId == null) return [];
     final rows = await _client.from('loans').select('*, profiles(name)').eq('member_id', memberId).order('created_at', ascending: false);
     return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
   }

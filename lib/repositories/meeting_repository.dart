@@ -21,7 +21,8 @@ class MeetingRepository {
   static final List<Meeting> _locallyScheduled = [];
 
   Future<List<Meeting>> fetchForShg(String? shgId) async {
-    if (!_live || shgId == null) return [..._locallyScheduled.reversed, ..._mockMeetings()];
+    if (!_live) return [..._locallyScheduled.reversed, ..._mockMeetings()];
+    if (shgId == null) return [];
     final rows = await _client.from('meetings').select().eq('shg_id', shgId).order('meeting_date', ascending: false);
     return (rows as List).map((r) => Meeting.fromMap(r as Map<String, dynamic>)).toList();
   }
@@ -72,9 +73,10 @@ class MeetingRepository {
 
   /// The SHG's member roster (id + name) — used to build attendance sheets.
   Future<List<(String id, String name)>> fetchRoster(String? shgId) async {
-    if (!_live || shgId == null) {
+    if (!_live) {
       return mock_members.members.map((m) => (m.id, m.name)).toList();
     }
+    if (shgId == null) return [];
     final rows = await _client.from('profiles').select('id, name').eq('shg_id', shgId).order('name');
     return (rows as List).map((r) => (r['id'] as String, r['name'] as String)).toList();
   }
@@ -99,7 +101,7 @@ class MeetingRepository {
   /// SHG, newest first — backs the Attendance Report (see
   /// `lib/pages/reports/attendance_report_page.dart`).
   Future<List<MemberAttendanceRecord>> fetchAttendanceHistory(String? memberId, String? shgId) async {
-    if (!_live || memberId == null || shgId == null) {
+    if (!_live) {
       // Only completed meetings — an upcoming one hasn't happened yet, so
       // there's nothing to have attended. Consults the same `_locallyMarked`
       // map fetchAttendance() reads, so a leader's mark on a completed
@@ -110,6 +112,7 @@ class MeetingRepository {
           .map((m) => MemberAttendanceRecord(meetingDate: m.date, venue: m.venue, present: _locallyMarked['${m.id}:$memberId'] ?? true))
           .toList();
     }
+    if (memberId == null || shgId == null) return const [];
     final meetings = await _client.from('meetings').select('id, meeting_date, venue').eq('shg_id', shgId).eq('status', 'completed').order('meeting_date', ascending: false);
     final meetingList = meetings as List;
     if (meetingList.isEmpty) return const [];

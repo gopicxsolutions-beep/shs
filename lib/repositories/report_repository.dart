@@ -19,7 +19,7 @@ class ReportRepository {
   bool get _live => SupabaseService.isConfigured;
 
   Future<MemberReport> fetchMemberReport({required String? memberId, required String? shgId}) async {
-    if (!_live || memberId == null || shgId == null) {
+    if (!_live) {
       // Computed from the same mock data the Savings/Loans/Meetings pages
       // show, rather than a fixed snapshot, so this doesn't drift out of
       // sync with what tapping through to those pages actually displays.
@@ -41,6 +41,9 @@ class ReportRepository {
         meetingsTotal: completedMeetings,
         period: 'All time',
       );
+    }
+    if (memberId == null || shgId == null) {
+      return const MemberReport(totalSavings: 0, savingsEntryCount: 0, totalOutstanding: 0, activeLoanCount: 0, meetingsAttended: 0, meetingsTotal: 0, period: 'All time');
     }
     final savings = await _client.from('savings_entries').select('amount').eq('member_id', memberId);
     final totalSavings = (savings as List).fold<num>(0, (s, r) => s + ((r as Map<String, dynamic>)['amount'] as num));
@@ -79,7 +82,7 @@ class ReportRepository {
   }
 
   Future<ShgReportData> fetchShgReport(String? shgId) async {
-    if (!_live || shgId == null) {
+    if (!_live) {
       // Computed from the same mock data the Members/Savings/Loans pages
       // show, rather than a fixed snapshot, so this doesn't drift out of
       // sync with what tapping through to those pages actually displays.
@@ -106,6 +109,9 @@ class ReportRepository {
         avgAttendancePct: avgAttendancePct,
         period: 'All time',
       );
+    }
+    if (shgId == null) {
+      return const ShgReportData(memberCount: 0, totalSavings: 0, totalOutstanding: 0, activeLoanCount: 0, avgAttendancePct: 0, period: 'All time');
     }
     final members = await _client.from('profiles').select('id').eq('shg_id', shgId);
     final memberCount = (members as List).length;
