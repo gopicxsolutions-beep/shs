@@ -56,13 +56,17 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
     });
     final appState = context.read<AppState>();
     try {
-      await _repo.apply(
+      final saved = await _repo.apply(
         memberId: appState.profile?.id,
         shgId: appState.profile?.shgId,
         purpose: _purpose.text.trim(),
         amount: amount,
         tenureMonths: _tenure,
       );
+      if (!saved) {
+        if (mounted) setState(() => _error = "You're not linked to an SHG, so there's nothing to apply for this loan against.");
+        return;
+      }
       if (mounted) {
         // Navigate first, then show on the captured messenger — showing
         // before navigating drops the SnackBar, since context.go() replaces

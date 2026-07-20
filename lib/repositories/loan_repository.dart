@@ -63,7 +63,11 @@ class LoanRepository {
     return row == null ? null : Loan.fromMap(row);
   }
 
-  Future<void> apply({
+  /// Returns whether the application was actually saved — `false` (not
+  /// an exception) when the applying member/staff has no SHG, so the
+  /// caller can tell that apart from a genuine success instead of
+  /// showing "submitted for review" for a write that never happened.
+  Future<bool> apply({
     required String? memberId,
     required String? shgId,
     required String purpose,
@@ -84,9 +88,9 @@ class LoanRepository {
         status: 'pending',
         nextDueDate: null,
       ));
-      return;
+      return true;
     }
-    if (memberId == null || shgId == null) return;
+    if (memberId == null || shgId == null) return false;
     await _client.from('loans').insert({
       'member_id': memberId,
       'shg_id': shgId,
@@ -97,6 +101,7 @@ class LoanRepository {
       'tenure_months': tenureMonths,
       'status': 'pending',
     });
+    return true;
   }
 
   Future<void> approve(String id, {required num emi, required DateTime nextDueDate}) async {
