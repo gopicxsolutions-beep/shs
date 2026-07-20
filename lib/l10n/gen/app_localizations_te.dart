@@ -177,7 +177,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get fieldDistrict => 'జిల్లా';
 
   @override
-  String get yourShg => 'మీ SHG';
+  String get yourShg => 'మీ SHG (ఐచ్ఛికం)';
 
   @override
   String get searchSelectShg => 'మీ SHGని వెతికి ఎంచుకోండి';

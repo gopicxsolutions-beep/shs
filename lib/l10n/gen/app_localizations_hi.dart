@@ -176,7 +176,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get fieldDistrict => 'ज़िला';
 
   @override
-  String get yourShg => 'आपका SHG';
+  String get yourShg => 'आपका SHG (वैकल्पिक)';
 
   @override
   String get searchSelectShg => 'अपना SHG खोजें और चुनें';

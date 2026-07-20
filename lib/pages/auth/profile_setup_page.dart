@@ -111,7 +111,16 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final valid = _name.text.trim().isNotEmpty && _selectedShg != null;
+    // An SHG is optional here, not required: completeProfileSetup() never
+    // writes _selectedShg onto the profile row itself — it only submits an
+    // optional join request for a leader to approve later (see
+    // AppState.completeProfileSetup's doc comment). Requiring one to even
+    // enable Continue was a client-side-only restriction with no backend
+    // basis, and it blocked every path through onboarding — including a
+    // future admin/crp/clf/leader, none of whom belong to a specific SHG at
+    // signup — whenever the SHG catalog was empty (e.g. a fresh deployment
+    // with no SHGs seeded yet: nobody could ever become the first admin).
+    final valid = _name.text.trim().isNotEmpty;
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Neutral.c50,

@@ -433,7 +433,7 @@ abstract class AppLocalizations {
   /// No description provided for @yourShg.
   ///
   /// In en, this message translates to:
-  /// **'Your SHG'**
+  /// **'Your SHG (optional)'**
   String get yourShg;
 
   /// No description provided for @searchSelectShg.
