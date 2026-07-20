@@ -6,6 +6,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/types.dart';
 import '../../routes/paths.dart';
+import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -122,30 +123,38 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
-                Text(l10n.settingsPreviewAs, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
-                const SizedBox(height: 6),
-                Text('This app lets you preview every role\'s dashboard — switch anytime.', style: AppTheme.sans(11, color: Neutral.c400)),
-                const SizedBox(height: 12),
-                AppCard(
-                  padded: false,
-                  child: Column(
-                    children: roles.map((r) {
-                      final selected = r.id == appState.user.role;
-                      return InkWell(
-                        onTap: selected || _switchingRole ? null : () => _switchRole(appState, r.id),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          child: Row(children: [
-                            Icon(selected ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded, size: 18, color: selected ? Brand.c600 : Neutral.c300),
-                            const SizedBox(width: 12),
-                            Expanded(child: Text(r.label, style: AppTheme.sans(13, weight: selected ? FontWeight.w700 : FontWeight.w500))),
-                          ]),
-                        ),
-                      );
-                    }).toList(),
+                // Live accounts have a real, backend-authorized role (set at
+                // onboarding / by an admin) — self-selecting any role here,
+                // including Administrator, would be a client-side privilege
+                // escalation with nothing on the server to stop it. This
+                // preview switcher only makes sense in demo mode, where
+                // there's no real backend and no real permissions to escalate.
+                if (!SupabaseService.isConfigured) ...[
+                  const SizedBox(height: 24),
+                  Text(l10n.settingsPreviewAs, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
+                  const SizedBox(height: 6),
+                  Text('This app lets you preview every role\'s dashboard — switch anytime.', style: AppTheme.sans(11, color: Neutral.c400)),
+                  const SizedBox(height: 12),
+                  AppCard(
+                    padded: false,
+                    child: Column(
+                      children: roles.map((r) {
+                        final selected = r.id == appState.user.role;
+                        return InkWell(
+                          onTap: selected || _switchingRole ? null : () => _switchRole(appState, r.id),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            child: Row(children: [
+                              Icon(selected ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded, size: 18, color: selected ? Brand.c600 : Neutral.c300),
+                              const SizedBox(width: 12),
+                              Expanded(child: Text(r.label, style: AppTheme.sans(13, weight: selected ? FontWeight.w700 : FontWeight.w500))),
+                            ]),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 24),
                 Center(child: Text('${l10n.settingsAppVersion}: NavaSakhi v1.0.0', style: AppTheme.sans(11, color: Neutral.c400))),
               ],
