@@ -121,6 +121,11 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                   ],
                 ),
               ),
+              if (ticket.description != null && ticket.description!.trim().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Text(ticket.description!, style: AppTheme.sans(13, color: Neutral.c600)),
+                ),
               const Divider(height: 1),
               Expanded(
                 child: data.messages.isEmpty
