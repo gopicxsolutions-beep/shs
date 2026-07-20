@@ -55,13 +55,17 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
     });
     final appState = context.read<AppState>();
     try {
-      await _repo.schedule(
+      final saved = await _repo.schedule(
         shgId: appState.profile?.shgId,
         date: _date,
         time: _time.format(context),
         venue: _venue.text.trim(),
         agenda: _agenda.text.trim(),
       );
+      if (!saved) {
+        if (mounted) setState(() => _error = "You're not linked to an SHG, so there's nothing to schedule this meeting for.");
+        return;
+      }
       if (mounted) {
         // Navigate first, then show on the captured messenger — showing
         // before navigating drops the SnackBar, since context.go() replaces

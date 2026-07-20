@@ -52,7 +52,11 @@ class SavingsRepository {
     return (rows as List).map((r) => SavingsEntry.fromMap(r as Map<String, dynamic>)).toList();
   }
 
-  Future<void> addEntry({
+  /// Returns whether the entry was actually saved — `false` (not an
+  /// exception) when the submitting member/staff has no SHG, so the
+  /// caller can tell that apart from a genuine success instead of showing
+  /// "submitted for verification" for a write that never happened.
+  Future<bool> addEntry({
     required String? memberId,
     required String? shgId,
     required num amount,
@@ -70,9 +74,9 @@ class SavingsRepository {
         frequency: frequency,
         status: 'pending',
       ));
-      return;
+      return true;
     }
-    if (memberId == null || shgId == null) return;
+    if (memberId == null || shgId == null) return false;
     await _client.from('savings_entries').insert({
       'member_id': memberId,
       'shg_id': shgId,
@@ -81,6 +85,7 @@ class SavingsRepository {
       'frequency': frequency,
       'status': 'pending',
     });
+    return true;
   }
 
   Future<void> verifyEntry(String id) async {

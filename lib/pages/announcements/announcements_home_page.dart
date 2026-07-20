@@ -79,8 +79,14 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
     if (!mounted) return;
     setState(() => _busy = true);
     try {
-      await _repo.post(shgId: shgId, createdBy: createdBy, title: _title.text.trim(), body: _body.text.trim(), category: _category);
+      final posted = await _repo.post(shgId: shgId, createdBy: createdBy, title: _title.text.trim(), body: _body.text.trim(), category: _category);
       if (!mounted) return;
+      if (!posted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("You're not linked to an SHG, so there's nothing to post this announcement to.")),
+        );
+        return;
+      }
       _title.clear();
       _body.clear();
       _key.currentState?.reload();

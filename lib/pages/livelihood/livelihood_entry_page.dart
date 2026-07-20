@@ -51,13 +51,17 @@ class _LivelihoodEntryPageState extends State<LivelihoodEntryPage> {
     });
     final appState = context.read<AppState>();
     try {
-      await _repo.addActivity(
+      final saved = await _repo.addActivity(
         memberId: appState.profile?.id,
         shgId: appState.profile?.shgId,
         activityType: _activityType,
         description: _description.text.trim(),
         investment: investment,
       );
+      if (!saved) {
+        if (mounted) setState(() => _error = "You're not linked to an SHG, so there's nothing to record this activity against.");
+        return;
+      }
       if (mounted) {
         // Navigate first, then show on the captured messenger — showing
         // before navigating drops the SnackBar, since context.go() replaces

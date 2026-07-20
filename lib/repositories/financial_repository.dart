@@ -36,7 +36,11 @@ class FinancialRepository {
 
   /// Adds an entry, computing the running balance from the last entry of the
   /// same type (mirrors a simple cashbook: balance = previous ± this entry).
-  Future<void> addEntry({
+  /// Returns whether the entry was actually saved — `false` (not an
+  /// exception) when a live staff account has no SHG to post the entry
+  /// against, so the caller can tell that apart from a genuine success
+  /// instead of showing "Entry added" for a write that never happened.
+  Future<bool> addEntry({
     required String? shgId,
     required String? createdBy,
     required String entryType,
@@ -55,9 +59,9 @@ class FinancialRepository {
         balance: previousBalance + credit - debit,
         date: DateTime.now(),
       ));
-      return;
+      return true;
     }
-    if (shgId == null) return;
+    if (shgId == null) return false;
     final last = await _client
         .from('financial_ledger')
         .select('balance')
@@ -78,6 +82,7 @@ class FinancialRepository {
       'balance': newBalance,
       'created_by': ?createdBy,
     });
+    return true;
   }
 
   DateTime _parseMockDate(String s) {

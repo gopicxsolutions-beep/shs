@@ -63,7 +63,7 @@ Future<bool?> showFinancialEntryDialog(
                       submitting = true;
                     });
                     try {
-                      await repo.addEntry(
+                      final saved = await repo.addEntry(
                         shgId: shgId,
                         createdBy: createdBy,
                         entryType: entryType,
@@ -71,6 +71,13 @@ Future<bool?> showFinancialEntryDialog(
                         debit: isCredit ? 0 : amount,
                         credit: isCredit ? amount : 0,
                       );
+                      if (!saved) {
+                        setState(() {
+                          submitting = false;
+                          error = "You're not linked to an SHG, so there's nothing to record this entry against.";
+                        });
+                        return;
+                      }
                       if (context.mounted) Navigator.of(context).pop(true);
                     } catch (_) {
                       if (context.mounted) {

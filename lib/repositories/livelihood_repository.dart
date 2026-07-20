@@ -53,7 +53,11 @@ class LivelihoodRepository {
     return row == null ? null : LivelihoodActivity.fromMap(row);
   }
 
-  Future<void> addActivity({
+  /// Returns whether the activity was actually saved — `false` (not an
+  /// exception) when the submitting member/staff has no SHG, so the
+  /// caller can tell that apart from a genuine success instead of showing
+  /// "Activity added" for a write that never happened.
+  Future<bool> addActivity({
     required String? memberId,
     required String? shgId,
     required String activityType,
@@ -71,9 +75,9 @@ class LivelihoodRepository {
         revenue: 0,
         status: 'planned',
       ));
-      return;
+      return true;
     }
-    if (memberId == null || shgId == null) return;
+    if (memberId == null || shgId == null) return false;
     await _client.from('livelihood_activities').insert({
       'shg_id': shgId,
       'member_id': memberId,
@@ -83,6 +87,7 @@ class LivelihoodRepository {
       'revenue': 0,
       'status': 'planned',
     });
+    return true;
   }
 
   Future<void> updateProgress(String id, {required num revenue, required String status}) async {

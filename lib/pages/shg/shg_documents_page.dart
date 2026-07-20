@@ -52,12 +52,18 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
     if (name == null || name.isEmpty) return;
     setState(() => _busy = true);
     try {
-      await _repo.addDocument(shgId: shgId, name: name, type: 'PDF');
+      final saved = await _repo.addDocument(shgId: shgId, name: name, type: 'PDF');
       if (mounted) {
-        _key.currentState?.reload();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? 'Document added' : 'Demo mode — not saved (connect Supabase to persist)'),
-        ));
+        if (!saved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("You're not linked to an SHG, so there's nothing to attach this document to.")),
+          );
+        } else {
+          _key.currentState?.reload();
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(SupabaseService.isConfigured ? 'Document added' : 'Demo mode — not saved (connect Supabase to persist)'),
+          ));
+        }
       }
     } catch (_) {
       if (mounted) {

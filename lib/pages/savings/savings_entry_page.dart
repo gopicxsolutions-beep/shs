@@ -89,13 +89,17 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
       _error = null;
     });
     try {
-      await _repo.addEntry(
+      final saved = await _repo.addEntry(
         memberId: isLeaderOrStaff ? _selectedMemberId : appState.profile?.id,
         shgId: appState.profile?.shgId,
         amount: amount,
         mode: _mode,
         frequency: _frequency,
       );
+      if (!saved) {
+        if (mounted) setState(() => _error = "You're not linked to an SHG, so there's nothing to record this entry against.");
+        return;
+      }
       if (mounted) {
         // Showing the SnackBar before navigating away silently drops it —
         // context.go() replaces this page's Scaffold before the SnackBar

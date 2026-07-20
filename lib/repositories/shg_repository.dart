@@ -127,18 +127,23 @@ class ShgRepository {
   /// Storage bucket + a file-picker plugin (neither wired yet — see
   /// docs/DEVELOPMENT_PROGRESS.md); this persists the record once a
   /// `storagePath` is available from that upload step.
-  Future<void> addDocument({required String? shgId, required String name, required String type, String? storagePath}) async {
+  /// Returns whether the document record was actually saved — `false`
+  /// (not an exception) when a live staff account has no SHG to attach it
+  /// to, so the caller can tell that apart from a genuine success instead
+  /// of showing "Document added" for a write that never happened.
+  Future<bool> addDocument({required String? shgId, required String name, required String type, String? storagePath}) async {
     if (!_live) {
       _locallyAdded.add(ShgDocument(id: 'local-${DateTime.now().microsecondsSinceEpoch}', name: name, type: type, createdAt: DateTime.now()));
-      return;
+      return true;
     }
-    if (shgId == null) return;
+    if (shgId == null) return false;
     await _client.from('shg_documents').insert({
       'shg_id': shgId,
       'name': name,
       'type': type,
       'storage_path': ?storagePath,
     });
+    return true;
   }
 
   DateTime _parseMockDate(String s) {

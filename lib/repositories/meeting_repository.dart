@@ -36,7 +36,11 @@ class MeetingRepository {
     return row == null ? null : Meeting.fromMap(row);
   }
 
-  Future<void> schedule({
+  /// Returns whether the meeting was actually saved — `false` (not an
+  /// exception) when a live staff account has no SHG to schedule for, so
+  /// the caller can tell that apart from a genuine success instead of
+  /// showing "Meeting scheduled" for a write that never happened.
+  Future<bool> schedule({
     required String? shgId,
     required DateTime date,
     required String time,
@@ -53,9 +57,9 @@ class MeetingRepository {
         agenda: agenda,
         status: 'upcoming',
       ));
-      return;
+      return true;
     }
-    if (shgId == null) return;
+    if (shgId == null) return false;
     await _client.from('meetings').insert({
       'shg_id': shgId,
       'meeting_date': date.toIso8601String().split('T').first,
@@ -64,6 +68,7 @@ class MeetingRepository {
       'agenda': agenda,
       'status': 'upcoming',
     });
+    return true;
   }
 
   Future<void> setStatus(String id, String status) async {

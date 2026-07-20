@@ -60,8 +60,13 @@ class AnnouncementRepository {
     }, onConflict: 'announcement_id,member_id');
   }
 
-  Future<void> post({required String? shgId, required String? createdBy, required String title, required String body, required String category}) async {
-    if (!_live || shgId == null) return;
+  /// Returns whether the announcement was actually posted — `false` (not
+  /// an exception) when a live staff account has no SHG to post it to, so
+  /// the caller can tell that apart from a genuine success instead of
+  /// silently clearing the compose form for a write that never happened.
+  Future<bool> post({required String? shgId, required String? createdBy, required String title, required String body, required String category}) async {
+    if (!_live) return false;
+    if (shgId == null) return false;
     await _client.from('announcements').insert({
       'shg_id': shgId,
       'created_by': createdBy,
@@ -69,6 +74,7 @@ class AnnouncementRepository {
       'body': body,
       'category': category,
     });
+    return true;
   }
 
   DateTime _parseMockDate(String s) {
