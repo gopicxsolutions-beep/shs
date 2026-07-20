@@ -87,7 +87,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: PageHeader(
         title: l10n.profileTitle,
-        right: IconButton(icon: const Icon(Icons.edit_rounded), tooltip: l10n.profileEditProfile, onPressed: () => _editProfile(profile)),
+        right: IconButton(icon: const Icon(Icons.edit_rounded, color: Brand.c600), tooltip: l10n.profileEditProfile, onPressed: () => _editProfile(profile)),
       ),
       body: AppAsyncBuilder<ShgProfile?>(
         key: _key,
