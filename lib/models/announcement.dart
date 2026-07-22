@@ -25,7 +25,11 @@ class Announcement {
         title: map['title'] as String,
         body: map['body'] as String?,
         category: map['category'] as String,
-        createdAt: DateTime.parse(map['created_at'] as String),
+        // `created_at` is a `timestamptz` (stored/returned in UTC). Convert
+        // to local (IST) before this ever reaches a date-only `DateFormat`
+        // call — otherwise an announcement posted between local midnight and
+        // 5:29am IST would display as the previous day (its UTC date).
+        createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
         read: read,
       );
 }

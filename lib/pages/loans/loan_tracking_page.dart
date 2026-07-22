@@ -50,15 +50,18 @@ class LoanTrackingPage extends StatelessWidget {
                       ]),
                       const SizedBox(height: 10),
                       Row(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text('₹${l.outstanding}', style: AppTheme.display(18)),
-                        Text('of ₹${l.amount}', style: AppTheme.sans(12, color: Neutral.c500)),
+                        Flexible(child: Text('₹${NumberFormat('#,##,##0', 'en_IN').format(l.outstanding)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.display(18))),
+                        const SizedBox(width: 8),
+                        Flexible(child: Text('of ₹${NumberFormat('#,##,##0', 'en_IN').format(l.amount)}', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: AppTheme.sans(12, color: Neutral.c500))),
                       ]),
                       const SizedBox(height: 8),
                       AppProgressBar(value: paid, max: l.amount, tone: l.status == 'overdue' ? ProgressTone.danger : ProgressTone.gold),
                       const SizedBox(height: 12),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                         if (l.nextDueDate != null)
-                          AppBadge(text: 'EMI ₹${l.emi} due ${DateFormat('dd MMM yyyy').format(l.nextDueDate!)}', tone: BadgeTone.warning, dot: true),
+                          Flexible(
+                            child: AppBadge(text: 'EMI ₹${NumberFormat('#,##,##0', 'en_IN').format(l.emi)} due ${DateFormat('dd MMM yyyy').format(l.nextDueDate!)}', tone: BadgeTone.warning, dot: true),
+                          ),
                         GestureDetector(
                           onTap: () => context.go(Paths.loanDetail(l.id)),
                           child: Text('Details', style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),

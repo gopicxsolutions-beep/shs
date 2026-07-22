@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../layout/page_header.dart';
 import '../../models/report.dart';
 import '../../repositories/report_repository.dart';
@@ -33,15 +34,34 @@ class FederationVillagesPage extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(g.village, style: AppTheme.sans(14, weight: FontWeight.w700)),
-                          const SizedBox(height: 2),
-                          Text('${g.shgCount} SHGs', style: AppTheme.sans(12, color: Neutral.c500)),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(g.village, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(14, weight: FontWeight.w700)),
+                            const SizedBox(height: 2),
+                            Text('${g.shgCount} SHGs', style: AppTheme.sans(12, color: Neutral.c500)),
+                          ],
+                        ),
                       ),
-                      Text('₹${g.totalSavings}', style: AppTheme.sans(14, weight: FontWeight.w700, color: Brand.c600)),
+                      const SizedBox(width: 8),
+                      // The switch from a raw `${g.totalSavings}` to a
+                      // comma-grouped NumberFormat string (matching how every
+                      // other total-savings figure in the app is displayed)
+                      // adds 1-2 characters at this scale (lakhs) — enough to
+                      // overflow this row's fixed width without a Flexible
+                      // wrapper, since the sibling Column had no Expanded
+                      // either. `all_routes_smoke_test.dart` caught this via
+                      // a real RenderFlex overflow on this route.
+                      Flexible(
+                        child: Text(
+                          '₹${NumberFormat('#,##,##0', 'en_IN').format(g.totalSavings)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
+                          style: AppTheme.sans(14, weight: FontWeight.w700, color: Brand.c600),
+                        ),
+                      ),
                     ],
                   ),
                 ),

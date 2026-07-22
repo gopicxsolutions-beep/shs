@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/loan.dart';
+import '../../models/types.dart';
 import '../../repositories/loan_repository.dart';
 import '../../services/supabase_service.dart';
+import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
@@ -28,6 +32,16 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    // `loans_update_leader_or_staff` (RLS) only lets the SHG's leader or
+    // staff update a loan row — recording a payment updates `outstanding`,
+    // so a member recording a payment on their own loan would insert the
+    // payment row (allowed) but silently fail to update the balance (RLS-
+    // denied, no error surfaced), leaving the loan looking unpaid despite a
+    // "successful" confirmation. Real SHG practice also has the leader/
+    // treasurer record EMI payments collected at meetings, not the member
+    // themselves — so this gates the button to match both the backend
+    // permission model and the real workflow, rather than loosening RLS.
+    final canRecordPayment = context.watch<AppState>().user.role != Role.member;
     return Scaffold(
       appBar: const PageHeader(title: 'Loan Detail'),
       body: AppAsyncBuilder<Loan?>(
@@ -51,8 +65,8 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                       AppBadge(text: loan.status, tone: BadgeTone.neutral),
                     ]),
                     const SizedBox(height: 12),
-                    Text('₹${loan.outstanding}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: Colors.white)),
-                    Text('outstanding of ₹${loan.amount}', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                    Text('₹${NumberFormat('#,##,##0', 'en_IN').format(loan.outstanding)}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: Colors.white)),
+                    Text('outstanding of ₹${NumberFormat('#,##,##0', 'en_IN').format(loan.amount)}', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
                     const SizedBox(height: 12),
                     AppProgressBar(value: paid, max: loan.amount, tone: ProgressTone.info),
                   ],
@@ -60,7 +74,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
               ),
               const SizedBox(height: 16),
               Row(children: [
-                Expanded(child: _infoTile('EMI', '₹${loan.emi}')),
+                Expanded(child: _infoTile('EMI', '₹${NumberFormat('#,##,##0', 'en_IN').format(loan.emi)}')),
                 const SizedBox(width: 12),
                 Expanded(child: _infoTile('Tenure', '${loan.tenureMonths} months')),
               ]),
@@ -70,7 +84,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                 const SizedBox(width: 12),
                 Expanded(child: _infoTile('Next Due', loan.nextDueDate != null ? DateFormat('dd MMM yyyy').format(loan.nextDueDate!) : '—')),
               ]),
-              if (loan.status == 'active' || loan.status == 'overdue') ...[
+              if (canRecordPayment && (loan.status == 'active' || loan.status == 'overdue')) ...[
                 const SizedBox(height: 20),
                 AppButton(
                   label: 'Record Payment',
@@ -95,7 +109,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                             Text(DateFormat('dd MMM yyyy').format(p.paidOn), style: AppTheme.sans(13, weight: FontWeight.w600)),
-                            Text('₹${p.amount}', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600)),
+                            Text('₹${NumberFormat('#,##,##0', 'en_IN').format(p.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600)),
                           ]),
                         );
                       }).toList(),
@@ -149,7 +163,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
             FilledButton(
               onPressed: submitting
                   ? null
@@ -157,6 +171,18 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                       final amount = num.tryParse(controller.text);
                       if (amount == null || amount <= 0) {
                         setState(() => error = 'Enter a valid amount');
+                        return;
+                      }
+                      // The RPC/demo-mode fallback both clamp `outstanding`
+                      // to a floor of 0, so an overpayment can't push the
+                      // balance negative — but without this check it would
+                      // still silently accept e.g. a ₹50,000 payment against
+                      // a ₹500 remaining balance, recording a payment amount
+                      // that doesn't reconcile with what was actually owed
+                      // (the payment history total would exceed loan.amount
+                      // even though `outstanding` reads 0/closed).
+                      if (amount > loan.outstanding) {
+                        setState(() => error = 'Amount exceeds the outstanding balance of ₹${NumberFormat('#,##,##0', 'en_IN').format(loan.outstanding)}');
                         return;
                       }
                       setState(() {
@@ -184,6 +210,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
     );
     if (recorded == true) {
       _key.currentState?.reload();
+      _paymentsKey.currentState?.reload();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(SupabaseService.isConfigured ? 'Payment recorded' : 'Demo mode — not saved (connect Supabase to persist)')),

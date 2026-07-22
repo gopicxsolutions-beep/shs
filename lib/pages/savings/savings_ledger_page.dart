@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/savings.dart';
 import '../../repositories/savings_repository.dart';
@@ -26,9 +27,18 @@ class SavingsLedgerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<AppState>();
+    // Only `profile?.shgId` is used below (to build the repo query / decide
+    // `live`) — `.watch<AppState>()` would rebuild this page, and re-create
+    // the StreamBuilder's `stream:` (tearing down and re-opening the
+    // Supabase realtime channel), on every unrelated AppState change, e.g.
+    // the GoTrue auto-refresh timer's periodic token refresh, which calls
+    // `AppState.notifyListeners()` on every tick regardless of whether the
+    // profile actually changed (see `_authSub` in app_state.dart). A leader
+    // who leaves this ledger open for the better part of an hour would
+    // otherwise get their live subscription silently torn down and rebuilt
+    // for no reason. `.select` only rebuilds when shgId itself changes.
+    final shgId = context.select<AppState, String?>((s) => s.profile?.shgId);
     final repo = SavingsRepository();
-    final shgId = appState.profile?.shgId;
     final live = SupabaseService.isConfigured && shgId != null;
 
     return Scaffold(
@@ -42,10 +52,12 @@ class SavingsLedgerPage extends StatelessWidget {
               stream: repo.watchForShg(shgId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  final l10n = AppLocalizations.of(context);
+                  return Center(child: Semantics(label: l10n?.commonLoading ?? 'Loading…', liveRegion: true, child: const CircularProgressIndicator()));
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Could not load the ledger. Please try again.', style: AppTheme.sans(13, color: Neutral.c500)));
+                  final l10n = AppLocalizations.of(context);
+                  return Center(child: Text(l10n?.asyncErrorGeneric ?? 'Something went wrong. Please try again.', style: AppTheme.sans(13, color: Neutral.c500)));
                 }
                 return _LedgerList(entries: snapshot.data ?? const [], repo: repo);
               },
@@ -116,14 +128,14 @@ class _LedgerListState extends State<_LedgerList> {
                           side: BorderSide(color: Brand.c500),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: Text(verifying ? 'Verifying…' : '₹${e.amount} · Verify', style: AppTheme.sans(11, weight: FontWeight.w700, color: Brand.c600)),
+                        child: Text(verifying ? 'Verifying…' : '₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)} · Verify', style: AppTheme.sans(11, weight: FontWeight.w700, color: Brand.c600)),
                       ),
                     )
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('₹${e.amount}', style: AppTheme.sans(13, weight: FontWeight.w700)),
+                        Text('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                         const SizedBox(height: 4),
                         const AppBadge(text: 'verified', tone: BadgeTone.success),
                       ],

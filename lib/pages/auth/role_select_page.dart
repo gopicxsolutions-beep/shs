@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/types.dart';
 import '../../routes/paths.dart';
+import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -44,7 +45,7 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
     } catch (_) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not save your role. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.roleSelectSaveError)));
       }
     }
   }
@@ -53,6 +54,11 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
   Widget build(BuildContext context) {
     final appState = context.read<AppState>();
     final l10n = AppLocalizations.of(context)!;
+    // Staff roles (crp/clf/admin) are never self-selectable in live mode —
+    // see AppState.setRole's doc comment. Demo mode keeps all 5 so every
+    // dashboard stays explorable without a backend (matches this page's
+    // long-standing demo behavior; there's no real account to escalate).
+    final selectableRoles = SupabaseService.isConfigured ? roles.where((r) => r.id == Role.member || r.id == Role.leader).toList() : roles;
     return Scaffold(
       backgroundColor: Neutral.c50,
       body: SafeArea(
@@ -64,7 +70,7 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
               const SizedBox(height: 6),
               Text(l10n.roleSelectSubtitle, textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
               const SizedBox(height: 28),
-              ...roles.map((r) {
+              ...selectableRoles.map((r) {
                 final (bg, fg) = _tones[r.id]!;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),

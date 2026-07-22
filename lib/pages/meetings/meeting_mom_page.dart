@@ -30,6 +30,7 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
   List<MeetingActionItem> _actionItems = [];
   bool _savingDecision = false;
   bool _savingActionItem = false;
+  final _togglingItems = <String>{};
 
   @override
   void dispose() {
@@ -104,10 +105,35 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isLeaderOrStaff = context.watch<AppState>().user.role != Role.member;
+    final appState = context.watch<AppState>();
+    final isLeaderOrStaff = appState.user.role != Role.member;
+    final currentMemberId = appState.profile?.id;
     return Scaffold(
       appBar: const PageHeader(title: 'Minutes of Meeting'),
-      body: ListView(
+      // Unlike MeetingDetailPage (the only in-app link to this page), a
+      // direct URL visit (e.g. #/app/meetings/does-not-exist/mom) never went
+      // through that page's own not-found guard — fetchLatestMinutes/
+      // fetchActionItems both just return empty results for a bogus
+      // meetingId (no exception), so this page would silently render a
+      // normal-looking, fully-interactive "Minutes of Meeting" screen for a
+      // meeting that doesn't exist, letting a leader/staff account "add" a
+      // decision or action item against it. Guarding on the meeting's own
+      // existence first, mirroring every other :id detail page's
+      // AppEmptyState pattern.
+      body: AppAsyncBuilder<Meeting?>(
+        future: () => _repo.fetchById(widget.meetingId),
+        builder: (context, meeting) {
+          if (meeting == null) {
+            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This meeting could not be found');
+          }
+          return _buildContent(context, isLeaderOrStaff, currentMemberId);
+        },
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, bool isLeaderOrStaff, String? currentMemberId) {
+    return ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const SectionHeader(title: 'Decisions'),
@@ -174,7 +200,23 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                     if (_actionItems.isEmpty)
                       Padding(padding: const EdgeInsets.all(16), child: Text('No action items yet', style: AppTheme.sans(12, color: Neutral.c400)))
                     else
-                      ..._actionItems.map((item) => CheckboxListTile(
+                      ..._actionItems.map((item) {
+                        // `meeting_action_items_write_related` (RLS) only lets
+                        // the item's own owner, the SHG leader, or staff toggle
+                        // it — any other member tapping this checkbox for
+                        // someone else's item hit a silent RLS no-op (0 rows
+                        // updated, no exception), so the checkbox visually
+                        // flipped then snapped back with no explanation on the
+                        // next reload.
+                        final canToggle = isLeaderOrStaff || item.ownerId == currentMemberId;
+                        // Guards against a rapid double-tap firing two
+                        // concurrent `toggleActionItem` calls for the same
+                        // row — the same double-submit shape already
+                        // guarded against for the attendance `Switch` in
+                        // `meeting_attendance_page.dart` via its `_updating`
+                        // set, but this checkbox had no equivalent guard.
+                        final isToggling = _togglingItems.contains(item.id);
+                        return CheckboxListTile(
                             value: item.done,
                             activeColor: Brand.c600,
                             controlAffinity: ListTileControlAffinity.leading,
@@ -183,7 +225,8 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                               style: AppTheme.sans(13, weight: FontWeight.w600).copyWith(decoration: item.done ? TextDecoration.lineThrough : null),
                             ),
                             subtitle: item.dueDate != null ? Text('Due ${DateFormat('dd MMM yyyy').format(item.dueDate!)}', style: AppTheme.sans(11, color: Neutral.c500)) : null,
-                            onChanged: (v) async {
+                            onChanged: (!canToggle || isToggling) ? null : (v) async {
+                              setState(() => _togglingItems.add(item.id));
                               try {
                                 await _repo.toggleActionItem(item.id, v ?? false);
                                 if (mounted) {
@@ -210,9 +253,12 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update this action item. Please try again.')));
                                 }
+                              } finally {
+                                if (mounted) setState(() => _togglingItems.remove(item.id));
                               }
                             },
-                          )),
+                          );
+                      }),
                     if (isLeaderOrStaff)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 8, 12),
@@ -239,7 +285,6 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
             },
           ),
         ],
-      ),
-    );
+      );
   }
 }

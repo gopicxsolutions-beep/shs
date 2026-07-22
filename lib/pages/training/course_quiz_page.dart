@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
+import '../../models/training.dart';
 import '../../repositories/training_repository.dart';
 import '../../routes/paths.dart';
 import '../../services/supabase_service.dart';
@@ -10,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/async_state.dart';
 
 class _Question {
   final String text;
@@ -72,10 +74,33 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
 
   @override
   Widget build(BuildContext context) {
-    final allAnswered = _answers.every((a) => a != null);
     return Scaffold(
       appBar: const PageHeader(title: 'Course Quiz'),
-      body: ListView(
+      // Unlike CourseDetailPage (the only in-app link to this page, which
+      // guards on fetchCourseById returning null), a direct URL visit (e.g.
+      // #/app/training/does-not-exist/quiz) skipped that check entirely —
+      // the quiz content here is generic/hardcoded (not fetched per-course,
+      // see the class doc comment above), so a bogus courseId still
+      // rendered a fully-answerable quiz with a working "Submit" button
+      // before failing (or, in demo mode, silently "succeeding") on a
+      // course that doesn't exist. Guarding on the course's own existence
+      // first, mirroring every other :id detail page's AppEmptyState
+      // pattern.
+      body: AppAsyncBuilder<Course?>(
+        future: () => _repo.fetchCourseById(widget.courseId),
+        builder: (context, course) {
+          if (course == null) {
+            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This course could not be found');
+          }
+          return _buildQuiz(context);
+        },
+      ),
+    );
+  }
+
+  Widget _buildQuiz(BuildContext context) {
+    final allAnswered = _answers.every((a) => a != null);
+    return ListView(
         padding: const EdgeInsets.all(16),
         children: [
           for (var qi = 0; qi < _questions.length; qi++) ...[
@@ -113,7 +138,6 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
             onPressed: allAnswered && !_submitting ? _submit : null,
           ),
         ],
-      ),
-    );
+      );
   }
 }

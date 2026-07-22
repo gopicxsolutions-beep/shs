@@ -7,10 +7,12 @@ import '../../repositories/marketplace_repository.dart';
 import '../../routes/paths.dart';
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
+import '../../state/unsaved_changes.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/discard_changes_dialog.dart';
 import '../../widgets/input_formatters.dart';
 
 class AddProductPage extends StatefulWidget {
@@ -27,12 +29,28 @@ class _AddProductPageState extends State<AddProductPage> {
   final _repo = MarketplaceRepository();
   String _category = 'Handicrafts';
   bool _saving = false;
+  bool _dirty = false;
   String? _error;
 
   static const _categories = ['Handicrafts', 'Tailoring', 'Food', 'Agriculture', 'Other'];
+  // Matches the sanity-check ceiling already used on `loan_apply_page.dart`
+  // and `savings_entry_page.dart` — this field had no upper bound at all,
+  // so a stray extra digit (e.g. ₹5000 fat-fingered as ₹500000) would list
+  // silently with no warning, unlike its sibling money-entry forms.
+  static const _maxPrice = 1000000;
+
+  // Also raises the app-wide `UnsavedChanges` flag that `PageHeader`'s Back
+  // button and the bottom nav check before navigating away — see
+  // `unsaved_changes.dart` for why this page's own `PopScope` below can't
+  // cover those two paths by itself.
+  void _markDirty() {
+    _dirty = true;
+    UnsavedChanges.dirty = true;
+  }
 
   @override
   void dispose() {
+    UnsavedChanges.dirty = false;
     _name.dispose();
     _description.dispose();
     _price.dispose();
@@ -49,6 +67,10 @@ class _AddProductPageState extends State<AddProductPage> {
     }
     if (price == null || price <= 0) {
       setState(() => _error = 'Enter a valid price');
+      return;
+    }
+    if (price > _maxPrice) {
+      setState(() => _error = 'Price seems unusually large — please check and re-enter');
       return;
     }
     setState(() {
@@ -97,16 +119,35 @@ class _AddProductPageState extends State<AddProductPage> {
             textInputAction: textInputAction,
             style: AppTheme.sans(14),
             decoration: InputDecoration(border: InputBorder.none, hintText: hint, counterText: maxLength != null ? '' : null),
-            onChanged: (_) => setState(() => _error = null),
+            onChanged: (_) => setState(() {
+              _error = null;
+              _markDirty();
+            }),
           ),
         ],
       ),
     );
   }
 
+  // Defense-in-depth for the rare case something genuinely calls
+  // `Navigator.pop()` on this page (e.g. if it's ever reached via
+  // `context.push()` in the future). Does NOT cover this app's actual
+  // navigation triggers today — see `unsaved_changes.dart`.
+  Future<void> _handlePop(bool didPop, dynamic result) async {
+    if (didPop) return;
+    final discard = await confirmDiscardChanges(context);
+    if (discard && mounted) {
+      UnsavedChanges.dirty = false;
+      context.go(Paths.marketplace);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: _handlePop,
+      child: Scaffold(
       appBar: const PageHeader(title: 'Add Product'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -137,7 +178,10 @@ class _AddProductPageState extends State<AddProductPage> {
                       return ChoiceChip(
                         label: Text(c),
                         selected: selected,
-                        onSelected: (_) => setState(() => _category = c),
+                        onSelected: (_) => setState(() {
+                          _category = c;
+                          _markDirty();
+                        }),
                         selectedColor: Brand.c50,
                         labelStyle: AppTheme.sans(12, weight: FontWeight.w600, color: selected ? Brand.c700 : Neutral.c600),
                         backgroundColor: Colors.white,
@@ -157,6 +201,7 @@ class _AddProductPageState extends State<AddProductPage> {
             AppButton(label: _saving ? 'Listing…' : 'List Product', fullWidth: true, size: ButtonSize.lg, onPressed: _saving ? null : _submit),
           ],
         ),
+      ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../repositories/payment_repository.dart';
 import '../../routes/paths.dart';
@@ -38,7 +39,8 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
   }
 
   Future<void> _scan() async {
-    final code = await showQrScanner(context, title: 'Scan to Pay', instructions: 'Point your camera at the merchant\'s UPI QR code');
+    final l10n = AppLocalizations.of(context)!;
+    final code = await showQrScanner(context, title: l10n.qrScanToPayTitle, instructions: l10n.qrScanToPayInstructions);
     if (code == null || !mounted) return;
 
     String? payee;
@@ -105,7 +107,12 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
               onTap: _scan,
               borderRadius: BorderRadius.circular(16),
               child: Container(
-                height: 160,
+                // A fixed 160px height fits this comfortably at normal text
+                // scale, but "Tap to scan a QR code" (plus the optional
+                // "Paying <name>" line) needs more vertical room once text
+                // scale is turned up — minHeight (not a hard height) lets
+                // the box grow to fit instead of clipping/overflowing.
+                constraints: const BoxConstraints(minHeight: 160),
                 decoration: BoxDecoration(color: Neutral.c100, borderRadius: BorderRadius.circular(16)),
                 alignment: Alignment.center,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [

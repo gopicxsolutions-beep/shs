@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
 import '../../models/training.dart';
@@ -8,6 +9,12 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
+
+class _CertificateData {
+  final Course course;
+  final DateTime? completedOn;
+  const _CertificateData(this.course, this.completedOn);
+}
 
 class CertificatesPage extends StatelessWidget {
   const CertificatesPage({super.key});
@@ -20,17 +27,28 @@ class CertificatesPage extends StatelessWidget {
 
     return Scaffold(
       appBar: const PageHeader(title: 'Certificates'),
-      body: AppAsyncBuilder<List<Course>>(
-        future: () => repo.fetchCertificates(memberId),
-        builder: (context, courses) {
-          if (courses.isEmpty) {
+      body: AppAsyncBuilder<List<_CertificateData>>(
+        future: () async {
+          final courses = await repo.fetchCertificates(memberId);
+          // `CourseProgress.completedOn` (`course_progress.completed_on`)
+          // was parsed by `TrainingRepository.fetchMyProgress()` but never
+          // displayed anywhere — `fetchCertificates()` itself drops the
+          // progress data entirely, returning bare `Course`s. Re-fetching
+          // progress here (same call `CourseDetailPage` already makes) lets
+          // this page show when each certificate was actually earned.
+          final progress = await repo.fetchMyProgress(memberId);
+          return courses.map((c) => _CertificateData(c, progress[c.id]?.completedOn)).toList();
+        },
+        builder: (context, certificates) {
+          if (certificates.isEmpty) {
             return const AppEmptyState(icon: Icons.workspace_premium_rounded, message: 'No certificates earned yet — complete a course quiz to get one');
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: courses.length,
+            itemCount: certificates.length,
             itemBuilder: (context, i) {
-              final c = courses[i];
+              final cert = certificates[i];
+              final c = cert.course;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: AppCard(
@@ -42,7 +60,10 @@ class CertificatesPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(c.title, style: AppTheme.sans(13, weight: FontWeight.w700)),
-                          Text(c.topic, style: AppTheme.sans(11, color: Neutral.c500)),
+                          Text(
+                            cert.completedOn != null ? '${c.topic} · Completed ${DateFormat('dd MMM yyyy').format(cert.completedOn!)}' : c.topic,
+                            style: AppTheme.sans(11, color: Neutral.c500),
+                          ),
                         ],
                       ),
                     ),

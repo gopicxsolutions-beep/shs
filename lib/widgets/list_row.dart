@@ -31,7 +31,13 @@ class AppListRow extends StatelessWidget {
               ],
             ),
           ),
-          ?trailing,
+          // Flexible (not left unconstrained) so a wide trailing widget —
+          // an amount + badge column, or a button whose label text grows at
+          // a large accessibility text scale — shrinks to fit the row
+          // instead of overflowing it; loose fit keeps trailing at its
+          // natural size whenever there's room, matching every existing
+          // caller's normal-scale appearance exactly.
+          if (trailing != null) Flexible(fit: FlexFit.loose, child: trailing!),
           if (onTap != null && chevron) Icon(Icons.chevron_right, size: 18, color: Neutral.c300),
         ],
       ),

@@ -27,6 +27,10 @@ class ShgJoinRequest {
         shgId: map['shg_id'] as String,
         shgName: (map['shgs'] as Map<String, dynamic>?)?['name'] as String?,
         status: map['status'] as String,
-        requestedAt: DateTime.parse(map['requested_at'] as String),
+        // `requested_at` is `timestamptz` (UTC). Convert to local (IST) at
+        // parse time so `shg_join_requests_page.dart`'s date-only
+        // `DateFormat` never shows the wrong calendar day for a request
+        // made near local midnight.
+        requestedAt: DateTime.parse(map['requested_at'] as String).toLocal(),
       );
 }

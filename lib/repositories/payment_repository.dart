@@ -36,7 +36,18 @@ class PaymentRepository {
 
   /// Runs the (mock) gateway charge, then records the outcome. Returns the
   /// result so the UI can show success/failure immediately.
+  ///
+  /// In live mode, a missing [memberId] (profile not yet loaded) must be
+  /// checked *before* invoking the processor: charging first and then
+  /// discovering there's nowhere to record the result used to return the
+  /// processor's own (always-successful, for the mock) outcome unchanged —
+  /// so the UI showed "Payment successful · Ref ..." for a payment that was
+  /// never written to `payments` at all, the same false-success shape fixed
+  /// for `LoanRepository.apply()`'s no-SHG case.
   Future<PaymentChargeResult> pay({required String? memberId, required num amount, required String mode}) async {
+    if (_live && memberId == null) {
+      return const PaymentChargeResult(success: false, reference: '');
+    }
     final result = await _processor.charge(amount: amount, mode: mode);
     if (!_live) {
       _locallyAdded.add(Payment(
@@ -49,7 +60,6 @@ class PaymentRepository {
       ));
       return result;
     }
-    if (memberId == null) return result;
     await _client.from('payments').insert({
       'member_id': memberId,
       'amount': amount,

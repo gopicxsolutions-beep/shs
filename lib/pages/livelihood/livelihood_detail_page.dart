@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/livelihood.dart';
+import '../../models/types.dart';
 import '../../repositories/livelihood_repository.dart';
 import '../../services/supabase_service.dart';
+import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
@@ -26,6 +31,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
     return Scaffold(
       appBar: const PageHeader(title: 'Activity Detail'),
       body: AppAsyncBuilder<LivelihoodActivity?>(
@@ -35,6 +41,15 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
           if (activity == null) {
             return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This activity could not be found');
           }
+          // `livelihood_write_self_leader_or_staff` (RLS) only lets the
+          // activity's own member, the SHG's leader, or staff update it —
+          // but `livelihood_select_shg_or_staff` lets every SHG member READ
+          // every other member's activities (transparency, like savings/
+          // loans), so any member could open a teammate's activity detail
+          // page and see "Update Progress" with no ownership check, tap it,
+          // and hit a silent RLS no-op (0 rows updated, no exception) that
+          // looked like a successful save.
+          final canUpdate = activity.memberId == appState.profile?.id || appState.user.role != Role.member;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -50,23 +65,25 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
                     const SizedBox(height: 6),
                     Text(activity.description ?? '', style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.9))),
                     const SizedBox(height: 12),
-                    Text('₹${activity.profit} net', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white)),
+                    Text('${activity.profit < 0 ? '-' : ''}₹${NumberFormat('#,##,##0', 'en_IN').format(activity.profit.abs())} net', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white)),
                     Text('${activity.profit >= 0 ? "Profit" : "Loss"} so far', style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.75))),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               Row(children: [
-                Expanded(child: _infoTile('Investment', '₹${activity.investment}')),
+                Expanded(child: _infoTile('Investment', '₹${NumberFormat('#,##,##0', 'en_IN').format(activity.investment)}')),
                 const SizedBox(width: 12),
-                Expanded(child: _infoTile('Revenue', '₹${activity.revenue}')),
+                Expanded(child: _infoTile('Revenue', '₹${NumberFormat('#,##,##0', 'en_IN').format(activity.revenue)}')),
               ]),
-              const SizedBox(height: 20),
-              AppButton(
-                label: 'Update Progress',
-                fullWidth: true,
-                onPressed: () => _updateProgress(context, activity),
-              ),
+              if (canUpdate) ...[
+                const SizedBox(height: 20),
+                AppButton(
+                  label: 'Update Progress',
+                  fullWidth: true,
+                  onPressed: () => _updateProgress(context, activity),
+                ),
+              ],
             ],
           );
         },
@@ -121,7 +138,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
             FilledButton(
               onPressed: submitting
                   ? null

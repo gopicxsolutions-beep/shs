@@ -22,6 +22,9 @@ class Payment {
         mode: map['mode'] as String,
         reference: map['reference'] as String?,
         status: map['status'] as String,
-        createdAt: DateTime.parse(map['created_at'] as String),
+        // `created_at` is `timestamptz` (UTC). Convert to local (IST) at the
+        // parse boundary so the date-only `DateFormat` display never shows
+        // the wrong calendar day for a payment made near local midnight.
+        createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
       );
 }

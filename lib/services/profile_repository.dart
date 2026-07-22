@@ -41,6 +41,20 @@ class ProfileRepository {
     await _client.from('profiles').update({'role': role}).eq('id', uid);
   }
 
+  // A plain UPDATE, not `upsertMyProfile`'s upsert. For `INSERT ... ON
+  // CONFLICT DO UPDATE`, Postgres enforces the INSERT policy's WITH CHECK
+  // against the proposed row even when the conflict path is taken — so
+  // upserting an edit for an existing crp/clf/admin profile would fail
+  // `profiles_insert_self`'s `role in ('member', 'leader')` check
+  // (0022_profiles_insert_self_privilege_escalation_fix.sql), which is
+  // correctly scoped to first-time self-service signup, not edits to an
+  // already-existing profile of any role.
+  Future<Profile> updateNameVillage({required String name, String? village}) async {
+    final uid = _client.auth.currentUser!.id;
+    final row = await _client.from('profiles').update({'name': name, 'village': ?village}).eq('id', uid).select().single();
+    return Profile.fromMap(row);
+  }
+
   Future<List<ShgSearchResult>> searchShgs(String query) async {
     final builder = _client.from('shg_directory').select();
     final rows = await (query.trim().isEmpty ? builder.limit(20) : builder.ilike('name', '%${query.trim()}%').limit(20));

@@ -38,7 +38,14 @@ class SplashPage extends StatelessWidget {
                               child: const Icon(Icons.eco_rounded, color: Colors.white),
                             ),
                             const SizedBox(width: 8),
-                            Text('NAVASAKHI', style: AppTheme.sans(13, weight: FontWeight.w600, color: Colors.white.withValues(alpha: 0.8))),
+                            Flexible(
+                              child: Text(
+                                'NAVASAKHI',
+                                style: AppTheme.sans(13, weight: FontWeight.w600, color: Colors.white.withValues(alpha: 0.8)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 40),

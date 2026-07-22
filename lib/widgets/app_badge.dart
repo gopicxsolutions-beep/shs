@@ -30,7 +30,12 @@ class AppBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (dot) Container(width: 6, height: 6, margin: const EdgeInsets.only(right: 5), decoration: BoxDecoration(color: fg, shape: BoxShape.circle)),
-          Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg, height: 1)),
+          // Flexible so a badge placed next to other content in a
+          // constrained Row (e.g. an EMI-due badge next to a "Details"
+          // link) ellipsizes its (sometimes dynamic/unbounded) text
+          // instead of overflowing — a plain Text here has no bound of
+          // its own since the outer Row is `mainAxisSize.min`.
+          Flexible(child: Text(text, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg, height: 1))),
         ],
       ),
     );

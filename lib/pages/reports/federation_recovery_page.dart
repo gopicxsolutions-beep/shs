@@ -34,8 +34,9 @@ class FederationRecoveryPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('Recovered', style: AppTheme.sans(13, weight: FontWeight.w700)),
-                      Text('${k.recoveryRatePct.toStringAsFixed(1)}%', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600)),
+                      Flexible(child: Text('Recovered', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700))),
+                      const SizedBox(width: 8),
+                      Flexible(child: Text('${k.recoveryRatePct.toStringAsFixed(1)}%', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600))),
                     ]),
                     const SizedBox(height: 8),
                     ClipRRect(

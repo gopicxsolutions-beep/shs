@@ -20,6 +20,17 @@ class MeetingRepository {
   // the rest of the session, mirroring AnnouncementRepository._locallyRead.
   static final List<Meeting> _locallyScheduled = [];
 
+  // Test-only seam (null by default, so every existing test keeps seeing
+  // the exact short mock_members.members it always has).
+  // test/routes/long_content_stress_test.dart sets this (mirroring
+  // ShgRepository.debugMembersOverride/AdminRepository.debugMembersOverride
+  // — kept as a separate field rather than a shared import to avoid a new
+  // cross-repository dependency existing only for this test seam) to
+  // exercise a realistic long member name on the attendance roster at a
+  // normal viewport, then resets it — no change to lib/data/members.dart's
+  // shared mock records themselves.
+  static List<mock_members.Member>? debugMembersOverride;
+
   Future<List<Meeting>> fetchForShg(String? shgId) async {
     if (!_live) return [..._locallyScheduled.reversed, ..._mockMeetings()];
     if (shgId == null) return [];
@@ -79,7 +90,7 @@ class MeetingRepository {
   /// The SHG's member roster (id + name) — used to build attendance sheets.
   Future<List<(String id, String name)>> fetchRoster(String? shgId) async {
     if (!_live) {
-      return mock_members.members.map((m) => (m.id, m.name)).toList();
+      return (debugMembersOverride ?? mock_members.members).map((m) => (m.id, m.name)).toList();
     }
     if (shgId == null) return [];
     final rows = await _client.from('profiles').select('id, name').eq('shg_id', shgId).order('name');
@@ -118,7 +129,22 @@ class MeetingRepository {
           .toList();
     }
     if (memberId == null || shgId == null) return const [];
-    final meetings = await _client.from('meetings').select('id, meeting_date, venue').eq('shg_id', shgId).eq('status', 'completed').order('meeting_date', ascending: false);
+    // Filtering on `status = 'completed'` here would always return zero
+    // rows in live mode: nothing in the app ever calls `setStatus()` (see
+    // `Meeting.hasPassed`'s doc comment), so a real meeting's status never
+    // actually advances past 'upcoming' no matter how long ago it happened.
+    // Use the meeting's own date instead — a meeting is "done" once its
+    // date has passed, which is the ground truth this report actually
+    // needs (and matches the demo-mode branch's `status == 'completed'`
+    // mock data, which was authored assuming this transition would work).
+    final todayStr = DateTime.now().toIso8601String().split('T').first;
+    final meetings = await _client
+        .from('meetings')
+        .select('id, meeting_date, venue')
+        .eq('shg_id', shgId)
+        .neq('status', 'cancelled')
+        .lt('meeting_date', todayStr)
+        .order('meeting_date', ascending: false);
     final meetingList = meetings as List;
     if (meetingList.isEmpty) return const [];
     final meetingIds = meetingList.map((m) => (m as Map<String, dynamic>)['id'] as String).toList();

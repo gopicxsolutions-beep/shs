@@ -36,7 +36,7 @@ class MarketplaceReviewsPage extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(avg.toStringAsFixed(1), style: AppTheme.display(22)),
                   const SizedBox(width: 8),
-                  Text('from ${reviews.length} review${reviews.length == 1 ? '' : 's'}', style: AppTheme.sans(12, color: Neutral.c500)),
+                  Flexible(child: Text('from ${reviews.length} review${reviews.length == 1 ? '' : 's'}', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500))),
                 ]),
               ),
               const SizedBox(height: 16),
@@ -49,7 +49,7 @@ class MarketplaceReviewsPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(children: [
-                              Text(r.reviewerName, style: AppTheme.sans(12, weight: FontWeight.w700)),
+                              Flexible(child: Text(r.reviewerName, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700))),
                               const SizedBox(width: 8),
                               Semantics(
                                 label: '${r.rating} out of 5 stars',

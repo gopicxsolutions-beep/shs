@@ -41,7 +41,11 @@ class SavingsHomePage extends StatelessWidget {
       body: AppAsyncBuilder<List<SavingsEntry>>(
         future: () => isLeaderOrStaff ? repo.fetchForShg(shgId) : repo.fetchForMember(memberId),
         builder: (context, entries) {
-          final total = entries.fold<num>(0, (sum, e) => sum + e.amount);
+          // Only verified entries count toward the confirmed total — a
+          // pending entry is an unconfirmed self-report the SHG leader
+          // hasn't reconciled yet, still shown in the list below but not
+          // counted as settled savings.
+          final total = entries.where((e) => e.status == 'verified').fold<num>(0, (sum, e) => sum + e.amount);
           final pending = entries.where((e) => e.status == 'pending').length;
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -50,7 +54,7 @@ class SavingsHomePage extends StatelessWidget {
                 Expanded(
                   child: StatCard(
                     label: isLeaderOrStaff ? 'Group Savings' : 'My Savings',
-                    value: '₹${NumberFormat('#,##0').format(total)}',
+                    value: '₹${NumberFormat('#,##,##0', 'en_IN').format(total)}',
                     tone: StatTone.brand,
                     trend: '${entries.length} entries',
                     icon: Icons.account_balance_wallet_rounded,
@@ -108,7 +112,7 @@ class SavingsHomePage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('₹${e.amount}', style: AppTheme.sans(13, weight: FontWeight.w700)),
+                            Text('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                             const SizedBox(height: 4),
                             AppBadge(text: e.status, tone: e.status == 'verified' ? BadgeTone.success : BadgeTone.warning),
                           ],

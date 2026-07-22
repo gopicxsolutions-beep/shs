@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg.dart';
 import '../../repositories/loan_repository.dart';
@@ -61,9 +62,9 @@ class MemberDetailPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Row(children: [
-                Expanded(child: StatCard(label: 'Total Savings', value: '₹${detail.totalSavings}', tone: StatTone.brand, icon: Icons.account_balance_wallet_rounded)),
+                Expanded(child: StatCard(label: 'Total Savings', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(detail.totalSavings)}', tone: StatTone.brand, icon: Icons.account_balance_wallet_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Loan Outstanding', value: '₹${detail.totalOutstanding}', tone: StatTone.gold, icon: Icons.account_balance_rounded)),
+                Expanded(child: StatCard(label: 'Loan Outstanding', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(detail.totalOutstanding)}', tone: StatTone.gold, icon: Icons.account_balance_rounded)),
               ]),
               const SizedBox(height: 24),
               const SectionHeader(title: 'Contact'),
@@ -84,11 +85,17 @@ class MemberDetailPage extends StatelessWidget {
     );
   }
 
+  // `value` (a member's mobile number / village name) is real, unbounded
+  // data with no flex protection at all, so at a scaled-up accessibility
+  // text size it — combined with the label — could overflow the row.
+  // `Flexible`+ellipsis on both sides (same pattern as the sibling `_row`
+  // helper in shg_home_page.dart) keeps both visible instead of throwing.
   Widget _row(String label, String value) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: AppTheme.sans(12, color: Neutral.c500)),
-          Text(value, style: AppTheme.sans(12, weight: FontWeight.w700)),
+          Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500))),
+          const SizedBox(width: 8),
+          Flexible(child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: AppTheme.sans(12, weight: FontWeight.w700))),
         ],
       );
 }

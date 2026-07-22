@@ -44,4 +44,40 @@ void main() {
       expect(tester.takeException(), isNull, reason: 'Bottom nav overflowed for role $role');
     }
   });
+
+  testWidgets('the active tab is exposed to a screen reader via Semantics.selected, not just icon/text color', (tester) async {
+    final appState = AppState();
+    await appState.setRole(Role.member);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AppState>.value(
+        value: appState,
+        child: MaterialApp(
+          home: AppShell(location: Paths.dashboard, child: const SizedBox()),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Home is the active tab (location == Paths.dashboard) — a screen
+    // reader should announce it as selected...
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Home')),
+      matchesSemantics(label: 'Home', isSelected: true, hasSelectedState: true, isButton: true, hasTapAction: true),
+    );
+
+    // ...and every other tab should not be, so TalkBack/VoiceOver users can
+    // actually tell which one they're on instead of hearing 5 identical
+    // "tab" announcements.
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Market')),
+      matchesSemantics(label: 'Market', isSelected: false, hasSelectedState: true, isButton: true, hasTapAction: true),
+    );
+  });
 }

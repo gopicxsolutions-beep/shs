@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
 import '../../models/marketplace.dart';
+import '../../models/types.dart';
 import '../../repositories/marketplace_repository.dart';
 import '../../services/supabase_service.dart';
+import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
@@ -55,6 +58,16 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This order could not be found');
           }
           final currentIndex = _statusFlow.indexOf(order.status);
+          // `marketplace_orders_update_seller_or_staff` (RLS) only lets the
+          // product's seller or staff update an order's status — but this
+          // page is also reachable by the BUYER viewing their own order
+          // (marketplace_orders_select_related allows buyer_id = auth.uid()).
+          // A buyer tapping one of these chips would previously hit a
+          // silent RLS no-op (0 rows updated, no exception raised), then
+          // reload to find the status unchanged with no explanation.
+          final appState = context.watch<AppState>();
+          final isStaff = const {Role.crp, Role.clf, Role.admin}.contains(appState.user.role);
+          final canUpdateStatus = isStaff || (order.sellerId != null && order.sellerId == appState.profile?.id);
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -70,31 +83,33 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     Text('Buyer: ${order.buyerName}', style: AppTheme.sans(12, color: Neutral.c500)),
                     Text('Ordered ${DateFormat('dd MMM yyyy').format(order.orderDate)}', style: AppTheme.sans(12, color: Neutral.c500)),
                     const SizedBox(height: 8),
-                    Text('₹${order.amount}', style: AppTheme.display(18)),
+                    Text('₹${NumberFormat('#,##,##0', 'en_IN').format(order.amount)}', style: AppTheme.display(18)),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-              Text('Update status', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _statusFlow.asMap().entries.map((e) {
-                  final selected = e.key == currentIndex;
-                  final reachable = !_updating;
-                  return ChoiceChip(
-                    label: Text(e.value),
-                    selected: selected,
-                    onSelected: !reachable ? null : (_) => _updateStatus(order, e.value),
-                    selectedColor: Brand.c50,
-                    labelStyle: AppTheme.sans(12, weight: FontWeight.w600, color: selected ? Brand.c700 : Neutral.c600),
-                    backgroundColor: Colors.white,
-                    side: BorderSide(color: selected ? Brand.c500 : Neutral.c200),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  );
-                }).toList(),
-              ),
+              if (canUpdateStatus) ...[
+                const SizedBox(height: 20),
+                Text('Update status', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _statusFlow.asMap().entries.map((e) {
+                    final selected = e.key == currentIndex;
+                    final reachable = !_updating;
+                    return ChoiceChip(
+                      label: Text(e.value),
+                      selected: selected,
+                      onSelected: !reachable ? null : (_) => _updateStatus(order, e.value),
+                      selectedColor: Brand.c50,
+                      labelStyle: AppTheme.sans(12, weight: FontWeight.w600, color: selected ? Brand.c700 : Neutral.c600),
+                      backgroundColor: Colors.white,
+                      side: BorderSide(color: selected ? Brand.c500 : Neutral.c200),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    );
+                  }).toList(),
+                ),
+              ],
             ],
           );
         },

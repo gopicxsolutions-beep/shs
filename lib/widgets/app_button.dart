@@ -42,7 +42,10 @@ class AppButton extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (icon != null) ...[Icon(icon, size: fontSize + 2, color: fg), const SizedBox(width: 8)],
-        Text(label, style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w700, color: fg)),
+        // Flexible so a longer label (a longer localized string, or a
+        // longer dynamic label like a busy-state message) ellipsizes
+        // instead of overflowing the button on narrow screens.
+        Flexible(child: Text(label, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w700, color: fg))),
       ],
     );
     return SizedBox(

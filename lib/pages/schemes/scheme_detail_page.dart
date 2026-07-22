@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
 import '../../models/scheme.dart';
+import '../../models/types.dart';
 import '../../repositories/scheme_repository.dart';
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
@@ -47,6 +48,18 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final memberId = appState.profile?.id;
+    // Scheme applications are a personal, self-service action (mirrors
+    // `scheme_applications_insert_self`'s RLS, which only ever allows
+    // `member_id = auth.uid()`) — staff/leader/CRP/CLF review applications
+    // via the separate "Applications" tile instead of applying themselves.
+    // Demo mode's `AppState.profile` stays permanently null regardless of
+    // which role is being previewed (it's only ever assigned in live-mode
+    // branches), so without this gate a non-member "Preview as" persona
+    // could tap "Apply Now" and `SchemeRepository.apply()`'s demo-mode
+    // branch would report a fake success — the same leaked-application
+    // shape already fixed for loan applications (see `loans_home_page.dart`
+    // hiding its own "Apply" affordance for `isLeaderOrStaff`).
+    final isLeaderOrStaff = appState.user.role != Role.member;
 
     return Scaffold(
       appBar: const PageHeader(title: 'Scheme Detail'),
@@ -95,28 +108,57 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
                       )).toList(),
                 ),
               ),
-              const SizedBox(height: 20),
-              AppAsyncBuilder<SchemeApplication?>(
-                key: _appKey,
-                future: () async {
-                  final apps = await _repo.fetchMyApplications(memberId);
-                  return apps[widget.schemeId];
-                },
-                builder: (context, app) {
-                  if (app != null) {
-                    return AppCard(child: Row(children: [
-                      Text('Application status: ', style: AppTheme.sans(13)),
-                      AppBadge(text: app.status, tone: BadgeTone.brand),
-                    ]));
-                  }
-                  return AppButton(
-                    label: _applying ? 'Submitting…' : 'Apply Now',
-                    fullWidth: true,
-                    size: ButtonSize.lg,
-                    onPressed: _applying ? null : () => _apply(memberId),
-                  );
-                },
-              ),
+              if (!isLeaderOrStaff) ...[
+                const SizedBox(height: 20),
+                AppAsyncBuilder<SchemeApplication?>(
+                  key: _appKey,
+                  future: () async {
+                    final apps = await _repo.fetchMyApplications(memberId);
+                    return apps[widget.schemeId];
+                  },
+                  builder: (context, app) {
+                    if (app != null) {
+                      // `app.status` (applied/under_review/approved/rejected)
+                      // is unbounded/dynamic — combined with the fixed label
+                      // at a scaled-up accessibility text size it can
+                      // overflow the card's row, since neither side
+                      // otherwise has flex. Same pattern as the EMI-due
+                      // badge fix in loan_tracking_page.dart.
+                      return AppCard(child: Row(children: [
+                        Text('Application status: ', style: AppTheme.sans(13)),
+                        Flexible(child: AppBadge(text: app.status, tone: BadgeTone.brand)),
+                      ]));
+                    }
+                    // `scheme.deadline` was, until now, purely decorative —
+                    // shown in the header card but never checked before
+                    // letting a member submit. A member could apply to a
+                    // scheme whose deadline had already passed with zero
+                    // indication anything was wrong (the RPC/insert would
+                    // still silently succeed server-side too, see
+                    // `scheme_applications_insert_self` in
+                    // supabase/migrations/0030_scheme_application_deadline_enforcement.sql).
+                    // Compare on the calendar date only (not the exact
+                    // instant) since `deadline` is a DATE column — the whole
+                    // day it falls on should still count as open.
+                    final today = DateTime.now();
+                    final todayDate = DateTime(today.year, today.month, today.day);
+                    final deadlinePassed = scheme.deadline != null && todayDate.isAfter(scheme.deadline!);
+                    if (deadlinePassed) {
+                      return AppCard(child: Row(children: [
+                        Icon(Icons.event_busy_rounded, size: 18, color: Neutral.c400),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text('Applications closed — the deadline for this scheme has passed.', style: AppTheme.sans(12, color: Neutral.c500))),
+                      ]));
+                    }
+                    return AppButton(
+                      label: _applying ? 'Submitting…' : 'Apply Now',
+                      fullWidth: true,
+                      size: ButtonSize.lg,
+                      onPressed: _applying ? null : () => _apply(memberId),
+                    );
+                  },
+                ),
+              ],
             ],
           );
         },

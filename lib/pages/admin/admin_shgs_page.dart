@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg.dart';
 import '../../models/types.dart';
@@ -62,12 +63,21 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Add')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(AppLocalizations.of(context)?.actionAdd ?? 'Add')),
         ],
       ),
     );
-    if (confirmed != true || _name.text.trim().isEmpty) return;
+    if (confirmed != true || !mounted) return;
+    if (_name.text.trim().isEmpty) {
+      // Without this, tapping "Add" on a blank name silently closed the
+      // dialog and did nothing — indistinguishable from a broken button,
+      // since nothing here told the admin why no SHG was created.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('SHG name is required.')));
+      }
+      return;
+    }
     setState(() => _busy = true);
     try {
       await _repo.createShg(name: _name.text.trim(), village: _village.text.trim(), district: _district.text.trim());

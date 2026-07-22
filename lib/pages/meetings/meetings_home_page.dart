@@ -43,8 +43,13 @@ class MeetingsHomePage extends StatelessWidget {
       body: AppAsyncBuilder<List<Meeting>>(
         future: () => repo.fetchForShg(shgId),
         builder: (context, meetings) {
-          final upcoming = meetings.where((m) => m.status == 'upcoming').toList();
-          final past = meetings.where((m) => m.status != 'upcoming').toList();
+          // `status` alone isn't reliable here: nothing in the app ever
+          // advances a meeting from 'upcoming' to 'completed' (see
+          // `Meeting.hasPassed`'s doc comment), so a meeting whose date is
+          // long gone would otherwise sit under "Upcoming" forever instead
+          // of ever moving to "Past Meetings".
+          final upcoming = meetings.where((m) => m.status == 'upcoming' && !m.hasPassed).toList();
+          final past = meetings.where((m) => m.status != 'upcoming' || m.hasPassed).toList();
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
@@ -98,10 +103,18 @@ class MeetingsHomePage extends StatelessWidget {
             width: 48, height: 48,
             decoration: BoxDecoration(color: Brand.c50, borderRadius: BorderRadius.circular(12)),
             alignment: Alignment.center,
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(DateFormat('MMM').format(m.date), style: AppTheme.sans(9, weight: FontWeight.w700, color: Brand.c700)),
-              Text(DateFormat('d').format(m.date), style: AppTheme.sans(15, weight: FontWeight.w700, color: Brand.c700)),
-            ]),
+            // Fixed 48x48 calendar-style date badge — at a scaled-up
+            // accessibility text size the month + day text no longer fits
+            // that height. FittedBox scales the pair down together to
+            // stay inside the square instead of overflowing it (same fix
+            // as the identical badge in leader_dashboard.dart).
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text(DateFormat('MMM').format(m.date), style: AppTheme.sans(9, weight: FontWeight.w700, color: Brand.c700)),
+                Text(DateFormat('d').format(m.date), style: AppTheme.sans(15, weight: FontWeight.w700, color: Brand.c700)),
+              ]),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

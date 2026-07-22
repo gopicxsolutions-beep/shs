@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:shg_saathi/widgets/async_state.dart';
 
 void main() {
@@ -58,6 +60,34 @@ void main() {
 
       expect(find.text('recovered'), findsOneWidget);
       expect(attempt, 2);
+    });
+
+    testWidgets('shows an actionable connectivity message (not the generic one) for a dropped connection', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: AppAsyncBuilder<String>(
+          future: () => Future<String>.error(http.ClientException('Failed to fetch')),
+          builder: (context, data) => Text(data),
+        ),
+      ));
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Check your internet connection and try again.'), findsOneWidget);
+      expect(find.text('Something went wrong. Please try again.'), findsNothing);
+      expect(find.byIcon(Icons.wifi_off_rounded), findsOneWidget);
+    });
+
+    testWidgets('shows the same connectivity message for a client-side request timeout', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: AppAsyncBuilder<String>(
+          future: () => Future<String>.error(TimeoutException('timed out')),
+          builder: (context, data) => Text(data),
+        ),
+      ));
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Check your internet connection and try again.'), findsOneWidget);
     });
 
     testWidgets('reload() re-invokes the future', (tester) async {

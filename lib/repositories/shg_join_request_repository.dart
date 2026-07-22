@@ -11,6 +11,17 @@ class ShgJoinRequestRepository {
 
   Future<void> submit({required String memberId, required String shgId}) async {
     if (!_live) return;
+    // Replace any existing PENDING request instead of colliding with the
+    // one-pending-per-member unique index (0004) — a member can reach this
+    // call a second time while still awaiting a decision (e.g.
+    // ShgApprovalPendingPage's "Choose a different SHG", offered in the
+    // pending state too, not just rejected — see 0033), and without this
+    // the insert below throws a raw constraint-violation error instead of
+    // letting her actually change her mind. Already-decided (approved/
+    // rejected) rows never match this filter, so a leader's/staff's past
+    // decision is never touched — matches the delete policy 0033 backs
+    // this with (`status = 'pending'` only).
+    await _client.from('shg_join_requests').delete().eq('member_id', memberId).eq('status', 'pending');
     await _client.from('shg_join_requests').insert({'member_id': memberId, 'shg_id': shgId});
   }
 

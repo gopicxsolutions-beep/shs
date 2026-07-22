@@ -5,6 +5,7 @@ class Paths {
   static const profileSetup = '/profile-setup';
   static const roleSelect = '/role-select';
   static const shgApprovalPending = '/shg-approval-pending';
+  static const profileLoadError = '/profile-load-error';
 
   static const dashboard = '/app/dashboard';
   static const shg = '/app/shg';
@@ -56,6 +57,7 @@ class Paths {
   static String schemeDetail(String id) => '/app/schemes/$id';
   static const schemeEligibility = '/app/schemes/eligibility';
   static const schemeTracking = '/app/schemes/tracking';
+  static const schemeApplications = '/app/schemes/applications';
 
   static const training = '/app/training';
   static String trainingDetail(String id) => '/app/training/$id';

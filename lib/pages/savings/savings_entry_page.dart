@@ -166,16 +166,30 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
                     _loadingMembers
                         ? const SizedBox(
                             height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : DropdownButtonFormField<String>(
-                            initialValue: _selectedMemberId,
-                            isExpanded: true,
-                            decoration: const InputDecoration(border: InputBorder.none, hintText: 'Select a member'),
-                            items: _members.map((m) => DropdownMenuItem(value: m.id, child: Text(m.name))).toList(),
-                            onChanged: (v) => setState(() {
-                              _selectedMemberId = v;
-                              _error = null;
-                            }),
-                          ),
+                        : _members.isEmpty
+                            // `DropdownButtonFormField` silently disables
+                            // itself when `items` is empty — no error, no
+                            // visual "disabled" styling, just a
+                            // completely unresponsive tap target. A
+                            // leader with no SHG (or whose SHG genuinely
+                            // has zero registered members yet) would be
+                            // stuck here with no explanation. Live-found
+                            // this session: tapping the hint text did
+                            // nothing at all.
+                            ? Text(
+                                "No members found in your SHG yet — there's no one to record this entry against.",
+                                style: AppTheme.sans(13, color: Neutral.c500),
+                              )
+                            : DropdownButtonFormField<String>(
+                                initialValue: _selectedMemberId,
+                                isExpanded: true,
+                                decoration: const InputDecoration(border: InputBorder.none, hintText: 'Select a member'),
+                                items: _members.map((m) => DropdownMenuItem(value: m.id, child: Text(m.name))).toList(),
+                                onChanged: (v) => setState(() {
+                                  _selectedMemberId = v;
+                                  _error = null;
+                                }),
+                              ),
                   ],
                 ),
               ),

@@ -53,7 +53,7 @@ class MarketplaceOrdersPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('₹${o.amount}', style: AppTheme.sans(13, weight: FontWeight.w700)),
+                        Text('₹${NumberFormat('#,##,##0', 'en_IN').format(o.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                         const SizedBox(height: 4),
                         AppBadge(text: o.status, tone: _statusTones[o.status] ?? BadgeTone.neutral),
                       ],

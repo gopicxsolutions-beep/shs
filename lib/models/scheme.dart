@@ -45,3 +45,32 @@ class SchemeApplication {
         appliedOn: DateTime.parse(map['applied_on'] as String),
       );
 }
+
+/// A `scheme_applications` row joined with the scheme's and applicant's
+/// names, for the staff review queue (`SchemeRepository.fetchPendingApplications`).
+class SchemeApplicationReview {
+  final String applicationId;
+  final String schemeId;
+  final String schemeName;
+  final String memberName;
+  final String status;
+  final DateTime appliedOn;
+
+  const SchemeApplicationReview({
+    required this.applicationId,
+    required this.schemeId,
+    required this.schemeName,
+    required this.memberName,
+    required this.status,
+    required this.appliedOn,
+  });
+
+  factory SchemeApplicationReview.fromMap(Map<String, dynamic> map) => SchemeApplicationReview(
+        applicationId: map['id'] as String,
+        schemeId: map['scheme_id'] as String,
+        schemeName: (map['schemes'] as Map<String, dynamic>?)?['name'] as String? ?? 'Scheme',
+        memberName: (map['profiles'] as Map<String, dynamic>?)?['name'] as String? ?? 'Member',
+        status: map['status'] as String,
+        appliedOn: DateTime.parse(map['applied_on'] as String),
+      );
+}

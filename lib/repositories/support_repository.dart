@@ -28,7 +28,13 @@ class SupportRepository {
       if (memberId == null) return [];
       query = query.eq('member_id', memberId);
     }
-    final rows = await query.order('created_at', ascending: false);
+    // For staff this is every ticket ever raised across the whole platform,
+    // in every status (not just open ones, so it never self-drains as
+    // tickets get resolved) — genuinely unbounded growth over the life of
+    // the deployment. Previously had no `.limit()` at all. Capped at a
+    // generous 500 rather than left unbounded; newest-first ordering means
+    // it's old, already-resolved tickets that fall past the cap first.
+    final rows = await query.order('created_at', ascending: false).limit(500);
     return (rows as List).map((r) => SupportTicket.fromMap(r as Map<String, dynamic>)).toList();
   }
 

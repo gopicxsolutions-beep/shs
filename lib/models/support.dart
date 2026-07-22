@@ -26,7 +26,12 @@ class SupportTicket {
         subject: map['subject'] as String,
         description: map['description'] as String?,
         status: map['status'] as String,
-        createdAt: DateTime.parse(map['created_at'] as String),
+        // `created_at` is `timestamptz` (UTC). Convert to local (IST) here
+        // so the date-only `DateFormat` calls in `support_home_page.dart`/
+        // `support_chat_page.dart`/`support_ticket_detail_page.dart` never
+        // show the wrong calendar day for a ticket filed near local
+        // midnight.
+        createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
       );
 }
 
@@ -54,7 +59,10 @@ class SupportMessage {
         senderId: map['sender_id'] as String?,
         senderName: (map['profiles'] as Map<String, dynamic>?)?['name'] as String?,
         body: map['body'] as String,
-        createdAt: DateTime.parse(map['created_at'] as String),
+        // Same `timestamptz` → local conversion as `SupportTicket.createdAt`
+        // above, for consistency (not currently date-formatted anywhere,
+        // but keeps this field timezone-correct if it ever is).
+        createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
       );
 }
 

@@ -18,8 +18,12 @@ void main() {
   AppButton submitButton(WidgetTester tester) => tester.widget<AppButton>(find.byType(AppButton));
 
   testWidgets('selecting an answer in each question is tracked independently, enabling Submit once all 3 are answered', (tester) async {
-    SupabaseService.isConfigured = true;
-    addTearDown(() => SupabaseService.isConfigured = false);
+    // Demo mode (not live) so the page's new fetchCourseById-based
+    // not-found guard resolves against lib/data/training.dart's mock
+    // 'co1' course instead of attempting a real Supabase call (there's no
+    // initialized client in this test environment, which would otherwise
+    // surface as the AppAsyncBuilder error state instead of the quiz).
+    SupabaseService.isConfigured = false;
 
     // The quiz's 3 questions + Submit button are taller than the default
     // 800x600 test surface — Submit would be scrolled off-screen and thus

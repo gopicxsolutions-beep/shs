@@ -38,9 +38,22 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
           if (meetings.isEmpty) {
             return const AppEmptyState(icon: Icons.event_busy_rounded, message: 'No meetings to mark attendance for');
           }
-          _selected ??= meetings.where((m) => m.status == 'upcoming').isNotEmpty
-              ? meetings.firstWhere((m) => m.status == 'upcoming')
-              : meetings.first;
+          // Same fix as meeting_qr_page.dart: `fetchForShg` sorts newest-
+          // scheduled-date-first, so naively taking the first 'upcoming'
+          // match defaulted to the farthest-future meeting instead of the
+          // soonest one whenever more than one was scheduled at once — the
+          // dropdown below lets a leader correct it manually, but the wrong
+          // default was still a real, easy-to-miss trap for the common case.
+          //
+          // `!m.hasPassed` also excludes meetings whose date has already
+          // gone by, since `status` never actually advances away from
+          // 'upcoming' once a meeting happens (see `Meeting.hasPassed`'s
+          // doc comment) — without it, a meeting from weeks ago would sort
+          // first and keep defaulting the roster to stale history instead
+          // of today's meeting, forever, once the SHG has more than one
+          // meeting on record.
+          final upcomingMeetings = meetings.where((m) => m.status == 'upcoming' && !m.hasPassed).toList()..sort((a, b) => a.date.compareTo(b.date));
+          _selected ??= upcomingMeetings.isNotEmpty ? upcomingMeetings.first : meetings.first;
           final meeting = _selected!;
 
           return Column(
@@ -51,12 +64,14 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(DateFormat('dd MMM yyyy').format(meeting.date), style: AppTheme.sans(14, weight: FontWeight.w700)),
-                          Text(meeting.agenda ?? meeting.venue ?? '', style: AppTheme.sans(12, color: Neutral.c500)),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(DateFormat('dd MMM yyyy').format(meeting.date), style: AppTheme.sans(14, weight: FontWeight.w700)),
+                            Text(meeting.agenda ?? meeting.venue ?? '', overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500)),
+                          ],
+                        ),
                       ),
                       DropdownButton<Meeting>(
                         value: meeting,

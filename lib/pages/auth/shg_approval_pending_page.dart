@@ -33,7 +33,7 @@ class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
       await _key.currentState?.reload();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not check status. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.shgApprovalCheckError)));
       }
     } finally {
       if (mounted) setState(() => _checking = false);
@@ -90,8 +90,18 @@ class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
                   const SizedBox(height: 24),
                   if (rejected)
                     AppButton(label: l10n.chooseDifferentShg, fullWidth: true, size: ButtonSize.lg, onPressed: () => context.go(Paths.profileSetup))
-                  else
+                  else ...[
                     AppButton(label: _checking ? l10n.checkingStatus : l10n.actionCheckStatus, fullWidth: true, size: ButtonSize.lg, onPressed: _checking ? null : _checkStatus),
+                    const SizedBox(height: 12),
+                    // A still-pending request previously had no escape at
+                    // all here — only Check Status and Sign Out, neither of
+                    // which lets a member who picked the wrong SHG (or whose
+                    // leader never acts) change her mind. This mirrors the
+                    // rejected-state button above; ShgJoinRequestRepository.
+                    // submit() (see its own doc comment) now replaces the
+                    // still-pending row instead of erroring on it.
+                    AppButton(label: l10n.chooseDifferentShg, fullWidth: true, size: ButtonSize.lg, variant: ButtonVariant.outline, onPressed: () => context.go(Paths.profileSetup)),
+                  ],
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: () async {

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +12,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/shg_search_sheet.dart';
 
 class ProfileSetupPage extends StatefulWidget {
   const ProfileSetupPage({super.key});
@@ -74,13 +74,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           ));
       return;
     }
-    final result = await showModalBottomSheet<ShgSearchResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => _ShgSearchSheet(repository: _profileRepository),
-    );
+    final result = await showShgSearchSheet(context, search: _profileRepository.searchShgs);
     if (!mounted) return;
     if (result != null) setState(() => _selectedShg = result);
   }
@@ -101,7 +95,15 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         mandal: _mandal.text.trim().isNotEmpty ? _mandal.text.trim() : _selectedShg?.mandal,
         district: _district.text.trim().isNotEmpty ? _district.text.trim() : _selectedShg?.district,
       );
-      if (mounted) context.go(Paths.roleSelect);
+      // Not always Role Select: this page is also the "Choose a different
+      // SHG" retry a rejected member reaches from ShgApprovalPendingPage,
+      // where Role Select was already completed in a prior session (see
+      // AppState.completeProfileSetup's `isNewProfile` guard). Navigating to
+      // the dashboard and letting the router's own redirect chain resolve
+      // the actual next step (Role Select for a genuinely new profile,
+      // ShgApprovalPendingPage again for the retry, or the dashboard itself)
+      // is correct for every case instead of hardcoding one destination.
+      if (mounted) context.go(Paths.dashboard);
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not save your profile. Please try again.');
     } finally {
@@ -179,7 +181,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                     : Row(children: [
                         Icon(Icons.search, size: 16, color: Neutral.c500),
                         const SizedBox(width: 8),
-                        Text(l10n.searchSelectShg, style: AppTheme.sans(14, color: Neutral.c500)),
+                        Expanded(child: Text(l10n.searchSelectShg, style: AppTheme.sans(14, color: Neutral.c500), overflow: TextOverflow.ellipsis)),
                       ]),
               ),
               if (_error != null) ...[
@@ -192,119 +194,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                 fullWidth: true,
                 size: ButtonSize.lg,
                 onPressed: valid && !_saving ? _continue : null,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ShgSearchSheet extends StatefulWidget {
-  final ProfileRepository repository;
-  const _ShgSearchSheet({required this.repository});
-  @override
-  State<_ShgSearchSheet> createState() => _ShgSearchSheetState();
-}
-
-class _ShgSearchSheetState extends State<_ShgSearchSheet> {
-  final _query = TextEditingController();
-  Timer? _debounce;
-  List<ShgSearchResult> _results = [];
-  bool _loading = false;
-  String? _error;
-  int _searchGeneration = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _search('');
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _query.dispose();
-    super.dispose();
-  }
-
-  void _onChanged(String value) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () => _search(value));
-  }
-
-  Future<void> _search(String value) async {
-    // A later keystroke can start a second search before an earlier one's
-    // response arrives; only the most recent request may write its results,
-    // so a slow stale response can't clobber what the user is now seeing.
-    final generation = ++_searchGeneration;
-    setState(() => _loading = true);
-    try {
-      final results = await widget.repository.searchShgs(value);
-      if (mounted && generation == _searchGeneration) setState(() => _results = results);
-    } catch (_) {
-      if (mounted && generation == _searchGeneration) setState(() => _error = 'Could not load SHGs. Please try again.');
-    } finally {
-      if (mounted && generation == _searchGeneration) setState(() => _loading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: SizedBox(
-        height: 480,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.findYourShg, style: AppTheme.display(16)),
-              const SizedBox(height: 12),
-              Container(
-                decoration: BoxDecoration(border: Border.all(color: Neutral.c200), borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Row(children: [
-                  Icon(Icons.search, size: 16, color: Neutral.c400),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _query,
-                      onChanged: _onChanged,
-                      decoration: InputDecoration(border: InputBorder.none, hintText: l10n.searchShgHint),
-                      style: AppTheme.sans(14),
-                    ),
-                  ),
-                ]),
-              ),
-              const SizedBox(height: 12),
-              if (_error != null) Text(_error!, style: AppTheme.sans(12, color: Accent.red600)),
-              Expanded(
-                child: _loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _results.isEmpty
-                        ? Center(child: Text(l10n.noShgsFound, style: AppTheme.sans(13, color: Neutral.c400)))
-                        : ListView.separated(
-                            itemCount: _results.length,
-                            separatorBuilder: (_, _) => const SizedBox(height: 8),
-                            itemBuilder: (context, i) {
-                              final shg = _results[i];
-                              return AppCard(
-                                onTap: () => Navigator.of(context).pop(shg),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(shg.name, style: AppTheme.sans(14, weight: FontWeight.w700)),
-                                    const SizedBox(height: 2),
-                                    Text('${shg.village}, ${shg.district}', style: AppTheme.sans(12, color: Neutral.c500)),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
               ),
             ],
           ),

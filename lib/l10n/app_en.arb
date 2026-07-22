@@ -22,6 +22,34 @@
 
   "commonLoading": "Loading…",
   "commonError": "Something went wrong",
+  "commonBack": "Back",
+
+  "asyncErrorGeneric": "Something went wrong. Please try again.",
+  "asyncErrorNetwork": "Check your internet connection and try again.",
+
+  "discardChangesTitle": "Discard changes?",
+  "discardChangesMessage": "You've entered information on this page that hasn't been saved yet. Leaving now will lose it.",
+  "discardChangesKeepEditing": "Keep Editing",
+  "discardChangesDiscard": "Discard",
+
+  "errorGoHome": "Go to Home",
+  "error404Title": "Page not found",
+  "error404Message": "The page you're looking for doesn't exist or may have moved.",
+  "profileLoadErrorTitle": "Couldn't load your profile",
+
+  "qrPermissionDenied": "Camera permission was denied.",
+  "qrUnsupported": "Scanning isn't supported on this device.",
+  "qrCameraUnavailable": "Camera not available.",
+  "qrManualFallbackHint": "You can still enter details manually.",
+  "qrEnterManually": "Enter manually instead",
+  "qrManualEntry": "Manual entry",
+  "qrTurnOffFlashlight": "Turn off flashlight",
+  "qrTurnOnFlashlight": "Turn on flashlight",
+  "qrTakingTooLong": "Camera is taking too long to start.",
+  "qrScanToPayTitle": "Scan to Pay",
+  "qrScanToPayInstructions": "Point your camera at the merchant's UPI QR code",
+  "qrScanAttendanceTitle": "Scan Attendance QR",
+  "qrScanAttendanceInstructions": "Point your camera at the QR code displayed at the venue",
 
   "profileTitle": "Profile",
   "profileEditProfile": "Edit Profile",
@@ -29,17 +57,27 @@
   "profileVillage": "Village",
   "profileSHG": "SHG",
   "profileName": "Name",
+  "profileUpdated": "Profile updated",
+  "profileUpdateDemoMode": "Demo mode — not saved (connect Supabase to persist)",
+  "profileUpdateError": "Could not update your profile. Please try again.",
+  "profileNameRequired": "Name is required.",
 
   "settingsTitle": "Settings",
   "settingsNotifications": "Notifications",
   "settingsNotifMeetingReminders": "Meeting reminders",
   "settingsNotifPaymentAlerts": "Payment alerts",
   "settingsNotifAnnouncements": "Announcements",
+  "settingsNotifComingSoon": "These preferences are saved, but push/local reminders aren't sent yet in this version of the app.",
   "settingsLanguage": "Language",
   "settingsPreviewAs": "Preview as",
   "settingsAppVersion": "App version",
+  "settingsGeneralSection": "General",
+  "settingsPreviewRoleDescription": "This app lets you preview every role's dashboard — switch anytime.",
+  "settingsPreferenceError": "Could not save this preference. Please try again.",
+  "settingsRoleSwitchError": "Could not switch role. Please try again.",
 
   "languageTitle": "Language",
+  "languageSubtitle": "Choose your preferred language for the app",
   "languageEnglish": "English",
   "languageTelugu": "తెలుగు",
   "languageHindi": "हिन्दी",
@@ -50,6 +88,9 @@
   "loginSubtitle": "Enter your registered mobile number to continue",
   "loginSending": "Sending…",
   "loginSendOtp": "Send OTP",
+  "loginOtpError": "Could not send OTP. Please check the number and try again.",
+  "loginDataProtected": "Your data is protected under DAY-NRLM guidelines. We never share your Aadhaar details.",
+  "loginTermsAgreement": "By continuing you agree to the Terms of Service & Privacy Policy",
 
   "otpTitle": "Verify OTP",
   "otpHint": "Enter the 6-digit code sent to your phone",
@@ -60,6 +101,14 @@
   "otpResendIn": "Resend OTP in ",
   "otpResend": "Resend OTP",
   "otpDidntReceive": "Didn't receive the code? Check your SMS inbox.",
+  "otpVerifyError": "Incorrect or expired code. Please try again.",
+  "otpResendError": "Could not resend the code. Please try again.",
+  "otpDigitLabel": "OTP digit {position} of 6",
+  "@otpDigitLabel": {
+    "placeholders": {
+      "position": {"type": "int"}
+    }
+  },
 
   "profileSetupTitle": "Create your profile",
   "profileSetupSubtitle": "Tell us a bit about yourself to get started",
@@ -77,6 +126,7 @@
 
   "roleSelectTitle": "Continue as",
   "roleSelectSubtitle": "Choose your role in the SHG ecosystem to see a tailored experience",
+  "roleSelectSaveError": "Could not save your role. Please try again.",
 
   "dashboardGreeting": "Welcome back",
 
@@ -86,5 +136,34 @@
   "shgApprovalRejectedMessage": "Your SHG leader did not approve this request. You can pick a different SHG and try again.",
   "unknownShg": "Unknown SHG",
   "chooseDifferentShg": "Choose a different SHG",
-  "checkingStatus": "Checking…"
+  "checkingStatus": "Checking…",
+  "shgApprovalCheckError": "Could not check status. Please try again.",
+
+  "voiceNoLoans": "You have no loans on record.",
+  "voiceNoActiveLoans": "You have no active loans out of {count} on record.",
+  "@voiceNoActiveLoans": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "voiceLoanActive": "{purpose}: ₹{amount} loan, ₹{outstanding} still outstanding.",
+  "@voiceLoanActive": {
+    "placeholders": {
+      "purpose": {"type": "String"},
+      "amount": {"type": "String"},
+      "outstanding": {"type": "String"}
+    }
+  },
+  "voiceSavingsThisMonth": "You have saved ₹{amount} this month across {count} {count, plural, =1{entry} other{entries}}.",
+  "@voiceSavingsThisMonth": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+  "voiceNoAnnouncements": "You have no announcements.",
+  "voiceOpeningSavingsForm": "Opening the savings entry form for you.",
+  "voiceUnknownCommand": "Sorry, I didn't understand that.",
+
+  "aiDisclaimer": "AI-generated guidance — may be inaccurate. Not professional financial, legal, or medical advice; confirm important decisions with your SHG leader or a qualified advisor."
 }

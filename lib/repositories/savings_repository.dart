@@ -93,13 +93,20 @@ class SavingsRepository {
     await _client.from('savings_entries').update({'status': 'verified'}).eq('id', id);
   }
 
-  /// Live updates for the shg's ledger (leader/staff screens).
+  /// Live updates for the shg's ledger (leader/staff screens). Ordered
+  /// newest-first to match `fetchForShg` (the demo-mode fallback used on
+  /// the same page) — this used to omit `ascending: false`, so the
+  /// realtime stream sorted oldest-first: a leader opening the live ledger
+  /// to verify an entry a member had just submitted had to scroll past
+  /// every older entry to reach it at the very bottom of the list, while
+  /// the demo-mode view of the identical page showed new entries at the
+  /// top as expected.
   Stream<List<SavingsEntry>> watchForShg(String shgId) {
     return _client
         .from('savings_entries')
         .stream(primaryKey: ['id'])
         .eq('shg_id', shgId)
-        .order('entry_date')
+        .order('entry_date', ascending: false)
         .map((rows) => rows.map(SavingsEntry.fromMap).toList());
   }
 

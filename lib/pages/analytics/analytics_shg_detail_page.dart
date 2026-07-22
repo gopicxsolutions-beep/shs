@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../layout/page_header.dart';
 import '../../models/analytics.dart';
 import '../../repositories/analytics_repository.dart';
@@ -50,7 +51,7 @@ class AnalyticsShgDetailPage extends StatelessWidget {
               Row(children: [
                 Expanded(child: StatCard(label: 'Members', value: '${g.memberCount}', tone: StatTone.ink, icon: Icons.groups_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Total Savings', value: '₹${g.totalSavings}', tone: StatTone.brand, icon: Icons.account_balance_wallet_rounded)),
+                Expanded(child: StatCard(label: 'Total Savings', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(g.totalSavings)}', tone: StatTone.brand, icon: Icons.account_balance_wallet_rounded)),
               ]),
               const SizedBox(height: 12),
               AppCard(

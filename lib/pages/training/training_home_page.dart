@@ -50,41 +50,62 @@ class TrainingHomePage extends StatelessWidget {
           if (data.courses.isEmpty) {
             return const AppEmptyState(icon: Icons.school_rounded, message: 'No courses available yet');
           }
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            children: [
-              const SectionHeader(title: 'Courses'),
-              ...data.courses.map((c) {
-                final p = data.progress[c.id];
-                final pct = p?.progress ?? 0;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: AppCard(
-                    onTap: () => context.go(Paths.trainingDetail(c.id)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          Container(width: 40, height: 40, decoration: BoxDecoration(color: Brand.c50, borderRadius: BorderRadius.circular(12)), child: Icon(_formatIcons[c.format] ?? Icons.school_rounded, color: Brand.c600, size: 20)),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(c.title, style: AppTheme.sans(13, weight: FontWeight.w700)),
-                                Text('${c.topic} · ${c.duration ?? ''}', style: AppTheme.sans(11, color: Neutral.c500)),
-                              ],
-                            ),
-                          ),
-                          if (p?.certified == true) AppBadge(text: 'Certified', tone: BadgeTone.success) else Text('$pct%', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
-                        ]),
-                        const SizedBox(height: 10),
-                        AppProgressBar(value: pct, tone: pct == 100 ? ProgressTone.brand : ProgressTone.gold),
-                      ],
-                    ),
-                  ),
-                );
-              }),
+          // CustomScrollView/Sliver split so the course list is genuinely
+          // lazy (`SliverList.builder`) instead of every card getting built
+          // eagerly via `...data.courses.map(...)` in a plain `ListView`.
+          // Unlike an SHG's member/loan lists (bounded to that group's
+          // ~10-30 members), this is the platform-wide training catalog
+          // shared by every SHG — it grows as more content is added over
+          // time, not by any one group's size, so it's not safe to assume
+          // it stays small.
+          return CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                sliver: SliverToBoxAdapter(child: SectionHeader(title: 'Courses')),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                sliver: SliverList.builder(
+                  itemCount: data.courses.length,
+                  itemBuilder: (context, i) {
+                    final c = data.courses[i];
+                    final p = data.progress[c.id];
+                    final pct = p?.progress ?? 0;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: AppCard(
+                        onTap: () => context.go(Paths.trainingDetail(c.id)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(children: [
+                              Container(width: 40, height: 40, decoration: BoxDecoration(color: Brand.c50, borderRadius: BorderRadius.circular(12)), child: Icon(_formatIcons[c.format] ?? Icons.school_rounded, color: Brand.c600, size: 20)),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(c.title, style: AppTheme.sans(13, weight: FontWeight.w700)),
+                                    Text('${c.topic} · ${c.duration ?? ''}', style: AppTheme.sans(11, color: Neutral.c500)),
+                                  ],
+                                ),
+                              ),
+                              Flexible(
+                                child: p?.certified == true
+                                    ? const AppBadge(text: 'Certified', tone: BadgeTone.success)
+                                    : Text('$pct%', overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                              ),
+                            ]),
+                            const SizedBox(height: 10),
+                            AppProgressBar(value: pct, tone: pct == 100 ? ProgressTone.brand : ProgressTone.gold),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ],
           );
         },

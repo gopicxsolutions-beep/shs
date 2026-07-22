@@ -73,7 +73,18 @@ class _CrpDashboardBody extends StatelessWidget {
             if (shgs.isEmpty)
               Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Text('No SHGs to monitor yet', style: AppTheme.sans(12, color: Neutral.c400)))
             else
-              ...shgs.map((g) => Padding(
+              // Capped like the Training Catalog preview below (`.take(3)`)
+              // — this dashboard renders every card eagerly (it's a fixed
+              // `Column` inside the page's `SingleChildScrollView`, not a
+              // lazy `.builder`), and a CRP can realistically be assigned
+              // 30+ SHGs across a federation (see the N+1 query fix in this
+              // same file's history for that exact scale). Uncapped, every
+              // login built a full `AppCard` (with its own progress bar,
+              // badge, and multiple `Text`/`Row` children) for all of them
+              // on the landing dashboard, most never scrolled into view.
+              // The full, properly lazy `ListView.builder` list is one tap
+              // away via "View all" (`AnalyticsShgListPage`).
+              ...shgs.take(5).map((g) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: AppCard(
                       onTap: () => context.go(Paths.analyticsShgDetail(g.id)),
@@ -99,7 +110,7 @@ class _CrpDashboardBody extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SectionHeader(title: 'Training Catalog', action: 'Manage', onAction: () => context.go(Paths.training)),
+            SectionHeader(title: 'Training Catalog', action: 'View all', onAction: () => context.go(Paths.training)),
             AppCard(
               padded: false,
               child: data.courses.isEmpty

@@ -76,7 +76,7 @@ class SupportHomePage extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            AppBadge(text: t.status.replaceAll('_', ' '), tone: _statusTones[t.status] ?? BadgeTone.neutral),
+                            Flexible(child: AppBadge(text: t.status.replaceAll('_', ' '), tone: _statusTones[t.status] ?? BadgeTone.neutral)),
                           ],
                         ),
                       ),

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
 import '../../models/scheme.dart';
+import '../../models/types.dart';
 import '../../repositories/scheme_repository.dart';
 import '../../routes/paths.dart';
 import '../../state/app_state.dart';
@@ -35,6 +36,7 @@ class SchemesHomePage extends StatelessWidget {
     final appState = context.watch<AppState>();
     final repo = SchemeRepository();
     final memberId = appState.profile?.id;
+    final isStaff = const {Role.crp, Role.clf, Role.admin}.contains(appState.user.role);
 
     return Scaffold(
       appBar: const PageHeader(title: 'Government Schemes'),
@@ -53,6 +55,7 @@ class SchemesHomePage extends StatelessWidget {
                 children: [
                   IconTile(onTap: () => context.go(Paths.schemeEligibility), icon: Icons.fact_check_rounded, label: 'Eligibility', tone: TileTone.brand),
                   IconTile(onTap: () => context.go(Paths.schemeTracking), icon: Icons.timeline_rounded, label: 'Tracking', tone: TileTone.gold),
+                  if (isStaff) IconTile(onTap: () => context.go(Paths.schemeApplications), icon: Icons.rule_folder_rounded, label: 'Applications', tone: TileTone.sky),
                 ],
               ),
               const SizedBox(height: 20),
@@ -78,7 +81,7 @@ class SchemesHomePage extends StatelessWidget {
                             ],
                           ),
                         ),
-                        AppBadge(text: app?.status ?? 'not applied', tone: app != null ? (_statusTones[app.status] ?? BadgeTone.neutral) : BadgeTone.neutral),
+                        Flexible(child: AppBadge(text: app?.status ?? 'not applied', tone: app != null ? (_statusTones[app.status] ?? BadgeTone.neutral) : BadgeTone.neutral)),
                       ]),
                     ),
                   );

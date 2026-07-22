@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/announcement.dart';
 import '../../models/types.dart';
@@ -69,13 +70,23 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
             FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Post')),
           ],
         ),
       ),
     );
-    if (confirmed != true || _title.text.trim().isEmpty) return;
+    if (confirmed != true) return;
+    if (_title.text.trim().isEmpty) {
+      // Without this, tapping "Post" on a blank title silently closed the
+      // dialog and posted nothing — indistinguishable from a broken button,
+      // same silent-no-op gap already fixed for "Add SHG"/"Add scheme" in
+      // admin_shgs_page.dart / admin_schemes_page.dart.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Title is required.')));
+      }
+      return;
+    }
     if (!mounted) return;
     setState(() => _busy = true);
     try {
@@ -134,24 +145,33 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Semantics(
-                  label: a.read ? null : 'Unread',
-                  child: AppCard(
-                    onTap: () => context.go(Paths.announcementDetail(a.id)),
-                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      if (!a.read) Padding(padding: const EdgeInsets.only(top: 5, right: 8), child: Container(width: 6, height: 6, decoration: BoxDecoration(color: Brand.c500, shape: BoxShape.circle))),
-                      if (a.read) const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(a.title, style: AppTheme.sans(13, weight: a.read ? FontWeight.w600 : FontWeight.w700)),
-                            const SizedBox(height: 2),
-                            Text(DateFormat('dd MMM yyyy').format(a.createdAt), style: AppTheme.sans(11, color: Neutral.c400)),
-                          ],
+                  label: [
+                    if (!a.read) 'Unread',
+                    a.title,
+                    DateFormat('dd MMM yyyy').format(a.createdAt),
+                    a.category,
+                  ].join(', '),
+                  button: true,
+                  onTap: () => context.go(Paths.announcementDetail(a.id)),
+                  child: ExcludeSemantics(
+                    child: AppCard(
+                      onTap: () => context.go(Paths.announcementDetail(a.id)),
+                      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        if (!a.read) Padding(padding: const EdgeInsets.only(top: 5, right: 8), child: Container(width: 6, height: 6, decoration: BoxDecoration(color: Brand.c500, shape: BoxShape.circle))),
+                        if (a.read) const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(a.title, style: AppTheme.sans(13, weight: a.read ? FontWeight.w600 : FontWeight.w700)),
+                              const SizedBox(height: 2),
+                              Text(DateFormat('dd MMM yyyy').format(a.createdAt), style: AppTheme.sans(11, color: Neutral.c400)),
+                            ],
+                          ),
                         ),
-                      ),
-                      AppBadge(text: a.category, tone: _categoryTones[a.category] ?? BadgeTone.neutral),
-                    ]),
+                        AppBadge(text: a.category, tone: _categoryTones[a.category] ?? BadgeTone.neutral),
+                      ]),
+                    ),
                   ),
                 ),
               );

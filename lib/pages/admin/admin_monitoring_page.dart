@@ -43,7 +43,7 @@ class AdminMonitoringPage extends StatelessWidget {
                     Row(children: [
                       Icon(Icons.info_outline_rounded, size: 14, color: Neutral.c400),
                       const SizedBox(width: 6),
-                      Text('Placeholder metrics', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                      Expanded(child: Text('Placeholder metrics', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600))),
                     ]),
                     const SizedBox(height: 6),
                     Text(

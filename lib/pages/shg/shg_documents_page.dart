@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg.dart';
 import '../../models/types.dart';
@@ -42,14 +43,22 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
         title: const Text('Add document record'),
         content: TextField(controller: _nameController, maxLength: 100, textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'Document name')),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(_nameController.text.trim()), child: const Text('Add')),
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(_nameController.text.trim()), child: Text(AppLocalizations.of(context)?.actionAdd ?? 'Add')),
         ],
       ),
     );
     if (!mounted) return;
     _nameController.clear();
-    if (name == null || name.isEmpty) return;
+    if (name == null) return;
+    if (name.isEmpty) {
+      // Without this, tapping "Add" on a blank document name silently
+      // closed the dialog and added nothing — indistinguishable from a
+      // broken button, same silent-no-op gap already fixed for "Add SHG"/
+      // "Add scheme" in admin_shgs_page.dart / admin_schemes_page.dart.
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Document name is required.')));
+      return;
+    }
     setState(() => _busy = true);
     try {
       final saved = await _repo.addDocument(shgId: shgId, name: name, type: 'PDF');

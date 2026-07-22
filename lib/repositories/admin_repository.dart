@@ -26,13 +26,41 @@ class AdminRepository {
   // the rest of the session, mirroring AnnouncementRepository._locallyRead.
   static final Map<String, String> _locallyUpdatedRoles = {};
 
+  // Test-only seam (null by default, so every existing test keeps seeing
+  // the exact short mock.members it always has).
+  // test/routes/long_content_stress_test.dart sets this (in lockstep with
+  // ShgRepository.debugMembersOverride, which it mirrors — kept as a
+  // separate field rather than a shared import to avoid a new cross-
+  // repository dependency existing only for this test seam) to exercise a
+  // realistic long member name at a normal viewport, then resets it — no
+  // change to lib/data/members.dart's shared mock records themselves.
+  static List<mock.Member>? debugMembersOverride;
+
+  /// Lets [ShgRepository]'s demo branch (fetchMembers/fetchMember) reflect
+  /// a role change made here via Manage Users — otherwise an admin
+  /// promoting/demoting a member in this repository's own local store
+  /// never showed up in that member's own "My SHG" roster or profile badge
+  /// for the rest of the "Preview as" session, one role's view silently
+  /// disagreeing with another's for the same underlying member.
+  static String roleOverride(String userId, String fallback) => _locallyUpdatedRoles[userId] ?? fallback;
+
   Future<List<Profile>> fetchAllUsers() async {
     if (!_live) {
-      return mock.members
-          .map((m) => Profile(id: m.id, name: m.name, mobile: m.mobile, role: _locallyUpdatedRoles[m.id] ?? _mockRoleMap[m.role] ?? 'member', shgId: 'demo-shg', village: null))
+      return (debugMembersOverride ?? mock.members)
+          .map((m) => Profile(id: m.id, name: m.name, mobile: m.mobile, role: _locallyUpdatedRoles[m.id] ?? _mockRoleMap[m.role] ?? 'member', shgId: _locallyAssignedShgs[m.id] ?? 'demo-shg', village: null))
           .toList();
     }
-    final rows = await _client.from('profiles').select().order('name');
+    // Every user on the platform, not scoped to any one SHG — AdminUsersPage
+    // has no search/filter to narrow this. Previously had no `.limit()` at
+    // all. Capped at a generous 500 rather than left fully unbounded (same
+    // defensive cap as the other platform-wide admin/catalog queries), but
+    // unlike those, this list is ordered alphabetically rather than by
+    // recency, so a real deployment growing past 500 users would have the
+    // cutoff hide an arbitrary alphabetical tail with no way to reach them
+    // from this page — a real gap, but fixing it properly needs actual
+    // search/pagination on AdminUsersPage, which is out of scope for this
+    // minimal cap.
+    final rows = await _client.from('profiles').select().order('name').limit(500);
     return (rows as List).map((r) => Profile.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -42,6 +70,24 @@ class AdminRepository {
       return;
     }
     await _client.from('profiles').update({'role': role}).eq('id', userId);
+  }
+
+  // Same demo-mode local-tracking shape as _locallyUpdatedRoles, above.
+  static final Map<String, String> _locallyAssignedShgs = {};
+
+  Future<void> assignShg(String userId, String shgId) async {
+    if (!_live) {
+      _locallyAssignedShgs[userId] = shgId;
+      return;
+    }
+    await _client.from('profiles').update({'shg_id': shgId}).eq('id', userId);
+  }
+
+  Future<List<ShgSearchResult>> searchShgs(String query) async {
+    if (!_live) return const [];
+    final builder = _client.from('shg_directory').select();
+    final rows = await (query.trim().isEmpty ? builder.limit(20) : builder.ilike('name', '%${query.trim()}%').limit(20));
+    return (rows as List).map((r) => ShgSearchResult.fromMap(r as Map<String, dynamic>)).toList();
   }
 
   Future<SystemHealth> fetchSystemHealth() async {

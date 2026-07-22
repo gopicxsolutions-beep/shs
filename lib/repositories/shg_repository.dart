@@ -3,6 +3,7 @@ import '../data/members.dart' as mock_members;
 import '../data/shg.dart' as mock;
 import '../models/shg.dart';
 import '../services/supabase_service.dart';
+import 'admin_repository.dart';
 
 /// Backed by `public.shgs` / `public.profiles` / `public.shg_documents` when
 /// Supabase is configured; falls back to `lib/data/shg.dart` /
@@ -11,6 +12,15 @@ import '../services/supabase_service.dart';
 class ShgRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
+
+  // Test-only seams (both null by default, so every existing test keeps
+  // seeing the exact short mock.ShgInfo.name / mock_members.members values
+  // it always has). test/routes/long_content_stress_test.dart sets these to
+  // exercise a realistic long SHG name / member name at a normal viewport,
+  // then resets them — no change to lib/data/**'s shared mock records
+  // themselves.
+  static String? debugShgNameOverride;
+  static List<mock_members.Member>? debugMembersOverride;
 
   // Demo mode has no backing table, so an added document would otherwise
   // vanish the instant the list reloads — track it here so it survives for
@@ -30,7 +40,7 @@ class ShgRepository {
       return [
         ShgProfile(
           id: 'demo-shg',
-          name: mock.ShgInfo.name,
+          name: debugShgNameOverride ?? mock.ShgInfo.name,
           village: mock.ShgInfo.village,
           mandal: mock.ShgInfo.mandal,
           district: mock.ShgInfo.district,
@@ -40,7 +50,16 @@ class ShgRepository {
         ..._locallyAddedShgs,
       ];
     }
-    final rows = await _client.from('shgs').select().order('name');
+    // Every SHG on the platform — AdminShgsPage has no search/filter to
+    // narrow this. Previously had no `.limit()` at all. Capped at a
+    // generous 500 rather than left fully unbounded (same defensive cap as
+    // the other platform-wide admin/catalog queries), but unlike
+    // recency-ordered ones, this list is ordered alphabetically, so a real
+    // deployment growing past 500 SHGs would have the cutoff hide an
+    // arbitrary alphabetical tail with no way to reach them from this page
+    // — a real gap, but fixing it properly needs actual search/pagination
+    // on AdminShgsPage, which is out of scope for this minimal cap.
+    final rows = await _client.from('shgs').select().order('name').limit(500);
     return (rows as List).map((r) => ShgProfile.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -69,7 +88,7 @@ class ShgRepository {
     if (!_live) {
       return ShgProfile(
         id: 'demo-shg',
-        name: mock.ShgInfo.name,
+        name: debugShgNameOverride ?? mock.ShgInfo.name,
         regNumber: mock.ShgInfo.regNumber,
         village: mock.ShgInfo.village,
         mandal: mock.ShgInfo.mandal,
@@ -91,9 +110,20 @@ class ShgRepository {
     return row == null ? null : ShgProfile.fromMap(row);
   }
 
+  // Mock data's role field ('President'/'Secretary'/'Treasurer'/'Member')
+  // doesn't match the DB's role vocabulary ('leader'/'member'/etc.) that
+  // AppBadge's role-tone lookup (shg_members_page.dart/member_detail_page.dart)
+  // keys on — without this mapping, demo mode's leadership roles rendered
+  // as an unstyled "president"/"secretary"/"treasurer" badge instead of a
+  // styled "Leader" one. Mirrors AdminRepository._mockRoleMap, which
+  // already got this right for the same underlying mock data.
+  static const _mockRoleMap = <String, String>{'President': 'leader', 'Secretary': 'leader', 'Treasurer': 'leader', 'Member': 'member'};
+
   Future<List<Member>> fetchMembers(String? shgId) async {
     if (!_live) {
-      return mock_members.members.map((m) => Member(id: m.id, name: m.name, mobile: m.mobile, role: m.role.toLowerCase(), village: null)).toList();
+      return (debugMembersOverride ?? mock_members.members)
+          .map((m) => Member(id: m.id, name: m.name, mobile: m.mobile, role: AdminRepository.roleOverride(m.id, _mockRoleMap[m.role] ?? 'member'), village: null))
+          .toList();
     }
     if (shgId == null) return [];
     final rows = await _client.from('profiles').select().eq('shg_id', shgId).order('name');
@@ -102,10 +132,10 @@ class ShgRepository {
 
   Future<Member?> fetchMember(String id) async {
     if (!_live) {
-      final matches = mock_members.members.where((m) => m.id == id);
+      final matches = (debugMembersOverride ?? mock_members.members).where((m) => m.id == id);
       if (matches.isEmpty) return null;
       final m = matches.first;
-      return Member(id: m.id, name: m.name, mobile: m.mobile, role: m.role.toLowerCase(), village: null);
+      return Member(id: m.id, name: m.name, mobile: m.mobile, role: AdminRepository.roleOverride(m.id, _mockRoleMap[m.role] ?? 'member'), village: null);
     }
     final row = await _client.from('profiles').select().eq('id', id).maybeSingle();
     return row == null ? null : Member.fromMap(row);

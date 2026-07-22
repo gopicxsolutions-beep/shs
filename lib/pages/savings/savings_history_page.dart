@@ -62,7 +62,7 @@ class _SavingsHistoryPageState extends State<SavingsHistoryPage> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('₹${e.amount}', style: AppTheme.sans(13, weight: FontWeight.w700)),
+                          Text('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                           const SizedBox(height: 4),
                           AppBadge(text: e.status, tone: e.status == 'verified' ? BadgeTone.success : BadgeTone.warning),
                         ],

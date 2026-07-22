@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 /// Pushes a full-screen camera QR scanner and returns the first decoded
@@ -60,64 +61,89 @@ class _QrScannerPageState extends State<_QrScannerPage> {
     Navigator.of(context).pop(code);
   }
 
-  String _errorMessage(MobileScannerException error) => switch (error.errorCode) {
-        MobileScannerErrorCode.permissionDenied => 'Camera permission was denied.',
-        MobileScannerErrorCode.unsupported => 'Scanning isn\'t supported on this device.',
-        _ => 'Camera not available.',
-      };
+  // Nullable, not `!` throughout this file: falls back to English rather
+  // than crash if this ever renders without localization delegates wired
+  // up (this app's other l10n-aware shared widgets follow the same
+  // defensive pattern — see page_header.dart's doc comment for why).
+  String _errorMessage(MobileScannerException error) {
+    final l10n = AppLocalizations.of(context);
+    return switch (error.errorCode) {
+      MobileScannerErrorCode.permissionDenied => l10n?.qrPermissionDenied ?? 'Camera permission was denied.',
+      MobileScannerErrorCode.unsupported => l10n?.qrUnsupported ?? "Scanning isn't supported on this device.",
+      _ => l10n?.qrCameraUnavailable ?? 'Camera not available.',
+    };
+  }
 
-  Widget _fallback(String message) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.videocam_off_rounded, color: Colors.white70, size: 48),
-              const SizedBox(height: 16),
-              Text(message, textAlign: TextAlign.center, style: AppTheme.sans(13, color: Colors.white70)),
-              const SizedBox(height: 8),
-              Text('You can still enter details manually.', textAlign: TextAlign.center, style: AppTheme.sans(12, color: Colors.white54)),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: () {
-                  _handled = true;
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Enter manually instead'),
-              ),
-            ],
-          ),
+  Widget _fallback(String message) {
+    final l10n = AppLocalizations.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.videocam_off_rounded, color: Colors.white70, size: 48),
+            const SizedBox(height: 16),
+            Text(message, textAlign: TextAlign.center, style: AppTheme.sans(13, color: Colors.white70)),
+            const SizedBox(height: 8),
+            Text(l10n?.qrManualFallbackHint ?? 'You can still enter details manually.', textAlign: TextAlign.center, style: AppTheme.sans(12, color: Colors.white54)),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: () {
+                _handled = true;
+                Navigator.of(context).pop();
+              },
+              child: Text(l10n?.qrEnterManually ?? 'Enter manually instead'),
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: Text(widget.title),
+        // This is a plain Flutter `AppBar` (not the app's own
+        // `PageHeader`), pushed imperatively via `Navigator.push` rather
+        // than a registered `GoRoute` — so neither round 26's route smoke
+        // test nor round 27's text-scale stress test (both GoRouter-only)
+        // ever exercised it. Same fixed-height-chrome shape `page_header.
+        // dart` already fixes: `AppBar`'s toolbar height is fixed (56 by
+        // default), and a long localized title (e.g. "उपस्थिति QR स्कैन
+        // करें") next to the "Manual entry" action button can wrap to 2
+        // lines at a scaled-up accessibility text size and overflow that
+        // fixed height. FittedBox scales the title down to fit instead.
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
         actions: [
           TextButton(
             onPressed: () {
               _handled = true;
               Navigator.of(context).pop();
             },
-            child: const Text('Manual entry', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            child: Text(l10n?.qrManualEntry ?? 'Manual entry', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
           ),
           ValueListenableBuilder<MobileScannerState>(
             valueListenable: _controller,
             builder: (context, state, child) => IconButton(
               icon: Icon(state.torchState == TorchState.on ? Icons.flash_on_rounded : Icons.flash_off_rounded),
               onPressed: state.torchState == TorchState.unavailable ? null : () => _controller.toggleTorch().catchError((_) {}),
-              tooltip: state.torchState == TorchState.on ? 'Turn off flashlight' : 'Turn on flashlight',
+              tooltip: state.torchState == TorchState.on ? (l10n?.qrTurnOffFlashlight ?? 'Turn off flashlight') : (l10n?.qrTurnOnFlashlight ?? 'Turn on flashlight'),
             ),
           ),
         ],
       ),
       body: _timedOut
-          ? _fallback('Camera is taking too long to start.')
+          ? _fallback(l10n?.qrTakingTooLong ?? 'Camera is taking too long to start.')
           : Stack(
               fit: StackFit.expand,
               children: [

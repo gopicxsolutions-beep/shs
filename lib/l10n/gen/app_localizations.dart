@@ -208,6 +208,150 @@ abstract class AppLocalizations {
   /// **'Something went wrong'**
   String get commonError;
 
+  /// No description provided for @commonBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get commonBack;
+
+  /// No description provided for @asyncErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get asyncErrorGeneric;
+
+  /// No description provided for @asyncErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your internet connection and try again.'**
+  String get asyncErrorNetwork;
+
+  /// No description provided for @discardChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get discardChangesTitle;
+
+  /// No description provided for @discardChangesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve entered information on this page that hasn\'t been saved yet. Leaving now will lose it.'**
+  String get discardChangesMessage;
+
+  /// No description provided for @discardChangesKeepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Editing'**
+  String get discardChangesKeepEditing;
+
+  /// No description provided for @discardChangesDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discardChangesDiscard;
+
+  /// No description provided for @errorGoHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Home'**
+  String get errorGoHome;
+
+  /// No description provided for @error404Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Page not found'**
+  String get error404Title;
+
+  /// No description provided for @error404Message.
+  ///
+  /// In en, this message translates to:
+  /// **'The page you\'re looking for doesn\'t exist or may have moved.'**
+  String get error404Message;
+
+  /// No description provided for @profileLoadErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your profile'**
+  String get profileLoadErrorTitle;
+
+  /// No description provided for @qrPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera permission was denied.'**
+  String get qrPermissionDenied;
+
+  /// No description provided for @qrUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning isn\'t supported on this device.'**
+  String get qrUnsupported;
+
+  /// No description provided for @qrCameraUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera not available.'**
+  String get qrCameraUnavailable;
+
+  /// No description provided for @qrManualFallbackHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can still enter details manually.'**
+  String get qrManualFallbackHint;
+
+  /// No description provided for @qrEnterManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter manually instead'**
+  String get qrEnterManually;
+
+  /// No description provided for @qrManualEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual entry'**
+  String get qrManualEntry;
+
+  /// No description provided for @qrTurnOffFlashlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off flashlight'**
+  String get qrTurnOffFlashlight;
+
+  /// No description provided for @qrTurnOnFlashlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on flashlight'**
+  String get qrTurnOnFlashlight;
+
+  /// No description provided for @qrTakingTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera is taking too long to start.'**
+  String get qrTakingTooLong;
+
+  /// No description provided for @qrScanToPayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to Pay'**
+  String get qrScanToPayTitle;
+
+  /// No description provided for @qrScanToPayInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Point your camera at the merchant\'s UPI QR code'**
+  String get qrScanToPayInstructions;
+
+  /// No description provided for @qrScanAttendanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Attendance QR'**
+  String get qrScanAttendanceTitle;
+
+  /// No description provided for @qrScanAttendanceInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Point your camera at the QR code displayed at the venue'**
+  String get qrScanAttendanceInstructions;
+
   /// No description provided for @profileTitle.
   ///
   /// In en, this message translates to:
@@ -244,6 +388,30 @@ abstract class AppLocalizations {
   /// **'Name'**
   String get profileName;
 
+  /// No description provided for @profileUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated'**
+  String get profileUpdated;
+
+  /// No description provided for @profileUpdateDemoMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — not saved (connect Supabase to persist)'**
+  String get profileUpdateDemoMode;
+
+  /// No description provided for @profileUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update your profile. Please try again.'**
+  String get profileUpdateError;
+
+  /// No description provided for @profileNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required.'**
+  String get profileNameRequired;
+
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:
@@ -274,6 +442,12 @@ abstract class AppLocalizations {
   /// **'Announcements'**
   String get settingsNotifAnnouncements;
 
+  /// No description provided for @settingsNotifComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'These preferences are saved, but push/local reminders aren\'t sent yet in this version of the app.'**
+  String get settingsNotifComingSoon;
+
   /// No description provided for @settingsLanguage.
   ///
   /// In en, this message translates to:
@@ -292,11 +466,41 @@ abstract class AppLocalizations {
   /// **'App version'**
   String get settingsAppVersion;
 
+  /// No description provided for @settingsGeneralSection.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get settingsGeneralSection;
+
+  /// No description provided for @settingsPreviewRoleDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This app lets you preview every role\'s dashboard — switch anytime.'**
+  String get settingsPreviewRoleDescription;
+
+  /// No description provided for @settingsPreferenceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save this preference. Please try again.'**
+  String get settingsPreferenceError;
+
+  /// No description provided for @settingsRoleSwitchError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not switch role. Please try again.'**
+  String get settingsRoleSwitchError;
+
   /// No description provided for @languageTitle.
   ///
   /// In en, this message translates to:
   /// **'Language'**
   String get languageTitle;
+
+  /// No description provided for @languageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your preferred language for the app'**
+  String get languageSubtitle;
 
   /// No description provided for @languageEnglish.
   ///
@@ -345,6 +549,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send OTP'**
   String get loginSendOtp;
+
+  /// No description provided for @loginOtpError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send OTP. Please check the number and try again.'**
+  String get loginOtpError;
+
+  /// No description provided for @loginDataProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is protected under DAY-NRLM guidelines. We never share your Aadhaar details.'**
+  String get loginDataProtected;
+
+  /// No description provided for @loginTermsAgreement.
+  ///
+  /// In en, this message translates to:
+  /// **'By continuing you agree to the Terms of Service & Privacy Policy'**
+  String get loginTermsAgreement;
 
   /// No description provided for @otpTitle.
   ///
@@ -399,6 +621,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Didn\'t receive the code? Check your SMS inbox.'**
   String get otpDidntReceive;
+
+  /// No description provided for @otpVerifyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect or expired code. Please try again.'**
+  String get otpVerifyError;
+
+  /// No description provided for @otpResendError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not resend the code. Please try again.'**
+  String get otpResendError;
+
+  /// No description provided for @otpDigitLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP digit {position} of 6'**
+  String otpDigitLabel(int position);
 
   /// No description provided for @profileSetupTitle.
   ///
@@ -490,6 +730,12 @@ abstract class AppLocalizations {
   /// **'Choose your role in the SHG ecosystem to see a tailored experience'**
   String get roleSelectSubtitle;
 
+  /// No description provided for @roleSelectSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save your role. Please try again.'**
+  String get roleSelectSaveError;
+
   /// No description provided for @dashboardGreeting.
   ///
   /// In en, this message translates to:
@@ -537,6 +783,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Checking…'**
   String get checkingStatus;
+
+  /// No description provided for @shgApprovalCheckError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check status. Please try again.'**
+  String get shgApprovalCheckError;
+
+  /// No description provided for @voiceNoLoans.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no loans on record.'**
+  String get voiceNoLoans;
+
+  /// No description provided for @voiceNoActiveLoans.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no active loans out of {count} on record.'**
+  String voiceNoActiveLoans(int count);
+
+  /// No description provided for @voiceLoanActive.
+  ///
+  /// In en, this message translates to:
+  /// **'{purpose}: ₹{amount} loan, ₹{outstanding} still outstanding.'**
+  String voiceLoanActive(String purpose, String amount, String outstanding);
+
+  /// No description provided for @voiceSavingsThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'You have saved ₹{amount} this month across {count} {count, plural, =1{entry} other{entries}}.'**
+  String voiceSavingsThisMonth(String amount, int count);
+
+  /// No description provided for @voiceNoAnnouncements.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no announcements.'**
+  String get voiceNoAnnouncements;
+
+  /// No description provided for @voiceOpeningSavingsForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the savings entry form for you.'**
+  String get voiceOpeningSavingsForm;
+
+  /// No description provided for @voiceUnknownCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorry, I didn\'t understand that.'**
+  String get voiceUnknownCommand;
+
+  /// No description provided for @aiDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'AI-generated guidance — may be inaccurate. Not professional financial, legal, or medical advice; confirm important decisions with your SHG leader or a qualified advisor.'**
+  String get aiDisclaimer;
 }
 
 class _AppLocalizationsDelegate

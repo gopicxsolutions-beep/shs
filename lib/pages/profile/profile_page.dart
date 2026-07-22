@@ -61,18 +61,28 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
     );
-    if (saved != true || name.text.trim().isEmpty) return;
+    if (saved != true) return;
+    if (name.text.trim().isEmpty) {
+      // Without this, tapping "Save" with a blank name silently closed the
+      // dialog and updated nothing — indistinguishable from a broken button,
+      // same silent-no-op gap already fixed for "Add SHG"/"Add scheme" in
+      // admin_shgs_page.dart / admin_schemes_page.dart.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.profileNameRequired)));
+      }
+      return;
+    }
     try {
-      await _profileRepo.upsertMyProfile(name: name.text.trim(), role: profile.role, village: village.text.trim());
+      await _profileRepo.updateNameVillage(name: name.text.trim(), village: village.text.trim());
       if (!mounted) return;
       await context.read<AppState>().refreshProfile();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(SupabaseService.isConfigured ? 'Profile updated' : 'Demo mode — not saved (connect Supabase to persist)'),
+        content: Text(SupabaseService.isConfigured ? l10n.profileUpdated : l10n.profileUpdateDemoMode),
       ));
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update your profile. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.profileUpdateError)));
       }
     }
   }

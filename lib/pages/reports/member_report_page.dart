@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
 import '../../models/report.dart';
@@ -36,9 +37,9 @@ class MemberReportPage extends StatelessWidget {
               Text(r.period, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
               const SizedBox(height: 12),
               Row(children: [
-                Expanded(child: StatCard(label: 'Total Savings', value: '₹${r.totalSavings}', tone: StatTone.brand, trend: '${r.savingsEntryCount} entries', icon: Icons.account_balance_wallet_rounded)),
+                Expanded(child: StatCard(label: 'Total Savings', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(r.totalSavings)}', tone: StatTone.brand, trend: '${r.savingsEntryCount} entries', icon: Icons.account_balance_wallet_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Loan Outstanding', value: '₹${r.totalOutstanding}', tone: StatTone.gold, trend: '${r.activeLoanCount} active', icon: Icons.account_balance_rounded)),
+                Expanded(child: StatCard(label: 'Loan Outstanding', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(r.totalOutstanding)}', tone: StatTone.gold, trend: '${r.activeLoanCount} active', icon: Icons.account_balance_rounded)),
               ]),
               const SizedBox(height: 20),
               Text('Reports', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),

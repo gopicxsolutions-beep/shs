@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show AuthState, Session;
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthChangeEvent, AuthState, Session;
 import '../models/profile.dart';
 import '../models/types.dart';
 import '../repositories/shg_join_request_repository.dart';
@@ -9,6 +9,7 @@ import '../repositories/shg_repository.dart';
 import '../services/auth_service.dart';
 import '../services/profile_repository.dart';
 import '../services/supabase_service.dart';
+import '../widgets/async_state.dart' show isNetworkError;
 
 /// App-wide session & profile state.
 ///
@@ -46,6 +47,12 @@ class AppState extends ChangeNotifier {
   String? _shgName;
   int _profileLoadGeneration = 0;
 
+  // Set by `_loadProfile()` when its most recent attempt failed because of
+  // a network/connectivity problem specifically (not a confirmed "no such
+  // row" response) while no profile had ever been successfully loaded yet.
+  // See `profileLoadFailedNetwork` below for why this matters.
+  bool _profileLoadFailedNetwork = false;
+
   // Live mode only — true from the moment a fresh profile is created until
   // Role Select completes. Without this, `hasProfile` (just `_profile !=
   // null`) flips true the instant completeProfileSetup() runs, and the
@@ -77,6 +84,18 @@ class AppState extends ChangeNotifier {
   String? _legacyName;
   String? _legacyVillage;
 
+  // Captured by the router's `redirect` when it bounces an unauthenticated
+  // user away from a genuine `/app/**` deep link, so `OtpPage` can send them
+  // back to it after a successful sign-in instead of always landing on the
+  // dashboard. See `capturePendingDeepLink`/`consumePendingDeepLink` below.
+  //
+  // In-memory only, deliberately not persisted — a fresh `AppState` on app
+  // restart starts with this null, which is correct: re-opening the same
+  // bookmark re-captures it from scratch via the same redirect path, and a
+  // half-remembered target surviving a restart with no way to have been
+  // consumed would be a stale-state risk for no real benefit.
+  String? _pendingDeepLink;
+
   static const _roleKey = 'shg_role';
   static const _sessionKey = 'shg_session_started';
   static const _onboardedKey = 'shg_authenticated';
@@ -92,6 +111,24 @@ class AppState extends ChangeNotifier {
   /// or — unconfigured — role selection has been completed.
   bool get hasProfile => SupabaseService.isConfigured ? _profile != null : _legacyOnboarded;
 
+  /// True when the most recent attempt to fetch the current session's
+  /// `profiles` row failed because of a network/connectivity problem
+  /// (dropped connection, DNS failure, or the client-side request timeout —
+  /// see `isNetworkError` in `widgets/async_state.dart`) rather than a
+  /// confirmed "no such row" response from the server, AND no profile has
+  /// ever been successfully loaded this session (`_profile` is still null).
+  ///
+  /// Without this distinction, a returning already-onboarded user who opens
+  /// the app offline looks identical — to the router — to a genuinely
+  /// brand-new user: both have `hasSession && !hasProfile`. The router's
+  /// `redirect` callback checks this flag to route the former to a
+  /// retry-capable "couldn't load your profile" screen instead of silently
+  /// sending them through Profile Setup, which looks exactly like the app
+  /// forgot their account (or worse, invites them to accidentally
+  /// re-onboard). See docs/DEVELOPMENT_PROGRESS.md round 67, which
+  /// diagnosed this and deferred the fix to a dedicated round.
+  bool get profileLoadFailedNetwork => SupabaseService.isConfigured && _profile == null && _profileLoadFailedNetwork;
+
   bool get isAuthenticated => hasSession && hasProfile;
 
   /// Live mode only — a fresh profile exists but Role Select hasn't run
@@ -104,6 +141,31 @@ class AppState extends ChangeNotifier {
   /// a rank-and-file member joining, not the role-preview personas
   /// (leader/crp/clf/admin) this app's Role Select otherwise offers.
   bool get needsShgApproval => SupabaseService.isConfigured && _profile != null && _profile!.role == 'member' && _profile!.shgId == null;
+
+  /// Whether `Paths.roleSelect` is a legitimate destination while
+  /// [hasProfile] is still false — used by the router's redirect to decide
+  /// what counts as "still onboarding" before a `profiles` row exists.
+  ///
+  /// True only in demo/unconfigured mode: unlike live mode's 3-stage
+  /// session → profile → role pipeline, demo mode's two legacy flags double
+  /// up stages (`hasSession` == "profile setup done", `hasProfile` == "Role
+  /// Select done" — see the two-flag doc comment above), so `!hasProfile`
+  /// there genuinely means "Role Select is the very next, and only
+  /// reachable, step" — the mechanism that lets demo mode ever reach Role
+  /// Select at all, since [needsRoleSelection] is unconditionally false in
+  /// demo mode.
+  ///
+  /// In live mode, `!hasProfile` instead means no `profiles` row exists yet
+  /// — Role Select has nothing to write to (`setRole()` silently no-ops
+  /// when `_profile` is null), so treating it as reachable there let a
+  /// direct URL visit to `/role-select` right after OTP verification (before
+  /// `profileSetup` ever ran) silently swallow a role tap: `setRole()`
+  /// no-ops without throwing, `RoleSelectPage` sees no exception and
+  /// navigates to the dashboard, and the router's very next redirect
+  /// evaluation immediately bounces it back to `profileSetup` since
+  /// `hasProfile` is still false — a confusing dead-end with zero
+  /// explanation shown to the user.
+  bool get roleSelectReachableWithoutProfile => !SupabaseService.isConfigured;
 
   Profile? get profile => _profile;
   ShgSearchResult? get pendingShg => _pendingShg;
@@ -157,7 +219,16 @@ class AppState extends ChangeNotifier {
       if (_session == null) {
         _profileLoadGeneration++;
         _profile = null;
-      } else {
+        _profileLoadFailedNetwork = false;
+      } else if (state.event != AuthChangeEvent.tokenRefreshed) {
+        // GoTrue's auto-refresh timer fires this listener roughly hourly
+        // (see gotrue's `_autoRefreshTokenTick`) purely to rotate the JWT —
+        // the `profiles`/`shgs` rows behind it never change as a result, so
+        // re-running `_loadProfile()` (two network round-trips) on every
+        // tick was pure waste for as long as the app stayed open. Every
+        // other event (`initialSession`, `signedIn`, `userUpdated`, ...)
+        // still refetches, since those genuinely can correspond to a new or
+        // changed profile.
         await _loadProfile();
       }
       notifyListeners();
@@ -170,11 +241,24 @@ class AppState extends ChangeNotifier {
     try {
       final profile = await _profileRepository.fetchMyProfile();
       if (generation != _profileLoadGeneration) return;
+      // A successful fetch — even one that confirms `profile == null` (a
+      // genuinely new user, no `profiles` row yet) — means we definitively
+      // know the answer, so any earlier network-failure flag no longer
+      // applies.
       _profile = profile;
-    } catch (_) {
+      _profileLoadFailedNetwork = false;
+    } catch (error) {
+      if (generation != _profileLoadGeneration) return;
       // Leave any previously-loaded profile in place — a transient fetch
       // failure shouldn't wipe a valid profile and bounce an already
-      // onboarded user back into the onboarding flow.
+      // onboarded user back into the onboarding flow. Separately, remember
+      // whether THIS failure was network-related and no profile has ever
+      // been loaded (see `profileLoadFailedNetwork`'s doc comment) — that's
+      // the "we couldn't check" case the router must route differently
+      // from a confirmed "no profile" response. A network error after a
+      // profile was already loaded doesn't set this — `hasProfile` is
+      // already true then, so the router never reads this flag anyway.
+      _profileLoadFailedNetwork = _profile == null && isNetworkError(error);
       return;
     }
     final profile = _profile;
@@ -225,6 +309,29 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The most recently captured deep-link target awaiting replay after
+  /// sign-in, if any. See `capturePendingDeepLink`/`consumePendingDeepLink`.
+  String? get pendingDeepLink => _pendingDeepLink;
+
+  /// Records `location` as the destination to return to once the user has
+  /// signed in. Called only by the router's `redirect`, for an
+  /// unauthenticated visit to a genuine `/app/**` route.
+  ///
+  /// Deliberately does NOT call `notifyListeners()`: this runs synchronously
+  /// from inside GoRouter's own `redirect` callback (via `refreshListenable`
+  /// this same `AppState`), so notifying listeners here would re-enter
+  /// routing mid-decision instead of just recording state for `OtpPage` to
+  /// read back later.
+  void capturePendingDeepLink(String location) => _pendingDeepLink = location;
+
+  /// Returns the most recently captured deep link, if any, and clears it —
+  /// single-use, so it can never leak into a later, unrelated sign-in.
+  String? consumePendingDeepLink() {
+    final location = _pendingDeepLink;
+    _pendingDeepLink = null;
+    return location;
+  }
+
   Future<void> completeProfileSetup({
     required String name,
     required String village,
@@ -248,6 +355,19 @@ class AppState extends ChangeNotifier {
     // shgId is deliberately NOT passed here — membership only takes effect
     // once the SHG's leader approves the join request below (see
     // needsShgApproval).
+    //
+    // This method is also the "Choose a different SHG" retry path a
+    // rejected member reaches from ShgApprovalPendingPage (profileSetup
+    // stays reachable while needsShgApproval is true — see the router).
+    // Only a genuinely NEW profile still needs Role Select: without this
+    // `isNewProfile` guard, that retry unconditionally forced
+    // `_needsRoleSelection` back to true below, sending an already
+    // role-selected member back through Role Select a second time even
+    // though they were only ever picking a new SHG — a confusing extra
+    // step, and one that let them pick a different role (e.g. Leader) on
+    // the redo, silently escaping the pending-approval workflow they were
+    // already in the middle of.
+    final isNewProfile = _profile == null;
     _profile = await _profileRepository.upsertMyProfile(
       name: name,
       mobile: _session?.user.phone,
@@ -260,16 +380,32 @@ class AppState extends ChangeNotifier {
     // half-finished one (hasProfile=true but needsRoleSelection=false,
     // which would silently skip Role Select on the next unrelated
     // notifyListeners()). The caller still sees the thrown exception.
-    _needsRoleSelection = true;
+    if (isNewProfile) _needsRoleSelection = true;
     notifyListeners();
-    await _persistRoleSelectionPending(_profile!.id, true);
+    if (isNewProfile) await _persistRoleSelectionPending(_profile!.id, true);
     if (_pendingShg != null) {
       await _joinRequestRepository.submit(memberId: _profile!.id, shgId: _pendingShg!.id);
     }
   }
 
+  /// Self-service role selection — always the CALLER's own profile. Staff
+  /// roles (crp/clf/admin) must never be reachable here: this is the
+  /// onboarding Role Select page, not an admin-driven change (that's
+  /// `AdminRepository.updateUserRole`, gated to admin in the UI). The real
+  /// boundary is server-side — `profiles_update_self_or_admin`'s `with
+  /// check` (`supabase/migrations/0009_profiles_role_escalation_fix.sql`,
+  /// deployed and live since round 23) already rejects a self-update that
+  /// sets `role` to anything but the caller's current role or
+  /// member/leader. This client-side guard is defense-in-depth on top of
+  /// that: it fails fast with a clear error instead of surfacing a raw
+  /// `PostgrestException` if this code path is ever reached with a
+  /// disallowed role (e.g. a future UI change that re-adds a staff option
+  /// to this page by mistake).
   Future<void> setRole(Role role) async {
     if (SupabaseService.isConfigured) {
+      if (role == Role.crp || role == Role.clf || role == Role.admin) {
+        throw StateError('Staff and admin roles can only be granted by an administrator.');
+      }
       final profileId = _profile?.id;
       if (profileId == null) return;
       await _profileRepository.updateRole(role.name);
@@ -307,6 +443,11 @@ class AppState extends ChangeNotifier {
       _pendingShg = null;
       _shgName = null;
       _needsRoleSelection = false;
+      _profileLoadFailedNetwork = false;
+      // A pending deep link belongs to whoever is about to sign in next —
+      // without this, signing out and back in as a different account could
+      // replay the previous account's captured destination.
+      _pendingDeepLink = null;
     } else {
       _legacySessionStarted = false;
       _legacyOnboarded = false;

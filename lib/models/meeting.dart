@@ -27,6 +27,34 @@ class Meeting {
         agenda: map['agenda'] as String?,
         status: map['status'] as String,
       );
+
+  /// True once this meeting's scheduled date has passed — regardless of the
+  /// stored `status`. Nothing in the app ever calls
+  /// `MeetingRepository.setStatus()` (grepped: zero call sites in `lib/`),
+  /// so a real meeting's `status` stays `'upcoming'` forever after creation,
+  /// even long after its date has come and gone. Callers that need to know
+  /// whether a meeting has actually happened yet (picking "the next
+  /// meeting" to check into, or bucketing Upcoming vs. Past) must check
+  /// this instead of trusting `status` alone.
+  bool get hasPassed {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return date.isBefore(today);
+  }
+
+  /// True only on the meeting's own scheduled calendar day (day granularity,
+  /// same as [hasPassed]) — used to gate the member-facing self check-in
+  /// flow (`meeting_qr_page.dart`) so a member can't mark herself "present"
+  /// for a meeting that is still days/weeks away. `hasPassed` alone isn't
+  /// enough for that: it only excludes meetings whose date has already gone
+  /// by, so a naive `!hasPassed` filter is future-inclusive and would happily
+  /// resolve to an SHG's next scheduled meeting even if it's a month out,
+  /// letting a member self-check-in for it (and get counted in
+  /// `avg_attendance_pct`) long before it actually happens.
+  bool get isScheduledToday {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
+  }
 }
 
 /// A roster member merged with their attendance for one meeting (built in

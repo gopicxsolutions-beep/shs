@@ -3,6 +3,15 @@ import '../data/schemes.dart' as mock;
 import '../models/scheme.dart';
 import '../services/supabase_service.dart';
 
+/// Thrown by [SchemeRepository.decideApplication] when the application is no
+/// longer 'applied'/'under_review' by the time the write reaches the
+/// database — i.e. a different staff account already decided it (see
+/// `decide_scheme_application` in
+/// supabase/migrations/0029_loan_and_scheme_decision_race_guard.sql).
+class SchemeApplicationAlreadyDecidedException implements Exception {
+  const SchemeApplicationAlreadyDecidedException();
+}
+
 /// Backed by `public.schemes` / `public.scheme_applications` when Supabase
 /// is configured; falls back to `lib/data/schemes.dart` otherwise. The
 /// scheme catalog is public reference data, readable by any authenticated
@@ -15,6 +24,13 @@ class SchemeRepository {
   // never show anywhere — track it here so it survives for the rest of the
   // session, mirroring AnnouncementRepository._locallyRead.
   static final Set<String> _locallyApplied = {};
+
+  // Same idea for the staff decision on an application — see
+  // decideApplication()/fetchPendingApplications() below. Keyed by
+  // scheme id (mirrors _locallyApplied, since demo mode's single mock
+  // member can only have one application per scheme, matching the real
+  // schema's `unique (scheme_id, member_id)` constraint).
+  static final Map<String, String> _locallyDecided = {};
 
   // Same idea for admin catalog CRUD — adding/editing/deleting a scheme
   // would otherwise silently revert the moment the catalog reloads.
@@ -60,7 +76,8 @@ class SchemeRepository {
     if (!_live) {
       final byStatus = <String, SchemeApplication>{};
       for (final s in mock.schemes.where((s) => s.status != 'not_applied' || _locallyApplied.contains(s.id))) {
-        final status = s.status == 'not_applied' ? 'applied' : s.status;
+        final baseStatus = s.status == 'not_applied' ? 'applied' : s.status;
+        final status = _locallyDecided[s.id] ?? baseStatus;
         byStatus[s.id] = SchemeApplication(id: s.id, schemeId: s.id, status: status, appliedOn: DateTime.now());
       }
       return byStatus;
@@ -85,6 +102,74 @@ class SchemeRepository {
       'member_id': memberId,
       'status': 'applied',
     });
+  }
+
+  /// Staff review queue — `scheme_applications_update_self_or_staff` RLS
+  /// already let staff move an application between
+  /// applied/under_review/approved/rejected, but until now nothing in the
+  /// app ever called that update path: an application, once submitted,
+  /// could never actually be approved or rejected by anyone — a real,
+  /// core gap for an app whose entire "Government Schemes" module exists
+  /// to help members get schemes approved. Only staff (crp/clf/admin) can
+  /// reach this per `is_staff()`, matching the RLS's own staff-only write
+  /// scope (unlike loan approvals, this isn't leader-scoped — scheme
+  /// eligibility/approval is a govt-scheme-administration matter, not an
+  /// individual SHG's own call).
+  Future<List<SchemeApplicationReview>> fetchPendingApplications() async {
+    if (!_live) {
+      final schemes = await fetchSchemes();
+      // Must include the catalog's own preset 'applied'/'under_review' rows
+      // (sc2 PMEGP, sc3 MUDRA — see lib/data/schemes.dart), not just schemes
+      // applied to during this session via apply(): fetchMyApplications()
+      // already surfaces those preset rows to the member as pending
+      // applications, so if this queue only looked at _locallyApplied, the
+      // member's own "My Applications" list and the staff review queue
+      // would disagree about the same underlying demo data — the staff
+      // queue would sit empty even though the member view shows real
+      // pending applications, unlike live mode's `inFilter('status', ...)`
+      // which would surface matching rows for equivalent data.
+      final presetPendingIds = mock.schemes.where((s) => s.status == 'applied' || s.status == 'under_review').map((s) => s.id);
+      final pendingIds = {...presetPendingIds, ..._locallyApplied}.where((schemeId) => !_locallyDecided.containsKey(schemeId));
+      return pendingIds
+          .map((schemeId) {
+            final matches = schemes.where((s) => s.id == schemeId);
+            final schemeName = matches.isEmpty ? schemeId : matches.first.name;
+            return SchemeApplicationReview(applicationId: schemeId, schemeId: schemeId, schemeName: schemeName, memberName: 'Lakshmi Devi', status: 'applied', appliedOn: DateTime.now());
+          })
+          .toList();
+    }
+    final rows = await _client
+        .from('scheme_applications')
+        .select('id, scheme_id, status, applied_on, schemes(name), profiles(name)')
+        .inFilter('status', ['applied', 'under_review'])
+        .order('applied_on');
+    return (rows as List).map((r) => SchemeApplicationReview.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> decideApplication(String applicationId, {required bool approve}) async {
+    if (!_live) {
+      _locallyDecided[applicationId] = approve ? 'approved' : 'rejected';
+      return;
+    }
+    // Atomic via `decide_scheme_application` (see
+    // supabase/migrations/0029_loan_and_scheme_decision_race_guard.sql) —
+    // locks the row and verifies it's still applied/under_review before
+    // transitioning, so a second staff account racing on the same shared
+    // review queue can no longer silently overwrite the first decision.
+    try {
+      await _client.rpc('decide_scheme_application', params: {'p_application_id': applicationId, 'p_approve': approve});
+    } on PostgrestException catch (e) {
+      // 'PGRST202' = function not found in schema cache — migration 0029
+      // not deployed yet. Falls back to the old non-atomic write (same
+      // fallback shape used elsewhere in this repository layer for
+      // not-yet-deployed migrations).
+      if (e.code == 'PGRST202') {
+        await _client.from('scheme_applications').update({'status': approve ? 'approved' : 'rejected'}).eq('id', applicationId);
+        return;
+      }
+      if (e.message.contains('already decided')) throw const SchemeApplicationAlreadyDecidedException();
+      rethrow;
+    }
   }
 
   /// Admin-only catalog management (enforced server-side by

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../repositories/financial_repository.dart';
 import '../../widgets/input_formatters.dart';
 
@@ -44,7 +45,7 @@ Future<bool?> showFinancialEntryDialog(
           ],
         ),
         actions: [
-          TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
           FilledButton(
             onPressed: submitting
                 ? null
@@ -72,10 +73,12 @@ Future<bool?> showFinancialEntryDialog(
                         credit: isCredit ? amount : 0,
                       );
                       if (!saved) {
-                        setState(() {
-                          submitting = false;
-                          error = "You're not linked to an SHG, so there's nothing to record this entry against.";
-                        });
+                        if (context.mounted) {
+                          setState(() {
+                            submitting = false;
+                            error = "You're not linked to an SHG, so there's nothing to record this entry against.";
+                          });
+                        }
                         return;
                       }
                       if (context.mounted) Navigator.of(context).pop(true);

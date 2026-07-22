@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg.dart';
@@ -75,6 +76,13 @@ class ShgHomePage extends StatelessWidget {
                     _row('CLF', shg.clf ?? '—'),
                     const SizedBox(height: 8),
                     _row('Mandal', shg.mandal ?? '—'),
+                    const SizedBox(height: 8),
+                    // `ShgProfile.formationDate` (`shgs.formation_date`) was
+                    // parsed by `ShgRepository.fetchShg()` but never
+                    // displayed anywhere — a real, populated field with no
+                    // UI to show it, the same "data with no way to see it"
+                    // shape as round 65's orphaned routes.
+                    _row('Formed', shg.formationDate != null ? DateFormat('dd MMM yyyy').format(shg.formationDate!) : '—'),
                   ],
                 ),
               ),
@@ -101,12 +109,22 @@ class ShgHomePage extends StatelessWidget {
     );
   }
 
+  // `label` is a short fixed caption ("Bank", "IFSC", ...) so it keeps its
+  // natural width; `value` is real SHG/bank data of unbounded length (a
+  // long bank branch name, a full account number, ...) and previously had
+  // no flex at all, so it overflowed the row instead of wrapping.
+  //
+  // "short" only held at 1.0x text scale, though — "Village Organisation"
+  // is long enough that at 1.5-2x scaled text (a real accessibility
+  // setting, not just a hypothetically long label) it alone overflows the
+  // row before `value` even gets a say. `Flexible`+ellipsis on the label
+  // too keeps both sides visible instead of throwing.
   Widget _row(String label, String value) => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: Text(label, style: AppTheme.sans(12, color: Neutral.c500))),
+          Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500))),
           const SizedBox(width: 8),
-          Text(value, style: AppTheme.sans(12, weight: FontWeight.w700), textAlign: TextAlign.right),
+          Expanded(child: Text(value, style: AppTheme.sans(12, weight: FontWeight.w700), textAlign: TextAlign.right)),
         ],
       );
 }

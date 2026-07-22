@@ -6,10 +6,12 @@ import '../../repositories/loan_repository.dart';
 import '../../routes/paths.dart';
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
+import '../../state/unsaved_changes.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/discard_changes_dialog.dart';
 import '../../widgets/input_formatters.dart';
 
 class LoanApplyPage extends StatefulWidget {
@@ -24,13 +26,24 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
   final _repo = LoanRepository();
   int _tenure = 12;
   bool _saving = false;
+  bool _dirty = false;
   String? _error;
 
   static const _tenureOptions = [6, 12, 18, 24];
   static const _maxAmount = 1000000;
 
+  // Also raises the app-wide `UnsavedChanges` flag that `PageHeader`'s Back
+  // button and the bottom nav check before navigating away — see
+  // `unsaved_changes.dart` for why this page's own `PopScope` below can't
+  // cover those two paths by itself.
+  void _markDirty() {
+    _dirty = true;
+    UnsavedChanges.dirty = true;
+  }
+
   @override
   void dispose() {
+    UnsavedChanges.dirty = false;
     _purpose.dispose();
     _amount.dispose();
     super.dispose();
@@ -84,9 +97,25 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
     }
   }
 
+  // Defense-in-depth for the rare case something genuinely calls
+  // `Navigator.pop()` on this page (e.g. if it's ever reached via
+  // `context.push()` in the future). Does NOT cover this app's actual
+  // navigation triggers today — see `unsaved_changes.dart`.
+  Future<void> _handlePop(bool didPop, dynamic result) async {
+    if (didPop) return;
+    final discard = await confirmDiscardChanges(context);
+    if (discard && mounted) {
+      UnsavedChanges.dirty = false;
+      context.go(Paths.loans);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: _handlePop,
+      child: Scaffold(
       appBar: const PageHeader(title: 'Apply for Loan'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -106,7 +135,10 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
                     textInputAction: TextInputAction.next,
                     style: AppTheme.sans(14),
                     decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Dairy — buy milch cow', counterText: ''),
-                    onChanged: (_) => setState(() => _error = null),
+                    onChanged: (_) => setState(() {
+                      _error = null;
+                      _markDirty();
+                    }),
                   ),
                 ],
               ),
@@ -130,7 +162,10 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
                         maxLength: 7,
                         style: AppTheme.display(22),
                         decoration: const InputDecoration(border: InputBorder.none, hintText: '0', counterText: ''),
-                        onChanged: (_) => setState(() => _error = null),
+                        onChanged: (_) => setState(() {
+                          _error = null;
+                          _markDirty();
+                        }),
                       ),
                     ),
                   ]),
@@ -151,7 +186,10 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
                       return ChoiceChip(
                         label: Text('$t months'),
                         selected: selected,
-                        onSelected: (_) => setState(() => _tenure = t),
+                        onSelected: (_) => setState(() {
+                          _tenure = t;
+                          _markDirty();
+                        }),
                         selectedColor: Brand.c50,
                         labelStyle: AppTheme.sans(12, weight: FontWeight.w600, color: selected ? Brand.c700 : Neutral.c600),
                         backgroundColor: Colors.white,
@@ -171,6 +209,7 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
             AppButton(label: _saving ? 'Submitting…' : 'Submit Application', fullWidth: true, size: ButtonSize.lg, onPressed: _saving ? null : _submit),
           ],
         ),
+      ),
       ),
     );
   }

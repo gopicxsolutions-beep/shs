@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/loan.dart';
-import '../../repositories/loan_repository.dart';
+import '../../repositories/loan_repository.dart' show LoanAlreadyDecidedException, LoanRepository;
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -57,12 +59,12 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(l.memberName, style: AppTheme.sans(14, weight: FontWeight.w700)),
-                              Text(l.purpose, style: AppTheme.sans(12, color: Neutral.c500)),
+                              Text(l.memberName, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(14, weight: FontWeight.w700)),
+                              Text(l.purpose, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500)),
                             ],
                           ),
                         ),
-                        Text('₹${l.amount}', style: AppTheme.display(16)),
+                        Text('₹${NumberFormat('#,##,##0', 'en_IN').format(l.amount)}', style: AppTheme.display(16)),
                       ]),
                       const SizedBox(height: 4),
                       Text('${l.tenureMonths} month tenure', style: AppTheme.sans(11, color: Neutral.c400)),
@@ -80,6 +82,18 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(content: Text(SupabaseService.isConfigured ? 'Application rejected' : 'Demo mode — not saved (connect Supabase to persist)')),
+                                        );
+                                      }
+                                    } on LoanAlreadyDecidedException {
+                                      // Someone else (another leader/staff account) already
+                                      // approved or rejected this loan since the list was
+                                      // last loaded — reload so the now-stale row drops out
+                                      // of the pending queue instead of leaving it sitting
+                                      // there looking actionable.
+                                      _key.currentState?.reload();
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('This application was already decided by someone else.')),
                                         );
                                       }
                                     } catch (_) {
@@ -152,7 +166,7 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(null), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
             FilledButton(
               onPressed: submitting
                   ? null
@@ -169,6 +183,12 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                       try {
                         await _repo.approve(l.id, emi: emi, nextDueDate: DateTime.now().add(const Duration(days: 30)));
                         if (context.mounted) Navigator.of(context).pop(true);
+                      } on LoanAlreadyDecidedException {
+                        // Another leader/staff account already approved or rejected
+                        // this loan since the queue was loaded — retrying with a
+                        // different EMI won't help, so close the dialog and let the
+                        // reload below drop the now-stale row from the pending list.
+                        if (context.mounted) Navigator.of(context).pop(false);
                       } catch (_) {
                         if (context.mounted) {
                           setState(() {
@@ -188,6 +208,11 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
       _key.currentState?.reload();
       messenger.showSnackBar(
         SnackBar(content: Text(SupabaseService.isConfigured ? 'Loan approved' : 'Demo mode — not saved (connect Supabase to persist)')),
+      );
+    } else if (approved == false) {
+      _key.currentState?.reload();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('This loan was already decided by someone else.')),
       );
     }
   }

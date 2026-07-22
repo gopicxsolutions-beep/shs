@@ -22,6 +22,34 @@
 
   "commonLoading": "लोड हो रहा है…",
   "commonError": "कुछ गलत हो गया",
+  "commonBack": "वापस",
+
+  "asyncErrorGeneric": "कुछ गलत हो गया। कृपया फिर से कोशिश करें।",
+  "asyncErrorNetwork": "अपना इंटरनेट कनेक्शन जांचें और फिर से कोशिश करें।",
+
+  "discardChangesTitle": "बदलाव छोड़ें?",
+  "discardChangesMessage": "आपने इस पेज पर जो जानकारी भरी है वह अभी तक सेव नहीं हुई है। अभी जाने पर यह जानकारी खो जाएगी।",
+  "discardChangesKeepEditing": "संपादन जारी रखें",
+  "discardChangesDiscard": "छोड़ें",
+
+  "errorGoHome": "होम पर जाएं",
+  "error404Title": "पेज नहीं मिला",
+  "error404Message": "आप जिस पेज को खोज रहे हैं वह मौजूद नहीं है या हट गया है।",
+  "profileLoadErrorTitle": "आपकी प्रोफ़ाइल लोड नहीं हो सकी",
+
+  "qrPermissionDenied": "कैमरा अनुमति अस्वीकार कर दी गई।",
+  "qrUnsupported": "इस डिवाइस पर स्कैनिंग समर्थित नहीं है।",
+  "qrCameraUnavailable": "कैमरा उपलब्ध नहीं है।",
+  "qrManualFallbackHint": "आप अभी भी विवरण खुद दर्ज कर सकते हैं।",
+  "qrEnterManually": "इसके बजाय खुद दर्ज करें",
+  "qrManualEntry": "मैन्युअल एंट्री",
+  "qrTurnOffFlashlight": "फ्लैशलाइट बंद करें",
+  "qrTurnOnFlashlight": "फ्लैशलाइट चालू करें",
+  "qrTakingTooLong": "कैमरा शुरू होने में बहुत समय ले रहा है।",
+  "qrScanToPayTitle": "भुगतान के लिए स्कैन करें",
+  "qrScanToPayInstructions": "अपने कैमरे को व्यापारी के UPI QR कोड पर पॉइंट करें",
+  "qrScanAttendanceTitle": "उपस्थिति QR स्कैन करें",
+  "qrScanAttendanceInstructions": "अपने कैमरे को स्थल पर दिखाए गए QR कोड पर पॉइंट करें",
 
   "profileTitle": "प्रोफ़ाइल",
   "profileEditProfile": "प्रोफ़ाइल संपादित करें",
@@ -29,17 +57,27 @@
   "profileVillage": "गांव",
   "profileSHG": "SHG",
   "profileName": "नाम",
+  "profileUpdated": "प्रोफ़ाइल अपडेट हो गई",
+  "profileUpdateDemoMode": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+  "profileUpdateError": "आपकी प्रोफ़ाइल अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।",
+  "profileNameRequired": "नाम आवश्यक है।",
 
   "settingsTitle": "सेटिंग्स",
   "settingsNotifications": "सूचनाएं",
   "settingsNotifMeetingReminders": "बैठक अनुस्मारक",
   "settingsNotifPaymentAlerts": "भुगतान अलर्ट",
   "settingsNotifAnnouncements": "घोषणाएं",
+  "settingsNotifComingSoon": "ये प्राथमिकताएं सेव हो जाती हैं, लेकिन ऐप के इस वर्शन में पुश/लोकल रिमाइंडर अभी नहीं भेजे जाते।",
   "settingsLanguage": "भाषा",
   "settingsPreviewAs": "इस रूप में देखें",
   "settingsAppVersion": "ऐप संस्करण",
+  "settingsGeneralSection": "सामान्य",
+  "settingsPreviewRoleDescription": "यह ऐप आपको हर भूमिका का डैशबोर्ड देखने देता है — कभी भी बदल सकते हैं।",
+  "settingsPreferenceError": "यह प्राथमिकता सेव नहीं हो सकी। कृपया फिर से कोशिश करें।",
+  "settingsRoleSwitchError": "भूमिका नहीं बदली जा सकी। कृपया फिर से कोशिश करें।",
 
   "languageTitle": "भाषा",
+  "languageSubtitle": "ऐप के लिए अपनी पसंदीदा भाषा चुनें",
   "languageEnglish": "अंग्रेज़ी",
   "languageTelugu": "తెలుగు",
   "languageHindi": "हिन्दी",
@@ -50,6 +88,9 @@
   "loginSubtitle": "जारी रखने के लिए अपना पंजीकृत मोबाइल नंबर दर्ज करें",
   "loginSending": "भेजा जा रहा है…",
   "loginSendOtp": "OTP भेजें",
+  "loginOtpError": "OTP नहीं भेजा जा सका। कृपया नंबर जांचें और फिर से कोशिश करें।",
+  "loginDataProtected": "आपका डेटा DAY-NRLM दिशानिर्देशों के तहत सुरक्षित है। हम आपके आधार विवरण कभी साझा नहीं करते।",
+  "loginTermsAgreement": "जारी रखने पर आप सेवा की शर्तों और गोपनीयता नीति से सहमत होते हैं",
 
   "otpTitle": "OTP सत्यापित करें",
   "otpHint": "अपने फोन पर भेजा गया 6-अंकों का कोड दर्ज करें",
@@ -60,6 +101,9 @@
   "otpResendIn": "OTP दोबारा भेजें ",
   "otpResend": "OTP दोबारा भेजें",
   "otpDidntReceive": "कोड नहीं मिला? अपना SMS इनबॉक्स जांचें।",
+  "otpVerifyError": "गलत या समय-सीमा समाप्त कोड। कृपया फिर से कोशिश करें।",
+  "otpResendError": "कोड फिर से नहीं भेजा जा सका। कृपया फिर से कोशिश करें।",
+  "otpDigitLabel": "OTP अंक {position}, 6 में से",
 
   "profileSetupTitle": "अपनी प्रोफ़ाइल बनाएं",
   "profileSetupSubtitle": "शुरू करने के लिए अपने बारे में थोड़ा बताएं",
@@ -77,6 +121,7 @@
 
   "roleSelectTitle": "इस रूप में जारी रखें",
   "roleSelectSubtitle": "अनुकूलित अनुभव देखने के लिए SHG तंत्र में अपनी भूमिका चुनें",
+  "roleSelectSaveError": "आपकी भूमिका सेव नहीं हो सकी। कृपया फिर से कोशिश करें।",
 
   "dashboardGreeting": "वापसी पर स्वागत है",
 
@@ -86,5 +131,16 @@
   "shgApprovalRejectedMessage": "आपके SHG लीडर ने इस अनुरोध को स्वीकृत नहीं किया। आप कोई दूसरा SHG चुनकर फिर से कोशिश कर सकते हैं।",
   "unknownShg": "अज्ञात SHG",
   "chooseDifferentShg": "दूसरा SHG चुनें",
-  "checkingStatus": "जांच हो रही है…"
+  "checkingStatus": "जांच हो रही है…",
+  "shgApprovalCheckError": "स्थिति जांच नहीं हो सकी। कृपया फिर से कोशिश करें।",
+
+  "voiceNoLoans": "आपके नाम कोई ऋण नहीं है।",
+  "voiceNoActiveLoans": "आपके नाम कुल {count} ऋण हैं, लेकिन उनमें से कोई भी अभी सक्रिय नहीं है।",
+  "voiceLoanActive": "{purpose}: ₹{amount} ऋण, ₹{outstanding} अभी भी बकाया है।",
+  "voiceSavingsThisMonth": "इस महीने आपने {count} बार बचत की, कुल ₹{amount}।",
+  "voiceNoAnnouncements": "आपके लिए कोई घोषणा नहीं है।",
+  "voiceOpeningSavingsForm": "आपके लिए बचत प्रविष्टि फ़ॉर्म खोला जा रहा है।",
+  "voiceUnknownCommand": "माफ़ कीजिए, मुझे वह समझ नहीं आया।",
+
+  "aiDisclaimer": "यह सलाह AI द्वारा तैयार की गई है और गलत हो सकती है। यह पेशेवर वित्तीय, कानूनी या चिकित्सा सलाह नहीं है; महत्वपूर्ण निर्णय लेने से पहले अपने SHG लीडर या किसी योग्य सलाहकार से पुष्टि करें।"
 }

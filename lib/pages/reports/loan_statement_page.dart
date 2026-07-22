@@ -41,52 +41,91 @@ class LoanStatementPage extends StatelessWidget {
           final totalOutstanding = loans.where((l) => l.status == 'active' || l.status == 'overdue').fold<num>(0, (s, l) => s + l.outstanding);
           final totalRepaid = totalBorrowed - loans.fold<num>(0, (s, l) => s + l.outstanding);
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              AppCard(
-                gradient: const LinearGradient(colors: [Brand.c700, Brand.c600]),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Total Outstanding', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
-                      const SizedBox(height: 4),
-                      Text('₹${NumberFormat('#,##0').format(totalOutstanding)}', style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.w700)),
-                    ]),
-                    Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      Text('${loans.length} loan(s)', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
-                      const SizedBox(height: 4),
-                      Text('Repaid ₹${NumberFormat('#,##0').format(totalRepaid)}', style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
-                    ]),
+          // A CustomScrollView/Sliver split (not a plain ListView with
+          // `...loans.map(...)`) so the loan list below is genuinely lazily
+          // built (SliverList.builder) instead of every row being built
+          // eagerly regardless of scroll position.
+          return CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverMainAxisGroup(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: AppCard(
+                        gradient: const LinearGradient(colors: [Brand.c700, Brand.c600]),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text('Total Outstanding', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '₹${NumberFormat('#,##,##0', 'en_IN').format(totalOutstanding)}',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.w700),
+                                ),
+                              ]),
+                            ),
+                            const SizedBox(width: 12),
+                            Flexible(
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                                Text('${loans.length} loan(s)', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Repaid ₹${NumberFormat('#,##,##0', 'en_IN').format(totalRepaid)}',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.7)),
+                                ),
+                              ]),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                    SliverList.builder(
+                      itemCount: loans.length,
+                      itemBuilder: (context, index) {
+                        final l = loans[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: AppCard(
+                            onTap: () => context.go(Paths.loanDetail(l.id)),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                  Expanded(child: Text(l.purpose, style: AppTheme.sans(13, weight: FontWeight.w700))),
+                                  AppBadge(text: l.status, tone: _statusTones[l.status] ?? BadgeTone.neutral),
+                                ]),
+                                const SizedBox(height: 8),
+                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                  Flexible(child: Text('Amount ₹${NumberFormat('#,##,##0', 'en_IN').format(l.amount)}', overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500))),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      'Outstanding ₹${NumberFormat('#,##,##0', 'en_IN').format(l.outstanding)}',
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.right,
+                                      style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600),
+                                    ),
+                                  ),
+                                ]),
+                                if (l.disbursedOn != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text('Disbursed ${DateFormat('dd MMM yyyy').format(l.disbursedOn!)}', style: AppTheme.sans(11, color: Neutral.c400)),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              ...loans.map((l) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: AppCard(
-                      onTap: () => context.go(Paths.loanDetail(l.id)),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                            Expanded(child: Text(l.purpose, style: AppTheme.sans(13, weight: FontWeight.w700))),
-                            AppBadge(text: l.status, tone: _statusTones[l.status] ?? BadgeTone.neutral),
-                          ]),
-                          const SizedBox(height: 8),
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                            Text('Amount ₹${l.amount}', style: AppTheme.sans(12, color: Neutral.c500)),
-                            Text('Outstanding ₹${l.outstanding}', style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
-                          ]),
-                          if (l.disbursedOn != null) ...[
-                            const SizedBox(height: 4),
-                            Text('Disbursed ${DateFormat('dd MMM yyyy').format(l.disbursedOn!)}', style: AppTheme.sans(11, color: Neutral.c400)),
-                          ],
-                        ],
-                      ),
-                    ),
-                  )),
             ],
           );
         },

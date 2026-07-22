@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/scheme.dart';
 import '../../models/types.dart';
@@ -52,12 +53,21 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Add')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(AppLocalizations.of(context)?.actionAdd ?? 'Add')),
         ],
       ),
     );
-    if (confirmed != true || _name.text.trim().isEmpty) return;
+    if (confirmed != true || !mounted) return;
+    if (_name.text.trim().isEmpty) {
+      // Same silent-no-op gap as admin_shgs_page.dart's "Add SHG": tapping
+      // "Add" on a blank name closed the dialog with zero feedback, looking
+      // exactly like a dead button rather than a validation failure.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Scheme name is required.')));
+      }
+      return;
+    }
     setState(() => _busy = true);
     try {
       await _repo.createScheme(name: _name.text.trim(), agency: _agency.text.trim(), benefit: _benefit.text.trim());
@@ -76,6 +86,62 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
     }
   }
 
+  // `SchemeRepository.updateScheme()` was a fully-working, RLS-backed write
+  // (`schemes_write_admin`) with genuinely zero call sites anywhere in the
+  // app — this page could Add and Delete a scheme, but never Edit one, so a
+  // typo in a scheme's name/agency/benefit was permanently uncorrectable
+  // short of deleting and re-adding it (losing its id and any applications
+  // already filed against it). Mirrors `_addScheme`'s own dialog shape,
+  // just pre-filled and calling `updateScheme` instead of `createScheme`.
+  Future<void> _editScheme(Scheme s) async {
+    _name.text = s.name;
+    _agency.text = s.agency ?? '';
+    _benefit.text = s.benefit ?? '';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit scheme'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: _name, maxLength: 100, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'Scheme name')),
+            const SizedBox(height: 12),
+            TextField(controller: _agency, maxLength: 100, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'Agency')),
+            const SizedBox(height: 12),
+            TextField(controller: _benefit, maxLength: 300, textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'Benefit')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    if (_name.text.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Scheme name is required.')));
+      }
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await _repo.updateScheme(s.id, name: _name.text.trim(), fullName: s.fullName, agency: _agency.text.trim(), benefit: _benefit.text.trim());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(SupabaseService.isConfigured ? 'Scheme updated' : 'Demo mode — scheme not saved (connect Supabase to persist)'),
+        ));
+        _key.currentState?.reload();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update this scheme. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _deleteScheme(Scheme s) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -83,12 +149,12 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
         title: const Text('Delete scheme?'),
         content: Text('This removes "${s.name}" from the catalog.'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(AppLocalizations.of(context)?.actionDelete ?? 'Delete')),
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
     setState(() => _busy = true);
     try {
       await _repo.deleteScheme(s.id);
@@ -148,12 +214,18 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
                           ],
                         ),
                       ),
-                      if (isAdmin)
+                      if (isAdmin) ...[
+                        IconButton(
+                          icon: Icon(Icons.edit_outlined, color: !_busy ? Brand.c600 : Neutral.c300),
+                          onPressed: !_busy ? () => _editScheme(s) : null,
+                          tooltip: 'Edit ${s.name}',
+                        ),
                         IconButton(
                           icon: Icon(Icons.delete_outline_rounded, color: !_busy ? Accent.red500 : Neutral.c300),
                           onPressed: !_busy ? () => _deleteScheme(s) : null,
                           tooltip: 'Delete ${s.name}',
                         ),
+                      ],
                     ],
                   ),
                 ),

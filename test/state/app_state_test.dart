@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shg_saathi/models/profile.dart';
 import 'package:shg_saathi/models/shg.dart';
 import 'package:shg_saathi/repositories/shg_join_request_repository.dart';
@@ -29,6 +30,37 @@ class _FakeAuthService extends AuthService {
   @override
   Future<void> signOut() async {}
 }
+
+/// Drives a controllable [onAuthStateChange] stream so tests can push
+/// specific [AuthChangeEvent]s (e.g. `tokenRefreshed`) at [AppState] without
+/// touching a live Supabase client.
+class _FakeAuthServiceWithStream extends AuthService {
+  _FakeAuthServiceWithStream(this._initialSession);
+  final Session? _initialSession;
+  final _controller = StreamController<AuthState>.broadcast();
+  Session? _currentSession;
+
+  @override
+  Session? get currentSession => _currentSession ??= _initialSession;
+
+  @override
+  Stream<AuthState> get onAuthStateChange => _controller.stream;
+
+  @override
+  Future<void> signOut() async {}
+
+  void emit(AuthChangeEvent event, Session? session) {
+    _currentSession = session;
+    _controller.add(AuthState(event, session));
+  }
+}
+
+Session _fakeSession(String userId) => Session(
+      accessToken: 'token-$userId',
+      tokenType: 'bearer',
+      refreshToken: 'refresh-$userId',
+      user: User(id: userId, appMetadata: const {}, userMetadata: const {}, aud: 'authenticated', createdAt: DateTime(2026).toIso8601String()),
+    );
 
 class _FakeShgRepository extends ShgRepository {
   _FakeShgRepository(this._shg);
@@ -95,6 +127,193 @@ void main() {
 
       await appState.refreshProfile();
       expect(appState.profile?.id, 'keep-me', reason: 'a failed refresh should not wipe a valid, already-loaded profile');
+    });
+  });
+
+  group('AppState.profileLoadFailedNetwork', () {
+    // Covers the round-67-diagnosed bug: a returning, already-onboarded
+    // user whose session restores locally (no network needed) but whose
+    // very first profile fetch this session fails offline used to be
+    // silently misrouted to Profile Setup, indistinguishable from a
+    // brand-new user. These tests pin the flag the router now reads to
+    // route that case differently — see routes/router.dart's `redirect`.
+    test('a network failure on the very first profile load sets the flag, and hasProfile stays false', () async {
+      final fakeRepo = _FakeProfileRepository([() => Future<Profile?>.error(TimeoutException('timed out'))]);
+      final appState = AppState(profileRepository: fakeRepo, authService: _FakeAuthService(), joinRequestRepository: ShgJoinRequestRepository());
+
+      await appState.refreshProfile();
+
+      expect(appState.hasProfile, isFalse);
+      expect(appState.profileLoadFailedNetwork, isTrue, reason: 'a TimeoutException on the first-ever load is a connectivity failure, not a confirmed empty profile');
+    });
+
+    test('a confirmed empty profile (server returns null, no error) does not set the flag', () async {
+      final fakeRepo = _FakeProfileRepository([() async => null]);
+      final appState = AppState(profileRepository: fakeRepo, authService: _FakeAuthService(), joinRequestRepository: ShgJoinRequestRepository());
+
+      await appState.refreshProfile();
+
+      expect(appState.hasProfile, isFalse);
+      expect(appState.profileLoadFailedNetwork, isFalse, reason: 'a genuinely new user (server confirms zero rows) must still be routed to Profile Setup, not the retry screen');
+    });
+
+    test('a non-network error on the first load does not set the flag', () async {
+      final fakeRepo = _FakeProfileRepository([() => Future<Profile?>.error(Exception('permission denied'))]);
+      final appState = AppState(profileRepository: fakeRepo, authService: _FakeAuthService(), joinRequestRepository: ShgJoinRequestRepository());
+
+      await appState.refreshProfile();
+
+      expect(appState.profileLoadFailedNetwork, isFalse, reason: 'only the specific isNetworkError detection (TimeoutException/http.ClientException) should set this flag');
+    });
+
+    test('the flag clears once a retry succeeds', () async {
+      const profile = Profile(id: 'p1', name: 'Asha', role: 'member');
+      final fakeRepo = _FakeProfileRepository([
+        () => Future<Profile?>.error(TimeoutException('timed out')),
+        () async => profile,
+      ]);
+      final appState = AppState(profileRepository: fakeRepo, authService: _FakeAuthService(), joinRequestRepository: ShgJoinRequestRepository());
+
+      await appState.refreshProfile();
+      expect(appState.profileLoadFailedNetwork, isTrue);
+
+      await appState.refreshProfile();
+      expect(appState.profileLoadFailedNetwork, isFalse, reason: 'a successful retry must clear the flag so the router lets the user through to their dashboard');
+      expect(appState.hasProfile, isTrue);
+    });
+
+    test('a network failure refreshing an already-loaded profile does not set the flag (hasProfile stays true throughout)', () async {
+      const profile = Profile(id: 'p1', name: 'Asha', role: 'member');
+      final fakeRepo = _FakeProfileRepository([
+        () async => profile,
+        () => Future<Profile?>.error(TimeoutException('timed out')),
+      ]);
+      final appState = AppState(profileRepository: fakeRepo, authService: _FakeAuthService(), joinRequestRepository: ShgJoinRequestRepository());
+
+      await appState.refreshProfile();
+      expect(appState.hasProfile, isTrue);
+
+      await appState.refreshProfile();
+      expect(appState.hasProfile, isTrue, reason: 'the existing "leave previously-loaded profile in place" behavior must be unaffected');
+      expect(appState.profileLoadFailedNetwork, isFalse, reason: 'the router only ever reads this flag while !hasProfile, so it must stay false once a profile has been loaded');
+    });
+
+    test('signOut clears the flag', () async {
+      final fakeRepo = _FakeProfileRepository([() => Future<Profile?>.error(TimeoutException('timed out'))]);
+      final appState = AppState(profileRepository: fakeRepo, authService: _FakeAuthService(), joinRequestRepository: ShgJoinRequestRepository());
+
+      await appState.refreshProfile();
+      expect(appState.profileLoadFailedNetwork, isTrue);
+
+      await appState.signOut();
+      expect(appState.profileLoadFailedNetwork, isFalse, reason: 'a stale network-failure flag must not survive into a fresh, unauthenticated state');
+    });
+  });
+
+  group('AppState pending deep link', () {
+    // Covers the round-66/68-diagnosed gap: an unauthenticated deep link
+    // used to lose its target entirely once bounced to the splash screen.
+    // The router now captures it here (see routes/router.dart's `redirect`)
+    // for OtpPage to replay after a successful sign-in.
+    test('capture then consume returns the captured location and clears it (single-use)', () {
+      final appState = AppState(profileRepository: _FakeProfileRepository([]), authService: _FakeAuthService(), joinRequestRepository: ShgJoinRequestRepository());
+
+      expect(appState.pendingDeepLink, isNull);
+      appState.capturePendingDeepLink('/app/loans/abc123');
+      expect(appState.pendingDeepLink, '/app/loans/abc123');
+
+      expect(appState.consumePendingDeepLink(), '/app/loans/abc123');
+      expect(appState.pendingDeepLink, isNull, reason: 'consuming must clear it so it cannot be replayed a second time');
+      expect(appState.consumePendingDeepLink(), isNull);
+    });
+
+    test('a later capture overwrites an earlier, never-consumed one', () {
+      final appState = AppState(profileRepository: _FakeProfileRepository([]), authService: _FakeAuthService(), joinRequestRepository: ShgJoinRequestRepository());
+
+      appState.capturePendingDeepLink('/app/loans/abc123');
+      appState.capturePendingDeepLink('/app/schemes/xyz789');
+
+      expect(appState.consumePendingDeepLink(), '/app/schemes/xyz789', reason: 'only the most recent deep-link attempt should ever be replayed');
+    });
+
+    test('signOut clears a captured but never-consumed deep link', () async {
+      final appState = AppState(profileRepository: _FakeProfileRepository([]), authService: _FakeAuthService(), joinRequestRepository: ShgJoinRequestRepository());
+      appState.capturePendingDeepLink('/app/loans/abc123');
+
+      await appState.signOut();
+
+      expect(appState.pendingDeepLink, isNull, reason: 'a stale deep link must not survive into a fresh sign-in as a possibly-different account');
+    });
+  });
+
+  group('AppState._authSub token-refresh handling', () {
+    test('a tokenRefreshed event does not re-fetch the profile (only initialSession/signedIn/etc. do)', () async {
+      final session = _fakeSession('u1');
+      final fakeAuth = _FakeAuthServiceWithStream(session);
+      var fetchCount = 0;
+      final fakeRepo = _FakeProfileRepository([
+        () async {
+          fetchCount++;
+          return const Profile(id: 'u1', name: 'Asha', role: 'member');
+        },
+      ]);
+      final appState = AppState(profileRepository: fakeRepo, authService: fakeAuth, joinRequestRepository: ShgJoinRequestRepository(), shgRepository: _FakeShgRepository(null));
+
+      await appState.init();
+      expect(fetchCount, 1, reason: 'the initial session load should fetch the profile once');
+
+      // GoTrue's auto-refresh timer fires this roughly hourly purely to
+      // rotate the JWT — it must not re-trigger a profile/SHG refetch.
+      fakeAuth.emit(AuthChangeEvent.tokenRefreshed, _fakeSession('u1'));
+      await Future<void>.delayed(Duration.zero);
+      expect(fetchCount, 1, reason: 'a routine token refresh must not re-fetch the profile');
+      expect(appState.profile?.id, 'u1');
+
+      appState.dispose();
+    });
+
+    test('a signedIn event after tokenRefreshed still re-fetches the profile', () async {
+      final session = _fakeSession('u1');
+      final fakeAuth = _FakeAuthServiceWithStream(session);
+      var fetchCount = 0;
+      final fakeRepo = _FakeProfileRepository([
+        () async {
+          fetchCount++;
+          return const Profile(id: 'u1', name: 'Asha', role: 'member');
+        },
+        () async {
+          fetchCount++;
+          return const Profile(id: 'u1', name: 'Asha', role: 'member');
+        },
+      ]);
+      final appState = AppState(profileRepository: fakeRepo, authService: fakeAuth, joinRequestRepository: ShgJoinRequestRepository(), shgRepository: _FakeShgRepository(null));
+
+      await appState.init();
+      expect(fetchCount, 1);
+
+      fakeAuth.emit(AuthChangeEvent.signedIn, _fakeSession('u1'));
+      await Future<void>.delayed(Duration.zero);
+      expect(fetchCount, 2, reason: 'non-refresh auth events must still refetch the profile');
+
+      appState.dispose();
+    });
+
+    test('a signedOut event (e.g. an invalid/expired refresh token) clears the profile so the router redirects to login', () async {
+      final session = _fakeSession('u1');
+      final fakeAuth = _FakeAuthServiceWithStream(session);
+      final fakeRepo = _FakeProfileRepository([() async => const Profile(id: 'u1', name: 'Asha', role: 'member')]);
+      final appState = AppState(profileRepository: fakeRepo, authService: fakeAuth, joinRequestRepository: ShgJoinRequestRepository(), shgRepository: _FakeShgRepository(null));
+
+      await appState.init();
+      expect(appState.hasSession, isTrue);
+      expect(appState.hasProfile, isTrue);
+
+      fakeAuth.emit(AuthChangeEvent.signedOut, null);
+      await Future<void>.delayed(Duration.zero);
+      expect(appState.hasSession, isFalse);
+      expect(appState.hasProfile, isFalse, reason: 'local profile state must be cleared so the router redirect (!hasSession) takes the user to login instead of leaving stale UI up');
+
+      appState.dispose();
     });
   });
 

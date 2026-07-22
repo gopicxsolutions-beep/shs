@@ -7,10 +7,12 @@ import '../../repositories/meeting_repository.dart';
 import '../../routes/paths.dart';
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
+import '../../state/unsaved_changes.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/discard_changes_dialog.dart';
 
 class MeetingSchedulePage extends StatefulWidget {
   const MeetingSchedulePage({super.key});
@@ -25,10 +27,21 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
   DateTime _date = DateTime.now().add(const Duration(days: 7));
   TimeOfDay _time = const TimeOfDay(hour: 16, minute: 0);
   bool _saving = false;
+  bool _dirty = false;
   String? _error;
+
+  // Also raises the app-wide `UnsavedChanges` flag that `PageHeader`'s Back
+  // button and the bottom nav check before navigating away — see
+  // `unsaved_changes.dart` for why this page's own `PopScope` below can't
+  // cover those two paths by itself.
+  void _markDirty() {
+    _dirty = true;
+    UnsavedChanges.dirty = true;
+  }
 
   @override
   void dispose() {
+    UnsavedChanges.dirty = false;
     _venue.dispose();
     _agenda.dispose();
     super.dispose();
@@ -36,12 +49,22 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(context: context, initialDate: _date, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)));
-    if (picked != null && mounted) setState(() => _date = picked);
+    if (picked != null && mounted) {
+      setState(() {
+        _date = picked;
+        _markDirty();
+      });
+    }
   }
 
   Future<void> _pickTime() async {
     final picked = await showTimePicker(context: context, initialTime: _time);
-    if (picked != null && mounted) setState(() => _time = picked);
+    if (picked != null && mounted) {
+      setState(() {
+        _time = picked;
+        _markDirty();
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -87,19 +110,38 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
     return AppCard(
       onTap: onTap,
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: AppTheme.sans(11, color: Neutral.c500)),
-          const SizedBox(height: 4),
-          Text(value, style: AppTheme.sans(14, weight: FontWeight.w700)),
-        ]),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label, style: AppTheme.sans(11, color: Neutral.c500)),
+            const SizedBox(height: 4),
+            Text(value, overflow: TextOverflow.ellipsis, style: AppTheme.sans(14, weight: FontWeight.w700)),
+          ]),
+        ),
+        const SizedBox(width: 8),
         Icon(Icons.edit_calendar_rounded, color: Brand.c600, size: 20),
       ]),
     );
   }
 
+  // Defense-in-depth for the rare case something genuinely calls
+  // `Navigator.pop()` on this page (e.g. if it's ever reached via
+  // `context.push()` in the future). Does NOT cover this app's actual
+  // navigation triggers today — see `unsaved_changes.dart`.
+  Future<void> _handlePop(bool didPop, dynamic result) async {
+    if (didPop) return;
+    final discard = await confirmDiscardChanges(context);
+    if (discard && mounted) {
+      UnsavedChanges.dirty = false;
+      context.go(Paths.meetings);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: _handlePop,
+      child: Scaffold(
       appBar: const PageHeader(title: 'Schedule Meeting'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -124,7 +166,10 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
                     textInputAction: TextInputAction.next,
                     style: AppTheme.sans(14),
                     decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Anganwadi Centre, Kondapur', counterText: ''),
-                    onChanged: (_) => setState(() => _error = null),
+                    onChanged: (_) => setState(() {
+                      _error = null;
+                      _markDirty();
+                    }),
                   ),
                 ],
               ),
@@ -143,6 +188,7 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
                     textInputAction: TextInputAction.done,
                     style: AppTheme.sans(14),
                     decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Monthly savings review & loan applications', counterText: ''),
+                    onChanged: (_) => setState(_markDirty),
                   ),
                 ],
               ),
@@ -155,6 +201,7 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
             AppButton(label: _saving ? 'Scheduling…' : 'Schedule Meeting', fullWidth: true, size: ButtonSize.lg, onPressed: _saving ? null : _submit),
           ],
         ),
+      ),
       ),
     );
   }

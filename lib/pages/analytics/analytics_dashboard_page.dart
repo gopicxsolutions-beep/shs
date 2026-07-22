@@ -72,7 +72,8 @@ class AnalyticsDashboardPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('Loan Recovery Rate', style: AppTheme.sans(13, weight: FontWeight.w700)),
+                      Flexible(child: Text('Loan Recovery Rate', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700))),
+                      const SizedBox(width: 8),
                       Text('${k.recoveryRatePct.toStringAsFixed(1)}%', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600)),
                     ]),
                     const SizedBox(height: 8),

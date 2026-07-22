@@ -58,7 +58,7 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (_) {
       if (mounted) {
         setState(() => apply(!value));
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not save this preference. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.settingsPreferenceError)));
       }
     }
   }
@@ -70,7 +70,7 @@ class _SettingsPageState extends State<SettingsPage> {
       await appState.setRole(role);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not switch role. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.settingsRoleSwitchError)));
       }
     } finally {
       if (mounted) setState(() => _switchingRole = false);
@@ -85,11 +85,13 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: PageHeader(title: l10n.settingsTitle),
       body: !_loaded
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: Semantics(label: l10n.commonLoading, liveRegion: true, child: const CircularProgressIndicator()))
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 Text(l10n.settingsNotifications, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
+                const SizedBox(height: 4),
+                Text(l10n.settingsNotifComingSoon, style: AppTheme.sans(11, color: Neutral.c400)),
                 const SizedBox(height: 12),
                 AppCard(
                   padded: false,
@@ -104,7 +106,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('General', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
+                Text(l10n.settingsGeneralSection, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
                 const SizedBox(height: 12),
                 AppCard(
                   padded: false,
@@ -133,7 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   const SizedBox(height: 24),
                   Text(l10n.settingsPreviewAs, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
                   const SizedBox(height: 6),
-                  Text('This app lets you preview every role\'s dashboard — switch anytime.', style: AppTheme.sans(11, color: Neutral.c400)),
+                  Text(l10n.settingsPreviewRoleDescription, style: AppTheme.sans(11, color: Neutral.c400)),
                   const SizedBox(height: 12),
                   AppCard(
                     padded: false,

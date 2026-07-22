@@ -87,7 +87,18 @@ class MemberDashboard extends StatelessWidget {
     final announcements = results[8] as List<dynamic>;
 
     final activeLoan = loans.where((l) => l.status == 'active' || l.status == 'overdue').firstOrNull;
-    final upcomingMeeting = meetings.where((m) => m.status == 'upcoming').firstOrNull;
+    // `meetings` is sorted newest-scheduled-date-first (for the meetings
+    // list view) — same bug already fixed in meeting_qr_page.dart and
+    // meeting_attendance_page.dart: naively taking the first 'upcoming'
+    // match picked the farthest-future meeting instead of the soonest one
+    // whenever more than one was scheduled, showing the wrong date on the
+    // dashboard's "MEETING ALERT" card. `!m.hasPassed` also excludes
+    // meetings whose date has already gone by — nothing in the app ever
+    // advances `status` away from 'upcoming' once a meeting happens (see
+    // `Meeting.hasPassed`'s doc comment), so without it a meeting from
+    // weeks ago would keep showing as the "next meeting" forever.
+    final upcomingMeetings = meetings.where((m) => m.status == 'upcoming' && !m.hasPassed).toList()..sort((a, b) => a.date.compareTo(b.date));
+    final upcomingMeeting = upcomingMeetings.firstOrNull;
 
     Course? inProgressCourse;
     int inProgressPct = 0;
@@ -146,9 +157,9 @@ class _MemberDashboardBody extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(children: [
-              Expanded(child: StatCard(label: 'My Savings', value: '₹${report.totalSavings}', tone: StatTone.brand, trend: '${report.savingsEntryCount} entries', icon: Icons.account_balance_wallet_rounded)),
+              Expanded(child: StatCard(label: 'My Savings', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(report.totalSavings)}', tone: StatTone.brand, trend: '${report.savingsEntryCount} entries', icon: Icons.account_balance_wallet_rounded)),
               const SizedBox(width: 12),
-              Expanded(child: StatCard(label: 'Outstanding Loan', value: '₹${report.totalOutstanding}', tone: StatTone.gold, trend: myLoan?.nextDueDate != null ? 'Next EMI ${DateFormat('dd MMM').format(myLoan!.nextDueDate!)}' : 'No dues', icon: Icons.account_balance_rounded)),
+              Expanded(child: StatCard(label: 'Outstanding Loan', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(report.totalOutstanding)}', tone: StatTone.gold, trend: myLoan?.nextDueDate != null ? 'Next EMI ${DateFormat('dd MMM').format(myLoan!.nextDueDate!)}' : 'No dues', icon: Icons.account_balance_rounded)),
             ]),
           ),
         ),
@@ -162,7 +173,14 @@ class _MemberDashboardBody extends StatelessWidget {
                 IconTile(onTap: () => context.go(Paths.savingsEntry), icon: Icons.account_balance_wallet_rounded, label: 'Add Savings', tone: TileTone.brand),
                 IconTile(onTap: () => context.go(Paths.loanApply), icon: Icons.account_balance_rounded, label: 'Apply Loan', tone: TileTone.gold),
                 IconTile(onTap: () => context.go(Paths.meetingQr), icon: Icons.qr_code_rounded, label: 'Attendance', tone: TileTone.sky),
-                IconTile(onTap: () => context.go(Paths.schemes), icon: Icons.description_rounded, label: 'Schemes', tone: TileTone.violet, badge: newSchemesCount > 0 ? '$newSchemesCount' : null),
+                IconTile(
+                  onTap: () => context.go(Paths.schemes),
+                  icon: Icons.description_rounded,
+                  label: 'Schemes',
+                  tone: TileTone.violet,
+                  badge: newSchemesCount > 0 ? '$newSchemesCount' : null,
+                  badgeSemanticLabel: newSchemesCount > 0 ? 'Schemes, $newSchemesCount new' : null,
+                ),
               ],
             ),
           ),
@@ -210,7 +228,7 @@ class _MemberDashboardBody extends StatelessWidget {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('₹${report.totalSavings}', style: AppTheme.display(22)),
+                    Text('₹${NumberFormat('#,##,##0', 'en_IN').format(report.totalSavings)}', style: AppTheme.display(22)),
                     Text(report.period, style: AppTheme.sans(11, color: Neutral.c500)),
                   ]),
                 ]),
@@ -230,14 +248,15 @@ class _MemberDashboardBody extends StatelessWidget {
                   Text(myLoan.purpose, style: AppTheme.sans(12, color: Neutral.c500)),
                   const SizedBox(height: 8),
                   Row(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Text('₹${myLoan.outstanding}', style: AppTheme.display(18)),
-                    Text('of ₹${myLoan.amount}', style: AppTheme.sans(12, color: Neutral.c500)),
+                    Text('₹${NumberFormat('#,##,##0', 'en_IN').format(myLoan.outstanding)}', style: AppTheme.display(18)),
+                    Flexible(child: Text('of ₹${NumberFormat('#,##,##0', 'en_IN').format(myLoan.amount)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500))),
                   ]),
                   const SizedBox(height: 8),
                   AppProgressBar(value: myLoan.amount - myLoan.outstanding, max: myLoan.amount, tone: ProgressTone.gold),
                   const SizedBox(height: 12),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    AppBadge(text: myLoan.nextDueDate != null ? 'EMI ₹${myLoan.emi} due ${DateFormat('dd MMM').format(myLoan.nextDueDate!)}' : 'EMI ₹${myLoan.emi}', tone: BadgeTone.warning, dot: true),
+                    Flexible(child: AppBadge(text: myLoan.nextDueDate != null ? 'EMI ₹${NumberFormat('#,##,##0', 'en_IN').format(myLoan.emi)} due ${DateFormat('dd MMM').format(myLoan.nextDueDate!)}' : 'EMI ₹${NumberFormat('#,##,##0', 'en_IN').format(myLoan.emi)}', tone: BadgeTone.warning, dot: true)),
+                    const SizedBox(width: 8),
                     InkWell(onTap: () => context.go(Paths.paymentsQr), child: Text('Pay now', style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600))),
                   ]),
                 ]),
@@ -251,7 +270,7 @@ class _MemberDashboardBody extends StatelessWidget {
               Expanded(
                 child: AppCard(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [Icon(Icons.event_note_rounded, size: 14, color: Brand.c600), const SizedBox(width: 6), Text('MEETING ALERT', style: AppTheme.sans(10, weight: FontWeight.w700, color: Brand.c600))]),
+                    Row(children: [Icon(Icons.event_note_rounded, size: 14, color: Brand.c600), const SizedBox(width: 6), Flexible(child: Text('MEETING ALERT', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(10, weight: FontWeight.w700, color: Brand.c600)))]),
                     const SizedBox(height: 8),
                     Text(DateFormat('dd MMM yyyy').format(upcomingMeeting.date), style: AppTheme.sans(14, weight: FontWeight.w700)),
                     const SizedBox(height: 4),
@@ -266,7 +285,7 @@ class _MemberDashboardBody extends StatelessWidget {
               Expanded(
                 child: AppCard(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [Icon(Icons.school_rounded, size: 14, color: Gold.c600), const SizedBox(width: 6), Text('TRAINING ALERT', style: AppTheme.sans(10, weight: FontWeight.w700, color: Gold.c600))]),
+                    Row(children: [Icon(Icons.school_rounded, size: 14, color: Gold.c600), const SizedBox(width: 6), Flexible(child: Text('TRAINING ALERT', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(10, weight: FontWeight.w700, color: Gold.c600)))]),
                     const SizedBox(height: 8),
                     Text(inProgressCourse.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700)),
                     const SizedBox(height: 8),
@@ -304,19 +323,27 @@ class _MemberDashboardBody extends StatelessWidget {
                   : Column(
                       children: data.announcements.map((a) {
                         return Semantics(
-                          label: a.read ? null : 'Unread',
-                          child: InkWell(
-                            onTap: () => context.go(Paths.announcementDetail(a.id)),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                if (!a.read) Padding(padding: const EdgeInsets.only(top: 5, right: 8), child: Container(width: 6, height: 6, decoration: BoxDecoration(color: Brand.c500, shape: BoxShape.circle))),
-                                if (a.read) const SizedBox(width: 14),
-                                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text(a.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c800)),
-                                  Text(DateFormat('dd MMM yyyy').format(a.createdAt), style: AppTheme.sans(10, color: Neutral.c400)),
-                                ])),
-                              ]),
+                          label: [
+                            if (!a.read) 'Unread',
+                            a.title,
+                            DateFormat('dd MMM yyyy').format(a.createdAt),
+                          ].join(', '),
+                          button: true,
+                          onTap: () => context.go(Paths.announcementDetail(a.id)),
+                          child: ExcludeSemantics(
+                            child: InkWell(
+                              onTap: () => context.go(Paths.announcementDetail(a.id)),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  if (!a.read) Padding(padding: const EdgeInsets.only(top: 5, right: 8), child: Container(width: 6, height: 6, decoration: BoxDecoration(color: Brand.c500, shape: BoxShape.circle))),
+                                  if (a.read) const SizedBox(width: 14),
+                                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                    Text(a.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c800)),
+                                    Text(DateFormat('dd MMM yyyy').format(a.createdAt), style: AppTheme.sans(10, color: Neutral.c400)),
+                                  ])),
+                                ]),
+                              ),
                             ),
                           ),
                         );

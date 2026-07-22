@@ -30,6 +30,7 @@ class SupportTicketDetailPage extends StatefulWidget {
 class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
   final _repo = SupportRepository();
   final _message = TextEditingController();
+  final _scroll = ScrollController();
   final GlobalKey<AppAsyncBuilderState<_ThreadData>> _key = GlobalKey();
   bool _sending = false;
   bool _changingStatus = false;
@@ -37,17 +38,39 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
   @override
   void dispose() {
     _message.dispose();
+    _scroll.dispose();
     super.dispose();
+  }
+
+  // Every reload (initial load, and after sending a message) rebuilds this
+  // page's `ListView` from scratch via `AppAsyncBuilder`, so — same as
+  // ai_advisor_chat_page.dart's identical fix — the true bottom isn't
+  // knowable until that rebuilt list has actually laid out; scheduling for
+  // the end of that frame is what makes this land on the last message
+  // instead of one short.
+  void _scrollToEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) _scroll.jumpTo(_scroll.position.maxScrollExtent);
+    });
   }
 
   Future<_ThreadData> _load() async {
     final ticket = await _repo.fetchTicket(widget.ticketId);
     final messages = await _repo.fetchMessages(widget.ticketId);
+    if (messages.isNotEmpty) _scrollToEnd();
     return _ThreadData(ticket, messages);
   }
 
   Future<void> _send(String? memberId) async {
-    if (_message.text.trim().isEmpty || !SupabaseService.isConfigured) return;
+    // The composer TextField below is only ever disabled by
+    // `SupabaseService.isConfigured` (see its `enabled:`), not by
+    // `_sending` — so its `onSubmitted` (Enter key) stays live for the
+    // whole in-flight window and can re-fire this handler with the same
+    // unsent text before the first request completes, unlike the Send
+    // IconButton which does check `_sending`. Matches the guard shape
+    // already used for the same reason in meeting_mom_page.dart's
+    // `_addDecision`/`_addActionItem`.
+    if (_sending || _message.text.trim().isEmpty || !SupabaseService.isConfigured) return;
     setState(() => _sending = true);
     try {
       await _repo.sendMessage(ticketId: widget.ticketId, senderId: memberId, body: _message.text.trim());
@@ -131,6 +154,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                 child: data.messages.isEmpty
                     ? const AppEmptyState(icon: Icons.chat_bubble_outline_rounded, message: 'No messages yet')
                     : ListView.builder(
+                        controller: _scroll,
                         padding: const EdgeInsets.all(16),
                         itemCount: data.messages.length,
                         itemBuilder: (context, i) {
@@ -138,28 +162,30 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                           final mine = SupabaseService.isConfigured ? m.senderId == memberId : m.senderId == 'me';
                           return Semantics(
                             label: '${mine ? 'You' : (m.senderName ?? 'Staff')}: ${m.body}',
-                            child: Align(
-                            alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 10),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              constraints: const BoxConstraints(maxWidth: 280),
-                              decoration: BoxDecoration(
-                                color: mine ? Brand.c500 : Neutral.c100,
-                                borderRadius: BorderRadius.circular(14),
+                            child: ExcludeSemantics(
+                              child: Align(
+                                alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                  constraints: const BoxConstraints(maxWidth: 280),
+                                  decoration: BoxDecoration(
+                                    color: mine ? Brand.c500 : Neutral.c100,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      if (!mine && m.senderName != null)
+                                        Padding(
+                                          padding: const EdgeInsets.only(bottom: 2),
+                                          child: Text(m.senderName!, style: AppTheme.sans(10, weight: FontWeight.w700, color: Neutral.c500)),
+                                        ),
+                                      Text(m.body, style: AppTheme.sans(13, color: mine ? Colors.white : Neutral.c700)),
+                                    ],
+                                  ),
+                                ),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (!mine && m.senderName != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 2),
-                                      child: Text(m.senderName!, style: AppTheme.sans(10, weight: FontWeight.w700, color: Neutral.c500)),
-                                    ),
-                                  Text(m.body, style: AppTheme.sans(13, color: mine ? Colors.white : Neutral.c700)),
-                                ],
-                              ),
-                            ),
                             ),
                           );
                         },

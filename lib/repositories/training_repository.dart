@@ -17,7 +17,13 @@ class TrainingRepository {
 
   Future<List<Course>> fetchCourses() async {
     if (!_live) return mock.courses.map((c) => Course(id: c.id, title: c.title, topic: c.topic, format: c.format, duration: c.duration)).toList();
-    final rows = await _client.from('training_courses').select().order('created_at');
+    // Platform-wide catalog shared by every SHG (see class doc comment and
+    // TrainingHomePage's own note on this), not bounded by any one group's
+    // size — it grows as more content is added over time. Previously had no
+    // `.limit()` at all. Capped at a generous 500 rather than left
+    // unbounded, matching the same defensive cap now applied to the other
+    // platform-wide catalogs (marketplace products, admin user/SHG lists).
+    final rows = await _client.from('training_courses').select().order('created_at').limit(500);
     return (rows as List).map((r) => Course.fromMap(r as Map<String, dynamic>)).toList();
   }
 

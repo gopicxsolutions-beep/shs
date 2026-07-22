@@ -84,6 +84,9 @@ class ShgDocument {
         name: map['name'] as String,
         type: map['type'] as String?,
         size: map['size'] as String?,
-        createdAt: DateTime.parse(map['created_at'] as String),
+        // `created_at` is `timestamptz` (UTC). Convert to local (IST) here
+        // so `shg_documents_page.dart`'s date-only `DateFormat` never shows
+        // the wrong calendar day for a document uploaded near local midnight.
+        createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
       );
 }

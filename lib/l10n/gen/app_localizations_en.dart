@@ -63,6 +63,83 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonError => 'Something went wrong';
 
   @override
+  String get commonBack => 'Back';
+
+  @override
+  String get asyncErrorGeneric => 'Something went wrong. Please try again.';
+
+  @override
+  String get asyncErrorNetwork =>
+      'Check your internet connection and try again.';
+
+  @override
+  String get discardChangesTitle => 'Discard changes?';
+
+  @override
+  String get discardChangesMessage =>
+      'You\'ve entered information on this page that hasn\'t been saved yet. Leaving now will lose it.';
+
+  @override
+  String get discardChangesKeepEditing => 'Keep Editing';
+
+  @override
+  String get discardChangesDiscard => 'Discard';
+
+  @override
+  String get errorGoHome => 'Go to Home';
+
+  @override
+  String get error404Title => 'Page not found';
+
+  @override
+  String get error404Message =>
+      'The page you\'re looking for doesn\'t exist or may have moved.';
+
+  @override
+  String get profileLoadErrorTitle => 'Couldn\'t load your profile';
+
+  @override
+  String get qrPermissionDenied => 'Camera permission was denied.';
+
+  @override
+  String get qrUnsupported => 'Scanning isn\'t supported on this device.';
+
+  @override
+  String get qrCameraUnavailable => 'Camera not available.';
+
+  @override
+  String get qrManualFallbackHint => 'You can still enter details manually.';
+
+  @override
+  String get qrEnterManually => 'Enter manually instead';
+
+  @override
+  String get qrManualEntry => 'Manual entry';
+
+  @override
+  String get qrTurnOffFlashlight => 'Turn off flashlight';
+
+  @override
+  String get qrTurnOnFlashlight => 'Turn on flashlight';
+
+  @override
+  String get qrTakingTooLong => 'Camera is taking too long to start.';
+
+  @override
+  String get qrScanToPayTitle => 'Scan to Pay';
+
+  @override
+  String get qrScanToPayInstructions =>
+      'Point your camera at the merchant\'s UPI QR code';
+
+  @override
+  String get qrScanAttendanceTitle => 'Scan Attendance QR';
+
+  @override
+  String get qrScanAttendanceInstructions =>
+      'Point your camera at the QR code displayed at the venue';
+
+  @override
   String get profileTitle => 'Profile';
 
   @override
@@ -81,6 +158,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileName => 'Name';
 
   @override
+  String get profileUpdated => 'Profile updated';
+
+  @override
+  String get profileUpdateDemoMode =>
+      'Demo mode — not saved (connect Supabase to persist)';
+
+  @override
+  String get profileUpdateError =>
+      'Could not update your profile. Please try again.';
+
+  @override
+  String get profileNameRequired => 'Name is required.';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override
@@ -96,6 +187,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsNotifAnnouncements => 'Announcements';
 
   @override
+  String get settingsNotifComingSoon =>
+      'These preferences are saved, but push/local reminders aren\'t sent yet in this version of the app.';
+
+  @override
   String get settingsLanguage => 'Language';
 
   @override
@@ -105,7 +200,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppVersion => 'App version';
 
   @override
+  String get settingsGeneralSection => 'General';
+
+  @override
+  String get settingsPreviewRoleDescription =>
+      'This app lets you preview every role\'s dashboard — switch anytime.';
+
+  @override
+  String get settingsPreferenceError =>
+      'Could not save this preference. Please try again.';
+
+  @override
+  String get settingsRoleSwitchError =>
+      'Could not switch role. Please try again.';
+
+  @override
   String get languageTitle => 'Language';
+
+  @override
+  String get languageSubtitle => 'Choose your preferred language for the app';
 
   @override
   String get languageEnglish => 'English';
@@ -130,6 +243,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginSendOtp => 'Send OTP';
+
+  @override
+  String get loginOtpError =>
+      'Could not send OTP. Please check the number and try again.';
+
+  @override
+  String get loginDataProtected =>
+      'Your data is protected under DAY-NRLM guidelines. We never share your Aadhaar details.';
+
+  @override
+  String get loginTermsAgreement =>
+      'By continuing you agree to the Terms of Service & Privacy Policy';
 
   @override
   String get otpTitle => 'Verify OTP';
@@ -158,6 +283,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get otpDidntReceive =>
       'Didn\'t receive the code? Check your SMS inbox.';
+
+  @override
+  String get otpVerifyError => 'Incorrect or expired code. Please try again.';
+
+  @override
+  String get otpResendError => 'Could not resend the code. Please try again.';
+
+  @override
+  String otpDigitLabel(int position) {
+    return 'OTP digit $position of 6';
+  }
 
   @override
   String get profileSetupTitle => 'Create your profile';
@@ -207,6 +343,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose your role in the SHG ecosystem to see a tailored experience';
 
   @override
+  String get roleSelectSaveError =>
+      'Could not save your role. Please try again.';
+
+  @override
   String get dashboardGreeting => 'Welcome back';
 
   @override
@@ -231,4 +371,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkingStatus => 'Checking…';
+
+  @override
+  String get shgApprovalCheckError =>
+      'Could not check status. Please try again.';
+
+  @override
+  String get voiceNoLoans => 'You have no loans on record.';
+
+  @override
+  String voiceNoActiveLoans(int count) {
+    return 'You have no active loans out of $count on record.';
+  }
+
+  @override
+  String voiceLoanActive(String purpose, String amount, String outstanding) {
+    return '$purpose: ₹$amount loan, ₹$outstanding still outstanding.';
+  }
+
+  @override
+  String voiceSavingsThisMonth(String amount, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'entries',
+      one: 'entry',
+    );
+    return 'You have saved ₹$amount this month across $count $_temp0.';
+  }
+
+  @override
+  String get voiceNoAnnouncements => 'You have no announcements.';
+
+  @override
+  String get voiceOpeningSavingsForm =>
+      'Opening the savings entry form for you.';
+
+  @override
+  String get voiceUnknownCommand => 'Sorry, I didn\'t understand that.';
+
+  @override
+  String get aiDisclaimer =>
+      'AI-generated guidance — may be inaccurate. Not professional financial, legal, or medical advice; confirm important decisions with your SHG leader or a qualified advisor.';
 }

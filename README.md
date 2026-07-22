@@ -22,6 +22,8 @@ flutter run -d chrome --dart-define-from-file=.env.json
 
 Copy `.env.json.example` to `.env.json` and fill in your Supabase project URL and anon/publishable key (never the service-role key — that belongs server-side only, e.g. in Supabase Edge Functions, not in this client app). `.env.json` is gitignored.
 
+`SENTRY_DSN` is optional — leave it blank to run without crash reporting (the default; a DSN is a public, write-only identifier, not a secret, but it's still opt-in). Set it to a real [Sentry](https://sentry.io) project DSN to enable crash/error reporting in that build; see `lib/main.dart`.
+
 The onboarding flow (Splash → Login → OTP → Profile Setup → Role Select) lets you pick any of the 5 roles to explore a tailored dashboard and navigation experience.
 
 ## Project structure

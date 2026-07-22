@@ -27,7 +27,9 @@ const members = <Member>[
   Member(id: 'm1', name: 'Lakshmi Devi', mobile: '98765 43210', aadhaar: 'XXXX XXXX 4821', role: 'President', joiningDate: '12 Jun 2014', savings: 48200, loanOutstanding: 22000, attendance: 96, status: 'active'),
   Member(id: 'm2', name: 'Padma Reddy', mobile: '98765 11223', aadhaar: 'XXXX XXXX 7742', role: 'Secretary', joiningDate: '12 Jun 2014', savings: 41500, loanOutstanding: 0, attendance: 100, status: 'active'),
   Member(id: 'm3', name: 'Rajeshwari', mobile: '87654 22114', aadhaar: 'XXXX XXXX 1290', role: 'Treasurer', joiningDate: '03 Aug 2015', savings: 39800, loanOutstanding: 18500, attendance: 92, status: 'active'),
-  Member(id: 'm4', name: 'Anasuya', mobile: '90123 45671', aadhaar: 'XXXX XXXX 3345', role: 'Member', joiningDate: '19 Jan 2016', savings: 36200, loanOutstanding: 0, attendance: 88, status: 'active'),
+  // loanOutstanding must match loans.dart's l7 (Anasuya) outstanding — that
+  // loan was disbursed 25 Jun 2026 per financial.dart's f2 ledger entry.
+  Member(id: 'm4', name: 'Anasuya', mobile: '90123 45671', aadhaar: 'XXXX XXXX 3345', role: 'Member', joiningDate: '19 Jan 2016', savings: 36200, loanOutstanding: 35000, attendance: 88, status: 'active'),
   Member(id: 'm5', name: 'Bhavani', mobile: '91234 56782', aadhaar: 'XXXX XXXX 9987', role: 'Member', joiningDate: '19 Jan 2016', savings: 33500, loanOutstanding: 12000, attendance: 84, status: 'active'),
   Member(id: 'm6', name: 'Chandrakala', mobile: '92345 67893', aadhaar: 'XXXX XXXX 6612', role: 'Member', joiningDate: '05 Mar 2017', savings: 30100, loanOutstanding: 0, attendance: 90, status: 'active'),
   Member(id: 'm7', name: 'Durga Bhavani', mobile: '93456 78904', aadhaar: 'XXXX XXXX 5523', role: 'Member', joiningDate: '05 Mar 2017', savings: 28700, loanOutstanding: 9000, attendance: 78, status: 'active'),

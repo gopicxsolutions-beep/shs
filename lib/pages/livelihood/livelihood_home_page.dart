@@ -47,9 +47,9 @@ class LivelihoodHomePage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               Row(children: [
-                Expanded(child: StatCard(label: 'Total Investment', value: '₹${NumberFormat('#,##0').format(totalInvestment)}', tone: StatTone.gold, icon: Icons.trending_up_rounded)),
+                Expanded(child: StatCard(label: 'Total Investment', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(totalInvestment)}', tone: StatTone.gold, icon: Icons.trending_up_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Total Revenue', value: '₹${NumberFormat('#,##0').format(totalRevenue)}', tone: StatTone.brand, icon: Icons.payments_rounded)),
+                Expanded(child: StatCard(label: 'Total Revenue', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(totalRevenue)}', tone: StatTone.brand, icon: Icons.payments_rounded)),
               ]),
               const SizedBox(height: 20),
               if (activities.isEmpty)
@@ -70,13 +70,21 @@ class LivelihoodHomePage extends StatelessWidget {
                               ],
                             ),
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              AppBadge(text: a.status, tone: _statusTones[a.status] ?? BadgeTone.neutral),
-                              const SizedBox(height: 4),
-                              Text('₹${a.revenue - a.investment} net', style: AppTheme.sans(11, color: a.profit >= 0 ? Brand.c600 : Accent.red600)),
-                            ],
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AppBadge(text: a.status, tone: _statusTones[a.status] ?? BadgeTone.neutral),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${a.profit < 0 ? '-' : ''}₹${NumberFormat('#,##,##0', 'en_IN').format(a.profit.abs())} net',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTheme.sans(11, color: a.profit >= 0 ? Brand.c600 : Accent.red600),
+                                ),
+                              ],
+                            ),
                           ),
                         ]),
                       ),

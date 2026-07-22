@@ -84,26 +84,31 @@ class _ClfDashboardBody extends StatelessWidget {
             AppCard(
               child: villages.isEmpty
                   ? Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Text('No villages yet', style: AppTheme.sans(12, color: Neutral.c400)))
-                  : SizedBox(
-                      height: 160,
-                      child: BarChart(
-                        BarChartData(
-                          gridData: const FlGridData(show: false),
-                          borderData: FlBorderData(show: false),
-                          titlesData: FlTitlesData(
-                            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32, getTitlesWidget: (v, meta) {
-                              final i = v.toInt();
-                              if (i < 0 || i >= villages.length) return const SizedBox();
-                              return Padding(padding: const EdgeInsets.only(top: 6), child: Text(villages[i].village, style: AppTheme.sans(9, color: Neutral.c500)));
-                            })),
+                  : Semantics(
+                      label: 'Village-wise SHGs bar chart: ${villages.map((v) => '${v.village} ${v.shgCount} SHGs').join(', ')}',
+                      child: ExcludeSemantics(
+                        child: SizedBox(
+                          height: 160,
+                          child: BarChart(
+                            BarChartData(
+                              gridData: const FlGridData(show: false),
+                              borderData: FlBorderData(show: false),
+                              titlesData: FlTitlesData(
+                                leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32, getTitlesWidget: (v, meta) {
+                                  final i = v.toInt();
+                                  if (i < 0 || i >= villages.length) return const SizedBox();
+                                  return Padding(padding: const EdgeInsets.only(top: 6), child: Text(villages[i].village, style: AppTheme.sans(9, color: Neutral.c500)));
+                                })),
+                              ),
+                              barGroups: [
+                                for (var i = 0; i < villages.length; i++)
+                                  BarChartGroupData(x: i, barRods: [BarChartRodData(toY: villages[i].shgCount.toDouble(), color: Brand.c500, width: 18, borderRadius: BorderRadius.circular(6))]),
+                              ],
+                            ),
                           ),
-                          barGroups: [
-                            for (var i = 0; i < villages.length; i++)
-                              BarChartGroupData(x: i, barRods: [BarChartRodData(toY: villages[i].shgCount.toDouble(), color: Brand.c500, width: 18, borderRadius: BorderRadius.circular(6))]),
-                          ],
                         ),
                       ),
                     ),

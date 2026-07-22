@@ -6,6 +6,17 @@ import '../models/loan.dart';
 import '../models/types.dart';
 import '../services/supabase_service.dart';
 
+/// Thrown by [LoanRepository.approve]/[LoanRepository.reject] when the loan
+/// is no longer 'pending' by the time the write reaches the database — i.e.
+/// a different leader/staff account already decided it (see
+/// `approve_loan`/`reject_loan` in
+/// supabase/migrations/0029_loan_and_scheme_decision_race_guard.sql). Lets
+/// the UI show a specific "someone already acted on this" message instead
+/// of a generic failure.
+class LoanAlreadyDecidedException implements Exception {
+  const LoanAlreadyDecidedException();
+}
+
 /// Backed by `public.loans` / `public.loan_payments` when Supabase is
 /// configured; falls back to `lib/data/loans.dart` otherwise (same dual-mode
 /// pattern as [SavingsRepository]).
@@ -22,6 +33,13 @@ class LoanRepository {
   static final List<Loan> _locallyApplied = [];
   static final Map<String, Loan> _locallyUpdated = {};
   static final Map<String, List<LoanPayment>> _locallyPayments = {};
+
+  // Test-only seam (null by default, so every existing test keeps seeing
+  // the exact short mock.loans it always has).
+  // test/routes/long_content_stress_test.dart sets this to exercise a
+  // realistic long loan purpose at a normal viewport, then resets it — no
+  // change to lib/data/loans.dart's shared mock records themselves.
+  static List<mock.Loan>? debugLoansOverride;
 
   List<Loan> _demoLoans() => [
         ..._mockLoans().map((l) => _locallyUpdated[l.id] ?? l),
@@ -124,12 +142,36 @@ class LoanRepository {
       );
       return;
     }
-    await _client.from('loans').update({
-      'status': 'active',
-      'disbursed_on': DateTime.now().toIso8601String().split('T').first,
-      'emi': emi,
-      'next_due_date': nextDueDate.toIso8601String().split('T').first,
-    }).eq('id', id);
+    // Atomic via `approve_loan` (see
+    // supabase/migrations/0029_loan_and_scheme_decision_race_guard.sql) —
+    // locks the row and verifies it's still 'pending' before transitioning,
+    // so a second leader/staff account racing to approve/reject the same
+    // loan (both looking at the same "pending" queue) can no longer
+    // silently overwrite the first decision or re-disburse with different
+    // terms.
+    try {
+      await _client.rpc('approve_loan', params: {
+        'p_loan_id': id,
+        'p_emi': emi,
+        'p_next_due_date': nextDueDate.toIso8601String().split('T').first,
+      });
+    } on PostgrestException catch (e) {
+      // 'PGRST202' = function not found in schema cache — migration 0029
+      // not deployed yet. Falls back to the old non-atomic write rather
+      // than hard-failing every approval in the gap before it's deployed
+      // (same fallback shape as `recordPayment`'s PGRST202 handling above).
+      if (e.code == 'PGRST202') {
+        await _client.from('loans').update({
+          'status': 'active',
+          'disbursed_on': DateTime.now().toIso8601String().split('T').first,
+          'emi': emi,
+          'next_due_date': nextDueDate.toIso8601String().split('T').first,
+        }).eq('id', id);
+        return;
+      }
+      if (e.message.contains('no longer pending')) throw const LoanAlreadyDecidedException();
+      rethrow;
+    }
   }
 
   Future<void> reject(String id) async {
@@ -152,7 +194,17 @@ class LoanRepository {
       );
       return;
     }
-    await _client.from('loans').update({'status': 'rejected'}).eq('id', id);
+    // Atomic via `reject_loan` — see the comment on approve() above for why.
+    try {
+      await _client.rpc('reject_loan', params: {'p_loan_id': id});
+    } on PostgrestException catch (e) {
+      if (e.code == 'PGRST202') {
+        await _client.from('loans').update({'status': 'rejected'}).eq('id', id);
+        return;
+      }
+      if (e.message.contains('no longer pending')) throw const LoanAlreadyDecidedException();
+      rethrow;
+    }
   }
 
   Future<List<LoanPayment>> fetchPayments(String loanId) async {
@@ -162,7 +214,18 @@ class LoanRepository {
   }
 
   /// Records an EMI payment and updates the loan's outstanding balance,
-  /// closing it once fully repaid.
+  /// closing it once fully repaid. [newOutstanding] is only used in demo
+  /// mode (no real backend to compute against) — in live mode the new
+  /// balance is always computed atomically server-side (see
+  /// `record_loan_payment` in
+  /// supabase/migrations/0011_atomic_loan_payment_and_ledger_balance.sql),
+  /// never from this caller-supplied value. This used to write the
+  /// caller's own precomputed `newOutstanding` directly — a real race: two
+  /// leader/staff accounts (both allowed to update the same loan per
+  /// `loans_update_leader_or_staff`) recording a payment around the same
+  /// time would each compute from the same stale `loan.outstanding`
+  /// snapshot, and whichever write landed second would silently overwrite
+  /// (not add to) the first payment's effect on the balance.
   Future<void> recordPayment(String loanId, num amount, num newOutstanding) async {
     if (!_live) {
       _locallyPayments.putIfAbsent(loanId, () => []).insert(0, LoanPayment(
@@ -190,11 +253,31 @@ class LoanRepository {
       }
       return;
     }
-    await _client.from('loan_payments').insert({'loan_id': loanId, 'amount': amount});
-    await _client.from('loans').update({
-      'outstanding': newOutstanding,
-      if (newOutstanding <= 0) 'status': 'closed',
-    }).eq('id', loanId);
+    // Atomic via `record_loan_payment` (see
+    // supabase/migrations/0011_atomic_loan_payment_and_ledger_balance.sql)
+    // — inserts the payment row and decrements `outstanding` in one
+    // statement/transaction, so a concurrent second payment on the same
+    // loan correctly computes from the post-first-payment balance instead
+    // of the same stale snapshot both callers happened to load.
+    try {
+      await _client.rpc('record_loan_payment', params: {'p_loan_id': loanId, 'p_amount': amount});
+    } on PostgrestException catch (e) {
+      // 'PGRST202' = PostgREST's "function not found in schema cache" —
+      // the migration above hasn't been deployed yet. Falls back to the
+      // old non-atomic behavior (same race this fix closes) rather than
+      // hard-failing every payment in the gap before the migration runs;
+      // remove once the migration is confirmed deployed everywhere this
+      // app runs. (Checking 'PGRST202', not the raw Postgres '42883' —
+      // this session shipped that exact wrong check once already on the
+      // marketplace fix and had to live-debug it; see that fix's comment
+      // for the full story.)
+      if (e.code != 'PGRST202') rethrow;
+      await _client.from('loan_payments').insert({'loan_id': loanId, 'amount': amount});
+      await _client.from('loans').update({
+        'outstanding': newOutstanding,
+        if (newOutstanding <= 0) 'status': 'closed',
+      }).eq('id', loanId);
+    }
   }
 
   Stream<List<Loan>> watchForShg(String shgId) {
@@ -209,7 +292,7 @@ class LoanRepository {
   // Reversed so demo mode matches the live query's `created_at desc` order
   // (newest first) — the mock list is declared oldest-disbursed-first, with
   // the still-pending applications (no disbursedOn yet) last.
-  List<Loan> _mockLoans() => mock.loans.reversed
+  List<Loan> _mockLoans() => (debugLoansOverride ?? mock.loans).reversed
       .map((l) => Loan(
             id: l.id,
             memberId: l.id,

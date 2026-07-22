@@ -18,6 +18,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["--yes", "serve", "-l", "5002", "build/web"],
       "port": 5002
+    },
+    {
+      "name": "flutter-web-live",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": ["run", "-d", "chrome", "--web-port=5003", "--dart-define-from-file=.env.json"],
+      "port": 5003
     }
   ]
 }

@@ -63,6 +63,83 @@ class AppLocalizationsHi extends AppLocalizations {
   String get commonError => 'कुछ गलत हो गया';
 
   @override
+  String get commonBack => 'वापस';
+
+  @override
+  String get asyncErrorGeneric => 'कुछ गलत हो गया। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get asyncErrorNetwork =>
+      'अपना इंटरनेट कनेक्शन जांचें और फिर से कोशिश करें।';
+
+  @override
+  String get discardChangesTitle => 'बदलाव छोड़ें?';
+
+  @override
+  String get discardChangesMessage =>
+      'आपने इस पेज पर जो जानकारी भरी है वह अभी तक सेव नहीं हुई है। अभी जाने पर यह जानकारी खो जाएगी।';
+
+  @override
+  String get discardChangesKeepEditing => 'संपादन जारी रखें';
+
+  @override
+  String get discardChangesDiscard => 'छोड़ें';
+
+  @override
+  String get errorGoHome => 'होम पर जाएं';
+
+  @override
+  String get error404Title => 'पेज नहीं मिला';
+
+  @override
+  String get error404Message =>
+      'आप जिस पेज को खोज रहे हैं वह मौजूद नहीं है या हट गया है।';
+
+  @override
+  String get profileLoadErrorTitle => 'आपकी प्रोफ़ाइल लोड नहीं हो सकी';
+
+  @override
+  String get qrPermissionDenied => 'कैमरा अनुमति अस्वीकार कर दी गई।';
+
+  @override
+  String get qrUnsupported => 'इस डिवाइस पर स्कैनिंग समर्थित नहीं है।';
+
+  @override
+  String get qrCameraUnavailable => 'कैमरा उपलब्ध नहीं है।';
+
+  @override
+  String get qrManualFallbackHint => 'आप अभी भी विवरण खुद दर्ज कर सकते हैं।';
+
+  @override
+  String get qrEnterManually => 'इसके बजाय खुद दर्ज करें';
+
+  @override
+  String get qrManualEntry => 'मैन्युअल एंट्री';
+
+  @override
+  String get qrTurnOffFlashlight => 'फ्लैशलाइट बंद करें';
+
+  @override
+  String get qrTurnOnFlashlight => 'फ्लैशलाइट चालू करें';
+
+  @override
+  String get qrTakingTooLong => 'कैमरा शुरू होने में बहुत समय ले रहा है।';
+
+  @override
+  String get qrScanToPayTitle => 'भुगतान के लिए स्कैन करें';
+
+  @override
+  String get qrScanToPayInstructions =>
+      'अपने कैमरे को व्यापारी के UPI QR कोड पर पॉइंट करें';
+
+  @override
+  String get qrScanAttendanceTitle => 'उपस्थिति QR स्कैन करें';
+
+  @override
+  String get qrScanAttendanceInstructions =>
+      'अपने कैमरे को स्थल पर दिखाए गए QR कोड पर पॉइंट करें';
+
+  @override
   String get profileTitle => 'प्रोफ़ाइल';
 
   @override
@@ -81,6 +158,20 @@ class AppLocalizationsHi extends AppLocalizations {
   String get profileName => 'नाम';
 
   @override
+  String get profileUpdated => 'प्रोफ़ाइल अपडेट हो गई';
+
+  @override
+  String get profileUpdateDemoMode =>
+      'डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
+
+  @override
+  String get profileUpdateError =>
+      'आपकी प्रोफ़ाइल अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get profileNameRequired => 'नाम आवश्यक है।';
+
+  @override
   String get settingsTitle => 'सेटिंग्स';
 
   @override
@@ -96,6 +187,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settingsNotifAnnouncements => 'घोषणाएं';
 
   @override
+  String get settingsNotifComingSoon =>
+      'ये प्राथमिकताएं सेव हो जाती हैं, लेकिन ऐप के इस वर्शन में पुश/लोकल रिमाइंडर अभी नहीं भेजे जाते।';
+
+  @override
   String get settingsLanguage => 'भाषा';
 
   @override
@@ -105,7 +200,25 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settingsAppVersion => 'ऐप संस्करण';
 
   @override
+  String get settingsGeneralSection => 'सामान्य';
+
+  @override
+  String get settingsPreviewRoleDescription =>
+      'यह ऐप आपको हर भूमिका का डैशबोर्ड देखने देता है — कभी भी बदल सकते हैं।';
+
+  @override
+  String get settingsPreferenceError =>
+      'यह प्राथमिकता सेव नहीं हो सकी। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get settingsRoleSwitchError =>
+      'भूमिका नहीं बदली जा सकी। कृपया फिर से कोशिश करें।';
+
+  @override
   String get languageTitle => 'भाषा';
+
+  @override
+  String get languageSubtitle => 'ऐप के लिए अपनी पसंदीदा भाषा चुनें';
 
   @override
   String get languageEnglish => 'अंग्रेज़ी';
@@ -133,6 +246,18 @@ class AppLocalizationsHi extends AppLocalizations {
   String get loginSendOtp => 'OTP भेजें';
 
   @override
+  String get loginOtpError =>
+      'OTP नहीं भेजा जा सका। कृपया नंबर जांचें और फिर से कोशिश करें।';
+
+  @override
+  String get loginDataProtected =>
+      'आपका डेटा DAY-NRLM दिशानिर्देशों के तहत सुरक्षित है। हम आपके आधार विवरण कभी साझा नहीं करते।';
+
+  @override
+  String get loginTermsAgreement =>
+      'जारी रखने पर आप सेवा की शर्तों और गोपनीयता नीति से सहमत होते हैं';
+
+  @override
   String get otpTitle => 'OTP सत्यापित करें';
 
   @override
@@ -158,6 +283,19 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get otpDidntReceive => 'कोड नहीं मिला? अपना SMS इनबॉक्स जांचें।';
+
+  @override
+  String get otpVerifyError =>
+      'गलत या समय-सीमा समाप्त कोड। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get otpResendError =>
+      'कोड फिर से नहीं भेजा जा सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String otpDigitLabel(int position) {
+    return 'OTP अंक $position, 6 में से';
+  }
 
   @override
   String get profileSetupTitle => 'अपनी प्रोफ़ाइल बनाएं';
@@ -207,6 +345,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'अनुकूलित अनुभव देखने के लिए SHG तंत्र में अपनी भूमिका चुनें';
 
   @override
+  String get roleSelectSaveError =>
+      'आपकी भूमिका सेव नहीं हो सकी। कृपया फिर से कोशिश करें।';
+
+  @override
   String get dashboardGreeting => 'वापसी पर स्वागत है';
 
   @override
@@ -231,4 +373,40 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get checkingStatus => 'जांच हो रही है…';
+
+  @override
+  String get shgApprovalCheckError =>
+      'स्थिति जांच नहीं हो सकी। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get voiceNoLoans => 'आपके नाम कोई ऋण नहीं है।';
+
+  @override
+  String voiceNoActiveLoans(int count) {
+    return 'आपके नाम कुल $count ऋण हैं, लेकिन उनमें से कोई भी अभी सक्रिय नहीं है।';
+  }
+
+  @override
+  String voiceLoanActive(String purpose, String amount, String outstanding) {
+    return '$purpose: ₹$amount ऋण, ₹$outstanding अभी भी बकाया है।';
+  }
+
+  @override
+  String voiceSavingsThisMonth(String amount, int count) {
+    return 'इस महीने आपने $count बार बचत की, कुल ₹$amount।';
+  }
+
+  @override
+  String get voiceNoAnnouncements => 'आपके लिए कोई घोषणा नहीं है।';
+
+  @override
+  String get voiceOpeningSavingsForm =>
+      'आपके लिए बचत प्रविष्टि फ़ॉर्म खोला जा रहा है।';
+
+  @override
+  String get voiceUnknownCommand => 'माफ़ कीजिए, मुझे वह समझ नहीं आया।';
+
+  @override
+  String get aiDisclaimer =>
+      'यह सलाह AI द्वारा तैयार की गई है और गलत हो सकती है। यह पेशेवर वित्तीय, कानूनी या चिकित्सा सलाह नहीं है; महत्वपूर्ण निर्णय लेने से पहले अपने SHG लीडर या किसी योग्य सलाहकार से पुष्टि करें।';
 }

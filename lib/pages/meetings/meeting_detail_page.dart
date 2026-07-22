@@ -44,7 +44,8 @@ class MeetingDetailPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text(DateFormat('dd MMM yyyy').format(meeting.date), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+                      Flexible(child: Text(DateFormat('dd MMM yyyy').format(meeting.date), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white))),
+                      const SizedBox(width: 8),
                       AppBadge(text: meeting.status, tone: BadgeTone.neutral),
                     ]),
                     const SizedBox(height: 6),

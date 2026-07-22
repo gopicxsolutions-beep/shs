@@ -31,21 +31,47 @@ class LoansHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<AppState>();
-    final isLeaderOrStaff = appState.user.role != Role.member;
+    // Only role/shgId/memberId are used below — `.watch<AppState>()` would
+    // rebuild this whole page, including the non-lazy `loans.map(...)` list
+    // of every loan row plus the three `.where().fold()`/`.length` passes
+    // over it, on every unrelated AppState change (e.g. the periodic
+    // token-refresh notify in app_state.dart's `_authSub`), even though
+    // nothing displayed here depends on it. `.select` only rebuilds when
+    // one of these three fields actually changes.
+    final isLeaderOrStaff = context.select<AppState, bool>((s) => s.user.role != Role.member);
+    final shgId = context.select<AppState, String?>((s) => s.profile?.shgId);
+    final memberId = context.select<AppState, String?>((s) => s.profile?.id);
     final repo = LoanRepository();
-    final shgId = appState.profile?.shgId;
-    final memberId = appState.profile?.id;
 
     return Scaffold(
       appBar: PageHeader(
         title: 'Loans',
-        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.loanApply), tooltip: 'Apply for a loan'),
+        // This page is the group/staff overview when isLeaderOrStaff (title,
+        // stats, and list rows all switch to group data throughout) — the
+        // "Approvals" tile below is already correctly leader/staff-only;
+        // "Apply" was the one asymmetric affordance still shown to everyone
+        // regardless of role. Harmless in live mode (a leader IS still a
+        // real SHG member and `loans_insert_self` RLS would legitimately
+        // allow it), but in DEMO mode it produced a genuinely confusing
+        // bug: demo mode's simulated identity doesn't vary with the
+        // "Preview as" role switcher (`AppState.profile` stays null for
+        // every previewed role), so applying while previewing as
+        // Leader/CRP/CLF/Admin silently created a loan attributed to the
+        // same hardcoded "Lakshmi Devi" demo persona — then reappeared in
+        // that persona's own "My Loans" list after switching back to
+        // Member, indistinguishable from something genuinely self-applied.
+        right: isLeaderOrStaff ? null : IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.loanApply), tooltip: 'Apply for a loan'),
       ),
       body: AppAsyncBuilder<List<Loan>>(
         future: () => isLeaderOrStaff ? repo.fetchForShg(shgId) : repo.fetchForMember(memberId),
         builder: (context, loans) {
-          final outstanding = loans.fold<num>(0, (sum, l) => sum + l.outstanding);
+          // A pending or rejected loan's `outstanding` is set to the full
+          // requested amount (never disbursed, so never reduced by a
+          // payment) — summing every loan regardless of status counted an
+          // application that was never approved, or was explicitly
+          // rejected, as real owed debt. Only active/overdue loans have
+          // actually been disbursed and carry a genuine outstanding balance.
+          final outstanding = loans.where((l) => l.status == 'active' || l.status == 'overdue').fold<num>(0, (sum, l) => sum + l.outstanding);
           final pending = loans.where((l) => l.status == 'pending').length;
           final overdue = loans.where((l) => l.status == 'overdue').length;
           return ListView(
@@ -55,7 +81,7 @@ class LoansHomePage extends StatelessWidget {
                 Expanded(
                   child: StatCard(
                     label: isLeaderOrStaff ? 'Group Outstanding' : 'My Outstanding',
-                    value: '₹${NumberFormat('#,##0').format(outstanding)}',
+                    value: '₹${NumberFormat('#,##,##0', 'en_IN').format(outstanding)}',
                     tone: StatTone.gold,
                     trend: '${loans.length} loans',
                     icon: Icons.account_balance_rounded,
@@ -76,7 +102,7 @@ class LoansHomePage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconTile(onTap: () => context.go(Paths.loanApply), icon: Icons.add_circle_rounded, label: 'Apply', tone: TileTone.brand),
+                  if (!isLeaderOrStaff) IconTile(onTap: () => context.go(Paths.loanApply), icon: Icons.add_circle_rounded, label: 'Apply', tone: TileTone.brand),
                   IconTile(onTap: () => context.go(Paths.loanTracking), icon: Icons.trending_up_rounded, label: 'Tracking', tone: TileTone.sky),
                   if (isLeaderOrStaff)
                     IconTile(
@@ -85,6 +111,7 @@ class LoansHomePage extends StatelessWidget {
                       label: 'Approvals',
                       tone: TileTone.gold,
                       badge: pending > 0 ? '$pending' : null,
+                      badgeSemanticLabel: pending > 0 ? 'Approvals, $pending pending' : null,
                     ),
                 ],
               ),
@@ -100,7 +127,7 @@ class LoansHomePage extends StatelessWidget {
                       return AppListRow(
                         leading: isLeaderOrStaff ? AppAvatar(name: l.memberName, size: 36) : null,
                         title: isLeaderOrStaff ? l.memberName : l.purpose,
-                        subtitle: isLeaderOrStaff ? l.purpose : '₹${l.outstanding} of ₹${l.amount} outstanding',
+                        subtitle: isLeaderOrStaff ? l.purpose : '₹${NumberFormat('#,##,##0', 'en_IN').format(l.outstanding)} of ₹${NumberFormat('#,##,##0', 'en_IN').format(l.amount)} outstanding',
                         trailing: AppBadge(text: l.status, tone: _statusTones[l.status] ?? BadgeTone.neutral),
                         onTap: () => context.go(Paths.loanDetail(l.id)),
                       );

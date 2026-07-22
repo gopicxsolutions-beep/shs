@@ -57,7 +57,20 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(roleInfo.label, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                        // The full label (e.g. "SHG Leader / President") is
+                        // too wide for this pill on a real phone-width
+                        // screen — every role but the shortest overflowed
+                        // the row here. The short badge form ("Leader",
+                        // "Admin", ...) is what this compact pill is for;
+                        // the full label is shown elsewhere (e.g. Role
+                        // Select) where there's room for it.
+                        Flexible(
+                          child: Text(
+                            roleInfo.shortLabel,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
+                          ),
+                        ),
                         const SizedBox(width: 4),
                         Icon(Icons.unfold_more, size: 12, color: Colors.white.withValues(alpha: 0.6)),
                       ],

@@ -37,6 +37,7 @@ class MarketOrder {
   final String id;
   final String productId;
   final String productName;
+  final String? sellerId;
   final String buyerName;
   final num amount;
   final String status; // new | packed | shipped | delivered
@@ -46,6 +47,7 @@ class MarketOrder {
     required this.id,
     required this.productId,
     required this.productName,
+    this.sellerId,
     required this.buyerName,
     required this.amount,
     required this.status,
@@ -56,6 +58,7 @@ class MarketOrder {
         id: map['id'] as String,
         productId: map['product_id'] as String,
         productName: (map['marketplace_products'] as Map<String, dynamic>?)?['name'] as String? ?? 'Product',
+        sellerId: (map['marketplace_products'] as Map<String, dynamic>?)?['seller_id'] as String?,
         buyerName: map['buyer_name'] as String,
         amount: map['amount'] as num,
         status: map['status'] as String,
@@ -67,15 +70,17 @@ class MarketOrder {
 class Review {
   final String id;
   final String productId;
+  final String? reviewerId;
   final String reviewerName;
   final int rating;
   final String? comment;
 
-  const Review({required this.id, required this.productId, required this.reviewerName, required this.rating, this.comment});
+  const Review({required this.id, required this.productId, this.reviewerId, required this.reviewerName, required this.rating, this.comment});
 
   factory Review.fromMap(Map<String, dynamic> map) => Review(
         id: map['id'] as String,
         productId: map['product_id'] as String,
+        reviewerId: map['reviewer_id'] as String?,
         reviewerName: map['reviewer_name'] as String,
         rating: map['rating'] as int,
         comment: map['comment'] as String?,

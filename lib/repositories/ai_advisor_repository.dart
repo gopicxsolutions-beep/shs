@@ -30,15 +30,29 @@ class AiAdvisorRepository {
 
   /// Runs the (mock) advisor call, then records the interaction. Returns
   /// the response text so the UI can show it immediately.
+  ///
+  /// The log insert is best-effort: it must not turn a real, already-
+  /// obtained LLM answer into a user-facing failure. Before this fix, a
+  /// transient failure on the `ai_advisor_logs` insert (network blip, RLS
+  /// mismatch, etc.) propagated out of `ask()` uncaught, so
+  /// `AiAdvisorChatPage._ask()`'s catch block discarded the genuine answer
+  /// entirely and showed "Sorry, something went wrong" instead — the
+  /// member's question was actually answered, but they'd never see it.
+  /// Mirrors `announcement_detail_page.dart`'s established "read-receipt
+  /// failure must not hide successfully-loaded content" pattern.
   Future<String> ask({required String? memberId, required String advisorType, required String query}) async {
     final response = await _service.ask(advisorType: advisorType, query: query);
     if (_live && memberId != null) {
-      await _client.from('ai_advisor_logs').insert({
-        'member_id': memberId,
-        'advisor_type': advisorType,
-        'query': query,
-        'response': response,
-      });
+      try {
+        await _client.from('ai_advisor_logs').insert({
+          'member_id': memberId,
+          'advisor_type': advisorType,
+          'query': query,
+          'response': response,
+        });
+      } catch (_) {
+        // Logging failure must not hide an already-successful answer.
+      }
     }
     return response;
   }

@@ -68,7 +68,7 @@ class PaymentsHomePage extends StatelessWidget {
                               ),
                             ),
                             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                              Text('₹${p.amount}', style: AppTheme.sans(13, weight: FontWeight.w700)),
+                              Text('₹${NumberFormat('#,##,##0', 'en_IN').format(p.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                               const SizedBox(height: 4),
                               AppBadge(text: p.status, tone: _statusTones[p.status] ?? BadgeTone.neutral),
                             ]),
