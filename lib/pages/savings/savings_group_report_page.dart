@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/savings.dart';
 import '../../repositories/savings_repository.dart';
@@ -17,6 +18,7 @@ class SavingsGroupReportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // Only `profile?.shgId` is used below. `.watch<AppState>()` would
     // rebuild this whole page — including the per-member totals map, sort,
     // and monthly trend, all recomputed synchronously in build(), plus an
@@ -28,12 +30,12 @@ class SavingsGroupReportPage extends StatelessWidget {
     final repo = SavingsRepository();
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Group Savings Report'),
+      appBar: PageHeader(title: l10n.savingsGroupReportTitle),
       body: AppAsyncBuilder<List<SavingsEntry>>(
         future: () => repo.fetchForShg(shgId),
         builder: (context, entries) {
           if (entries.isEmpty) {
-            return const Center(child: AppEmptyState(icon: Icons.groups_rounded, message: 'No group savings data yet'));
+            return Center(child: AppEmptyState(icon: Icons.groups_rounded, message: l10n.savingsGroupReportEmpty));
           }
           // Only verified entries count as confirmed group savings — a
           // pending entry is an unconfirmed self-report not yet reconciled
@@ -54,11 +56,11 @@ class SavingsGroupReportPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Group Total', style: AppTheme.sans(12, color: Neutral.c500)),
+                    Text(l10n.savingsGroupReportTotalLabel, style: AppTheme.sans(12, color: Neutral.c500)),
                     const SizedBox(height: 4),
                     Text('₹${NumberFormat('#,##,##0', 'en_IN').format(groupTotal)}', style: AppTheme.display(24)),
                     const SizedBox(height: 4),
-                    Text('${totals.length} contributing members · ${trend.length} months of activity', style: AppTheme.sans(11, color: Neutral.c500)),
+                    Text(l10n.savingsGroupReportSummary(totals.length, trend.length), style: AppTheme.sans(11, color: Neutral.c500)),
                   ],
                 ),
               ),
@@ -71,7 +73,7 @@ class SavingsGroupReportPage extends StatelessWidget {
                       AppListRow(
                         leading: AppAvatar(name: sorted[i].key, size: 36),
                         title: sorted[i].key,
-                        subtitle: 'Rank #${i + 1}',
+                        subtitle: l10n.savingsGroupReportRank(i + 1),
                         trailing: Text('₹${NumberFormat('#,##,##0', 'en_IN').format(sorted[i].value)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                         chevron: false,
                       ),

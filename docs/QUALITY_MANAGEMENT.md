@@ -22,10 +22,9 @@ reasoned about. It is done when:
 - [ ] It was actually exercised — a real UI click-through or a real query
       against real RLS — not merely read and reasoned about (see
       [TESTING_STRATEGY.md](TESTING_STRATEGY.md) §1 for why this line exists).
-- [ ] Any intentional placeholder (scheme-eligibility heuristic, generic
-      course quiz, admin monitoring metrics, mocked voice STT/TTS) is
-      documented as a placeholder in-code and in the docs, not presented as
-      authoritative.
+- [ ] Any intentional placeholder (admin system-monitoring row counts, the
+      system-uptime figure on the Admin dashboard) is documented as a
+      placeholder in-code and in the docs, not presented as authoritative.
 
 If any box can't be checked — no live preview available, a dependency wasn't
 testable — that must be stated explicitly, not silently skipped.
@@ -104,13 +103,19 @@ back button, the discard-changes dialog, the 404 page, and the QR scanner
 sheet's 9 strings. Zero placeholder/untranslated values found — key parity
 across all three `.arb` files was exact after the additions.
 
-**The disclosed, larger gap**: only ~10 of 109 page/widget files use
-`AppLocalizations` at all. Most feature screens (Savings, Loans, Meetings,
-Marketplace, Schemes, Reports, Admin) are English-only **by current scope**,
-not by oversight — fully localizing the remaining ~99 files is explicitly
-flagged as a multi-hundred-key initiative beyond any single bounded audit
-pass. Treat "localization audited" as "the highest-traffic shared surface is
-covered," not "the app is fully localized."
+**The formerly-disclosed larger gap is now closed**: every feature module
+(Savings, Loans, Meetings, Marketplace, Schemes, Reports, Admin, Training,
+Support, SHG, Analytics, Livelihoods, Payments, Dashboards) is localized —
+91 of 92 page files under `lib/pages/` reference `AppLocalizations` (the one
+exception, `dashboard_page.dart`, has no literal UI strings to localize at
+all — it's a pure role-based routing switch). This added 638 new keys across
+all three `.arb` files (841 total entries in `app_en.arb` including
+placeholder metadata) in one pass across 12 parallel module batches, each
+required to reuse this app's existing Hindi/Telugu terminology for recurring
+terms rather than inventing inconsistent alternate translations. Full
+`flutter test` (915/915) and `flutter analyze` (0 issues) pass with every
+new key wired in and the generated `app_localizations_*.dart` files
+regenerated.
 
 ---
 
@@ -130,16 +135,21 @@ covered," not "the app is fully localized."
   (`com.shgsaathi.shg_saathi`) with the template's own "specify your own
   unique Application ID" comment left in place — worth a deliberate decision
   before store submission, not an oversight to silently keep.
-- `INTERNET` and `CAMERA` permissions are declared (the former only after the
-  CRITICAL fix in §2.1). **No `RECORD_AUDIO`** — consistent with the Voice
-  Assistant being fully mocked (see [AI_MODULES.md](AI_MODULES.md) §3); if a
-  real STT provider is ever wired, this permission becomes required.
+- `INTERNET`, `CAMERA`, `RECORD_AUDIO`, `POST_NOTIFICATIONS`, and
+  `SCHEDULE_EXACT_ALARM` permissions are declared — `RECORD_AUDIO` alongside
+  the real on-device speech recognition wired for the Voice Assistant/Voice
+  Support (see [AI_MODULES.md](AI_MODULES.md) §3), the latter two alongside
+  real local notification scheduling for meeting/loan-due/announcement
+  reminders. Core-library desugaring and multidex are enabled in
+  `build.gradle.kts` for `flutter_local_notifications`' Java 8+ API needs.
 
 ### 5.2 iOS
 
-- `NSCameraUsageDescription` is declared ("scan QR codes for meeting check-in
-  and payments"). No `NSMicrophoneUsageDescription` — same reasoning as
-  Android.
+- `NSCameraUsageDescription` ("scan QR codes for meeting check-in and
+  payments"), `NSMicrophoneUsageDescription`, and
+  `NSSpeechRecognitionUsageDescription` are all declared — the latter two
+  added alongside real on-device speech recognition (see
+  [AI_MODULES.md](AI_MODULES.md) §3).
 - **Outstanding**: App Store submission requires the app owner's own Apple
   Developer Program membership — not something a development session can
   provide.
@@ -187,21 +197,26 @@ this.
 | Area | Status |
 |---|---|
 | `flutter analyze` | Clean (0 issues) as of last recorded check |
-| `flutter test` | 713/713 passing as of last recorded check |
-| CI enforcing analyze/test automatically | **Not set up** — manual, per-round only |
+| `flutter test` | 848/848 passing as of last recorded check |
+| CI enforcing analyze/test automatically | **Wired** — `.github/workflows/ci.yml` runs `flutter analyze`/`flutter test` on every push and PR, demo-mode only (no secrets needed); not yet committed/merged |
 | RLS CRUD sweep (SELECT/INSERT/UPDATE/DELETE) | Systematically completed once; new instances of known bug shapes still surfaced afterward — treat as an ongoing discipline, not a one-time certification |
 | Privilege-escalation closure | Closed (5 CRITICAL findings, all fixed, one via adversarial re-audit) |
 | Accessibility | Bounded audit complete for highest-traffic screens; not a full WCAG certification |
-| Localization | Bounded audit complete for shared/high-traffic widgets; ~99 page files remain English-only by disclosed scope |
+| Localization | **Complete** — 91 of 92 page files localized (the 92nd has no literal strings to localize); all three `.arb` files at parity |
 | Android release signing | Wired, but real keystore credential still needed from app owner |
 | iOS release | Needs app owner's Apple Developer account |
 | `CRON_SECRET` | Plumbing deployed, secret value still needs setting |
 | Crash/error telemetry | **Wired** (Sentry, opt-in via `SENTRY_DSN`) — a real project DSN is still an app-owner deployment step |
 | Real payment gateway | Mocked — `payment-webhook-handler` exists for when one is commissioned |
-| Real file/document upload | Metadata-only — no Storage wiring yet |
-| Real voice STT/TTS | Mocked — see [AI_MODULES.md](AI_MODULES.md) §3 |
+| Real file/document upload | **Wired** — real `file_picker` → Supabase Storage (`shg-documents`/`product-images` buckets, pre-existing RLS); not live-click-tested with a real human file dialog in this environment (native OS file dialog risk, same class of limitation as camera/mic below) |
+| Real voice STT/TTS | **Wired** — real on-device `speech_to_text`/`flutter_tts`, no vendor key; see [AI_MODULES.md](AI_MODULES.md) §3 for the same live-click-testing caveat |
+| Real local notifications | **Wired** — `flutter_local_notifications` for meeting/loan-due/announcement reminders, local-only (no push backend); cannot be click-tested outside a real device/emulator |
+| Admin list pagination | **Wired** — real keyset "Load more" pagination on Manage Users/Manage SHGs, replacing the old silent 500-row cap |
+| Admin dashboard real stats | **Wired** — training completion %, pending-review count, and recent activity are now genuinely computed; system uptime remains a placeholder, now honestly labeled "Not live-monitored" |
+| Government scheme eligibility engine | **Wired** — real structured rules (SHG membership/age/grade) replacing keyword matching; still not a government e-filing connection |
+| Training course quiz content | **Wired** — real per-course questions (new `quiz_questions` table, migration `0041`, not yet deployed) replacing the single generic 3-question set |
 | AI advisor disclaimer | **Shown on every AI-branded screen** (see [AI_MODULES.md](AI_MODULES.md) §6) |
-| AI advisor content moderation / prompt-injection defense | **Absent** — a deliberate scope gap, worth a design decision before scaling real usage |
+| AI advisor content moderation / prompt-injection defense | **Basic layer wired** — delimiter-based prompt-injection hardening, a keyword/pattern pre-filter for obvious self-harm/hate-speech/jailbreak attempts, and an output-side system-prompt-leak heuristic; explicitly a first line of defense, not enterprise-grade moderation — see [AI_MODULES.md](AI_MODULES.md) §6 |
 
 This table is a snapshot, not a live source — re-verify against
 [docs/DEVELOPMENT_PROGRESS.md](DEVELOPMENT_PROGRESS.md)'s latest entries and

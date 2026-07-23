@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shg_saathi/l10n/gen/app_localizations.dart';
 import 'package:shg_saathi/routes/router.dart';
 import 'package:shg_saathi/state/app_state.dart';
 
@@ -22,7 +24,16 @@ void main() {
     await appState.init();
     final router = buildRouter(appState);
 
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(MaterialApp.router(
+      routerConfig: router,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+    ));
     await tester.pumpAndSettle();
 
     router.go('/this-route-does-not-exist');

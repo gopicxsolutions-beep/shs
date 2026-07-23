@@ -28,23 +28,24 @@ methodology below exists in its current, deliberately paranoid form.
 ## 2. Automated test suite
 
 **Frameworks**: `flutter_test` only — no `mockito`/`mocktail`, no
-`integration_test` package, no golden-file tooling. **No CI configuration
-exists** (no `.github/workflows` or equivalent) — `flutter analyze` and
-`flutter test` are run manually and logged by hand after each round of work,
-not enforced automatically on push/PR. This is a genuine gap for a production
-release (see [QUALITY_MANAGEMENT.md](QUALITY_MANAGEMENT.md) §7).
+`integration_test` package, no golden-file tooling. **CI is now wired**:
+`.github/workflows/ci.yml` runs `flutter analyze`/`flutter test` on every
+push and PR (demo mode only, no secrets needed) — not yet committed/merged
+as of this writing, but no longer the "nothing runs automatically" gap
+described in earlier rounds (see
+[QUALITY_MANAGEMENT.md](QUALITY_MANAGEMENT.md) §7).
 
-**Inventory** (50 files under `test/`):
+**Inventory** (71 files under `test/`):
 
 | Directory | Count | What it tests |
 |---|---|---|
-| `test/models/` | 3 | Pure unit tests of model getters/parsing (e.g. `Meeting.hasPassed` date math, timezone parsing) |
-| `test/repositories/` | 3 | Aggregation logic and dual-mode fallback behavior |
-| `test/pages/` | 13 | Widget tests of individual pages — mostly regression tests pinned to a specific previously-fixed bug |
-| `test/widgets/` | 17 | Shared components, including 3 WCAG contrast-ratio tests and several tests that reproduce a *bug shape* (double-submit guard, dialog-mounted guard, stale-response guard) in an isolated minimal widget, because demo-mode repositories resolve too fast to observe the real race in situ |
-| `test/routes/` | 8 | The heaviest-weight tests: exhaustive route sweeps and layout-stress tests, several of which loop over every registered route and generate one test per route dynamically |
-| top-level | 2 | Full boot-to-login smoke test; locale-switching regression test |
-| `test/services/` | 1 | HTTP timeout client |
+| `test/models/` | 4 | Pure unit tests of model getters/parsing (e.g. `Meeting.hasPassed` date math, timezone parsing, scheme eligibility evaluation) |
+| `test/repositories/` | 8 | Aggregation logic, dual-mode fallback behavior, meeting cancellation/stats exclusion, admin dashboard stats, scheme/quiz-question repositories, file-upload wiring |
+| `test/pages/` | 26 | Widget tests of individual pages — mostly regression tests pinned to a specific previously-fixed bug, now including admin pagination, meeting cancel/action-item assignment, scheme eligibility, course quiz content, and notification-sync-on-load coverage |
+| `test/widgets/` | 16 | Shared components, including 3 WCAG contrast-ratio tests and several tests that reproduce a *bug shape* (double-submit guard, dialog-mounted guard, stale-response guard) in an isolated minimal widget, because demo-mode repositories resolve too fast to observe the real race in situ |
+| `test/routes/` | 9 | The heaviest-weight tests: exhaustive route sweeps and layout-stress tests, several of which loop over every registered route and generate one test per route dynamically |
+| top-level | 3 | Full boot-to-login smoke test; router error-page test; locale-switching regression test |
+| `test/services/` | 4 | HTTP timeout client, voice intent classifier, notification-sync decision logic, payment processor |
 
 A literal grep for `test(`/`testWidgets(` call sites finds 183 static
 occurrences — this undercounts the real number, since the route-sweep files
@@ -176,14 +177,18 @@ As of the most recent recorded round:
   the table surface was not fully exhausted even after 82 rounds.
 
 **Disclosed, not hidden, gaps in the testing approach itself**:
-- No CI — nothing runs `analyze`/`test` automatically on push or PR.
+- CI is now wired (`.github/workflows/ci.yml`) but not yet committed/merged —
+  until it is, `analyze`/`test` still only run manually per round in practice.
 - No `integration_test` adoption, despite the project's own log flagging it as
   the more robust long-term answer to the manual live-SQL-simulation
   technique.
 - No load/performance testing.
-- Full localization coverage is audited for the highest-traffic shared
-  widgets only, not for all ~99 page files that don't yet use
-  `AppLocalizations`.
+- Full localization coverage is now real (91 of 92 page files), but the
+  translation quality itself was produced by parallel agents in one pass and
+  verified only structurally (compiles, renders, existing `l10n_test.dart`
+  locale-smoke tests pass) — not reviewed string-by-string by a native
+  Hindi/Telugu speaker. Worth a human linguistic QA pass before treating the
+  translations as launch-ready, even though they are structurally complete.
 
 Before treating "713/713 passing, 0 analyze issues" as current, re-check
 [docs/DEVELOPMENT_PROGRESS.md](DEVELOPMENT_PROGRESS.md)'s tail — these numbers

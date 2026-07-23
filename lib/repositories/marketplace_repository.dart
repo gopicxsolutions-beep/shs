@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/marketplace.dart' as mock;
 import '../models/marketplace.dart';
@@ -71,6 +72,7 @@ class MarketplaceRepository {
     required num price,
     required int stock,
     required String category,
+    String? imageUrl,
   }) async {
     if (!_live) {
       _locallyAddedProducts.add(Product(
@@ -82,6 +84,7 @@ class MarketplaceRepository {
         price: price,
         stock: stock,
         category: category,
+        imageUrl: imageUrl,
       ));
       return;
     }
@@ -93,7 +96,24 @@ class MarketplaceRepository {
       'price': price,
       'stock': stock,
       'category': category,
+      'image_url': ?imageUrl,
     });
+  }
+
+  /// Uploads a picked image's bytes to the `product-images` bucket under
+  /// this seller's own folder (`{sellerId}/{filename}`) — the folder
+  /// convention `0005_storage_buckets.sql`'s RLS keys off of
+  /// (`(storage.foldername(name))[1] = auth.uid()`). Unlike `shg-documents`,
+  /// this bucket is public-read, so the returned URL is a stable, permanent
+  /// public URL rather than a short-lived signed one — no separate
+  /// "get download URL" step is needed to display it. The bucket enforces a
+  /// 5 MiB size cap and a JPEG/PNG/WEBP allow-list server-side
+  /// (`0028_storage_bucket_size_and_type_limits.sql`) — a rejected upload
+  /// throws a `StorageException`, surfaced by the caller as a friendly error.
+  Future<String> uploadProductImage({required String sellerId, required Uint8List bytes, required String fileName, required String contentType}) async {
+    final path = '$sellerId/${DateTime.now().millisecondsSinceEpoch}_$fileName';
+    await _client.storage.from('product-images').uploadBinary(path, bytes, fileOptions: FileOptions(contentType: contentType));
+    return _client.storage.from('product-images').getPublicUrl(path);
   }
 
   // [amount] is only used in demo mode (no backing table to verify a price

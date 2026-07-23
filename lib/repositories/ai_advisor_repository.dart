@@ -16,6 +16,21 @@ class AiAdvisorRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Real cross-turn conversation memory for the *current* chat session
+  // (closes the gap docs/AI_MODULES.md §2.1 previously disclosed: no prior
+  // turn was ever sent back to the model). One AiAdvisorRepository is
+  // created fresh per open AiAdvisorChatPage
+  // (`final _repo = AiAdvisorRepository()`), so this list's lifetime
+  // already matches "reset on leaving/reopening the page or app restart"
+  // with no extra bookkeeping needed — a new page instance means a new
+  // repository instance means empty history again. Never persisted to a
+  // database; capped to the most recent [_maxHistoryExchanges] turns so a
+  // long-running chat can't make each outgoing request grow unbounded (the
+  // Edge Function independently re-enforces its own bound server-side too,
+  // regardless of what any caller sends).
+  static const _maxHistoryExchanges = 6;
+  final List<AiAdvisorExchange> _sessionHistory = [];
+
   Future<List<AiAdvisorLog>> fetchHistory({required String? memberId, required String advisorType}) async {
     if (!_live) {
       return mock.mockAdvisorLogs
@@ -41,7 +56,15 @@ class AiAdvisorRepository {
   /// Mirrors `announcement_detail_page.dart`'s established "read-receipt
   /// failure must not hide successfully-loaded content" pattern.
   Future<String> ask({required String? memberId, required String advisorType, required String query}) async {
-    final response = await _service.ask(advisorType: advisorType, query: query);
+    final response = await _service.ask(
+      advisorType: advisorType,
+      query: query,
+      history: List.unmodifiable(_sessionHistory),
+    );
+    _sessionHistory.add(AiAdvisorExchange(query: query, response: response));
+    if (_sessionHistory.length > _maxHistoryExchanges) {
+      _sessionHistory.removeAt(0);
+    }
     if (_live && memberId != null) {
       try {
         await _client.from('ai_advisor_logs').insert({

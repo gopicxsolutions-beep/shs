@@ -54,11 +54,13 @@ REST call with a real JWT — before calling something fixed or done. See
 [CLAUDE.md](../CLAUDE.md) for the concrete verification discipline this implies.
 
 **5. Placeholders must say they're placeholders.**
-The scheme-eligibility checker, the course quiz, the admin monitoring panel — some
-things are intentionally not-yet-real. That's fine. What's not fine is presenting a
-heuristic as authoritative or a mock metric as live infrastructure data. Every
-placeholder is documented as one, in the code and in the SRS, so nobody — user,
-teammate, or future agent — mistakes a stand-in for a finished feature.
+The admin monitoring panel's system-uptime figure, the mocked payment gateway — some
+things are intentionally not-yet-real, usually because the real version needs an
+external credential or vendor account this codebase can't provision for itself. That's
+fine. What's not fine is presenting a heuristic as authoritative or a mock metric as
+live infrastructure data. Every placeholder is documented as one, in the code and in
+the SRS, so nobody — user, teammate, or future agent — mistakes a stand-in for a
+finished feature.
 
 **6. Language and literacy are not an afterthought.**
 English-only is a shipped bug for this user base, not a v2 nice-to-have. Every

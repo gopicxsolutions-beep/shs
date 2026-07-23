@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/scheme.dart';
 import '../../repositories/scheme_repository.dart' show SchemeApplicationAlreadyDecidedException, SchemeRepository;
@@ -32,8 +33,9 @@ class _SchemeApplicationsReviewPageState extends State<SchemeApplicationsReviewP
       await _repo.decideApplication(app.applicationId, approve: approve);
       _key.currentState?.reload();
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? (approve ? 'Application approved' : 'Application rejected') : 'Demo mode — not saved (connect Supabase to persist)'),
+          content: Text(SupabaseService.isConfigured ? (approve ? l10n.schemeApplicationsReviewApproved : l10n.schemeApplicationsReviewRejected) : l10n.profileUpdateDemoMode),
         ));
       }
     } on SchemeApplicationAlreadyDecidedException {
@@ -42,11 +44,11 @@ class _SchemeApplicationsReviewPageState extends State<SchemeApplicationsReviewP
       // out instead of sitting there looking actionable.
       _key.currentState?.reload();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This application was already decided by someone else.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.schemeApplicationsReviewAlreadyDecided)));
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not save this decision. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.schemeApplicationsReviewSaveError)));
       }
     } finally {
       if (mounted) setState(() => _deciding.remove(app.applicationId));
@@ -55,14 +57,15 @@ class _SchemeApplicationsReviewPageState extends State<SchemeApplicationsReviewP
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: const PageHeader(title: 'Scheme Applications'),
+      appBar: PageHeader(title: l10n.schemeApplicationsReviewTitle),
       body: AppAsyncBuilder<List<SchemeApplicationReview>>(
         key: _key,
         future: _repo.fetchPendingApplications,
         builder: (context, apps) {
           if (apps.isEmpty) {
-            return const AppEmptyState(icon: Icons.fact_check_rounded, message: 'No pending scheme applications');
+            return AppEmptyState(icon: Icons.fact_check_rounded, message: l10n.schemeApplicationsReviewEmptyState);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -90,7 +93,7 @@ class _SchemeApplicationsReviewPageState extends State<SchemeApplicationsReviewP
                         ),
                       ]),
                       const SizedBox(height: 4),
-                      Text('Applied ${DateFormat('dd MMM yyyy').format(app.appliedOn)}', style: AppTheme.sans(11, color: Neutral.c400)),
+                      Text(l10n.schemeApplicationsReviewAppliedOn(DateFormat('dd MMM yyyy').format(app.appliedOn)), style: AppTheme.sans(11, color: Neutral.c400)),
                       const SizedBox(height: 12),
                       Row(children: [
                         Expanded(
@@ -101,7 +104,7 @@ class _SchemeApplicationsReviewPageState extends State<SchemeApplicationsReviewP
                               foregroundColor: Accent.red600,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            child: const Text('Reject'),
+                            child: Text(l10n.schemeApplicationsReviewReject),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -109,7 +112,7 @@ class _SchemeApplicationsReviewPageState extends State<SchemeApplicationsReviewP
                           child: FilledButton(
                             onPressed: deciding ? null : () => _decide(app, true),
                             style: FilledButton.styleFrom(backgroundColor: Brand.c600, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                            child: Text(deciding ? 'Saving…' : 'Approve'),
+                            child: Text(deciding ? l10n.schemeApplicationsReviewSaving : l10n.schemeApplicationsReviewApprove),
                           ),
                         ),
                       ]),

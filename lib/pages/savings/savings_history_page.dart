@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/savings.dart';
 import '../../repositories/savings_repository.dart';
@@ -23,11 +24,12 @@ class _SavingsHistoryPageState extends State<SavingsHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final memberId = appState.profile?.id;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Savings History'),
+      appBar: PageHeader(title: l10n.savingsHistoryTitle),
       body: RefreshIndicator(
         onRefresh: () async {
           try {
@@ -44,7 +46,7 @@ class _SavingsHistoryPageState extends State<SavingsHistoryPage> {
           future: () => _repo.fetchForMember(memberId),
           builder: (context, entries) {
             if (entries.isEmpty) {
-              return ListView(children: const [AppEmptyState(icon: Icons.history_rounded, message: 'No savings history yet')]);
+              return ListView(children: [AppEmptyState(icon: Icons.history_rounded, message: l10n.savingsHistoryEmpty)]);
             }
             return ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -56,7 +58,7 @@ class _SavingsHistoryPageState extends State<SavingsHistoryPage> {
                   child: AppCard(
                     padded: false,
                     child: AppListRow(
-                      title: '${e.frequency} savings',
+                      title: l10n.savingsFrequencyEntryTitle(e.frequency),
                       subtitle: '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.mode}',
                       trailing: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,

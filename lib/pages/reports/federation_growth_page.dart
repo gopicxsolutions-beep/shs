@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/trend.dart';
 import '../../repositories/trend_repository.dart';
@@ -13,20 +14,21 @@ class FederationGrowthPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final repo = TrendRepository();
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Savings Growth'),
+      appBar: PageHeader(title: l10n.federationGrowthTitle),
       body: AppAsyncBuilder<List<MonthlyPoint>>(
         future: repo.savingsTrend,
         builder: (context, points) {
           if (points.isEmpty) {
-            return const AppEmptyState(icon: Icons.trending_up_rounded, message: 'No savings recorded yet');
+            return AppEmptyState(icon: Icons.trending_up_rounded, message: l10n.federationGrowthEmpty);
           }
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text('Monthly total savings across every SHG', style: AppTheme.sans(12, color: Neutral.c500)),
+              Text(l10n.federationGrowthSubtitle, style: AppTheme.sans(12, color: Neutral.c500)),
               const SizedBox(height: 12),
               AppCard(child: TrendChart(points: points, color: Brand.c500, suffix: '')),
             ],

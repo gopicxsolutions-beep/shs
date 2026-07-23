@@ -31,6 +31,7 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
   String? _payeeName;
 
   static const _modes = ['UPI', 'QR', 'Card', 'NetBanking'];
+  static const _maxAmount = 1000000;
 
   @override
   void dispose() {
@@ -68,6 +69,10 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
     final amount = num.tryParse(_amount.text);
     if (amount == null || amount <= 0) {
       setState(() => _error = 'Enter a valid amount');
+      return;
+    }
+    if (amount > _maxAmount) {
+      setState(() => _error = 'Amount seems unusually large — please check and re-enter');
       return;
     }
     setState(() {

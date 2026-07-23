@@ -16,8 +16,6 @@ import 'theme/app_theme.dart';
 import 'widgets/error_screen.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
   // Widget-build errors get a friendly fallback instead of Flutter's
   // default gray/red screen. This hook is independent of the crash
   // reporting below — Sentry's own FlutterError.onError integration
@@ -54,6 +52,17 @@ Future<void> main() async {
 }
 
 Future<void> _startApp() async {
+  // Must happen inside this function, not at the top of `main()` — this is
+  // the zone-establishing callback for both branches above (`runZonedGuarded`
+  // directly, or Sentry's own zone via `appRunner`), and Flutter requires
+  // `ensureInitialized()` and `runApp()` to run in the *same* zone. Calling
+  // it in `main()` instead (as a prior change briefly did) put it in the
+  // root zone while `runApp()` below stayed in the child zone, throwing
+  // "Zone mismatch" and rendering a fully blank page in both demo and live
+  // mode — caught live in the Browser pane, not by `flutter test` (which
+  // pumps widgets directly and never calls real `main()`, so this class of
+  // bug is invisible to the whole test suite).
+  WidgetsFlutterBinding.ensureInitialized();
   if (Env.supabaseUrl.isNotEmpty && Env.supabaseAnonKey.isNotEmpty) {
     // Every Supabase sub-client (Postgrest, Auth, Storage, Functions) is
     // threaded through this one httpClient, so this single change bounds

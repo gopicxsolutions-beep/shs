@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../repositories/meeting_repository.dart';
 import '../../routes/paths.dart';
@@ -68,8 +69,9 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_venue.text.trim().isEmpty) {
-      setState(() => _error = 'Enter a venue');
+      setState(() => _error = l10n.meetingScheduleEnterVenueError);
       return;
     }
     setState(() {
@@ -86,7 +88,7 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
         agenda: _agenda.text.trim(),
       );
       if (!saved) {
-        if (mounted) setState(() => _error = "You're not linked to an SHG, so there's nothing to schedule this meeting for.");
+        if (mounted) setState(() => _error = l10n.meetingScheduleNoShgError);
         return;
       }
       if (mounted) {
@@ -96,11 +98,11 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
         final messenger = ScaffoldMessenger.of(context);
         context.go(Paths.meetings);
         messenger.showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? 'Meeting scheduled' : 'Demo mode — meeting not saved (connect Supabase to persist)'),
+          content: Text(SupabaseService.isConfigured ? l10n.meetingScheduleSuccess : l10n.meetingScheduleDemoMode),
         ));
       }
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not schedule this meeting. Please try again.');
+      if (mounted) setState(() => _error = l10n.meetingScheduleError);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -138,34 +140,35 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return PopScope(
       canPop: !_dirty,
       onPopInvokedWithResult: _handlePop,
       child: Scaffold(
-      appBar: const PageHeader(title: 'Schedule Meeting'),
+      appBar: PageHeader(title: l10n.meetingScheduleTitle),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(children: [
-              Expanded(child: _pickerTile('Date', DateFormat('dd MMM yyyy').format(_date), _pickDate)),
+              Expanded(child: _pickerTile(l10n.meetingScheduleDateLabel, DateFormat('dd MMM yyyy').format(_date), _pickDate)),
               const SizedBox(width: 12),
-              Expanded(child: _pickerTile('Time', _time.format(context), _pickTime)),
+              Expanded(child: _pickerTile(l10n.meetingScheduleTimeLabel, _time.format(context), _pickTime)),
             ]),
             const SizedBox(height: 16),
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Venue', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                  Text(l10n.meetingScheduleVenueLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _venue,
                     maxLength: 150,
                     textInputAction: TextInputAction.next,
                     style: AppTheme.sans(14),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Anganwadi Centre, Kondapur', counterText: ''),
+                    decoration: InputDecoration(border: InputBorder.none, hintText: l10n.meetingScheduleVenueHint, counterText: ''),
                     onChanged: (_) => setState(() {
                       _error = null;
                       _markDirty();
@@ -179,7 +182,7 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Agenda', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                  Text(l10n.meetingScheduleAgendaLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _agenda,
@@ -187,7 +190,7 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
                     maxLength: 300,
                     textInputAction: TextInputAction.done,
                     style: AppTheme.sans(14),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Monthly savings review & loan applications', counterText: ''),
+                    decoration: InputDecoration(border: InputBorder.none, hintText: l10n.meetingScheduleAgendaHint, counterText: ''),
                     onChanged: (_) => setState(_markDirty),
                   ),
                 ],
@@ -198,7 +201,7 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
               Text(_error!, style: AppTheme.sans(12, color: Accent.red600)),
             ],
             const SizedBox(height: 24),
-            AppButton(label: _saving ? 'Scheduling…' : 'Schedule Meeting', fullWidth: true, size: ButtonSize.lg, onPressed: _saving ? null : _submit),
+            AppButton(label: _saving ? l10n.meetingScheduleSubmitting : l10n.meetingScheduleTitle, fullWidth: true, size: ButtonSize.lg, onPressed: _saving ? null : _submit),
           ],
         ),
       ),

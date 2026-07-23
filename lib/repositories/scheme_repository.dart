@@ -42,7 +42,20 @@ class SchemeRepository {
     if (!_live) {
       final list = mock.schemes
           .where((s) => !_locallyDeletedSchemes.contains(s.id))
-          .map((s) => Scheme(id: s.id, name: s.name, fullName: s.fullName, agency: s.agency, benefit: s.benefit, eligibility: s.eligibility, deadline: _parseMockDate(s.deadline)))
+          .map((s) => Scheme(
+                id: s.id,
+                name: s.name,
+                fullName: s.fullName,
+                agency: s.agency,
+                benefit: s.benefit,
+                eligibility: s.eligibility,
+                criteria: EligibilityCriteria(
+                  requiresShgMembership: s.requiresShgMembership,
+                  minShgAgeMonths: s.minShgAgeMonths,
+                  minShgGrade: s.minShgGrade,
+                ),
+                deadline: _parseMockDate(s.deadline),
+              ))
           .map((s) => _locallyUpdatedSchemes[s.id] ?? s)
           .toList()
         ..addAll(_locallyAddedSchemes);
@@ -173,8 +186,19 @@ class SchemeRepository {
   }
 
   /// Admin-only catalog management (enforced server-side by
-  /// `schemes_write_admin`).
-  Future<void> createScheme({required String name, String? fullName, String? agency, String? benefit, List<String> eligibility = const []}) async {
+  /// `schemes_write_admin`). [criteria] backs the structured eligibility
+  /// rules engine (see `EligibilityCriteria` in `lib/models/scheme.dart`) —
+  /// defaults to "no structured criteria", matching a scheme whose
+  /// eligibility is manual-verification-only via the free-text [eligibility]
+  /// list.
+  Future<void> createScheme({
+    required String name,
+    String? fullName,
+    String? agency,
+    String? benefit,
+    List<String> eligibility = const [],
+    EligibilityCriteria criteria = const EligibilityCriteria(),
+  }) async {
     if (!_live) {
       _locallyAddedSchemes.add(Scheme(
         id: 'local-${DateTime.now().microsecondsSinceEpoch}',
@@ -183,6 +207,7 @@ class SchemeRepository {
         agency: agency,
         benefit: benefit,
         eligibility: eligibility,
+        criteria: criteria,
       ));
       return;
     }
@@ -192,14 +217,15 @@ class SchemeRepository {
       'agency': ?agency,
       'benefit': ?benefit,
       'eligibility': eligibility,
+      'eligibility_criteria': criteria.toMap(),
     });
   }
 
-  Future<void> updateScheme(String id, {required String name, String? fullName, String? agency, String? benefit}) async {
+  Future<void> updateScheme(String id, {required String name, String? fullName, String? agency, String? benefit, EligibilityCriteria criteria = const EligibilityCriteria()}) async {
     if (!_live) {
       final current = (await fetchSchemes()).where((s) => s.id == id);
       final eligibility = current.isEmpty ? const <String>[] : current.first.eligibility;
-      final updated = Scheme(id: id, name: name, fullName: fullName, agency: agency, benefit: benefit, eligibility: eligibility);
+      final updated = Scheme(id: id, name: name, fullName: fullName, agency: agency, benefit: benefit, eligibility: eligibility, criteria: criteria);
       final addedIdx = _locallyAddedSchemes.indexWhere((s) => s.id == id);
       if (addedIdx != -1) {
         _locallyAddedSchemes[addedIdx] = updated;
@@ -213,6 +239,7 @@ class SchemeRepository {
       'full_name': fullName,
       'agency': agency,
       'benefit': benefit,
+      'eligibility_criteria': criteria.toMap(),
     }).eq('id', id);
   }
 

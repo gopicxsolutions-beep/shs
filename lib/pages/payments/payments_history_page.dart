@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/payment.dart';
 import '../../repositories/payment_repository.dart';
@@ -25,14 +26,15 @@ class PaymentsHistoryPage extends StatelessWidget {
     final appState = context.watch<AppState>();
     final repo = PaymentRepository();
     final memberId = appState.profile?.id;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Payment History'),
+      appBar: PageHeader(title: l10n.paymentsHistoryTitle),
       body: AppAsyncBuilder<List<Payment>>(
         future: () => repo.fetchHistory(memberId),
         builder: (context, payments) {
           if (payments.isEmpty) {
-            return const AppEmptyState(icon: Icons.receipt_long_rounded, message: 'No payments yet');
+            return AppEmptyState(icon: Icons.receipt_long_rounded, message: l10n.paymentsHistoryEmpty);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -44,7 +46,7 @@ class PaymentsHistoryPage extends StatelessWidget {
                 child: AppCard(
                   padded: false,
                   child: AppListRow(
-                    title: '${p.mode} Payment',
+                    title: l10n.paymentsHistoryModePayment(p.mode),
                     subtitle: '${p.reference ?? ''} · ${DateFormat('dd MMM yyyy').format(p.createdAt)}',
                     trailing: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,

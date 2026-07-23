@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../routes/paths.dart';
 import '../../theme/app_theme.dart';
@@ -13,8 +14,9 @@ class AiHubPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: const PageHeader(title: 'AI Advisors'),
+      appBar: PageHeader(title: l10n.aiHubTitle),
       body: Column(
         children: [
           const AiDisclaimerBanner(),
@@ -23,7 +25,7 @@ class AiHubPage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
-                  'Ask an advisor',
+                  l10n.aiHubAskAdvisor,
                   style: AppTheme.sans(
                     12,
                     weight: FontWeight.w700,
@@ -34,32 +36,32 @@ class AiHubPage extends StatelessWidget {
                 _AdvisorCard(
                   icon: Icons.savings_rounded,
                   tone: TileTone.brand,
-                  title: 'Financial Advisor',
-                  subtitle: 'Savings, loans & budgeting guidance',
+                  title: l10n.aiHubFinancialAdvisorTitle,
+                  subtitle: l10n.aiHubFinancialAdvisorSubtitle,
                   onTap: () => context.go(Paths.aiFinancialAdvisor),
                 ),
                 const SizedBox(height: 12),
                 _AdvisorCard(
                   icon: Icons.description_rounded,
                   tone: TileTone.violet,
-                  title: 'Scheme Recommender',
-                  subtitle: 'Find government schemes you qualify for',
+                  title: l10n.aiHubSchemeRecommenderTitle,
+                  subtitle: l10n.aiHubSchemeRecommenderSubtitle,
                   onTap: () => context.go(Paths.aiSchemeRecommender),
                 ),
                 const SizedBox(height: 12),
                 _AdvisorCard(
                   icon: Icons.storefront_rounded,
                   tone: TileTone.gold,
-                  title: 'Market Advisor',
-                  subtitle: 'Pricing & selling tips for your products',
+                  title: l10n.aiHubMarketAdvisorTitle,
+                  subtitle: l10n.aiHubMarketAdvisorSubtitle,
                   onTap: () => context.go(Paths.aiMarketAdvisor),
                 ),
                 const SizedBox(height: 12),
                 _AdvisorCard(
                   icon: Icons.mic_rounded,
                   tone: TileTone.sky,
-                  title: 'Voice Assistant',
-                  subtitle: 'Ask in Telugu, Hindi or English — hands-free',
+                  title: l10n.aiHubVoiceAssistantTitle,
+                  subtitle: l10n.aiHubVoiceAssistantSubtitle,
                   onTap: () => context.go(Paths.aiVoiceAssistant),
                 ),
               ],

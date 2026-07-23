@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/loan.dart';
 import '../../models/meeting.dart';
 import '../../models/report.dart';
@@ -78,6 +79,7 @@ class _LeaderDashboardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final report = data.report;
     final pendingLoans = data.pendingLoans;
     final overdueLoans = data.overdueLoans;
@@ -92,9 +94,9 @@ class _LeaderDashboardBody extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(children: [
-              Expanded(child: StatCard(label: 'Group Savings', value: '₹${(report.totalSavings / 100000).toStringAsFixed(1)}L', tone: StatTone.brand, trend: '${report.memberCount} members', icon: Icons.account_balance_wallet_rounded)),
+              Expanded(child: StatCard(label: l10n.leaderDashboardGroupSavingsLabel, value: '₹${(report.totalSavings / 100000).toStringAsFixed(1)}L', tone: StatTone.brand, trend: l10n.leaderDashboardMembersTrend(report.memberCount), icon: Icons.account_balance_wallet_rounded)),
               const SizedBox(width: 12),
-              Expanded(child: StatCard(label: 'Loans Outstanding', value: '₹${(report.totalOutstanding / 100000).toStringAsFixed(1)}L', tone: StatTone.gold, trend: '${overdueLoans.length} overdue', icon: Icons.account_balance_rounded)),
+              Expanded(child: StatCard(label: l10n.leaderDashboardLoansOutstandingLabel, value: '₹${(report.totalOutstanding / 100000).toStringAsFixed(1)}L', tone: StatTone.gold, trend: l10n.leaderDashboardOverdueTrend(overdueLoans.length), icon: Icons.account_balance_rounded)),
             ]),
           ),
         ),
@@ -105,17 +107,17 @@ class _LeaderDashboardBody extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconTile(onTap: () => context.go(Paths.shgMembers), icon: Icons.groups_rounded, label: 'Members', tone: TileTone.brand),
+                IconTile(onTap: () => context.go(Paths.shgMembers), icon: Icons.groups_rounded, label: l10n.leaderDashboardMembersTile, tone: TileTone.brand),
                 IconTile(
                   onTap: () => context.go(Paths.loanApproval),
                   icon: Icons.fact_check_rounded,
-                  label: 'Approvals',
+                  label: l10n.leaderDashboardApprovalsTile,
                   tone: TileTone.gold,
                   badge: pendingLoans.isNotEmpty ? '${pendingLoans.length}' : null,
-                  badgeSemanticLabel: pendingLoans.isNotEmpty ? 'Approvals, ${pendingLoans.length} pending' : null,
+                  badgeSemanticLabel: pendingLoans.isNotEmpty ? l10n.leaderDashboardApprovalsPendingBadge(pendingLoans.length) : null,
                 ),
-                IconTile(onTap: () => context.go(Paths.meetingSchedule), icon: Icons.event_rounded, label: 'Schedule', tone: TileTone.sky),
-                IconTile(onTap: () => context.go(Paths.reportsShg), icon: Icons.bar_chart_rounded, label: 'Reports', tone: TileTone.violet),
+                IconTile(onTap: () => context.go(Paths.meetingSchedule), icon: Icons.event_rounded, label: l10n.leaderDashboardScheduleTile, tone: TileTone.sky),
+                IconTile(onTap: () => context.go(Paths.reportsShg), icon: Icons.bar_chart_rounded, label: l10n.leaderDashboardReportsTile, tone: TileTone.violet),
               ],
             ),
           ),
@@ -130,11 +132,11 @@ class _LeaderDashboardBody extends StatelessWidget {
                 Container(width: 40, height: 40, decoration: BoxDecoration(color: Accent.red100, borderRadius: BorderRadius.circular(12)), child: Icon(Icons.warning_rounded, color: Accent.red600, size: 20)),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${overdueLoans.length} Defaulter Alert${overdueLoans.length > 1 ? 's' : ''}', style: AppTheme.sans(14, weight: FontWeight.w700, color: Accent.red700)),
+                  Text(l10n.leaderDashboardDefaulterAlert(overdueLoans.length), style: AppTheme.sans(14, weight: FontWeight.w700, color: Accent.red700)),
                   Text(
                     overdueLoans.first.nextDueDate != null
-                        ? '${overdueLoans.first.memberName} — EMI overdue since ${DateFormat('dd MMM').format(overdueLoans.first.nextDueDate!)}'
-                        : '${overdueLoans.first.memberName} — EMI overdue',
+                        ? l10n.leaderDashboardEmiOverdueSinceDate(overdueLoans.first.memberName, DateFormat('dd MMM').format(overdueLoans.first.nextDueDate!))
+                        : l10n.leaderDashboardEmiOverdue(overdueLoans.first.memberName),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.sans(12, color: Accent.red500),
@@ -144,18 +146,23 @@ class _LeaderDashboardBody extends StatelessWidget {
                 // loans, not the SHG's — for a leader tapping "View" here
                 // that was showing their own unrelated loan instead of the
                 // actual defaulting member's. Route to that loan directly.
-                InkWell(onTap: () => context.go(Paths.loanDetail(overdueLoans.first.id)), child: Text('View', style: AppTheme.sans(12, weight: FontWeight.w700, color: Accent.red600))),
+                Flexible(
+                  child: InkWell(
+                    onTap: () => context.go(Paths.loanDetail(overdueLoans.first.id)),
+                    child: Text(l10n.leaderDashboardViewAction, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Accent.red600)),
+                  ),
+                ),
               ]),
             ),
           ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SectionHeader(title: 'Pending Loan Approvals', action: 'Review all', onAction: () => context.go(Paths.loanApproval)),
+            SectionHeader(title: l10n.leaderDashboardPendingApprovalsTitle, action: l10n.leaderDashboardReviewAllAction, onAction: () => context.go(Paths.loanApproval)),
             AppCard(
               padded: false,
               child: pendingLoans.isEmpty
-                  ? Padding(padding: const EdgeInsets.all(16), child: Text('No pending loan requests', style: AppTheme.sans(12, color: Neutral.c400)))
+                  ? Padding(padding: const EdgeInsets.all(16), child: Text(l10n.leaderDashboardNoPendingLoans, style: AppTheme.sans(12, color: Neutral.c400)))
                   : Column(
                       children: pendingLoans.map((l) => Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -177,7 +184,7 @@ class _LeaderDashboardBody extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              SectionHeader(title: 'Next Meeting', action: 'Manage', onAction: () => context.go(Paths.meetings)),
+              SectionHeader(title: l10n.leaderDashboardNextMeetingTitle, action: l10n.leaderDashboardManageAction, onAction: () => context.go(Paths.meetings)),
               AppCard(
                 child: Row(children: [
                   Container(
@@ -199,7 +206,7 @@ class _LeaderDashboardBody extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(upcomingMeeting.agenda ?? 'Meeting', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700)),
+                    Text(upcomingMeeting.agenda ?? l10n.leaderDashboardMeetingFallback, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700)),
                     Text('${upcomingMeeting.time ?? ''} · ${upcomingMeeting.venue ?? ''}', style: AppTheme.sans(11, color: Neutral.c500)),
                   ])),
                 ]),
@@ -209,13 +216,13 @@ class _LeaderDashboardBody extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SectionHeader(title: 'SHG Health'),
+            SectionHeader(title: l10n.leaderDashboardShgHealthTitle),
             Row(children: [
-              Expanded(child: _healthTile(data.shg?.grade ?? '—', 'Grading')),
+              Expanded(child: _healthTile(data.shg?.grade ?? '—', l10n.leaderDashboardGradingLabel)),
               const SizedBox(width: 12),
-              Expanded(child: _healthTile('${report.avgAttendancePct.round()}%', 'Attendance')),
+              Expanded(child: _healthTile('${report.avgAttendancePct.round()}%', l10n.leaderDashboardAttendanceLabel)),
               const SizedBox(width: 12),
-              Expanded(child: _healthTile('$recoveryPct%', 'Recovery')),
+              Expanded(child: _healthTile('$recoveryPct%', l10n.leaderDashboardRecoveryLabel)),
             ]),
           ]),
         ),

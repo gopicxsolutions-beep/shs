@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shg_saathi/l10n/gen/app_localizations.dart';
 import 'package:shg_saathi/pages/savings/savings_entry_page.dart';
 import 'package:shg_saathi/services/supabase_service.dart';
 import 'package:shg_saathi/state/app_state.dart';
@@ -17,7 +19,7 @@ void main() {
 
   Widget harness() => ChangeNotifierProvider<AppState>(
         create: (_) => AppState(),
-        child: const MaterialApp(home: SavingsEntryPage()),
+        child: MaterialApp(home: const SavingsEntryPage(), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales, ),
       );
 
   testWidgets('tapping Submit with an empty amount shows a validation error instead of crashing', (tester) async {

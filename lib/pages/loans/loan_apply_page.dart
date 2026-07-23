@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../repositories/loan_repository.dart';
 import '../../routes/paths.dart';
@@ -50,17 +51,18 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     final amount = num.tryParse(_amount.text);
     if (_purpose.text.trim().isEmpty) {
-      setState(() => _error = 'Describe what the loan is for');
+      setState(() => _error = l10n.loanApplyPurposeRequiredError);
       return;
     }
     if (amount == null || amount <= 0) {
-      setState(() => _error = 'Enter a valid amount');
+      setState(() => _error = l10n.loanApplyInvalidAmountError);
       return;
     }
     if (amount > _maxAmount) {
-      setState(() => _error = 'Amount seems unusually large — please check and re-enter');
+      setState(() => _error = l10n.loanApplyAmountTooLargeError);
       return;
     }
     setState(() {
@@ -77,7 +79,7 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
         tenureMonths: _tenure,
       );
       if (!saved) {
-        if (mounted) setState(() => _error = "You're not linked to an SHG, so there's nothing to apply for this loan against.");
+        if (mounted) setState(() => _error = l10n.loanApplyNoShgError);
         return;
       }
       if (mounted) {
@@ -87,11 +89,11 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
         final messenger = ScaffoldMessenger.of(context);
         context.go(Paths.loans);
         messenger.showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? 'Loan application submitted for review' : 'Demo mode — application not saved (connect Supabase to persist)'),
+          content: Text(SupabaseService.isConfigured ? l10n.loanApplySuccessMessage : l10n.loanApplyDemoModeMessage),
         ));
       }
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not submit this application. Please try again.');
+      if (mounted) setState(() => _error = l10n.loanApplySubmitError);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -112,11 +114,12 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return PopScope(
       canPop: !_dirty,
       onPopInvokedWithResult: _handlePop,
       child: Scaffold(
-      appBar: const PageHeader(title: 'Apply for Loan'),
+      appBar: PageHeader(title: l10n.loanApplyTitle),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -126,7 +129,7 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Purpose', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                  Text(l10n.loanApplyPurposeLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _purpose,
@@ -134,7 +137,7 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
                     maxLength: 200,
                     textInputAction: TextInputAction.next,
                     style: AppTheme.sans(14),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Dairy — buy milch cow', counterText: ''),
+                    decoration: InputDecoration(border: InputBorder.none, hintText: l10n.loanApplyPurposeHint, counterText: ''),
                     onChanged: (_) => setState(() {
                       _error = null;
                       _markDirty();
@@ -148,7 +151,7 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Amount requested', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                  Text(l10n.loanApplyAmountLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                   const SizedBox(height: 6),
                   Row(children: [
                     Text('₹', style: AppTheme.display(22)),
@@ -177,14 +180,14 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Tenure', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                  Text(l10n.loanApplyTenureLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     children: _tenureOptions.map((t) {
                       final selected = t == _tenure;
                       return ChoiceChip(
-                        label: Text('$t months'),
+                        label: Text(l10n.loanApplyTenureMonths(t)),
                         selected: selected,
                         onSelected: (_) => setState(() {
                           _tenure = t;
@@ -206,7 +209,7 @@ class _LoanApplyPageState extends State<LoanApplyPage> {
               Text(_error!, style: AppTheme.sans(12, color: Accent.red600)),
             ],
             const SizedBox(height: 24),
-            AppButton(label: _saving ? 'Submitting…' : 'Submit Application', fullWidth: true, size: ButtonSize.lg, onPressed: _saving ? null : _submit),
+            AppButton(label: _saving ? l10n.loanApplySubmitting : l10n.loanApplySubmitButton, fullWidth: true, size: ButtonSize.lg, onPressed: _saving ? null : _submit),
           ],
         ),
       ),

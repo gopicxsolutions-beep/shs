@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/marketplace.dart';
 import '../../repositories/marketplace_repository.dart';
@@ -45,11 +46,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (_submittingReview) return;
     _commentController.clear();
     int rating = 5;
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Write a review'),
+          title: Text(l10n.productDetailWriteReviewTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,7 +63,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   (i) => IconButton(
                     icon: Icon(i < rating ? Icons.star_rounded : Icons.star_border_rounded, color: Gold.c500, size: 28),
                     onPressed: () => setDialogState(() => rating = i + 1),
-                    tooltip: '${i + 1} star${i == 0 ? '' : 's'}',
+                    tooltip: l10n.productDetailStarTooltip(i + 1),
                   ),
                 ),
               ),
@@ -71,13 +73,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 maxLength: 300,
                 maxLines: 3,
                 textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(hintText: 'Share your experience with this product (optional)'),
+                decoration: InputDecoration(hintText: l10n.productDetailReviewHint),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Submit')),
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.actionSubmit)),
           ],
         ),
       ),
@@ -94,8 +96,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         comment: _commentController.text.trim(),
       );
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? 'Review submitted' : 'Demo mode — review not saved (connect Supabase to persist)'),
+          content: Text(SupabaseService.isConfigured ? l10n.productDetailReviewSubmitted : l10n.productDetailReviewDemoMode),
         ));
         _reviewsKey.currentState?.reload();
       }
@@ -104,7 +107,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       // failure, not a distinguishable error code — a generic message here
       // matches this repository layer's other write paths.
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not submit your review. You may need to purchase this product first.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.productDetailReviewSubmitError)));
       }
     } finally {
       if (mounted) setState(() => _submittingReview = false);
@@ -124,13 +127,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       // easy to believe an order hadn't gone through and place duplicates.
       _key.currentState?.reload();
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(SupabaseService.isConfigured ? 'Order placed' : 'Demo mode — order not saved (connect Supabase to persist)')),
+          SnackBar(content: Text(SupabaseService.isConfigured ? l10n.productDetailOrderPlaced : l10n.productDetailOrderDemoMode)),
         );
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not place this order. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.productDetailOrderPlaceError)));
       }
     } finally {
       if (mounted) setState(() => _placing = false);
@@ -141,24 +145,37 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Widget build(BuildContext context) {
     final repo = _repo;
     final productId = widget.productId;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Product'),
+      appBar: PageHeader(title: l10n.productDetailTitle),
       body: AppAsyncBuilder<Product?>(
         key: _key,
         future: () => repo.fetchProductById(productId),
         builder: (context, product) {
           if (product == null) {
-            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This product could not be found');
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.productDetailNotFound);
           }
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Container(
-                height: 160,
-                decoration: BoxDecoration(color: Brand.c50, borderRadius: BorderRadius.circular(16)),
-                alignment: Alignment.center,
-                child: Icon(Icons.storefront_rounded, color: Brand.c500, size: 56),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  height: 160,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(color: Brand.c50),
+                  alignment: Alignment.center,
+                  child: product.imageUrl == null
+                      ? Icon(Icons.storefront_rounded, color: Brand.c500, size: 56)
+                      : Image.network(
+                          product.imageUrl!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (context, error, stackTrace) => Icon(Icons.storefront_rounded, color: Brand.c500, size: 56),
+                        ),
+                ),
               ),
               const SizedBox(height: 16),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -166,24 +183,24 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 if (product.category != null) AppBadge(text: product.category!, tone: BadgeTone.brand),
               ]),
               const SizedBox(height: 6),
-              Text('by ${product.sellerName}', style: AppTheme.sans(12, color: Neutral.c500)),
+              Text(l10n.productDetailBySeller(product.sellerName), style: AppTheme.sans(12, color: Neutral.c500)),
               const SizedBox(height: 12),
               Text('₹${NumberFormat('#,##,##0', 'en_IN').format(product.price)}', style: AppTheme.display(22, color: Brand.c700)),
               const SizedBox(height: 4),
-              Text('${product.stock} in stock', style: AppTheme.sans(12, color: product.stock > 0 ? Neutral.c500 : Accent.red600)),
+              Text(l10n.productDetailInStock(product.stock), style: AppTheme.sans(12, color: product.stock > 0 ? Neutral.c500 : Accent.red600)),
               const SizedBox(height: 12),
               if (product.description != null) Text(product.description!, style: AppTheme.sans(13, color: Neutral.c700)),
               const SizedBox(height: 20),
               AppButton(
-                label: _placing ? 'Placing…' : 'Place Order',
+                label: _placing ? l10n.productDetailPlacingInProgress : l10n.productDetailPlaceOrderButton,
                 fullWidth: true,
                 size: ButtonSize.lg,
                 onPressed: product.stock <= 0 || _placing ? null : () => _placeOrder(product),
               ),
               const SizedBox(height: 24),
               SectionHeader(
-                title: 'Reviews',
-                action: _submittingReview ? 'Submitting…' : 'Write a Review',
+                title: l10n.productDetailReviewsSection,
+                action: _submittingReview ? l10n.productDetailSubmittingAction : l10n.productDetailWriteReviewAction,
                 onAction: () => _writeReview(productId),
               ),
               AppAsyncBuilder<List<Review>>(
@@ -191,7 +208,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 future: () => repo.fetchReviewsForProduct(productId),
                 builder: (context, reviews) {
                   if (reviews.isEmpty) {
-                    return const AppEmptyState(icon: Icons.star_border_rounded, message: 'No reviews yet');
+                    return AppEmptyState(icon: Icons.star_border_rounded, message: l10n.productDetailNoReviewsYet);
                   }
                   return AppCard(
                     padded: false,
@@ -205,7 +222,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                   Text(r.reviewerName, style: AppTheme.sans(12, weight: FontWeight.w700)),
                                   const SizedBox(width: 8),
                                   Semantics(
-                                    label: '${r.rating} out of 5 stars',
+                                    label: l10n.productDetailReviewRatingSemantics(r.rating),
                                     child: ExcludeSemantics(
                                       child: Row(children: List.generate(5, (i) => Icon(i < r.rating ? Icons.star_rounded : Icons.star_border_rounded, size: 14, color: Gold.c500))),
                                     ),

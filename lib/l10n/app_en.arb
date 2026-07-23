@@ -67,7 +67,9 @@
   "settingsNotifMeetingReminders": "Meeting reminders",
   "settingsNotifPaymentAlerts": "Payment alerts",
   "settingsNotifAnnouncements": "Announcements",
-  "settingsNotifComingSoon": "These preferences are saved, but push/local reminders aren't sent yet in this version of the app.",
+  "settingsNotifLocalOnly": "Reminders are scheduled on this device only — not sent by a server. They won't reach you if you use a different phone or reinstall the app. If a meeting is cancelled, only this device's own reminder is cancelled right away — another member's phone may still show a stale reminder for it until she reopens the Meetings tab.",
+  "settingsNotifPermissionDenied": "Notifications are turned off for this app in your phone's settings. Turn them on there to actually receive reminders.",
+  "settingsNotifCancelPendingError": "Couldn't turn off these reminders on this device. We'll keep retrying automatically — please check your connection, or try again.",
   "settingsLanguage": "Language",
   "settingsPreviewAs": "Preview as",
   "settingsAppVersion": "App version",
@@ -165,5 +167,1749 @@
   "voiceOpeningSavingsForm": "Opening the savings entry form for you.",
   "voiceUnknownCommand": "Sorry, I didn't understand that.",
 
-  "aiDisclaimer": "AI-generated guidance — may be inaccurate. Not professional financial, legal, or medical advice; confirm important decisions with your SHG leader or a qualified advisor."
+  "aiDisclaimer": "AI-generated guidance — may be inaccurate. Not professional financial, legal, or medical advice; confirm important decisions with your SHG leader or a qualified advisor.",
+
+  "adminDashboardJustNow": "Just now",
+
+  "adminDashboardMinutesAgo": "{count}m ago",
+  "@adminDashboardMinutesAgo": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "adminDashboardHoursAgo": "{count}h ago",
+  "@adminDashboardHoursAgo": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "adminDashboardDaysAgo": "{count}d ago",
+  "@adminDashboardDaysAgo": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "adminDashboardMonthsAgo": "{count}mo ago",
+  "@adminDashboardMonthsAgo": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "adminDashboardTotalShgsLabel": "Total SHGs",
+
+  "adminDashboardActiveMembersTrend": "{count} members",
+  "@adminDashboardActiveMembersTrend": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "adminDashboardSystemUptimeLabel": "System Uptime",
+
+  "adminDashboardNotLiveMonitored": "Not live-monitored",
+
+  "adminDashboardUsersTile": "Users",
+
+  "adminDashboardShgsTile": "SHGs",
+
+  "adminDashboardSchemesTile": "Schemes",
+
+  "adminDashboardMonitoringTile": "Monitoring",
+
+  "adminDashboardReportsTile": "Reports",
+
+  "adminDashboardPendingReviewCount": "{count} scheme applications pending review",
+  "@adminDashboardPendingReviewCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "adminDashboardAwaitingReviewSubtitle": "Awaiting staff approval or rejection",
+
+  "adminDashboardReviewAction": "Review",
+
+  "adminDashboardPlatformSnapshotTitle": "Platform Snapshot",
+
+  "adminDashboardAnalyticsAction": "Analytics",
+
+  "adminDashboardLoansDisbursedLabel": "Loans Disbursed",
+
+  "adminDashboardTrainingCompletionLabel": "Training Completion",
+
+  "adminDashboardRecentActivityTitle": "Recent System Activity",
+
+  "adminDashboardNoRecentActivity": "No recent activity yet",
+
+  "clfDashboardVillageOrgsLabel": "Village Orgs",
+
+  "clfDashboardShgsTotalTrend": "{count} SHGs total",
+  "@clfDashboardShgsTotalTrend": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "clfDashboardTotalSavingsLabel": "Total Savings",
+
+  "clfDashboardFinancialOversightTrend": "Financial oversight",
+
+  "clfDashboardMonitorVillageOrgsTitle": "Monitor Village Organisations",
+
+  "clfDashboardVillagesShgsSummary": "{villageCount} villages · {shgCount} SHGs",
+  "@clfDashboardVillagesShgsSummary": {
+    "placeholders": {
+      "villageCount": {"type": "int"},
+      "shgCount": {"type": "int"}
+    }
+  },
+
+  "clfDashboardVillageWiseShgsTitle": "Village-wise SHGs",
+
+  "clfDashboardFederationReportsAction": "Federation reports",
+
+  "clfDashboardNoVillagesYet": "No villages yet",
+
+  "clfDashboardShgChartSemanticLabel": "Village-wise SHGs bar chart: {summary}",
+  "@clfDashboardShgChartSemanticLabel": {
+    "placeholders": {
+      "summary": {"type": "String"}
+    }
+  },
+
+  "clfDashboardShgChartItemLabel": "{village} {count} SHGs",
+  "@clfDashboardShgChartItemLabel": {
+    "placeholders": {
+      "village": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+
+  "clfDashboardFinancialOversightTitle": "Financial Oversight",
+
+  "clfDashboardLoansDisbursedLabel": "Loans Disbursed",
+
+  "clfDashboardRecoveryRateLabel": "Recovery Rate",
+
+  "clfDashboardFullAnalyticsTitle": "Full Analytics Dashboard",
+
+  "clfDashboardFullAnalyticsSubtitle": "KPIs, trends & recovery insights",
+
+  "clfDashboardOpenAction": "Open",
+
+  "crpDashboardShgsMonitoredLabel": "SHGs Monitored",
+
+  "crpDashboardNoShgsYetTrend": "No SHGs yet",
+
+  "crpDashboardAvgHealthScoreLabel": "Avg. Health Score",
+
+  "crpDashboardAttendanceProxyTrend": "Attendance-based proxy",
+
+  "crpDashboardShgsUnderMonitoringTitle": "SHGs Under Monitoring",
+
+  "crpDashboardViewAllAction": "View all",
+
+  "crpDashboardNoShgsToMonitorYet": "No SHGs to monitor yet",
+
+  "crpDashboardShgVillageMembersSummary": "{village} · {count} members",
+  "@crpDashboardShgVillageMembersSummary": {
+    "placeholders": {
+      "village": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+
+  "crpDashboardTrainingCatalogTitle": "Training Catalog",
+
+  "crpDashboardNoCoursesYet": "No courses yet",
+
+  "dashboardTopBarGreeting": "Namaste, {name} 🙏",
+  "@dashboardTopBarGreeting": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "dashboardTopBarUnreadAnnouncementsTooltip": "{count} unread announcements",
+  "@dashboardTopBarUnreadAnnouncementsTooltip": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "dashboardTopBarAnnouncementsTooltip": "Announcements",
+
+  "leaderDashboardGroupSavingsLabel": "Group Savings",
+
+  "leaderDashboardMembersTrend": "{count} members",
+  "@leaderDashboardMembersTrend": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "leaderDashboardLoansOutstandingLabel": "Loans Outstanding",
+
+  "leaderDashboardOverdueTrend": "{count} overdue",
+  "@leaderDashboardOverdueTrend": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "leaderDashboardMembersTile": "Members",
+
+  "leaderDashboardApprovalsTile": "Approvals",
+
+  "leaderDashboardApprovalsPendingBadge": "Approvals, {count} pending",
+  "@leaderDashboardApprovalsPendingBadge": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "leaderDashboardScheduleTile": "Schedule",
+
+  "leaderDashboardReportsTile": "Reports",
+
+  "leaderDashboardDefaulterAlert": "{count} {count, plural, =1{Defaulter Alert} other{Defaulter Alerts}}",
+  "@leaderDashboardDefaulterAlert": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "leaderDashboardEmiOverdueSinceDate": "{name} — EMI overdue since {date}",
+  "@leaderDashboardEmiOverdueSinceDate": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+
+  "leaderDashboardEmiOverdue": "{name} — EMI overdue",
+  "@leaderDashboardEmiOverdue": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "leaderDashboardViewAction": "View",
+
+  "leaderDashboardPendingApprovalsTitle": "Pending Loan Approvals",
+
+  "leaderDashboardReviewAllAction": "Review all",
+
+  "leaderDashboardNoPendingLoans": "No pending loan requests",
+
+  "leaderDashboardNextMeetingTitle": "Next Meeting",
+
+  "leaderDashboardManageAction": "Manage",
+
+  "leaderDashboardMeetingFallback": "Meeting",
+
+  "leaderDashboardShgHealthTitle": "SHG Health",
+
+  "leaderDashboardGradingLabel": "Grading",
+
+  "leaderDashboardAttendanceLabel": "Attendance",
+
+  "leaderDashboardRecoveryLabel": "Recovery",
+
+  "memberDashboardMySavingsLabel": "My Savings",
+
+  "memberDashboardSavingsEntriesTrend": "{count} entries",
+  "@memberDashboardSavingsEntriesTrend": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "memberDashboardOutstandingLoanLabel": "Outstanding Loan",
+
+  "memberDashboardNextEmiTrend": "Next EMI {date}",
+  "@memberDashboardNextEmiTrend": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+
+  "memberDashboardNoDuesTrend": "No dues",
+
+  "memberDashboardAddSavingsTile": "Add Savings",
+
+  "memberDashboardApplyLoanTile": "Apply Loan",
+
+  "memberDashboardAttendanceLabel": "Attendance",
+
+  "memberDashboardSchemesTile": "Schemes",
+
+  "memberDashboardSchemesNewBadge": "Schemes, {count} new",
+  "@memberDashboardSchemesNewBadge": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "memberDashboardNewSchemesCount": "{count} new",
+  "@memberDashboardNewSchemesCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "memberDashboardSchemesAvailableLabel": "Schemes available",
+
+  "memberDashboardSavingsSummaryTitle": "Savings Summary",
+
+  "memberDashboardViewAllAction": "View all",
+
+  "memberDashboardLoanSummaryTitle": "Loan Summary",
+
+  "memberDashboardTrackAction": "Track",
+
+  "memberDashboardOfAmount": "of ₹{amount}",
+  "@memberDashboardOfAmount": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "memberDashboardEmiDueBadge": "EMI ₹{amount} due {date}",
+  "@memberDashboardEmiDueBadge": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+
+  "memberDashboardEmiBadge": "EMI ₹{amount}",
+  "@memberDashboardEmiBadge": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "memberDashboardPayNowAction": "Pay now",
+
+  "memberDashboardMeetingAlertLabel": "MEETING ALERT",
+
+  "memberDashboardMeetingFallback": "Meeting",
+
+  "memberDashboardDetailsAction": "Details",
+
+  "memberDashboardTrainingAlertLabel": "TRAINING ALERT",
+
+  "memberDashboardContinueAction": "Continue",
+
+  "memberDashboardAiAdvisorTitle": "AI Financial Advisor",
+
+  "memberDashboardAiAdvisorSubtitle": "Ask about savings, loans & budgeting",
+
+  "memberDashboardViewAction": "View",
+
+  "memberDashboardRecentAnnouncementsTitle": "Recent Announcements",
+
+  "memberDashboardSeeAllAction": "See all",
+
+  "memberDashboardNoAnnouncementsYet": "No announcements yet",
+
+  "memberDashboardUnreadLabel": "Unread",
+
+  "memberDashboardSavingsTrendChartSemanticLabel": "Savings trend chart: {summary}",
+  "@memberDashboardSavingsTrendChartSemanticLabel": {
+    "placeholders": {
+      "summary": {"type": "String"}
+    }
+  },
+
+  "attendanceReportTitle": "Attendance Report",
+
+  "attendanceReportEmpty": "No completed meetings yet",
+
+  "attendanceReportOverallLabel": "Overall Attendance",
+
+  "attendanceReportSummary": "{present} of {total} meetings attended",
+  "@attendanceReportSummary": {
+    "placeholders": {
+      "present": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+
+  "federationGrowthTitle": "Savings Growth",
+
+  "federationGrowthEmpty": "No savings recorded yet",
+
+  "federationGrowthSubtitle": "Monthly total savings across every SHG",
+
+  "federationRecoveryTitle": "Loan Recovery",
+
+  "federationRecoveryLoansDisbursed": "Loans Disbursed",
+
+  "federationRecoveryRateLabel": "Recovery Rate",
+
+  "federationRecoveryRecoveredLabel": "Recovered",
+
+  "federationRecoveryFootnote": "Across active, overdue & closed loans in every SHG",
+
+  "federationReportsTitle": "Federation Reports",
+
+  "federationReportsVillagesTitle": "Village-wise SHGs",
+
+  "federationReportsVillagesSubtitle": "SHG count & savings per village",
+
+  "federationReportsRecoveryTitle": "Loan Recovery",
+
+  "federationReportsRecoverySubtitle": "Disbursed vs. repaid across every SHG",
+
+  "federationReportsGrowthTitle": "Savings Growth",
+
+  "federationReportsGrowthSubtitle": "Monthly savings trend, federation-wide",
+
+  "federationVillagesTitle": "Village-wise SHGs",
+
+  "federationVillagesEmpty": "No SHGs registered yet",
+
+  "federationVillagesShgCount": "{count} {count, plural, =1{SHG} other{SHGs}}",
+  "@federationVillagesShgCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "loanStatementTitle": "Loan Statement",
+
+  "loanStatementEmpty": "No loans to statement yet",
+
+  "loanStatementTotalOutstandingLabel": "Total Outstanding",
+
+  "loanStatementLoanCount": "{count} {count, plural, =1{loan} other{loans}}",
+  "@loanStatementLoanCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "loanStatementRepaidAmount": "Repaid ₹{amount}",
+  "@loanStatementRepaidAmount": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "loanStatementAmountLabel": "Amount ₹{amount}",
+  "@loanStatementAmountLabel": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "loanStatementOutstandingAmount": "Outstanding ₹{amount}",
+  "@loanStatementOutstandingAmount": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "loanStatementDisbursedOn": "Disbursed {date}",
+  "@loanStatementDisbursedOn": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+
+  "memberReportTitle": "My Reports",
+
+  "memberReportTotalSavingsLabel": "Total Savings",
+
+  "memberReportEntriesTrend": "{count} {count, plural, =1{entry} other{entries}}",
+  "@memberReportEntriesTrend": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "memberReportLoanOutstandingLabel": "Loan Outstanding",
+
+  "memberReportActiveLoansTrend": "{count} active",
+  "@memberReportActiveLoansTrend": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "memberReportSectionTitle": "Reports",
+
+  "memberReportSavingsStatementTitle": "Savings Statement",
+
+  "memberReportSavingsStatementSubtitle": "Running balance across every savings entry",
+
+  "memberReportLoanStatementTitle": "Loan Statement",
+
+  "memberReportLoanStatementSubtitle": "Every loan, EMI schedule & outstanding balance",
+
+  "memberReportAttendanceTitle": "Attendance Report",
+
+  "memberReportAttendanceSubtitle": "{pct}% · {present} of {total} meetings",
+  "@memberReportAttendanceSubtitle": {
+    "placeholders": {
+      "pct": {"type": "String"},
+      "present": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+
+  "reportsHubTitle": "Reports",
+
+  "reportsHubMyReportsTitle": "My Reports",
+
+  "reportsHubMyReportsSubtitle": "Your savings, loans & attendance summary",
+
+  "reportsHubShgReportsTitle": "SHG Reports",
+
+  "reportsHubShgReportsSubtitle": "Group-wide savings, loans & attendance",
+
+  "reportsHubFederationReportsTitle": "Federation Reports",
+
+  "reportsHubFederationReportsSubtitle": "Aggregated across every SHG",
+
+  "shgFinancialSummaryTitle": "Financial Summary",
+
+  "shgFinancialSummaryMembersLabel": "Members",
+
+  "shgFinancialSummaryActiveLoansLabel": "Active Loans",
+
+  "shgFinancialSummaryTotalSavingsLabel": "Total Savings",
+
+  "shgFinancialSummaryLoanOutstandingLabel": "Loan Outstanding",
+
+  "shgFinancialSummaryAvgAttendanceLabel": "Average Attendance",
+
+  "shgPerformanceReportTitle": "Performance Report",
+
+  "shgPerformanceAvgAttendanceLabel": "Avg. Attendance",
+
+  "shgPerformanceActiveLoansLabel": "Active Loans",
+
+  "shgPerformanceAttendanceTrendLabel": "Attendance Trend",
+
+  "shgPerformanceEmptyTrend": "No completed meetings yet",
+
+  "shgReportsTitle": "SHG Reports",
+
+  "shgReportsFinancialSummaryTitle": "Financial Summary",
+
+  "shgReportsFinancialSummarySubtitle": "Savings, loans & attendance at a glance",
+
+  "shgReportsAuditReportTitle": "Audit Report",
+
+  "shgReportsAuditReportSubtitle": "Internal & external audit trail",
+
+  "shgReportsPerformanceReportTitle": "Performance Report",
+
+  "shgReportsPerformanceReportSubtitle": "Attendance trend & loan activity",
+
+  "addProductTitle": "Add Product",
+
+  "addProductImageTooLarge": "Image is too large — please choose one under 5 MB",
+
+  "addProductAddPhotoOptional": "Add a photo (optional)",
+
+  "addProductNameLabel": "Product name",
+
+  "addProductNameHint": "e.g. Handwoven Cotton Saree",
+
+  "addProductDescriptionLabel": "Description",
+
+  "addProductDescriptionHint": "Describe your product",
+
+  "addProductPriceLabel": "Price (₹)",
+
+  "addProductStockLabel": "Stock",
+
+  "addProductCategoryLabel": "Category",
+
+  "addProductNameRequired": "Enter a product name",
+
+  "addProductInvalidPrice": "Enter a valid price",
+
+  "addProductPriceTooLarge": "Price seems unusually large — please check and re-enter",
+
+  "addProductSubmitError": "Could not list this product. Please try again.",
+
+  "addProductListedSuccess": "Product listed",
+
+  "addProductDemoModeNotSaved": "Demo mode — product not saved (connect Supabase to persist)",
+
+  "addProductListingInProgress": "Listing…",
+
+  "addProductSubmitButton": "List Product",
+
+  "marketplaceHomeTitle": "Marketplace",
+
+  "marketplaceHomeAddProductTooltip": "Add product",
+
+  "marketplaceHomeSellTile": "Sell",
+
+  "marketplaceHomeOrdersTile": "Orders",
+
+  "marketplaceHomeReviewsTile": "Reviews",
+
+  "marketplaceHomeBrowseProducts": "Browse Products",
+
+  "marketplaceHomeEmptyProducts": "No products listed yet",
+
+  "marketplaceOrdersTitle": "Orders",
+
+  "marketplaceOrdersEmpty": "No orders yet",
+
+  "marketplaceReviewsTitle": "Reviews",
+
+  "marketplaceReviewsEmpty": "No reviews on your products yet",
+
+  "marketplaceReviewsFromCount": "from {count} {count, plural, =1{review} other{reviews}}",
+  "@marketplaceReviewsFromCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "marketplaceReviewsRatingSemantics": "{rating} out of 5 stars",
+  "@marketplaceReviewsRatingSemantics": {
+    "placeholders": {
+      "rating": {"type": "int"}
+    }
+  },
+
+  "orderDetailTitle": "Order Detail",
+
+  "orderDetailNotFound": "This order could not be found",
+
+  "orderDetailUpdateStatusError": "Could not update the order status. Please try again.",
+
+  "orderDetailUpdateStatusLabel": "Update status",
+
+  "orderDetailBuyerLabel": "Buyer: {name}",
+  "@orderDetailBuyerLabel": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "orderDetailOrderedOn": "Ordered {date}",
+  "@orderDetailOrderedOn": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+
+  "productDetailTitle": "Product",
+
+  "productDetailNotFound": "This product could not be found",
+
+  "productDetailWriteReviewTitle": "Write a review",
+
+  "productDetailStarTooltip": "{count} {count, plural, =1{star} other{stars}}",
+  "@productDetailStarTooltip": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "productDetailReviewHint": "Share your experience with this product (optional)",
+
+  "productDetailReviewSubmitted": "Review submitted",
+
+  "productDetailReviewDemoMode": "Demo mode — review not saved (connect Supabase to persist)",
+
+  "productDetailReviewSubmitError": "Could not submit your review. You may need to purchase this product first.",
+
+  "productDetailOrderPlaced": "Order placed",
+
+  "productDetailOrderDemoMode": "Demo mode — order not saved (connect Supabase to persist)",
+
+  "productDetailOrderPlaceError": "Could not place this order. Please try again.",
+
+  "productDetailBySeller": "by {name}",
+  "@productDetailBySeller": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "productDetailInStock": "{count} in stock",
+  "@productDetailInStock": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "productDetailReviewsSection": "Reviews",
+
+  "productDetailSubmittingAction": "Submitting…",
+
+  "productDetailWriteReviewAction": "Write a Review",
+
+  "productDetailNoReviewsYet": "No reviews yet",
+
+  "productDetailReviewRatingSemantics": "{rating} out of 5 stars",
+  "@productDetailReviewRatingSemantics": {
+    "placeholders": {
+      "rating": {"type": "int"}
+    }
+  },
+
+  "productDetailPlacingInProgress": "Placing…",
+
+  "productDetailPlaceOrderButton": "Place Order",
+
+  "meetingsHomeTitle": "Meetings",
+
+  "meetingsHomeScheduleTooltip": "Schedule meeting",
+
+  "meetingsHomeCheckIn": "Check In",
+
+  "meetingsHomeScheduleLabel": "Schedule",
+
+  "meetingsHomeAttendanceLabel": "Attendance",
+
+  "meetingsHomeUpcoming": "Upcoming",
+
+  "meetingsHomePastMeetings": "Past Meetings",
+
+  "meetingsHomeNoPastMeetings": "No past meetings yet",
+
+  "meetingsHomeDefaultTitle": "Meeting",
+
+  "meetingDetailTitle": "Meeting Detail",
+
+  "meetingDetailNotFound": "This meeting could not be found",
+
+  "meetingDetailDefaultTitle": "Meeting",
+
+  "meetingDetailMinutesLabel": "Minutes of Meeting",
+
+  "meetingDetailCancelDialogTitle": "Cancel meeting?",
+
+  "meetingDetailCancelDialogContent": "This marks the {date} meeting as cancelled. Members will see it as cancelled instead of upcoming.",
+  "@meetingDetailCancelDialogContent": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+
+  "meetingDetailKeepMeeting": "Keep Meeting",
+
+  "meetingDetailCancelMeeting": "Cancel Meeting",
+
+  "meetingDetailCancelling": "Cancelling…",
+
+  "meetingDetailCancelledSuccess": "Meeting cancelled",
+
+  "meetingDetailCancelledDemoMode": "Demo mode — cancelled for the rest of this session (connect Supabase to persist)",
+
+  "meetingDetailCancelError": "Could not cancel this meeting. Please try again.",
+
+  "meetingDetailAttendanceSection": "Attendance",
+
+  "meetingDetailMarkAction": "Mark",
+
+  "meetingDetailPresentCount": "{present} / {total} present",
+  "@meetingDetailPresentCount": {
+    "placeholders": {
+      "present": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+
+  "meetingAttendanceTitle": "Attendance",
+
+  "meetingAttendanceNoMeetings": "No meetings to mark attendance for",
+
+  "meetingAttendanceNoMembers": "No members to mark attendance for",
+
+  "meetingAttendancePresentCount": "{present} / {total} present",
+  "@meetingAttendancePresentCount": {
+    "placeholders": {
+      "present": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+
+  "meetingAttendanceUpdateError": "Could not update attendance. Please try again.",
+
+  "meetingMomTitle": "Minutes of Meeting",
+
+  "meetingMomNotFound": "This meeting could not be found",
+
+  "meetingMomDemoModeNotSaved": "Demo mode — not saved (connect Supabase to persist)",
+
+  "meetingMomSaveDecisionError": "Could not save this decision. Please try again.",
+
+  "meetingMomSaveActionItemError": "Could not save this action item. Please try again.",
+
+  "meetingMomDecisionsSection": "Decisions",
+
+  "meetingMomNoDecisions": "No decisions recorded yet",
+
+  "meetingMomAddDecisionHint": "Add a decision…",
+
+  "meetingMomAddDecisionTooltip": "Add decision",
+
+  "meetingMomActionItemsSection": "Action Items",
+
+  "meetingMomNoActionItems": "No action items yet",
+
+  "meetingMomUpdateActionItemError": "Could not update this action item. Please try again.",
+
+  "meetingMomAssignedTo": "Assigned to {name}",
+  "@meetingMomAssignedTo": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "meetingMomDueDate": "Due {date}",
+  "@meetingMomDueDate": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+
+  "meetingMomAssignToLabel": "Assign to",
+
+  "meetingMomUnassigned": "Unassigned",
+
+  "meetingMomAddTaskHint": "Add a task…",
+
+  "meetingMomAddActionItemTooltip": "Add action item",
+
+  "meetingScheduleTitle": "Schedule Meeting",
+
+  "meetingScheduleSubmitting": "Scheduling…",
+
+  "meetingScheduleEnterVenueError": "Enter a venue",
+
+  "meetingScheduleNoShgError": "You're not linked to an SHG, so there's nothing to schedule this meeting for.",
+
+  "meetingScheduleSuccess": "Meeting scheduled",
+
+  "meetingScheduleDemoMode": "Demo mode — meeting not saved (connect Supabase to persist)",
+
+  "meetingScheduleError": "Could not schedule this meeting. Please try again.",
+
+  "meetingScheduleDateLabel": "Date",
+
+  "meetingScheduleTimeLabel": "Time",
+
+  "meetingScheduleVenueLabel": "Venue",
+
+  "meetingScheduleVenueHint": "e.g. Anganwadi Centre, Kondapur",
+
+  "meetingScheduleAgendaLabel": "Agenda",
+
+  "meetingScheduleAgendaHint": "e.g. Monthly savings review & loan applications",
+
+  "savingsEntryTitle": "Add Savings",
+
+  "savingsEntryMemberLabel": "Member",
+
+  "savingsEntryNoMembersFound": "No members found in your SHG yet — there's no one to record this entry against.",
+
+  "savingsEntrySelectMember": "Select a member",
+
+  "savingsEntryAmountLabel": "Amount",
+
+  "savingsEntryAmountRequired": "Enter an amount",
+
+  "savingsEntryAmountInvalid": "Enter a valid number",
+
+  "savingsEntryAmountZero": "Amount must be greater than zero",
+
+  "savingsEntryAmountTooLarge": "Amount seems unusually large — please check and re-enter",
+
+  "savingsEntryPaymentModeLabel": "Payment mode",
+
+  "savingsEntryFrequencyLabel": "Frequency",
+
+  "savingsEntryNoShgError": "You're not linked to an SHG, so there's nothing to record this entry against.",
+
+  "savingsEntrySubmittedMessage": "Savings entry submitted for verification",
+
+  "savingsEntryDemoModeMessage": "Demo mode — entry not saved (connect Supabase to persist)",
+
+  "savingsEntrySaveError": "Could not save this entry. Please try again.",
+
+  "savingsEntrySaving": "Saving…",
+
+  "savingsEntrySubmit": "Submit Entry",
+
+  "savingsGroupReportTitle": "Group Savings Report",
+
+  "savingsGroupReportEmpty": "No group savings data yet",
+
+  "savingsGroupReportTotalLabel": "Group Total",
+
+  "savingsGroupReportSummary": "{memberCount} contributing {memberCount, plural, =1{member} other{members}} · {monthCount} {monthCount, plural, =1{month} other{months}} of activity",
+  "@savingsGroupReportSummary": {
+    "placeholders": {
+      "memberCount": {"type": "int"},
+      "monthCount": {"type": "int"}
+    }
+  },
+
+  "savingsGroupReportRank": "Rank #{rank}",
+  "@savingsGroupReportRank": {
+    "placeholders": {
+      "rank": {"type": "int"}
+    }
+  },
+
+  "savingsHistoryTitle": "Savings History",
+
+  "savingsHistoryEmpty": "No savings history yet",
+
+  "savingsFrequencyEntryTitle": "{frequency} savings",
+  "@savingsFrequencyEntryTitle": {
+    "placeholders": {
+      "frequency": {"type": "String"}
+    }
+  },
+
+  "savingsHomeTitle": "Savings",
+
+  "savingsHomeAddTooltip": "Add savings",
+
+  "savingsHomeGroupSavingsLabel": "Group Savings",
+
+  "savingsHomeMySavingsLabel": "My Savings",
+
+  "savingsHomeEntriesCount": "{count} {count, plural, =1{entry} other{entries}}",
+  "@savingsHomeEntriesCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "savingsHomePendingVerificationLabel": "Pending Verification",
+
+  "savingsHomeNeedsReview": "Needs review",
+
+  "savingsHomeAllCaughtUp": "All caught up",
+
+  "savingsHomeAddSavingsTile": "Add Savings",
+
+  "savingsHomeHistoryTile": "History",
+
+  "savingsHomeStatementTile": "Statement",
+
+  "savingsHomeLedgerTile": "Ledger",
+
+  "savingsHomeGroupTile": "Group",
+
+  "savingsHomeRecentEntriesTitle": "Recent Entries",
+
+  "savingsHomeViewAllAction": "View all",
+
+  "savingsHomeEmpty": "No savings entries yet",
+
+  "savingsStatementTitle": "Savings Statement",
+
+  "savingsStatementEmpty": "No entries to statement yet",
+
+  "savingsStatementClosingBalance": "Closing Balance",
+
+  "savingsStatementTransactionsCount": "{count} {count, plural, =1{transaction} other{transactions}}",
+  "@savingsStatementTransactionsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "savingsStatementDateModeHeader": "DATE / MODE",
+
+  "savingsStatementAmountBalanceHeader": "AMOUNT / BALANCE",
+
+  "schemeEligibilityTitle": "Eligibility Checker",
+
+  "schemeEligibilityIntro": "Checked automatically against your SHG's membership, registration age and grade. Some requirements — like BPL status or prior subsidy history — still need manual verification; see each scheme's full eligibility list for those.",
+
+  "schemeEligibilityEmptyCatalog": "No schemes in the catalog yet",
+
+  "schemeEligibilitySeeFullDetails": "See full details",
+
+  "schemeEligibilityEligible": "Eligible",
+
+  "schemeEligibilityNotEligible": "Not eligible",
+
+  "schemeEligibilityNoCriteria": "No automatic eligibility criteria set for this scheme — open it to see the full requirements.",
+
+  "schemesHomeTitle": "Government Schemes",
+
+  "schemesHomeEligibilityTile": "Eligibility",
+
+  "schemesHomeTrackingTile": "Tracking",
+
+  "schemesHomeApplicationsTile": "Applications",
+
+  "schemesHomeAllSchemesSection": "All Schemes",
+
+  "schemesHomeEmptyState": "No schemes available right now",
+
+  "schemesHomeNotApplied": "not applied",
+
+  "schemeDetailApplicationSubmitted": "Application submitted",
+
+  "schemeDetailApplyError": "Could not submit this application. Please try again.",
+
+  "schemeDetailTitle": "Scheme Detail",
+
+  "schemeDetailNotFound": "This scheme could not be found",
+
+  "schemeDetailBenefitSection": "Benefit",
+
+  "schemeDetailEligibilitySection": "Eligibility",
+
+  "schemeDetailApplicationStatusLabel": "Application status: ",
+
+  "schemeDetailDeadlinePassed": "Applications closed — the deadline for this scheme has passed.",
+
+  "schemeDetailSubmitting": "Submitting…",
+
+  "schemeDetailApplyNow": "Apply Now",
+
+  "schemeDetailDeadlineLabel": "Deadline: {date}",
+  "@schemeDetailDeadlineLabel": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+
+  "schemeTrackingTitle": "Application Tracking",
+
+  "schemeTrackingEmptyState": "You haven't applied to any schemes yet",
+
+  "schemeApplicationsReviewApproved": "Application approved",
+
+  "schemeApplicationsReviewRejected": "Application rejected",
+
+  "schemeApplicationsReviewAlreadyDecided": "This application was already decided by someone else.",
+
+  "schemeApplicationsReviewSaveError": "Could not save this decision. Please try again.",
+
+  "schemeApplicationsReviewTitle": "Scheme Applications",
+
+  "schemeApplicationsReviewEmptyState": "No pending scheme applications",
+
+  "schemeApplicationsReviewAppliedOn": "Applied {date}",
+  "@schemeApplicationsReviewAppliedOn": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+
+  "schemeApplicationsReviewReject": "Reject",
+
+  "schemeApplicationsReviewSaving": "Saving…",
+
+  "schemeApplicationsReviewApprove": "Approve",
+
+  "supportStatusOpen": "Open",
+
+  "supportStatusInProgress": "In Progress",
+
+  "supportStatusResolved": "Resolved",
+
+  "supportStatusClosed": "Closed",
+
+  "supportChatTitle": "Chat Support",
+
+  "supportChatEmptyMessage": "No conversations yet — raise a ticket to get started",
+
+  "supportFaqTitle": "FAQs",
+
+  "supportHomeTitle": "Support",
+
+  "supportHomeMyTickets": "My Tickets",
+
+  "supportHomeRaiseTicket": "Raise Ticket",
+
+  "supportHomeVoiceHelp": "Voice Help",
+
+  "supportHomeFaqs": "FAQs",
+
+  "supportHomeAllTickets": "All Tickets",
+
+  "supportHomeViewAll": "View all",
+
+  "supportHomeEmptyMessage": "No support tickets yet",
+
+  "supportTicketDetailSendError": "Could not send this message. Please try again.",
+
+  "supportTicketDetailStatusError": "Could not update the ticket status. Please try again.",
+
+  "supportTicketDetailTitle": "Ticket",
+
+  "supportTicketDetailNotFound": "This ticket could not be found",
+
+  "supportTicketDetailNoMessages": "No messages yet",
+
+  "supportTicketDetailYou": "You",
+
+  "supportTicketDetailStaff": "Staff",
+
+  "supportTicketDetailComposerHint": "Type a message…",
+
+  "supportTicketDetailDemoModeHint": "Demo mode — replies disabled",
+
+  "supportTicketDetailSendTooltip": "Send message",
+
+  "supportTicketFormTitle": "Raise a Ticket",
+
+  "supportTicketFormSubjectLabel": "Subject",
+
+  "supportTicketFormSubjectHint": "e.g. Loan disbursement delay",
+
+  "supportTicketFormDescriptionLabel": "Describe your issue",
+
+  "supportTicketFormDescriptionHint": "Give as much detail as you can",
+
+  "supportTicketFormSubjectRequired": "Enter a subject for your issue",
+
+  "supportTicketFormSubmitting": "Submitting…",
+
+  "supportTicketFormSubmit": "Submit Ticket",
+
+  "supportTicketFormRaisedSuccess": "Ticket raised",
+
+  "supportTicketFormDemoModeMessage": "Demo mode — ticket not saved (connect Supabase to persist)",
+
+  "supportTicketFormRaiseError": "Could not raise this ticket. Please try again.",
+
+  "supportVoiceTitle": "Voice Support",
+
+  "supportVoiceTapToAsk": "Tap to ask a question",
+
+  "supportVoiceListening": "Listening…",
+
+  "supportVoiceThinking": "Finding an answer…",
+
+  "supportVoiceTapToAskAgain": "Tap to ask again",
+
+  "supportVoiceError": "Sorry, something went wrong. Please try again.",
+
+  "supportVoiceYouAsked": "You asked",
+
+  "supportVoiceAnswerLabel": "Answer",
+
+  "memberDetailTitle": "Member Detail",
+
+  "memberDetailNotFound": "This member could not be found",
+
+  "memberDetailTotalSavings": "Total Savings",
+
+  "memberDetailLoanOutstanding": "Loan Outstanding",
+
+  "memberDetailContactSection": "Contact",
+
+  "memberDetailMobileLabel": "Mobile",
+
+  "memberDetailVillageLabel": "Village",
+
+  "shgHomeTitle": "My SHG",
+
+  "shgHomeNotLinked": "You're not linked to an SHG yet",
+
+  "shgHomeRegNumberLabel": "Reg. {regNumber}",
+  "@shgHomeRegNumberLabel": {
+    "placeholders": {
+      "regNumber": {"type": "String"}
+    }
+  },
+
+  "shgHomeMembersTile": "Members",
+
+  "shgHomeDocumentsTile": "Documents",
+
+  "shgHomeFederationSection": "Federation",
+
+  "shgHomeVillageOrgLabel": "Village Organi­sation",
+
+  "shgHomeClfLabel": "CLF",
+
+  "shgHomeMandalLabel": "Mandal",
+
+  "shgHomeFormedLabel": "Formed",
+
+  "shgHomeBankDetailsSection": "Bank Details",
+
+  "shgHomeBankLabel": "Bank",
+
+  "shgHomeAccountLabel": "Account",
+
+  "shgHomeIfscLabel": "IFSC",
+
+  "shgJoinRequestsApproved": "Request approved",
+
+  "shgJoinRequestsRejected": "Request rejected",
+
+  "shgJoinRequestsDemoMode": "Demo mode — not saved (connect Supabase to persist)",
+
+  "shgJoinRequestsProcessError": "Could not process this request. Please try again.",
+
+  "shgJoinRequestsTitle": "Join Requests",
+
+  "shgJoinRequestsEmpty": "No pending join requests",
+
+  "shgJoinRequestsMemberFallback": "Member",
+
+  "shgJoinRequestsRequestedOn": "Requested {date}",
+  "@shgJoinRequestsRequestedOn": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+
+  "shgJoinRequestsReject": "Reject",
+
+  "shgJoinRequestsWorking": "Working…",
+
+  "shgJoinRequestsApprove": "Approve",
+
+  "shgMembersTitle": "Members",
+
+  "shgMembersJoinRequestsTooltip": "Join requests",
+
+  "shgMembersEmpty": "No members found",
+
+  "certificatesTitle": "Certificates",
+
+  "certificatesEmptyState": "No certificates earned yet — complete a course quiz to get one",
+
+  "certificatesCompletedOn": "{topic} · Completed {date}",
+  "@certificatesCompletedOn": {
+    "placeholders": {
+      "topic": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+
+  "courseDetailTitle": "Course Detail",
+
+  "courseDetailProgressDemoMode": "Demo mode — progress not saved (connect Supabase to persist)",
+
+  "courseDetailProgressError": "Could not save your progress. Please try again.",
+
+  "courseDetailNotFound": "This course could not be found",
+
+  "courseDetailCertifiedBadge": "Certified",
+
+  "courseDetailPercentComplete": "{pct}% complete",
+  "@courseDetailPercentComplete": {
+    "placeholders": {
+      "pct": {"type": "int"}
+    }
+  },
+
+  "courseDetailSaving": "Saving…",
+
+  "courseDetailStartCourse": "Start Course",
+
+  "courseDetailContinue": "Continue",
+
+  "courseDetailTakeQuiz": "Take Quiz & Get Certified",
+
+  "courseDetailCertificateEarned": "You earned a certificate for this course!",
+
+  "courseQuizTitle": "Course Quiz",
+
+  "courseQuizScoreResult": "You scored {score}/{total}. Try again to pass.",
+  "@courseQuizScoreResult": {
+    "placeholders": {
+      "score": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+
+  "courseQuizPassed": "Passed! Certificate earned.",
+
+  "courseQuizPassedDemoMode": "Passed! Demo mode — certificate not saved (connect Supabase to persist)",
+
+  "courseQuizSaveError": "Could not save your certificate. Please try again.",
+
+  "courseQuizNotFound": "This course could not be found",
+
+  "courseQuizNoQuizAvailable": "No quiz is available for this course yet",
+
+  "courseQuizSubmitButton": "Submit Quiz",
+
+  "courseQuizSubmitting": "Submitting…",
+
+  "trainingHomeTitle": "Training",
+
+  "trainingHomeCertificatesTooltip": "My certificates",
+
+  "trainingHomeEmpty": "No courses available yet",
+
+  "trainingHomeCoursesSection": "Courses",
+
+  "trainingHomeCertifiedBadge": "Certified",
+
+  "loanApplyTitle": "Apply for Loan",
+
+  "loanApplyPurposeLabel": "Purpose",
+
+  "loanApplyPurposeHint": "e.g. Dairy — buy milch cow",
+
+  "loanApplyAmountLabel": "Amount requested",
+
+  "loanApplyTenureLabel": "Tenure",
+
+  "loanApplyTenureMonths": "{months} {months, plural, =1{month} other{months}}",
+  "@loanApplyTenureMonths": {
+    "placeholders": {
+      "months": {"type": "int"}
+    }
+  },
+
+  "loanApplySubmitting": "Submitting…",
+
+  "loanApplySubmitButton": "Submit Application",
+
+  "loanApplyPurposeRequiredError": "Describe what the loan is for",
+
+  "loanApplyInvalidAmountError": "Enter a valid amount",
+
+  "loanApplyAmountTooLargeError": "Amount seems unusually large — please check and re-enter",
+
+  "loanApplyNoShgError": "You're not linked to an SHG, so there's nothing to apply for this loan against.",
+
+  "loanApplySuccessMessage": "Loan application submitted for review",
+
+  "loanApplyDemoModeMessage": "Demo mode — application not saved (connect Supabase to persist)",
+
+  "loanApplySubmitError": "Could not submit this application. Please try again.",
+
+  "loansHomeTitle": "Loans",
+
+  "loansHomeApplyTooltip": "Apply for a loan",
+
+  "loansHomeGroupOutstandingLabel": "Group Outstanding",
+
+  "loansHomeMyOutstandingLabel": "My Outstanding",
+
+  "loansHomeLoanCount": "{count} {count, plural, =1{loan} other{loans}}",
+  "@loansHomeLoanCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "loansHomePendingApprovalLabel": "Pending Approval",
+
+  "loansHomeOverdueLabel": "Overdue",
+
+  "loansHomeNeedsReviewTrend": "Needs review",
+
+  "loansHomeActionNeededTrend": "Action needed",
+
+  "loansHomeOnTrackTrend": "On track",
+
+  "loansHomeApplyLabel": "Apply",
+
+  "loansHomeTrackingLabel": "Tracking",
+
+  "loansHomeApprovalsLabel": "Approvals",
+
+  "loansHomeApprovalsBadgeSemanticLabel": "Approvals, {count} pending",
+  "@loansHomeApprovalsBadgeSemanticLabel": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "loansHomeAllLoansTitle": "All Loans",
+
+  "loansHomeMyLoansTitle": "My Loans",
+
+  "loansHomeEmptyMessage": "No loans yet",
+
+  "loansHomeOutstandingOfAmount": "₹{outstanding} of ₹{amount} outstanding",
+  "@loansHomeOutstandingOfAmount": {
+    "placeholders": {
+      "outstanding": {"type": "String"},
+      "amount": {"type": "String"}
+    }
+  },
+
+  "loanTrackingTitle": "Loan Tracking",
+
+  "loanTrackingEmptyMessage": "No active loans to track",
+
+  "loanTrackingOfAmount": "of ₹{amount}",
+  "@loanTrackingOfAmount": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "loanTrackingEmiDueBadge": "EMI ₹{emi} due {dueDate}",
+  "@loanTrackingEmiDueBadge": {
+    "placeholders": {
+      "emi": {"type": "String"},
+      "dueDate": {"type": "String"}
+    }
+  },
+
+  "loanTrackingDetailsLink": "Details",
+
+  "analyticsDashboardTitle": "Analytics",
+
+  "analyticsDashboardTotalShgs": "Total SHGs",
+
+  "analyticsDashboardActiveMembers": "Active Members",
+
+  "analyticsDashboardTotalSavings": "Total Savings",
+
+  "analyticsDashboardLoansDisbursed": "Loans Disbursed",
+
+  "analyticsDashboardLoanRecoveryRate": "Loan Recovery Rate",
+
+  "analyticsDashboardMonitorShgs": "Monitor SHGs",
+
+  "analyticsDashboardPerGroupHealthScores": "Per-group health scores",
+
+  "analyticsDashboardChartsLabel": "Charts",
+
+  "analyticsDashboardSavingsTrends": "Savings Trends",
+
+  "analyticsDashboardLoanTrends": "Loan Trends",
+
+  "analyticsDashboardRevenueTrends": "Revenue Trends",
+
+  "analyticsDashboardAttendanceTrends": "Attendance Trends",
+
+  "analyticsDashboardNoDataYet": "No data yet",
+
+  "analyticsShgDetailTitle": "SHG Analytics",
+
+  "analyticsShgDetailNotFound": "This SHG could not be found",
+
+  "analyticsShgDetailMembersLabel": "Members",
+
+  "analyticsShgDetailTotalSavings": "Total Savings",
+
+  "analyticsShgDetailHealthScore": "Health Score",
+
+  "analyticsShgDetailHealthScoreNote": "Based on completed-meeting attendance rate",
+
+  "analyticsShgListTitle": "SHGs Monitoring",
+
+  "analyticsShgListEmptyState": "No SHGs to monitor yet",
+
+  "analyticsShgListVillageMemberCount": "{village} · {count} {count, plural, =1{member} other{members}}",
+  "@analyticsShgListVillageMemberCount": {
+    "placeholders": {
+      "village": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+
+  "livelihoodEntryTitle": "Add Activity",
+
+  "livelihoodEntryActivityTypeLabel": "Activity type",
+
+  "livelihoodEntryTypeDairy": "Dairy",
+
+  "livelihoodEntryTypeTailoring": "Tailoring",
+
+  "livelihoodEntryTypeRetail": "Retail",
+
+  "livelihoodEntryTypePoultry": "Poultry",
+
+  "livelihoodEntryTypeAgriculture": "Agriculture",
+
+  "livelihoodEntryTypeHandicrafts": "Handicrafts",
+
+  "livelihoodEntryTypeOther": "Other",
+
+  "livelihoodEntryDescriptionLabel": "Description",
+
+  "livelihoodEntryDescriptionHint": "e.g. Milch cow rearing — 2 cows",
+
+  "livelihoodEntryInvestmentLabel": "Initial investment",
+
+  "livelihoodEntryDescribeRequired": "Describe the activity",
+
+  "livelihoodEntryInvalidInvestment": "Enter a valid investment amount",
+
+  "livelihoodEntryNoShg": "You're not linked to an SHG, so there's nothing to record this activity against.",
+
+  "livelihoodEntryAdded": "Activity added",
+
+  "livelihoodEntryDemoMode": "Demo mode — activity not saved (connect Supabase to persist)",
+
+  "livelihoodEntrySaveError": "Could not save this activity. Please try again.",
+
+  "livelihoodEntrySaving": "Saving…",
+
+  "livelihoodHomeTitle": "Livelihoods",
+
+  "livelihoodHomeAddActivityTooltip": "Add activity",
+
+  "livelihoodHomeTotalInvestment": "Total Investment",
+
+  "livelihoodHomeTotalRevenue": "Total Revenue",
+
+  "livelihoodHomeEmpty": "No livelihood activities yet",
+
+  "livelihoodHomeNetAmount": "{amount} net",
+  "@livelihoodHomeNetAmount": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "paymentsHistoryTitle": "Payment History",
+
+  "paymentsHistoryEmpty": "No payments yet",
+
+  "paymentsHistoryModePayment": "{mode} Payment",
+  "@paymentsHistoryModePayment": {
+    "placeholders": {
+      "mode": {"type": "String"}
+    }
+  },
+
+  "paymentsHomeTitle": "Digital Payments",
+
+  "paymentsHomeScanPay": "Scan & Pay",
+
+  "paymentsHomeHistory": "History",
+
+  "paymentsHomeRecentPayments": "Recent Payments",
+
+  "paymentsHomeViewAll": "View all",
+
+  "paymentsHomeEmpty": "No payments yet",
+
+  "adminMonitoringTitle": "System Monitoring",
+
+  "adminMonitoringTotalUsers": "Total Users",
+
+  "adminMonitoringTotalShgs": "Total SHGs",
+
+  "adminMonitoringSavingsEntries": "Savings Entries",
+
+  "adminMonitoringLoansPending": "Loans (pending)",
+
+  "adminMonitoringPlaceholderLabel": "Placeholder metrics",
+
+  "adminMonitoringPlaceholderDescription": "These are basic row counts, not real infrastructure metrics (uptime, latency, error rate). Wiring real monitoring needs a dedicated Edge Function or an external service.",
+
+  "adminMonitoringCheckedAt": "Checked {date}",
+  "@adminMonitoringCheckedAt": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+
+  "aiHubTitle": "AI Advisors",
+
+  "aiHubAskAdvisor": "Ask an advisor",
+
+  "aiHubFinancialAdvisorTitle": "Financial Advisor",
+
+  "aiHubFinancialAdvisorSubtitle": "Savings, loans & budgeting guidance",
+
+  "aiHubSchemeRecommenderTitle": "Scheme Recommender",
+
+  "aiHubSchemeRecommenderSubtitle": "Find government schemes you qualify for",
+
+  "aiHubMarketAdvisorTitle": "Market Advisor",
+
+  "aiHubMarketAdvisorSubtitle": "Pricing & selling tips for your products",
+
+  "aiHubVoiceAssistantTitle": "Voice Assistant",
+
+  "aiHubVoiceAssistantSubtitle": "Ask in Telugu, Hindi or English — hands-free",
+
+  "announcementDetailTitle": "Announcement",
+
+  "announcementDetailNotFound": "This announcement could not be found",
+
+  "splashBrandName": "NAVASAKHI",
+
+  "splashHeadline": "Empowering Women.\nTransforming Communities.",
+
+  "splashSubtitle": "Savings, loans, meetings, schemes, marketplace & more — everything your SHG needs, in one app.",
+
+  "splashFeatureSavingsLoans": "Savings & Loans",
+
+  "splashFeatureGroupManagement": "Group Management",
+
+  "splashFeatureGovtSchemes": "Govt. Schemes",
+
+  "splashFeatureLivelihoods": "Livelihoods",
+
+  "splashGetStarted": "Get Started",
+
+  "splashAvailableLanguages": "Available in English · తెలుగు · हिंदी",
+
+  "financialLedgerCashbookLabel": "Cashbook",
+
+  "financialLedgerLedgerLabel": "Ledger",
+
+  "financialLedgerBankLabel": "Bank",
+
+  "financialLedgerAuditLabel": "Audit",
+
+  "financialLedgerAddEntryTooltip": "Add entry",
+
+  "financialLedgerEntryAdded": "Entry added",
+
+  "financialLedgerDemoMode": "Demo mode — not saved (connect Supabase to persist)",
+
+  "financialLedgerEmpty": "No {title} entries yet",
+  "@financialLedgerEmpty": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "servicesSavingsLabel": "Savings",
+
+  "servicesLoansLabel": "Loans",
+
+  "servicesMeetingsLabel": "Meetings",
+
+  "servicesFinancialRecordsLabel": "Financial Records",
+
+  "servicesLivelihoodsLabel": "Livelihoods",
+
+  "servicesMarketplaceLabel": "Marketplace",
+
+  "servicesDigitalPaymentsLabel": "Digital Payments",
+
+  "servicesGovtSchemesLabel": "Govt. Schemes",
+
+  "servicesTrainingLabel": "Training",
+
+  "servicesSupportLabel": "Support",
+
+  "servicesAiAdvisorsLabel": "AI Advisors",
+
+  "servicesAnnouncementsLabel": "Announce­ments",
+
+  "servicesReportsLabel": "Reports",
+
+  "servicesAnalyticsLabel": "Analytics",
+
+  "servicesManageUsersLabel": "Manage Users",
+
+  "servicesManageSchemesLabel": "Manage Schemes",
+
+  "servicesSystemMonitoringLabel": "System Monitoring",
+
+  "servicesShgManagementSection": "SHG Management",
+
+  "servicesCommerceSection": "Commerce",
+
+  "servicesLearningSupportSection": "Learning & Support",
+
+  "servicesInsightsSection": "Insights",
+
+  "servicesAdminToolsSection": "Admin Tools",
+
+  "schemeEligibilityShgMembershipMet": "SHG membership — you are linked to an SHG",
+
+  "schemeEligibilityShgMembershipUnmet": "Requires SHG membership — you are not linked to an SHG",
+
+  "schemeEligibilityAgeMet": "SHG registered {actual}+ months (requires {required}+)",
+  "@schemeEligibilityAgeMet": {
+    "placeholders": {
+      "actual": {"type": "int"},
+      "required": {"type": "int"}
+    }
+  },
+
+  "schemeEligibilityAgeUnmetNoShg": "Requires SHG registered {required}+ months — you are not linked to an SHG",
+  "@schemeEligibilityAgeUnmetNoShg": {
+    "placeholders": {
+      "required": {"type": "int"}
+    }
+  },
+
+  "schemeEligibilityAgeUnmetNoRecord": "Requires SHG registered {required}+ months — your SHG's registration date isn't on record",
+  "@schemeEligibilityAgeUnmetNoRecord": {
+    "placeholders": {
+      "required": {"type": "int"}
+    }
+  },
+
+  "schemeEligibilityAgeUnmet": "Requires SHG registered {required}+ months — yours is registered {actual} months",
+  "@schemeEligibilityAgeUnmet": {
+    "placeholders": {
+      "required": {"type": "int"},
+      "actual": {"type": "int"}
+    }
+  },
+
+  "schemeEligibilityGradeMet": "SHG grade {grade} meets the {required}-or-above requirement",
+  "@schemeEligibilityGradeMet": {
+    "placeholders": {
+      "grade": {"type": "String"},
+      "required": {"type": "String"}
+    }
+  },
+
+  "schemeEligibilityGradeUnmetNoShg": "Requires SHG grade {required} or above — you are not linked to an SHG",
+  "@schemeEligibilityGradeUnmetNoShg": {
+    "placeholders": {
+      "required": {"type": "String"}
+    }
+  },
+
+  "schemeEligibilityGradeUnmetNoRecord": "Requires SHG grade {required} or above — your SHG's grade isn't on record",
+  "@schemeEligibilityGradeUnmetNoRecord": {
+    "placeholders": {
+      "required": {"type": "String"}
+    }
+  },
+
+  "schemeEligibilityGradeUnmet": "Requires SHG grade {required} or above — yours is graded {grade}",
+  "@schemeEligibilityGradeUnmet": {
+    "placeholders": {
+      "required": {"type": "String"},
+      "grade": {"type": "String"}
+    }
+  },
+
+  "adminDashboardActivityNewUser": "New user registered — {name}",
+  "@adminDashboardActivityNewUser": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "adminDashboardActivityNewShg": "New SHG registered — {name}",
+  "@adminDashboardActivityNewShg": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "adminDashboardActivityDocument": "Document uploaded — {name}",
+  "@adminDashboardActivityDocument": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "aiAdvisorUpstreamUnavailable": "The advisor service is temporarily unavailable right now. Please try again in a moment."
 }

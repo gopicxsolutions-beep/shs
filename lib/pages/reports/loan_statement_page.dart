@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/loan.dart';
 import '../../repositories/loan_repository.dart';
@@ -26,16 +27,17 @@ class LoanStatementPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final memberId = context.watch<AppState>().profile?.id;
     final repo = LoanRepository();
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Loan Statement'),
+      appBar: PageHeader(title: l10n.loanStatementTitle),
       body: AppAsyncBuilder<List<Loan>>(
         future: () => repo.fetchForMember(memberId),
         builder: (context, loans) {
           if (loans.isEmpty) {
-            return const AppEmptyState(icon: Icons.account_balance_rounded, message: 'No loans to statement yet');
+            return AppEmptyState(icon: Icons.account_balance_rounded, message: l10n.loanStatementEmpty);
           }
           final totalBorrowed = loans.fold<num>(0, (s, l) => s + l.amount);
           final totalOutstanding = loans.where((l) => l.status == 'active' || l.status == 'overdue').fold<num>(0, (s, l) => s + l.outstanding);
@@ -59,7 +61,7 @@ class LoanStatementPage extends StatelessWidget {
                           children: [
                             Flexible(
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text('Total Outstanding', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                                Text(l10n.loanStatementTotalOutstandingLabel, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
                                 const SizedBox(height: 4),
                                 Text(
                                   '₹${NumberFormat('#,##,##0', 'en_IN').format(totalOutstanding)}',
@@ -71,10 +73,10 @@ class LoanStatementPage extends StatelessWidget {
                             const SizedBox(width: 12),
                             Flexible(
                               child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                                Text('${loans.length} loan(s)', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                                Text(l10n.loanStatementLoanCount(loans.length), style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Repaid ₹${NumberFormat('#,##,##0', 'en_IN').format(totalRepaid)}',
+                                  l10n.loanStatementRepaidAmount(NumberFormat('#,##,##0', 'en_IN').format(totalRepaid)),
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.7)),
                                 ),
@@ -102,11 +104,11 @@ class LoanStatementPage extends StatelessWidget {
                                 ]),
                                 const SizedBox(height: 8),
                                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                  Flexible(child: Text('Amount ₹${NumberFormat('#,##,##0', 'en_IN').format(l.amount)}', overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500))),
+                                  Flexible(child: Text(l10n.loanStatementAmountLabel(NumberFormat('#,##,##0', 'en_IN').format(l.amount)), overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500))),
                                   const SizedBox(width: 8),
                                   Flexible(
                                     child: Text(
-                                      'Outstanding ₹${NumberFormat('#,##,##0', 'en_IN').format(l.outstanding)}',
+                                      l10n.loanStatementOutstandingAmount(NumberFormat('#,##,##0', 'en_IN').format(l.outstanding)),
                                       overflow: TextOverflow.ellipsis,
                                       textAlign: TextAlign.right,
                                       style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600),
@@ -115,7 +117,7 @@ class LoanStatementPage extends StatelessWidget {
                                 ]),
                                 if (l.disbursedOn != null) ...[
                                   const SizedBox(height: 4),
-                                  Text('Disbursed ${DateFormat('dd MMM yyyy').format(l.disbursedOn!)}', style: AppTheme.sans(11, color: Neutral.c400)),
+                                  Text(l10n.loanStatementDisbursedOn(DateFormat('dd MMM yyyy').format(l.disbursedOn!)), style: AppTheme.sans(11, color: Neutral.c400)),
                                 ],
                               ],
                             ),

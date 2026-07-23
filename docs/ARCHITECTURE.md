@@ -59,8 +59,8 @@ complete, testable UI/UX today with a documented mock STT/TTS underneath (see
 
 ## 2. Data model
 
-27 base Postgres tables + 1 view (`shg_directory`), defined starting in
-`supabase/migrations/0001_init_schema.sql` and hardened across 35 further
+28 base Postgres tables + 1 view (`shg_directory`), defined starting in
+`supabase/migrations/0001_init_schema.sql` and hardened across 41 further
 migrations:
 
 | Table | Domain |
@@ -69,15 +69,15 @@ migrations:
 | `shg_directory` (view) | Safe public subset of `shgs` for onboarding search — excludes bank fields |
 | `profiles` | One row per user; `role`, `shg_id`, identity |
 | `shg_join_requests` | Member → SHG join workflow, one-pending-per-member |
-| `shg_documents` | Document metadata (no file upload wired yet — see §7) |
+| `shg_documents` | Document metadata + real Storage `storage_path` (real `file_picker` upload UI, private `shg-documents` bucket) |
 | `savings_entries` | Member savings deposits, `pending`/`verified` |
 | `loans`, `loan_payments` | Loan lifecycle and repayment history |
 | `financial_ledger` | SHG cashbook/ledger/bank/audit entries, one table, `entry_type`-discriminated |
 | `meetings`, `meeting_attendance`, `meeting_minutes`, `meeting_action_items` | Meeting lifecycle, attendance, MoM |
 | `livelihood_activities` | Member microenterprise tracking |
 | `marketplace_products`, `marketplace_orders`, `marketplace_reviews` | Commerce |
-| `schemes`, `scheme_applications` | Government welfare scheme catalog + applications |
-| `training_courses`, `course_progress` | E-learning catalog + per-member progress/certification |
+| `schemes`, `scheme_applications` | Government welfare scheme catalog + applications; `schemes.eligibility_criteria` (JSONB, migration `0040`) backs the real structured eligibility rules engine — see §7 |
+| `training_courses`, `course_progress`, `quiz_questions` | E-learning catalog + per-member progress/certification + real per-course quiz content (migration `0041`) — see §7 |
 | `payments` | Digital payment records (gateway is mocked — see §7) |
 | `announcements`, `announcement_reads` | Circulars + per-member read receipts |
 | `support_tickets`, `support_messages` | Helpdesk tickets + threaded messages |
@@ -277,9 +277,8 @@ module":
 
 | Area | Current state |
 |---|---|
-| File upload (SHG documents, product images) | Metadata-only; no Supabase Storage bucket/file-picker wired |
 | Payment gateway | `MockPaymentProcessor` always succeeds after a simulated delay; `payment-webhook-handler` exists for when a real gateway is commissioned |
-| Voice STT/TTS | Fully mocked — see [AI_MODULES.md](AI_MODULES.md) §3 |
-| Admin system monitoring | Real row counts from 4 tables, explicitly labeled in-UI as placeholder, not real infra telemetry (uptime/latency/error-rate) |
+| Admin system monitoring | Training completion %, pending-review count, and recent activity are now genuinely computed from real data (`AdminRepository.fetchDashboardStats()`); only System Uptime remains a placeholder, and is now honestly labeled "Not live-monitored" in the UI rather than presented as real telemetry — true uptime/latency/error-rate needs an external APM/monitoring service this app doesn't have |
 | Crash/error telemetry | Wired (`sentry_flutter`), opt-in via `Env.sentryDsn`/`SENTRY_DSN` — disabled by default until a real DSN is supplied; see [QUALITY_MANAGEMENT.md](QUALITY_MANAGEMENT.md) §6 |
-| Pagination on large admin lists | `fetchAllUsers()`/`fetchAllShgs()` cap at `LIMIT 500` with no pagination — a platform past 500 users has an unreachable alphabetical tail from the Admin Users page |
+| Government scheme eligibility | Real structured rules engine (`EligibilityCriteria`/`evaluateSchemeEligibility()` in `lib/models/scheme.dart`) over SHG membership/age/grade — the only structured facts this app's data model actually carries; still not a connection to any government eligibility API (none exists), and criteria needing income/gender/caste/occupation data remain manual-verification-only via each scheme's free-text list |
+| Training course quiz | Real per-course questions (`quiz_questions` table, migration `0041`) replacing the old single generic 3-question set; seeded with a genuine starting question set per demo course, not a transcription of any real curriculum — a subject-matter expert should review/extend it |

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/support.dart';
 import '../../models/types.dart';
@@ -21,6 +22,14 @@ const _statusTones = <String, BadgeTone>{
   'closed': BadgeTone.neutral,
 };
 
+String _statusLabel(AppLocalizations l10n, String status) => switch (status) {
+      'open' => l10n.supportStatusOpen,
+      'in_progress' => l10n.supportStatusInProgress,
+      'resolved' => l10n.supportStatusResolved,
+      'closed' => l10n.supportStatusClosed,
+      _ => status,
+    };
+
 /// Full ticket list ("Chat Support") — every conversation the member has
 /// raised, or (for staff) every ticket across all members.
 class SupportChatPage extends StatelessWidget {
@@ -28,18 +37,19 @@ class SupportChatPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final isStaff = const {Role.crp, Role.clf, Role.admin}.contains(appState.user.role);
     final memberId = appState.profile?.id;
     final repo = SupportRepository();
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Chat Support'),
+      appBar: PageHeader(title: l10n.supportChatTitle),
       body: AppAsyncBuilder<List<SupportTicket>>(
         future: () => repo.fetchTickets(memberId: memberId, isStaff: isStaff),
         builder: (context, tickets) {
           if (tickets.isEmpty) {
-            return const AppEmptyState(icon: Icons.forum_rounded, message: 'No conversations yet — raise a ticket to get started');
+            return AppEmptyState(icon: Icons.forum_rounded, message: l10n.supportChatEmptyMessage);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -69,7 +79,7 @@ class SupportChatPage extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Flexible(child: AppBadge(text: t.status.replaceAll('_', ' '), tone: _statusTones[t.status] ?? BadgeTone.neutral)),
+                      Flexible(child: AppBadge(text: _statusLabel(l10n, t.status), tone: _statusTones[t.status] ?? BadgeTone.neutral)),
                     ],
                   ),
                 ),

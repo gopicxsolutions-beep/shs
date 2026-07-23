@@ -1,8 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../data/meetings.dart' as mock_meetings;
 import '../models/report.dart';
 import '../services/supabase_service.dart';
 import 'loan_repository.dart';
+import 'meeting_repository.dart';
 import 'savings_repository.dart';
 import 'shg_repository.dart';
 import 'trend_repository.dart';
@@ -32,8 +32,16 @@ class ReportRepository {
       final totalOutstanding = activeLoans.fold<num>(0, (s, l) => s + l.outstanding);
       // Mock meetings carry no per-member attendance, so the demo persona is
       // treated as present at every completed meeting — same assumption
-      // MeetingRepository.fetchAttendanceHistory's demo branch makes.
-      final completedMeetings = mock_meetings.meetings.where((m) => m.status == 'completed').length;
+      // MeetingRepository.fetchAttendanceHistory's demo branch makes. Reads
+      // through MeetingRepository (not the raw `lib/data/meetings.dart` list
+      // directly) so this stays in sync with a meeting cancelled via
+      // `MeetingDetailPage`'s "Cancel Meeting" action in the same demo
+      // session — a cancelled meeting's status flips to 'cancelled' there
+      // (see `MeetingRepository._locallyCancelled`), so it no longer
+      // matches `status == 'completed'` here either, instead of this report
+      // silently disagreeing with what the Meetings tab now shows.
+      final meetings = await MeetingRepository().fetchForShg(shgId);
+      final completedMeetings = meetings.where((m) => m.status == 'completed').length;
       return MemberReport(
         totalSavings: totalSavings,
         savingsEntryCount: savings.length,
@@ -63,13 +71,15 @@ class ReportRepository {
     }
 
     // Filtering on `status = 'completed'` here would always return zero rows
-    // in live mode — nothing in the app ever calls `MeetingRepository.
-    // setStatus()` (see `Meeting.hasPassed`'s doc comment), so a real
-    // meeting's status never actually advances past 'upcoming'. Use the
-    // meeting's own date instead, same fix `MeetingRepository.
+    // in live mode — `MeetingRepository.setStatus()` is only ever called to
+    // set 'cancelled' (see its doc comment), never 'completed', so a real
+    // meeting's status never actually advances past 'upcoming' on its own.
+    // Use the meeting's own date instead, same fix `MeetingRepository.
     // fetchAttendanceHistory()` already applies — without this, a member's
     // dashboard "Attendance" stat was permanently stuck at 0% since
-    // `meetingsTotal` could never be non-zero.
+    // `meetingsTotal` could never be non-zero. `.neq('status', 'cancelled')`
+    // still excludes a meeting explicitly cancelled after its date passed,
+    // so it doesn't count as a completed-with-0%-attendance meeting here.
     final todayStr = DateTime.now().toIso8601String().split('T').first;
     final completedMeetings = await _client.from('meetings').select('id').eq('shg_id', shgId).neq('status', 'cancelled').lt('meeting_date', todayStr);
     final meetingsTotal = (completedMeetings as List).length;

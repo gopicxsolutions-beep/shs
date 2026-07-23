@@ -28,6 +28,13 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Required by flutter_local_notifications 10+ to schedule local
+        // notifications with backwards compatibility on older Android
+        // versions (see its README's "Gradle setup" section) — needed even
+        // though sourceCompatibility is already Java 17, since this is about
+        // desugaring java.time-era APIs down to the device's actual API
+        // level, not the compiler's language level.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -39,6 +46,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // flutter_local_notifications' desugared code path pulls in enough
+        // extra method references to risk the legacy 64k DEX method limit on
+        // minSdk devices below 21's native multidex support.
+        multiDexEnabled = true
     }
 
     signingConfigs {
@@ -71,6 +82,12 @@ kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
+}
+
+dependencies {
+    // Paired with `isCoreLibraryDesugaringEnabled` above — required by
+    // flutter_local_notifications for scheduled local notifications.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 flutter {

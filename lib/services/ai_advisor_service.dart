@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/ai_advisor.dart';
 import 'supabase_service.dart';
 
 /// Abstraction over a real LLM-backed advisor API.
@@ -6,7 +7,58 @@ import 'supabase_service.dart';
 abstract class AiAdvisorService {
   /// [advisorType] is one of 'financial' | 'scheme' | 'market', matching
   /// the `ai_advisor_logs.advisor_type` check constraint.
-  Future<String> ask({required String advisorType, required String query});
+  ///
+  /// [history] is a bounded, most-recent slice of the current chat
+  /// session's prior turns (see [AiAdvisorExchange] and
+  /// `AiAdvisorRepository`) — real cross-turn memory, sent to the provider
+  /// as actual prior user/assistant messages rather than folded into the
+  /// query text.
+  Future<String> ask({
+    required String advisorType,
+    required String query,
+    List<AiAdvisorExchange> history = const [],
+  });
+}
+
+/// Carries the ai-advisor-proxy Edge Function's actual, distinguishable
+/// failure category through to the UI, instead of every server-side
+/// rejection collapsing into one opaque [Exception] string that the chat
+/// page can't tell apart from a dropped connection.
+///
+/// [statusCode] mirrors the function's real HTTP response (see
+/// `supabase/functions/ai-advisor-proxy/index.ts`'s `HttpError`):
+/// - 400 — the content-moderation pre-filter or basic request validation
+///   rejected the query. [reason] is already written to be shown to the
+///   member as-is (see `moderation.ts`'s `*_REASON` constants — most
+///   importantly the supportive, safety-oriented self-harm wording — and
+///   index.ts's own validation messages).
+/// - 429 — the per-member rate limit was hit. [reason] is again a
+///   member-safe, specific instruction ("wait a minute").
+/// - 401/500/502 — an upstream/auth/provider failure that is the
+///   service's fault, not the member's; some of those raw reasons (e.g.
+///   "Internal error") are not written for end users, so callers should
+///   not show [reason] verbatim for this bucket.
+class AiAdvisorRequestException implements Exception {
+  final int statusCode;
+  final String reason;
+  const AiAdvisorRequestException(this.statusCode, this.reason);
+
+  @override
+  String toString() => 'AiAdvisorRequestException($statusCode): $reason';
+}
+
+/// Maps a [FunctionException] thrown by `SupabaseClient.functions.invoke`
+/// (for any non-2xx `ai-advisor-proxy` response) into the distinguishable
+/// [AiAdvisorRequestException] above. A pure function, kept separate from
+/// [EdgeFunctionAiAdvisorService.ask] so the actual status+reason
+/// translation is unit-testable without a live Supabase Functions client
+/// (see test/services/ai_advisor_service_test.dart).
+AiAdvisorRequestException mapFunctionExceptionToAdvisorException(FunctionException e) {
+  final details = e.details;
+  final reason = details is Map && details['error'] is String
+      ? details['error'] as String
+      : (e.reasonPhrase ?? 'AI advisor request failed');
+  return AiAdvisorRequestException(e.status, reason);
 }
 
 /// Calls the deployed `ai-advisor-proxy` Edge Function, which proxies to a
@@ -17,11 +69,33 @@ class EdgeFunctionAiAdvisorService implements AiAdvisorService {
   SupabaseClient get _client => SupabaseService.instance.client;
 
   @override
-  Future<String> ask({required String advisorType, required String query}) async {
-    final res = await _client.functions.invoke('ai-advisor-proxy', body: {'advisor_type': advisorType, 'query': query});
-    final data = res.data as Map<String, dynamic>?;
+  Future<String> ask({
+    required String advisorType,
+    required String query,
+    List<AiAdvisorExchange> history = const [],
+  }) async {
+    Map<String, dynamic>? data;
+    try {
+      final res = await _client.functions.invoke('ai-advisor-proxy', body: {
+        'advisor_type': advisorType,
+        'query': query,
+        if (history.isNotEmpty) 'history': history.map((h) => h.toJson()).toList(),
+      });
+      data = res.data as Map<String, dynamic>?;
+    } on FunctionException catch (e) {
+      // Any non-2xx response (400 validation/moderation rejection, 401
+      // unidentified caller, 429 rate-limited, 500/502 upstream failure —
+      // see index.ts's HttpError) is surfaced by the functions client as
+      // `FunctionException.details` (the decoded JSON error body), not as
+      // `res.data` above — the old code here never actually reached the
+      // `data['ok'] != true` branch below for any real server-side
+      // rejection, including the moderation pre-filter's specific reason.
+      // Thread the real status + reason through as a distinguishable
+      // exception instead of one generic string.
+      throw mapFunctionExceptionToAdvisorException(e);
+    }
     if (data == null || data['ok'] != true) {
-      throw Exception('AI advisor request failed: ${data?['error'] ?? 'unknown error'}');
+      throw AiAdvisorRequestException(500, (data?['error'] as String?) ?? 'unknown error');
     }
     return data['response'] as String;
   }
@@ -84,7 +158,11 @@ class MockAiAdvisorService implements AiAdvisorService {
   };
 
   @override
-  Future<String> ask({required String advisorType, required String query}) async {
+  Future<String> ask({
+    required String advisorType,
+    required String query,
+    List<AiAdvisorExchange> history = const [],
+  }) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final q = query.toLowerCase();
     final candidates = _responses[advisorType] ?? const [];

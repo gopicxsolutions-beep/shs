@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/scheme.dart';
 import '../../models/types.dart';
@@ -33,12 +34,13 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
       await _repo.apply(schemeId: widget.schemeId, memberId: memberId);
       _appKey.currentState?.reload();
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(SupabaseService.isConfigured ? 'Application submitted' : 'Demo mode — not saved (connect Supabase to persist)')),
+          SnackBar(content: Text(SupabaseService.isConfigured ? l10n.schemeDetailApplicationSubmitted : l10n.profileUpdateDemoMode)),
         );
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not submit this application. Please try again.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.schemeDetailApplyError)));
     } finally {
       if (mounted) setState(() => _applying = false);
     }
@@ -46,6 +48,7 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final memberId = appState.profile?.id;
     // Scheme applications are a personal, self-service action (mirrors
@@ -62,12 +65,12 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
     final isLeaderOrStaff = appState.user.role != Role.member;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Scheme Detail'),
+      appBar: PageHeader(title: l10n.schemeDetailTitle),
       body: AppAsyncBuilder<Scheme?>(
         future: () => _repo.fetchSchemeById(widget.schemeId),
         builder: (context, scheme) {
           if (scheme == null) {
-            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This scheme could not be found');
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.schemeDetailNotFound);
           }
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -83,18 +86,18 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
                     if (scheme.agency != null) Text(scheme.agency!, style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
                     if (scheme.deadline != null) ...[
                       const SizedBox(height: 8),
-                      Text('Deadline: ${DateFormat('dd MMM yyyy').format(scheme.deadline!)}', style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.8))),
+                      Text(l10n.schemeDetailDeadlineLabel(DateFormat('dd MMM yyyy').format(scheme.deadline!)), style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.8))),
                     ],
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               if (scheme.benefit != null) ...[
-                const SectionHeader(title: 'Benefit'),
+                SectionHeader(title: l10n.schemeDetailBenefitSection),
                 AppCard(child: Text(scheme.benefit!, style: AppTheme.sans(13))),
                 const SizedBox(height: 20),
               ],
-              const SectionHeader(title: 'Eligibility'),
+              SectionHeader(title: l10n.schemeDetailEligibilitySection),
               AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,7 +128,7 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
                       // otherwise has flex. Same pattern as the EMI-due
                       // badge fix in loan_tracking_page.dart.
                       return AppCard(child: Row(children: [
-                        Text('Application status: ', style: AppTheme.sans(13)),
+                        Text(l10n.schemeDetailApplicationStatusLabel, style: AppTheme.sans(13)),
                         Flexible(child: AppBadge(text: app.status, tone: BadgeTone.brand)),
                       ]));
                     }
@@ -147,11 +150,11 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
                       return AppCard(child: Row(children: [
                         Icon(Icons.event_busy_rounded, size: 18, color: Neutral.c400),
                         const SizedBox(width: 10),
-                        Expanded(child: Text('Applications closed — the deadline for this scheme has passed.', style: AppTheme.sans(12, color: Neutral.c500))),
+                        Expanded(child: Text(l10n.schemeDetailDeadlinePassed, style: AppTheme.sans(12, color: Neutral.c500))),
                       ]));
                     }
                     return AppButton(
-                      label: _applying ? 'Submitting…' : 'Apply Now',
+                      label: _applying ? l10n.schemeDetailSubmitting : l10n.schemeDetailApplyNow,
                       fullWidth: true,
                       size: ButtonSize.lg,
                       onPressed: _applying ? null : () => _apply(memberId),

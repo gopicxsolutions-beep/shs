@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/support.dart';
 import '../../models/types.dart';
@@ -19,6 +20,14 @@ const _statusTones = <String, BadgeTone>{
   'closed': BadgeTone.neutral,
 };
 const _statuses = ['open', 'in_progress', 'resolved', 'closed'];
+
+String _statusLabel(AppLocalizations l10n, String status) => switch (status) {
+      'open' => l10n.supportStatusOpen,
+      'in_progress' => l10n.supportStatusInProgress,
+      'resolved' => l10n.supportStatusResolved,
+      'closed' => l10n.supportStatusClosed,
+      _ => status,
+    };
 
 class SupportTicketDetailPage extends StatefulWidget {
   final String ticketId;
@@ -71,6 +80,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
     // already used for the same reason in meeting_mom_page.dart's
     // `_addDecision`/`_addActionItem`.
     if (_sending || _message.text.trim().isEmpty || !SupabaseService.isConfigured) return;
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _sending = true);
     try {
       await _repo.sendMessage(ticketId: widget.ticketId, senderId: memberId, body: _message.text.trim());
@@ -79,7 +89,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
       await _key.currentState?.reload();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not send this message. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.supportTicketDetailSendError)));
       }
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -88,13 +98,14 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
 
   Future<void> _changeStatus(String status) async {
     if (_changingStatus) return;
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _changingStatus = true);
     try {
       await _repo.updateStatus(widget.ticketId, status);
       if (mounted) _key.currentState?.reload();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update the ticket status. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.supportTicketDetailStatusError)));
       }
     } finally {
       if (mounted) setState(() => _changingStatus = false);
@@ -103,19 +114,20 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final isStaff = const {Role.crp, Role.clf, Role.admin}.contains(appState.user.role);
     final memberId = appState.profile?.id;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Ticket'),
+      appBar: PageHeader(title: l10n.supportTicketDetailTitle),
       body: AppAsyncBuilder<_ThreadData>(
         key: _key,
         future: _load,
         builder: (context, data) {
           final ticket = data.ticket;
           if (ticket == null) {
-            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This ticket could not be found');
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.supportTicketDetailNotFound);
           }
           return Column(
             children: [
@@ -136,11 +148,11 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                     if (isStaff && SupabaseService.isConfigured)
                       PopupMenuButton<String>(
                         onSelected: _changeStatus,
-                        itemBuilder: (context) => _statuses.map((s) => PopupMenuItem(value: s, child: Text(s.replaceAll('_', ' ')))).toList(),
-                        child: AppBadge(text: ticket.status.replaceAll('_', ' '), tone: _statusTones[ticket.status] ?? BadgeTone.neutral),
+                        itemBuilder: (context) => _statuses.map((s) => PopupMenuItem(value: s, child: Text(_statusLabel(l10n, s)))).toList(),
+                        child: AppBadge(text: _statusLabel(l10n, ticket.status), tone: _statusTones[ticket.status] ?? BadgeTone.neutral),
                       )
                     else
-                      AppBadge(text: ticket.status.replaceAll('_', ' '), tone: _statusTones[ticket.status] ?? BadgeTone.neutral),
+                      AppBadge(text: _statusLabel(l10n, ticket.status), tone: _statusTones[ticket.status] ?? BadgeTone.neutral),
                   ],
                 ),
               ),
@@ -152,7 +164,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
               const Divider(height: 1),
               Expanded(
                 child: data.messages.isEmpty
-                    ? const AppEmptyState(icon: Icons.chat_bubble_outline_rounded, message: 'No messages yet')
+                    ? AppEmptyState(icon: Icons.chat_bubble_outline_rounded, message: l10n.supportTicketDetailNoMessages)
                     : ListView.builder(
                         controller: _scroll,
                         padding: const EdgeInsets.all(16),
@@ -161,7 +173,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                           final m = data.messages[i];
                           final mine = SupabaseService.isConfigured ? m.senderId == memberId : m.senderId == 'me';
                           return Semantics(
-                            label: '${mine ? 'You' : (m.senderName ?? 'Staff')}: ${m.body}',
+                            label: '${mine ? l10n.supportTicketDetailYou : (m.senderName ?? l10n.supportTicketDetailStaff)}: ${m.body}',
                             child: ExcludeSemantics(
                               child: Align(
                                 alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
@@ -205,7 +217,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                         onSubmitted: (_) => _send(memberId),
                         style: AppTheme.sans(13),
                         decoration: InputDecoration(
-                          hintText: SupabaseService.isConfigured ? 'Type a message…' : 'Demo mode — replies disabled',
+                          hintText: SupabaseService.isConfigured ? l10n.supportTicketDetailComposerHint : l10n.supportTicketDetailDemoModeHint,
                           filled: true,
                           fillColor: Neutral.c50,
                           counterText: '',
@@ -218,7 +230,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                     IconButton(
                       icon: _sending ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(Icons.send_rounded, color: SupabaseService.isConfigured ? Brand.c600 : Neutral.c300),
                       onPressed: SupabaseService.isConfigured && !_sending ? () => _send(memberId) : null,
-                      tooltip: 'Send message',
+                      tooltip: l10n.supportTicketDetailSendTooltip,
                     ),
                   ],
                 ),

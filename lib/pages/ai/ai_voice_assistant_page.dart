@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +11,8 @@ import '../../repositories/announcement_repository.dart';
 import '../../repositories/loan_repository.dart';
 import '../../repositories/savings_repository.dart';
 import '../../routes/paths.dart';
+import '../../services/device_voice_recognition_service.dart';
+import '../../services/supabase_service.dart';
 import '../../services/voice_recognition_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -38,8 +42,9 @@ Locale _localeFor(Language language) => switch (language) {
 /// The spec's "AI Voice Assistant" — distinct from Support's generic Voice
 /// Support (`support_voice_page.dart`, free-form FAQ Q&A). This assistant
 /// recognizes a small fixed set of commands in Telugu/Hindi/English (via
-/// [MockVoiceRecognitionService], a placeholder for a real STT engine —
-/// see docs/DEVELOPMENT_PROGRESS.md's "External API abstraction plan") and
+/// [DeviceVoiceRecognitionService] in live mode — real on-device speech
+/// recognition, no vendor API key needed; [MockVoiceRecognitionService] in
+/// demo mode, so the app stays fully explorable with no microphone) and
 /// resolves each against the member's *real* data (loans, savings,
 /// announcements) rather than a canned answer, plus demonstrates
 /// voice-triggered form navigation ("fill forms through voice" from the
@@ -53,7 +58,8 @@ class AiVoiceAssistantPage extends StatefulWidget {
 }
 
 class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
-  final VoiceRecognitionService _service = MockVoiceRecognitionService();
+  final VoiceRecognitionService _service = SupabaseService.isConfigured ? DeviceVoiceRecognitionService() : MockVoiceRecognitionService();
+  final FlutterTts _tts = FlutterTts();
   _AssistantState _state = _AssistantState.idle;
   late Language _language;
   String? _transcript;
@@ -65,6 +71,32 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
     // Defaults to the member's actual app language instead of always
     // opening on Telugu regardless of their real preference.
     _language = context.read<AppState>().language;
+  }
+
+  @override
+  void dispose() {
+    _tts.stop();
+    super.dispose();
+  }
+
+  // Speaks the answer aloud in `_language` (this page's own selector, not
+  // the app's system display language — see `_resolve`'s doc comment for
+  // why those are deliberately independent). Swallowed on failure: not
+  // every device has a TTS voice installed for every language, and the
+  // answer is always shown as text regardless, so speech is a bonus, not a
+  // requirement for this feature to work.
+  Future<void> _speak(String text) async {
+    try {
+      final locale = switch (_language) {
+        Language.te => 'te-IN',
+        Language.hi => 'hi-IN',
+        Language.en => 'en-IN',
+      };
+      final available = await _tts.isLanguageAvailable(locale);
+      if (available != true) return;
+      await _tts.setLanguage(locale);
+      await _tts.speak(text);
+    } catch (_) {}
   }
 
   Future<void> _listen() async {
@@ -90,6 +122,7 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
         _answer = answer;
         _state = _AssistantState.answered;
       });
+      unawaited(_speak(answer));
 
       if (command.intent == VoiceIntent.addSavings && mounted) {
         await Future.delayed(const Duration(milliseconds: 900));

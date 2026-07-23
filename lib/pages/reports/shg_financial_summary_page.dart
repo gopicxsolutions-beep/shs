@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/report.dart';
 import '../../repositories/report_repository.dart';
@@ -16,11 +17,12 @@ class ShgFinancialSummaryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final shgId = context.watch<AppState>().profile?.shgId;
     final repo = ReportRepository();
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Financial Summary'),
+      appBar: PageHeader(title: l10n.shgFinancialSummaryTitle),
       body: AppAsyncBuilder<ShgReportData>(
         future: () => repo.fetchShgReport(shgId),
         builder: (context, r) {
@@ -30,15 +32,15 @@ class ShgFinancialSummaryPage extends StatelessWidget {
               Text(r.period, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
               const SizedBox(height: 12),
               Row(children: [
-                Expanded(child: StatCard(label: 'Members', value: '${r.memberCount}', tone: StatTone.ink, icon: Icons.groups_rounded)),
+                Expanded(child: StatCard(label: l10n.shgFinancialSummaryMembersLabel, value: '${r.memberCount}', tone: StatTone.ink, icon: Icons.groups_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Active Loans', value: '${r.activeLoanCount}', tone: StatTone.gold, icon: Icons.account_balance_rounded)),
+                Expanded(child: StatCard(label: l10n.shgFinancialSummaryActiveLoansLabel, value: '${r.activeLoanCount}', tone: StatTone.gold, icon: Icons.account_balance_rounded)),
               ]),
               const SizedBox(height: 12),
               Row(children: [
-                Expanded(child: StatCard(label: 'Total Savings', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(r.totalSavings)}', tone: StatTone.brand, icon: Icons.account_balance_wallet_rounded)),
+                Expanded(child: StatCard(label: l10n.shgFinancialSummaryTotalSavingsLabel, value: '₹${NumberFormat('#,##,##0', 'en_IN').format(r.totalSavings)}', tone: StatTone.brand, icon: Icons.account_balance_wallet_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Loan Outstanding', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(r.totalOutstanding)}', tone: StatTone.danger, icon: Icons.warning_amber_rounded)),
+                Expanded(child: StatCard(label: l10n.shgFinancialSummaryLoanOutstandingLabel, value: '₹${NumberFormat('#,##,##0', 'en_IN').format(r.totalOutstanding)}', tone: StatTone.danger, icon: Icons.warning_amber_rounded)),
               ]),
               const SizedBox(height: 12),
               AppCard(
@@ -46,7 +48,7 @@ class ShgFinancialSummaryPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Flexible(child: Text('Average Attendance', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700))),
+                      Flexible(child: Text(l10n.shgFinancialSummaryAvgAttendanceLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700))),
                       const SizedBox(width: 8),
                       Text('${r.avgAttendancePct.toStringAsFixed(0)}%', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600)),
                     ]),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +9,7 @@ import '../../models/announcement.dart';
 import '../../models/types.dart';
 import '../../repositories/announcement_repository.dart';
 import '../../routes/paths.dart';
+import '../../services/notification_service.dart';
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -24,7 +26,10 @@ const _categoryTones = <String, BadgeTone>{
 };
 
 class AnnouncementsHomePage extends StatefulWidget {
-  const AnnouncementsHomePage({super.key});
+  // Injectable for tests (mirrors `SettingsPage`'s `notificationService`
+  // seam) — defaults to the real on-device implementation.
+  final NotificationService? notificationService;
+  const AnnouncementsHomePage({super.key, this.notificationService});
   @override
   State<AnnouncementsHomePage> createState() => _AnnouncementsHomePageState();
 }
@@ -36,6 +41,46 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
   final _body = TextEditingController();
   String _category = 'Circular';
   bool _busy = false;
+
+  late final NotificationService _notifications = widget.notificationService ?? LocalNotificationService.instance;
+
+  /// Fetches this SHG's announcements and, best-effort and without blocking
+  /// the list from rendering, fires an immediate local notification for any
+  /// the member hasn't already been notified about on this device (see
+  /// `notifyNewAnnouncements`'s doc comment for the "already seen" bookkeeping
+  /// that keeps this from re-firing for the same announcement).
+  ///
+  /// Before deciding, this also proactively requests the OS notification
+  /// permission the first time this ever loads with the preference still at
+  /// its untouched, enabled-by-default state — see
+  /// `ensureNotificationPermissionForDefaultEnabled`'s doc comment — instead
+  /// of only ever asking reactively when a member happens to visit Settings.
+  ///
+  /// Bug fix: that permission check/notify step used to be `await`ed before
+  /// returning `items` to `AppAsyncBuilder` below — meaning the list this
+  /// method is documented as "without blocking...rendering" was, in fact,
+  /// held behind whatever the real on-device OS permission round trip
+  /// happened to take (a single request/response call for a user actually
+  /// present, but a two-way native handshake that can legitimately never
+  /// resolve at all in an environment with no native counterpart to answer
+  /// it — this app's own `flutter test` suite, which uses this page's
+  /// default real [LocalNotificationService.instance] whenever a test
+  /// doesn't inject a fake, hit exactly that and hung on `pumpAndSettle`
+  /// forever). Firing this off with [unawaited] instead means the
+  /// already-fetched `items` render immediately regardless of how long (or
+  /// whether) the permission dance ever resolves.
+  Future<List<Announcement>> _loadAndNotify(String? shgId, String? memberId) async {
+    final items = await _repo.fetchForShg(shgId, memberId);
+    unawaited(_syncNotifications(items));
+    return items;
+  }
+
+  Future<void> _syncNotifications(List<Announcement> items) async {
+    final enabled = await ensureNotificationPermissionForDefaultEnabled(_notifications, kNotifyAnnouncementsPrefKey, await announcementNotificationsEnabled());
+    if (enabled) {
+      await notifyNewAnnouncements(_notifications, items);
+    }
+  }
 
   static const _categories = ['Circular', 'Meeting', 'Training', 'Scheme'];
 
@@ -132,7 +177,7 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
       ),
       body: AppAsyncBuilder<List<Announcement>>(
         key: _key,
-        future: () => _repo.fetchForShg(shgId, memberId),
+        future: () => _loadAndNotify(shgId, memberId),
         builder: (context, items) {
           if (items.isEmpty) {
             return const AppEmptyState(icon: Icons.campaign_rounded, message: 'No announcements yet');

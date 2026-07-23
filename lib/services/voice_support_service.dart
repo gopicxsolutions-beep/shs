@@ -1,14 +1,15 @@
-/// Abstraction over a real speech-to-text / text-to-speech provider. No real
-/// STT/TTS API is wired yet — a production key would swap
-/// [MockVoiceSupportService] for a real implementation of this same
-/// interface without touching any call site. See
-/// docs/DEVELOPMENT_PROGRESS.md's "External API abstraction plan".
+/// Abstraction over a speech-to-text / text-to-speech provider.
+/// [DeviceVoiceSupportService] (`device_voice_support_service.dart`) is the
+/// live-mode implementation — real on-device recognition + synthesis via
+/// `speech_to_text`/`flutter_tts`, no vendor API key needed;
+/// [MockVoiceSupportService] is used in demo mode so the app stays fully
+/// explorable with no microphone.
 abstract class VoiceSupportService {
-  /// Transcribes a (simulated) recorded question into text.
+  /// Transcribes a recorded question into text.
   Future<String> transcribe();
 
-  /// Answers a transcribed question. Returns the reply text; a real
-  /// implementation would also synthesize and play back audio for it.
+  /// Answers a transcribed question, speaking the reply aloud as a
+  /// side effect where the implementation supports it.
   Future<String> answer(String question);
 }
 

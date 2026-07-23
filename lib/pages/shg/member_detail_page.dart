@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg.dart';
 import '../../repositories/loan_repository.dart';
@@ -39,14 +40,15 @@ class MemberDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: const PageHeader(title: 'Member Detail'),
+      appBar: PageHeader(title: l10n.memberDetailTitle),
       body: AppAsyncBuilder<_MemberDetail>(
         future: _load,
         builder: (context, detail) {
           final member = detail.member;
           if (member == null) {
-            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This member could not be found');
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.memberDetailNotFound);
           }
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -62,19 +64,19 @@ class MemberDetailPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Row(children: [
-                Expanded(child: StatCard(label: 'Total Savings', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(detail.totalSavings)}', tone: StatTone.brand, icon: Icons.account_balance_wallet_rounded)),
+                Expanded(child: StatCard(label: l10n.memberDetailTotalSavings, value: '₹${NumberFormat('#,##,##0', 'en_IN').format(detail.totalSavings)}', tone: StatTone.brand, icon: Icons.account_balance_wallet_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Loan Outstanding', value: '₹${NumberFormat('#,##,##0', 'en_IN').format(detail.totalOutstanding)}', tone: StatTone.gold, icon: Icons.account_balance_rounded)),
+                Expanded(child: StatCard(label: l10n.memberDetailLoanOutstanding, value: '₹${NumberFormat('#,##,##0', 'en_IN').format(detail.totalOutstanding)}', tone: StatTone.gold, icon: Icons.account_balance_rounded)),
               ]),
               const SizedBox(height: 24),
-              const SectionHeader(title: 'Contact'),
+              SectionHeader(title: l10n.memberDetailContactSection),
               AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _row('Mobile', member.mobile ?? '—'),
+                    _row(l10n.memberDetailMobileLabel, member.mobile ?? '—'),
                     const SizedBox(height: 8),
-                    _row('Village', member.village ?? '—'),
+                    _row(l10n.memberDetailVillageLabel, member.village ?? '—'),
                   ],
                 ),
               ),

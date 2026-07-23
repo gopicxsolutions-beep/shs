@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/payment.dart';
 import '../../repositories/payment_repository.dart';
@@ -29,9 +30,10 @@ class PaymentsHomePage extends StatelessWidget {
     final appState = context.watch<AppState>();
     final repo = PaymentRepository();
     final memberId = appState.profile?.id;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Digital Payments'),
+      appBar: PageHeader(title: l10n.paymentsHomeTitle),
       body: AppAsyncBuilder<List<Payment>>(
         future: () => repo.fetchHistory(memberId),
         builder: (context, payments) {
@@ -41,14 +43,14 @@ class PaymentsHomePage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconTile(onTap: () => context.go(Paths.paymentsQr), icon: Icons.qr_code_scanner_rounded, label: 'Scan & Pay', tone: TileTone.brand),
-                  IconTile(onTap: () => context.go(Paths.paymentsHistory), icon: Icons.history_rounded, label: 'History', tone: TileTone.gold),
+                  IconTile(onTap: () => context.go(Paths.paymentsQr), icon: Icons.qr_code_scanner_rounded, label: l10n.paymentsHomeScanPay, tone: TileTone.brand),
+                  IconTile(onTap: () => context.go(Paths.paymentsHistory), icon: Icons.history_rounded, label: l10n.paymentsHomeHistory, tone: TileTone.gold),
                 ],
               ),
               const SizedBox(height: 20),
-              SectionHeader(title: 'Recent Payments', action: 'View all', onAction: () => context.go(Paths.paymentsHistory)),
+              SectionHeader(title: l10n.paymentsHomeRecentPayments, action: l10n.paymentsHomeViewAll, onAction: () => context.go(Paths.paymentsHistory)),
               if (payments.isEmpty)
-                const AppEmptyState(icon: Icons.payments_rounded, message: 'No payments yet')
+                AppEmptyState(icon: Icons.payments_rounded, message: l10n.paymentsHomeEmpty)
               else
                 AppCard(
                   padded: false,

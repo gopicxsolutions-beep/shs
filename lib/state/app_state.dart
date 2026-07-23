@@ -173,6 +173,31 @@ class AppState extends ChangeNotifier {
   AppUser get user {
     if (SupabaseService.isConfigured) {
       if (_profile == null) return defaultUser;
+      // Root-cause note (live-testing report: a persisted "leader" account's
+      // Profile page correctly showed "SHG Leader / President" but a
+      // role-gated "+" button elsewhere in the app stayed hidden): this line
+      // is the ONLY place `_profile!.role` (the raw `profiles.role` string)
+      // gets turned into a `Role`, and every reader of a role anywhere in
+      // the app — the Profile page's badge (`roleInfoFor(user.role)`) and
+      // every `appState.user.role != Role.member` gate alike (this file's
+      // `_FirstOrNull` fallback below) — goes through this same `user`
+      // getter on this same shared `AppState` singleton. That makes it
+      // structurally impossible for two call sites to disagree about a
+      // single account's role at a single point in time: either this line
+      // matched the DB string and every reader sees the resolved `Role`, or
+      // it silently fell back to `Role.member` and every reader — Profile
+      // page included — would show "SHG Member", not a correct badge next
+      // to a wrongly-hidden button. See `test/pages/shg_documents_page_test
+      // .dart`'s "live mode" group, which proves both directions with a
+      // widget test (including one pumping the Profile page and
+      // ShgDocumentsPage off the identical `AppState` instance). A report
+      // that genuinely showed the two disagreeing therefore points at
+      // something outside this getter for that one session (e.g. a stale
+      // client build, or the observation being made at two different
+      // points in time around a role change) rather than a bug reachable
+      // from this code path — confirm via the account's actual live
+      // `profiles.role` value if it recurs, since no client-side fix
+      // reproduces it.
       final role = Role.values.where((r) => r.name == _profile!.role).firstOrNull ?? Role.member;
       return AppUser(
         name: _profile!.name,

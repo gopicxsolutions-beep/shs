@@ -67,7 +67,9 @@
   "settingsNotifMeetingReminders": "बैठक अनुस्मारक",
   "settingsNotifPaymentAlerts": "भुगतान अलर्ट",
   "settingsNotifAnnouncements": "घोषणाएं",
-  "settingsNotifComingSoon": "ये प्राथमिकताएं सेव हो जाती हैं, लेकिन ऐप के इस वर्शन में पुश/लोकल रिमाइंडर अभी नहीं भेजे जाते।",
+  "settingsNotifLocalOnly": "रिमाइंडर केवल इस डिवाइस पर शेड्यूल किए जाते हैं — किसी सर्वर से नहीं भेजे जाते। यदि आप कोई दूसरा फ़ोन इस्तेमाल करें या ऐप फिर से इंस्टॉल करें, तो ये आप तक नहीं पहुंचेंगे। यदि कोई बैठक रद्द कर दी जाती है, तो केवल इसी डिवाइस का रिमाइंडर तुरंत रद्द होता है — किसी अन्य सदस्य के फ़ोन पर पुराना रिमाइंडर तब तक दिख सकता है जब तक वह बैठक टैब फिर से न खोले।",
+  "settingsNotifPermissionDenied": "आपके फ़ोन की सेटिंग्स में इस ऐप के लिए नोटिफिकेशन बंद हैं। रिमाइंडर पाने के लिए वहां उन्हें चालू करें।",
+  "settingsNotifCancelPendingError": "इस डिवाइस पर ये रिमाइंडर बंद नहीं हो सके। हम स्वचालित रूप से फिर से कोशिश करते रहेंगे — कृपया अपना कनेक्शन जांचें, या दोबारा कोशिश करें।",
   "settingsLanguage": "भाषा",
   "settingsPreviewAs": "इस रूप में देखें",
   "settingsAppVersion": "ऐप संस्करण",
@@ -142,5 +144,1309 @@
   "voiceOpeningSavingsForm": "आपके लिए बचत प्रविष्टि फ़ॉर्म खोला जा रहा है।",
   "voiceUnknownCommand": "माफ़ कीजिए, मुझे वह समझ नहीं आया।",
 
-  "aiDisclaimer": "यह सलाह AI द्वारा तैयार की गई है और गलत हो सकती है। यह पेशेवर वित्तीय, कानूनी या चिकित्सा सलाह नहीं है; महत्वपूर्ण निर्णय लेने से पहले अपने SHG लीडर या किसी योग्य सलाहकार से पुष्टि करें।"
+  "aiDisclaimer": "यह सलाह AI द्वारा तैयार की गई है और गलत हो सकती है। यह पेशेवर वित्तीय, कानूनी या चिकित्सा सलाह नहीं है; महत्वपूर्ण निर्णय लेने से पहले अपने SHG लीडर या किसी योग्य सलाहकार से पुष्टि करें।",
+
+  "adminDashboardJustNow": "अभी",
+
+  "adminDashboardMinutesAgo": "{count} मिनट पहले",
+
+  "adminDashboardHoursAgo": "{count} घंटे पहले",
+
+  "adminDashboardDaysAgo": "{count} दिन पहले",
+
+  "adminDashboardMonthsAgo": "{count} महीने पहले",
+
+  "adminDashboardTotalShgsLabel": "कुल SHGs",
+
+  "adminDashboardActiveMembersTrend": "{count} सदस्य",
+
+  "adminDashboardSystemUptimeLabel": "सिस्टम अपटाइम",
+
+  "adminDashboardNotLiveMonitored": "लाइव मॉनिटर नहीं किया गया",
+
+  "adminDashboardUsersTile": "उपयोगकर्ता",
+
+  "adminDashboardShgsTile": "SHGs",
+
+  "adminDashboardSchemesTile": "योजनाएं",
+
+  "adminDashboardMonitoringTile": "निगरानी",
+
+  "adminDashboardReportsTile": "रिपोर्ट",
+
+  "adminDashboardPendingReviewCount": "{count} योजना आवेदन समीक्षा हेतु लंबित हैं",
+
+  "adminDashboardAwaitingReviewSubtitle": "स्टाफ की स्वीकृति या अस्वीकृति का इंतज़ार है",
+
+  "adminDashboardReviewAction": "समीक्षा करें",
+
+  "adminDashboardPlatformSnapshotTitle": "प्लेटफ़ॉर्म स्नैपशॉट",
+
+  "adminDashboardAnalyticsAction": "एनालिटिक्स",
+
+  "adminDashboardLoansDisbursedLabel": "वितरित ऋण",
+
+  "adminDashboardTrainingCompletionLabel": "प्रशिक्षण पूर्णता",
+
+  "adminDashboardRecentActivityTitle": "हाल की सिस्टम गतिविधि",
+
+  "adminDashboardNoRecentActivity": "अभी तक कोई हाल की गतिविधि नहीं",
+
+  "clfDashboardVillageOrgsLabel": "ग्राम संगठन",
+
+  "clfDashboardShgsTotalTrend": "कुल {count} SHGs",
+
+  "clfDashboardTotalSavingsLabel": "कुल बचत",
+
+  "clfDashboardFinancialOversightTrend": "वित्तीय निगरानी",
+
+  "clfDashboardMonitorVillageOrgsTitle": "ग्राम संगठनों की निगरानी करें",
+
+  "clfDashboardVillagesShgsSummary": "{villageCount} गांव · {shgCount} SHGs",
+
+  "clfDashboardVillageWiseShgsTitle": "गांव-वार SHGs",
+
+  "clfDashboardFederationReportsAction": "फेडरेशन रिपोर्ट",
+
+  "clfDashboardNoVillagesYet": "अभी तक कोई गांव नहीं",
+
+  "clfDashboardShgChartSemanticLabel": "गांव-वार SHGs बार चार्ट: {summary}",
+
+  "clfDashboardShgChartItemLabel": "{village} में {count} SHGs",
+
+  "clfDashboardFinancialOversightTitle": "वित्तीय निगरानी",
+
+  "clfDashboardLoansDisbursedLabel": "वितरित ऋण",
+
+  "clfDashboardRecoveryRateLabel": "रिकवरी दर",
+
+  "clfDashboardFullAnalyticsTitle": "पूर्ण एनालिटिक्स डैशबोर्ड",
+
+  "clfDashboardFullAnalyticsSubtitle": "KPI, ट्रेंड और रिकवरी इनसाइट्स",
+
+  "clfDashboardOpenAction": "खोलें",
+
+  "crpDashboardShgsMonitoredLabel": "निगरानी में SHGs",
+
+  "crpDashboardNoShgsYetTrend": "अभी तक कोई SHG नहीं",
+
+  "crpDashboardAvgHealthScoreLabel": "औसत हेल्थ स्कोर",
+
+  "crpDashboardAttendanceProxyTrend": "उपस्थिति के आधार पर अनुमान",
+
+  "crpDashboardShgsUnderMonitoringTitle": "निगरानी में ली गई SHGs",
+
+  "crpDashboardViewAllAction": "सभी देखें",
+
+  "crpDashboardNoShgsToMonitorYet": "निगरानी के लिए अभी तक कोई SHG नहीं",
+
+  "crpDashboardShgVillageMembersSummary": "{village} · {count} सदस्य",
+
+  "crpDashboardTrainingCatalogTitle": "प्रशिक्षण सूची",
+
+  "crpDashboardNoCoursesYet": "अभी तक कोई कोर्स नहीं",
+
+  "dashboardTopBarGreeting": "नमस्ते, {name} 🙏",
+
+  "dashboardTopBarUnreadAnnouncementsTooltip": "{count} अपठित घोषणाएं",
+
+  "dashboardTopBarAnnouncementsTooltip": "घोषणाएं",
+
+  "leaderDashboardGroupSavingsLabel": "समूह बचत",
+
+  "leaderDashboardMembersTrend": "{count} सदस्य",
+
+  "leaderDashboardLoansOutstandingLabel": "बकाया ऋण",
+
+  "leaderDashboardOverdueTrend": "{count} अतिदेय",
+
+  "leaderDashboardMembersTile": "सदस्य",
+
+  "leaderDashboardApprovalsTile": "स्वीकृतियां",
+
+  "leaderDashboardApprovalsPendingBadge": "स्वीकृतियां, {count} लंबित",
+
+  "leaderDashboardScheduleTile": "शेड्यूल",
+
+  "leaderDashboardReportsTile": "रिपोर्ट",
+
+  "leaderDashboardDefaulterAlert": "{count} डिफॉल्टर अलर्ट",
+
+  "leaderDashboardEmiOverdueSinceDate": "{name} — EMI {date} से अतिदेय है",
+
+  "leaderDashboardEmiOverdue": "{name} — EMI अतिदेय है",
+
+  "leaderDashboardViewAction": "देखें",
+
+  "leaderDashboardPendingApprovalsTitle": "लंबित ऋण स्वीकृतियां",
+
+  "leaderDashboardReviewAllAction": "सभी की समीक्षा करें",
+
+  "leaderDashboardNoPendingLoans": "कोई लंबित ऋण अनुरोध नहीं",
+
+  "leaderDashboardNextMeetingTitle": "अगली बैठक",
+
+  "leaderDashboardManageAction": "प्रबंधित करें",
+
+  "leaderDashboardMeetingFallback": "बैठक",
+
+  "leaderDashboardShgHealthTitle": "SHG स्वास्थ्य",
+
+  "leaderDashboardGradingLabel": "ग्रेडिंग",
+
+  "leaderDashboardAttendanceLabel": "उपस्थिति",
+
+  "leaderDashboardRecoveryLabel": "रिकवरी",
+
+  "memberDashboardMySavingsLabel": "मेरी बचत",
+
+  "memberDashboardSavingsEntriesTrend": "{count} प्रविष्टियां",
+
+  "memberDashboardOutstandingLoanLabel": "बकाया ऋण",
+
+  "memberDashboardNextEmiTrend": "अगली EMI {date}",
+
+  "memberDashboardNoDuesTrend": "कोई बकाया नहीं",
+
+  "memberDashboardAddSavingsTile": "बचत जोड़ें",
+
+  "memberDashboardApplyLoanTile": "ऋण के लिए आवेदन करें",
+
+  "memberDashboardAttendanceLabel": "उपस्थिति",
+
+  "memberDashboardSchemesTile": "योजनाएं",
+
+  "memberDashboardSchemesNewBadge": "योजनाएं, {count} नई",
+
+  "memberDashboardNewSchemesCount": "{count} नई",
+
+  "memberDashboardSchemesAvailableLabel": "उपलब्ध योजनाएं",
+
+  "memberDashboardSavingsSummaryTitle": "बचत सारांश",
+
+  "memberDashboardViewAllAction": "सभी देखें",
+
+  "memberDashboardLoanSummaryTitle": "ऋण सारांश",
+
+  "memberDashboardTrackAction": "ट्रैक करें",
+
+  "memberDashboardOfAmount": "₹{amount} में से",
+
+  "memberDashboardEmiDueBadge": "EMI ₹{amount}, {date} को देय",
+
+  "memberDashboardEmiBadge": "EMI ₹{amount}",
+
+  "memberDashboardPayNowAction": "अभी भुगतान करें",
+
+  "memberDashboardMeetingAlertLabel": "बैठक अलर्ट",
+
+  "memberDashboardMeetingFallback": "बैठक",
+
+  "memberDashboardDetailsAction": "विवरण",
+
+  "memberDashboardTrainingAlertLabel": "प्रशिक्षण अलर्ट",
+
+  "memberDashboardContinueAction": "जारी रखें",
+
+  "memberDashboardAiAdvisorTitle": "AI वित्तीय सलाहकार",
+
+  "memberDashboardAiAdvisorSubtitle": "बचत, ऋण और बजट के बारे में पूछें",
+
+  "memberDashboardViewAction": "देखें",
+
+  "memberDashboardRecentAnnouncementsTitle": "हाल की घोषणाएं",
+
+  "memberDashboardSeeAllAction": "सभी देखें",
+
+  "memberDashboardNoAnnouncementsYet": "अभी तक कोई घोषणा नहीं",
+
+  "memberDashboardUnreadLabel": "अपठित",
+
+  "memberDashboardSavingsTrendChartSemanticLabel": "बचत ट्रेंड चार्ट: {summary}",
+
+  "attendanceReportTitle": "उपस्थिति रिपोर्ट",
+
+  "attendanceReportEmpty": "अभी तक कोई बैठक पूरी नहीं हुई",
+
+  "attendanceReportOverallLabel": "कुल उपस्थिति",
+
+  "attendanceReportSummary": "{total} में से {present} बैठकों में उपस्थित",
+
+  "federationGrowthTitle": "बचत वृद्धि",
+
+  "federationGrowthEmpty": "अभी तक कोई बचत दर्ज नहीं हुई",
+
+  "federationGrowthSubtitle": "हर SHG की मासिक कुल बचत",
+
+  "federationRecoveryTitle": "ऋण वसूली",
+
+  "federationRecoveryLoansDisbursed": "वितरित ऋण",
+
+  "federationRecoveryRateLabel": "वसूली दर",
+
+  "federationRecoveryRecoveredLabel": "वसूल किया गया",
+
+  "federationRecoveryFootnote": "हर SHG के सक्रिय, बकाया और बंद ऋणों में",
+
+  "federationReportsTitle": "फेडरेशन रिपोर्ट्स",
+
+  "federationReportsVillagesTitle": "गांव-वार SHGs",
+
+  "federationReportsVillagesSubtitle": "प्रति गांव SHG संख्या और बचत",
+
+  "federationReportsRecoveryTitle": "ऋण वसूली",
+
+  "federationReportsRecoverySubtitle": "हर SHG में वितरित बनाम चुकाई गई राशि",
+
+  "federationReportsGrowthTitle": "बचत वृद्धि",
+
+  "federationReportsGrowthSubtitle": "मासिक बचत रुझान, पूरे फेडरेशन में",
+
+  "federationVillagesTitle": "गांव-वार SHGs",
+
+  "federationVillagesEmpty": "अभी तक कोई SHG पंजीकृत नहीं है",
+
+  "federationVillagesShgCount": "{count} {count, plural, =1{SHG} other{SHGs}}",
+
+  "loanStatementTitle": "ऋण स्टेटमेंट",
+
+  "loanStatementEmpty": "अभी स्टेटमेंट के लिए कोई ऋण नहीं है",
+
+  "loanStatementTotalOutstandingLabel": "कुल बकाया",
+
+  "loanStatementLoanCount": "{count} ऋण",
+
+  "loanStatementRepaidAmount": "चुकाया ₹{amount}",
+
+  "loanStatementAmountLabel": "राशि ₹{amount}",
+
+  "loanStatementOutstandingAmount": "बकाया ₹{amount}",
+
+  "loanStatementDisbursedOn": "वितरित {date}",
+
+  "memberReportTitle": "मेरी रिपोर्ट्स",
+
+  "memberReportTotalSavingsLabel": "कुल बचत",
+
+  "memberReportEntriesTrend": "{count} एंट्री",
+
+  "memberReportLoanOutstandingLabel": "बकाया ऋण",
+
+  "memberReportActiveLoansTrend": "{count} सक्रिय",
+
+  "memberReportSectionTitle": "रिपोर्ट्स",
+
+  "memberReportSavingsStatementTitle": "बचत स्टेटमेंट",
+
+  "memberReportSavingsStatementSubtitle": "हर बचत एंट्री के साथ चालू शेष राशि",
+
+  "memberReportLoanStatementTitle": "ऋण स्टेटमेंट",
+
+  "memberReportLoanStatementSubtitle": "हर ऋण, EMI शेड्यूल और बकाया राशि",
+
+  "memberReportAttendanceTitle": "उपस्थिति रिपोर्ट",
+
+  "memberReportAttendanceSubtitle": "{pct}% · {total} में से {present} बैठकें",
+
+  "reportsHubTitle": "रिपोर्ट्स",
+
+  "reportsHubMyReportsTitle": "मेरी रिपोर्ट्स",
+
+  "reportsHubMyReportsSubtitle": "आपकी बचत, ऋण और उपस्थिति का सारांश",
+
+  "reportsHubShgReportsTitle": "SHG रिपोर्ट्स",
+
+  "reportsHubShgReportsSubtitle": "पूरे समूह की बचत, ऋण और उपस्थिति",
+
+  "reportsHubFederationReportsTitle": "फेडरेशन रिपोर्ट्स",
+
+  "reportsHubFederationReportsSubtitle": "सभी SHG का कुल मिलाकर डेटा",
+
+  "shgFinancialSummaryTitle": "वित्तीय सारांश",
+
+  "shgFinancialSummaryMembersLabel": "सदस्य",
+
+  "shgFinancialSummaryActiveLoansLabel": "सक्रिय ऋण",
+
+  "shgFinancialSummaryTotalSavingsLabel": "कुल बचत",
+
+  "shgFinancialSummaryLoanOutstandingLabel": "बकाया ऋण",
+
+  "shgFinancialSummaryAvgAttendanceLabel": "औसत उपस्थिति",
+
+  "shgPerformanceReportTitle": "प्रदर्शन रिपोर्ट",
+
+  "shgPerformanceAvgAttendanceLabel": "औसत उपस्थिति",
+
+  "shgPerformanceActiveLoansLabel": "सक्रिय ऋण",
+
+  "shgPerformanceAttendanceTrendLabel": "उपस्थिति रुझान",
+
+  "shgPerformanceEmptyTrend": "अभी तक कोई बैठक पूरी नहीं हुई",
+
+  "shgReportsTitle": "SHG रिपोर्ट्स",
+
+  "shgReportsFinancialSummaryTitle": "वित्तीय सारांश",
+
+  "shgReportsFinancialSummarySubtitle": "एक नज़र में बचत, ऋण और उपस्थिति",
+
+  "shgReportsAuditReportTitle": "ऑडिट रिपोर्ट",
+
+  "shgReportsAuditReportSubtitle": "आंतरिक और बाहरी ऑडिट का रिकॉर्ड",
+
+  "shgReportsPerformanceReportTitle": "प्रदर्शन रिपोर्ट",
+
+  "shgReportsPerformanceReportSubtitle": "उपस्थिति रुझान और ऋण गतिविधि",
+
+  "addProductTitle": "उत्पाद जोड़ें",
+
+  "addProductImageTooLarge": "इमेज बहुत बड़ी है — कृपया 5 MB से कम की कोई इमेज चुनें",
+
+  "addProductAddPhotoOptional": "एक फोटो जोड़ें (वैकल्पिक)",
+
+  "addProductNameLabel": "उत्पाद का नाम",
+
+  "addProductNameHint": "उदाहरण: हाथ से बुनी कॉटन साड़ी",
+
+  "addProductDescriptionLabel": "विवरण",
+
+  "addProductDescriptionHint": "अपने उत्पाद के बारे में बताएं",
+
+  "addProductPriceLabel": "कीमत (₹)",
+
+  "addProductStockLabel": "स्टॉक",
+
+  "addProductCategoryLabel": "श्रेणी",
+
+  "addProductNameRequired": "उत्पाद का नाम दर्ज करें",
+
+  "addProductInvalidPrice": "एक सही कीमत दर्ज करें",
+
+  "addProductPriceTooLarge": "कीमत असामान्य रूप से ज़्यादा लग रही है — कृपया जांचकर फिर से दर्ज करें",
+
+  "addProductSubmitError": "इस उत्पाद को सूचीबद्ध नहीं किया जा सका। कृपया फिर से कोशिश करें।",
+
+  "addProductListedSuccess": "उत्पाद सूचीबद्ध हो गया",
+
+  "addProductDemoModeNotSaved": "डेमो मोड — उत्पाद सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "addProductListingInProgress": "सूचीबद्ध हो रहा है…",
+
+  "addProductSubmitButton": "उत्पाद सूचीबद्ध करें",
+
+  "marketplaceHomeTitle": "बाज़ार",
+
+  "marketplaceHomeAddProductTooltip": "उत्पाद जोड़ें",
+
+  "marketplaceHomeSellTile": "बेचें",
+
+  "marketplaceHomeOrdersTile": "ऑर्डर",
+
+  "marketplaceHomeReviewsTile": "समीक्षाएं",
+
+  "marketplaceHomeBrowseProducts": "उत्पाद देखें",
+
+  "marketplaceHomeEmptyProducts": "अभी तक कोई उत्पाद सूचीबद्ध नहीं है",
+
+  "marketplaceOrdersTitle": "ऑर्डर",
+
+  "marketplaceOrdersEmpty": "अभी तक कोई ऑर्डर नहीं है",
+
+  "marketplaceReviewsTitle": "समीक्षाएं",
+
+  "marketplaceReviewsEmpty": "आपके उत्पादों पर अभी तक कोई समीक्षा नहीं है",
+
+  "marketplaceReviewsFromCount": "{count} {count, plural, =1{समीक्षा} other{समीक्षाओं}} के आधार पर",
+
+  "marketplaceReviewsRatingSemantics": "5 में से {rating} सितारे",
+
+  "orderDetailTitle": "ऑर्डर विवरण",
+
+  "orderDetailNotFound": "यह ऑर्डर नहीं मिल सका",
+
+  "orderDetailUpdateStatusError": "ऑर्डर की स्थिति अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।",
+
+  "orderDetailUpdateStatusLabel": "स्थिति अपडेट करें",
+
+  "orderDetailBuyerLabel": "खरीदार: {name}",
+
+  "orderDetailOrderedOn": "ऑर्डर किया गया {date}",
+
+  "productDetailTitle": "उत्पाद",
+
+  "productDetailNotFound": "यह उत्पाद नहीं मिल सका",
+
+  "productDetailWriteReviewTitle": "समीक्षा लिखें",
+
+  "productDetailStarTooltip": "{count} {count, plural, =1{सितारा} other{सितारे}}",
+
+  "productDetailReviewHint": "इस उत्पाद के साथ अपना अनुभव साझा करें (वैकल्पिक)",
+
+  "productDetailReviewSubmitted": "समीक्षा सबमिट हो गई",
+
+  "productDetailReviewDemoMode": "डेमो मोड — समीक्षा सेव नहीं हुई (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "productDetailReviewSubmitError": "आपकी समीक्षा सबमिट नहीं हो सकी। हो सकता है आपको पहले यह उत्पाद खरीदना पड़े।",
+
+  "productDetailOrderPlaced": "ऑर्डर दिया गया",
+
+  "productDetailOrderDemoMode": "डेमो मोड — ऑर्डर सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "productDetailOrderPlaceError": "यह ऑर्डर नहीं दिया जा सका। कृपया फिर से कोशिश करें।",
+
+  "productDetailBySeller": "{name} द्वारा",
+
+  "productDetailInStock": "स्टॉक में {count}",
+
+  "productDetailReviewsSection": "समीक्षाएं",
+
+  "productDetailSubmittingAction": "सबमिट हो रहा है…",
+
+  "productDetailWriteReviewAction": "समीक्षा लिखें",
+
+  "productDetailNoReviewsYet": "अभी तक कोई समीक्षा नहीं है",
+
+  "productDetailReviewRatingSemantics": "5 में से {rating} सितारे",
+
+  "productDetailPlacingInProgress": "ऑर्डर दिया जा रहा है…",
+
+  "productDetailPlaceOrderButton": "ऑर्डर करें",
+
+  "meetingsHomeTitle": "बैठकें",
+
+  "meetingsHomeScheduleTooltip": "बैठक शेड्यूल करें",
+
+  "meetingsHomeCheckIn": "चेक-इन",
+
+  "meetingsHomeScheduleLabel": "शेड्यूल",
+
+  "meetingsHomeAttendanceLabel": "उपस्थिति",
+
+  "meetingsHomeUpcoming": "आने वाली",
+
+  "meetingsHomePastMeetings": "पिछली बैठकें",
+
+  "meetingsHomeNoPastMeetings": "अभी तक कोई पिछली बैठक नहीं",
+
+  "meetingsHomeDefaultTitle": "बैठक",
+
+  "meetingDetailTitle": "बैठक विवरण",
+
+  "meetingDetailNotFound": "यह बैठक नहीं मिली",
+
+  "meetingDetailDefaultTitle": "बैठक",
+
+  "meetingDetailMinutesLabel": "बैठक का ब्यौरा",
+
+  "meetingDetailCancelDialogTitle": "बैठक रद्द करें?",
+
+  "meetingDetailCancelDialogContent": "यह {date} की बैठक को रद्द के रूप में चिह्नित कर देगा। सदस्यों को यह आने वाली की जगह रद्द दिखाई देगी।",
+
+  "meetingDetailKeepMeeting": "बैठक रखें",
+
+  "meetingDetailCancelMeeting": "बैठक रद्द करें",
+
+  "meetingDetailCancelling": "रद्द हो रहा है…",
+
+  "meetingDetailCancelledSuccess": "बैठक रद्द हो गई",
+
+  "meetingDetailCancelledDemoMode": "डेमो मोड — इस सत्र के बाकी समय के लिए रद्द (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "meetingDetailCancelError": "बैठक रद्द नहीं हो सकी। कृपया फिर से कोशिश करें।",
+
+  "meetingDetailAttendanceSection": "उपस्थिति",
+
+  "meetingDetailMarkAction": "दर्ज करें",
+
+  "meetingDetailPresentCount": "{present} / {total} उपस्थित",
+
+  "meetingAttendanceTitle": "उपस्थिति",
+
+  "meetingAttendanceNoMeetings": "उपस्थिति दर्ज करने के लिए कोई बैठक नहीं है",
+
+  "meetingAttendanceNoMembers": "उपस्थिति दर्ज करने के लिए कोई सदस्य नहीं है",
+
+  "meetingAttendancePresentCount": "{present} / {total} उपस्थित",
+
+  "meetingAttendanceUpdateError": "उपस्थिति अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।",
+
+  "meetingMomTitle": "बैठक का ब्यौरा",
+
+  "meetingMomNotFound": "यह बैठक नहीं मिली",
+
+  "meetingMomDemoModeNotSaved": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "meetingMomSaveDecisionError": "यह निर्णय सेव नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "meetingMomSaveActionItemError": "यह कार्य सेव नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "meetingMomDecisionsSection": "निर्णय",
+
+  "meetingMomNoDecisions": "अभी तक कोई निर्णय दर्ज नहीं हुआ",
+
+  "meetingMomAddDecisionHint": "एक निर्णय जोड़ें…",
+
+  "meetingMomAddDecisionTooltip": "निर्णय जोड़ें",
+
+  "meetingMomActionItemsSection": "कार्य",
+
+  "meetingMomNoActionItems": "अभी तक कोई कार्य नहीं है",
+
+  "meetingMomUpdateActionItemError": "यह कार्य अपडेट नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "meetingMomAssignedTo": "{name} को सौंपा गया",
+
+  "meetingMomDueDate": "अंतिम तिथि: {date}",
+
+  "meetingMomAssignToLabel": "सौंपें",
+
+  "meetingMomUnassigned": "कोई नहीं",
+
+  "meetingMomAddTaskHint": "एक कार्य जोड़ें…",
+
+  "meetingMomAddActionItemTooltip": "कार्य जोड़ें",
+
+  "meetingScheduleTitle": "बैठक शेड्यूल करें",
+
+  "meetingScheduleSubmitting": "शेड्यूल हो रहा है…",
+
+  "meetingScheduleEnterVenueError": "स्थल दर्ज करें",
+
+  "meetingScheduleNoShgError": "आप किसी SHG से जुड़े नहीं हैं, इसलिए इस बैठक को शेड्यूल करने के लिए कुछ नहीं है।",
+
+  "meetingScheduleSuccess": "बैठक शेड्यूल हो गई",
+
+  "meetingScheduleDemoMode": "डेमो मोड — बैठक सेव नहीं हुई (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "meetingScheduleError": "बैठक शेड्यूल नहीं हो सकी। कृपया फिर से कोशिश करें।",
+
+  "meetingScheduleDateLabel": "तारीख",
+
+  "meetingScheduleTimeLabel": "समय",
+
+  "meetingScheduleVenueLabel": "स्थल",
+
+  "meetingScheduleVenueHint": "जैसे, आंगनवाड़ी केंद्र, कोंडापुर",
+
+  "meetingScheduleAgendaLabel": "एजेंडा",
+
+  "meetingScheduleAgendaHint": "जैसे, मासिक बचत समीक्षा और ऋण आवेदन",
+
+  "savingsEntryTitle": "बचत जोड़ें",
+
+  "savingsEntryMemberLabel": "सदस्य",
+
+  "savingsEntryNoMembersFound": "आपके SHG में अभी तक कोई सदस्य नहीं है — इस एंट्री को किसी के नाम दर्ज करने के लिए कोई नहीं है।",
+
+  "savingsEntrySelectMember": "एक सदस्य चुनें",
+
+  "savingsEntryAmountLabel": "राशि",
+
+  "savingsEntryAmountRequired": "राशि दर्ज करें",
+
+  "savingsEntryAmountInvalid": "एक सही संख्या दर्ज करें",
+
+  "savingsEntryAmountZero": "राशि शून्य से अधिक होनी चाहिए",
+
+  "savingsEntryAmountTooLarge": "यह राशि असामान्य रूप से बड़ी लग रही है — कृपया जांचें और फिर से दर्ज करें",
+
+  "savingsEntryPaymentModeLabel": "भुगतान का तरीका",
+
+  "savingsEntryFrequencyLabel": "कितनी बार",
+
+  "savingsEntryNoShgError": "आप किसी SHG से जुड़े नहीं हैं, इसलिए इस एंट्री को दर्ज करने के लिए कुछ नहीं है।",
+
+  "savingsEntrySubmittedMessage": "बचत एंट्री सत्यापन के लिए भेज दी गई है",
+
+  "savingsEntryDemoModeMessage": "डेमो मोड — एंट्री सेव नहीं हुई (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "savingsEntrySaveError": "यह एंट्री सेव नहीं हो सकी। कृपया फिर से कोशिश करें।",
+
+  "savingsEntrySaving": "सेव हो रहा है…",
+
+  "savingsEntrySubmit": "एंट्री सबमिट करें",
+
+  "savingsGroupReportTitle": "समूह बचत रिपोर्ट",
+
+  "savingsGroupReportEmpty": "अभी तक कोई समूह बचत डेटा नहीं है",
+
+  "savingsGroupReportTotalLabel": "समूह की कुल राशि",
+
+  "savingsGroupReportSummary": "{memberCount} सदस्य योगदान दे रहे हैं · {monthCount} {monthCount, plural, =1{महीने की गतिविधि} other{महीनों की गतिविधि}}",
+
+  "savingsGroupReportRank": "रैंक #{rank}",
+
+  "savingsHistoryTitle": "बचत इतिहास",
+
+  "savingsHistoryEmpty": "अभी तक कोई बचत इतिहास नहीं है",
+
+  "savingsFrequencyEntryTitle": "{frequency} बचत",
+
+  "savingsHomeTitle": "बचत",
+
+  "savingsHomeAddTooltip": "बचत जोड़ें",
+
+  "savingsHomeGroupSavingsLabel": "समूह बचत",
+
+  "savingsHomeMySavingsLabel": "मेरी बचत",
+
+  "savingsHomeEntriesCount": "{count} एंट्री",
+
+  "savingsHomePendingVerificationLabel": "पेंडिंग सत्यापन",
+
+  "savingsHomeNeedsReview": "समीक्षा बाकी",
+
+  "savingsHomeAllCaughtUp": "सब कुछ निपटा दिया गया",
+
+  "savingsHomeAddSavingsTile": "बचत जोड़ें",
+
+  "savingsHomeHistoryTile": "इतिहास",
+
+  "savingsHomeStatementTile": "स्टेटमेंट",
+
+  "savingsHomeLedgerTile": "लेजर",
+
+  "savingsHomeGroupTile": "समूह",
+
+  "savingsHomeRecentEntriesTitle": "हाल की एंट्रियां",
+
+  "savingsHomeViewAllAction": "सभी देखें",
+
+  "savingsHomeEmpty": "अभी तक कोई बचत एंट्री नहीं है",
+
+  "savingsStatementTitle": "बचत स्टेटमेंट",
+
+  "savingsStatementEmpty": "अभी तक कोई एंट्री नहीं है",
+
+  "savingsStatementClosingBalance": "क्लोजिंग बैलेंस",
+
+  "savingsStatementTransactionsCount": "{count} लेनदेन",
+
+  "savingsStatementDateModeHeader": "तारीख / तरीका",
+
+  "savingsStatementAmountBalanceHeader": "राशि / बैलेंस",
+
+  "schemeEligibilityTitle": "पात्रता जांच",
+
+  "schemeEligibilityIntro": "यह आपके SHG की सदस्यता, पंजीकरण की उम्र और ग्रेड के आधार पर स्वचालित रूप से जांचा जाता है। कुछ शर्तें — जैसे BPL स्थिति या पहले ली गई सब्सिडी — अभी भी मैन्युअल जांच की ज़रूरत रखती हैं; उनके लिए हर योजना की पूरी पात्रता सूची देखें।",
+
+  "schemeEligibilityEmptyCatalog": "अभी तक सूची में कोई योजना नहीं है",
+
+  "schemeEligibilitySeeFullDetails": "पूरी जानकारी देखें",
+
+  "schemeEligibilityEligible": "पात्र",
+
+  "schemeEligibilityNotEligible": "अपात्र",
+
+  "schemeEligibilityNoCriteria": "इस योजना के लिए कोई स्वचालित पात्रता शर्तें तय नहीं हैं — पूरी शर्तें देखने के लिए इसे खोलें।",
+
+  "schemesHomeTitle": "सरकारी योजनाएं",
+
+  "schemesHomeEligibilityTile": "पात्रता",
+
+  "schemesHomeTrackingTile": "ट्रैकिंग",
+
+  "schemesHomeApplicationsTile": "आवेदन",
+
+  "schemesHomeAllSchemesSection": "सभी योजनाएं",
+
+  "schemesHomeEmptyState": "अभी कोई योजना उपलब्ध नहीं है",
+
+  "schemesHomeNotApplied": "आवेदन नहीं किया",
+
+  "schemeDetailApplicationSubmitted": "आवेदन जमा किया गया",
+
+  "schemeDetailApplyError": "यह आवेदन जमा नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "schemeDetailTitle": "योजना विवरण",
+
+  "schemeDetailNotFound": "यह योजना नहीं मिली",
+
+  "schemeDetailBenefitSection": "लाभ",
+
+  "schemeDetailEligibilitySection": "पात्रता",
+
+  "schemeDetailApplicationStatusLabel": "आवेदन की स्थिति: ",
+
+  "schemeDetailDeadlinePassed": "आवेदन बंद हैं — इस योजना की अंतिम तिथि निकल चुकी है।",
+
+  "schemeDetailSubmitting": "सबमिट हो रहा है…",
+
+  "schemeDetailApplyNow": "अभी आवेदन करें",
+
+  "schemeDetailDeadlineLabel": "अंतिम तिथि: {date}",
+
+  "schemeTrackingTitle": "आवेदन ट्रैकिंग",
+
+  "schemeTrackingEmptyState": "आपने अभी तक किसी योजना के लिए आवेदन नहीं किया है",
+
+  "schemeApplicationsReviewApproved": "आवेदन स्वीकृत किया गया",
+
+  "schemeApplicationsReviewRejected": "आवेदन अस्वीकृत किया गया",
+
+  "schemeApplicationsReviewAlreadyDecided": "इस आवेदन पर पहले ही किसी और ने निर्णय ले लिया है।",
+
+  "schemeApplicationsReviewSaveError": "यह निर्णय सेव नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "schemeApplicationsReviewTitle": "योजना आवेदन",
+
+  "schemeApplicationsReviewEmptyState": "कोई लंबित योजना आवेदन नहीं",
+
+  "schemeApplicationsReviewAppliedOn": "{date} को आवेदन किया",
+
+  "schemeApplicationsReviewReject": "अस्वीकार करें",
+
+  "schemeApplicationsReviewSaving": "सेव हो रहा है…",
+
+  "schemeApplicationsReviewApprove": "स्वीकृत करें",
+
+  "supportStatusOpen": "खुला",
+
+  "supportStatusInProgress": "चल रहा है",
+
+  "supportStatusResolved": "सुलझा",
+
+  "supportStatusClosed": "बंद",
+
+  "supportChatTitle": "चैट सहायता",
+
+  "supportChatEmptyMessage": "अभी तक कोई बातचीत नहीं — शुरू करने के लिए एक टिकट दर्ज करें",
+
+  "supportFaqTitle": "सामान्य सवाल",
+
+  "supportHomeTitle": "सहायता",
+
+  "supportHomeMyTickets": "मेरे टिकट",
+
+  "supportHomeRaiseTicket": "टिकट दर्ज करें",
+
+  "supportHomeVoiceHelp": "आवाज़ सहायता",
+
+  "supportHomeFaqs": "सामान्य सवाल",
+
+  "supportHomeAllTickets": "सभी टिकट",
+
+  "supportHomeViewAll": "सभी देखें",
+
+  "supportHomeEmptyMessage": "अभी तक कोई सहायता टिकट नहीं है",
+
+  "supportTicketDetailSendError": "यह संदेश नहीं भेजा जा सका। कृपया फिर से कोशिश करें।",
+
+  "supportTicketDetailStatusError": "टिकट की स्थिति अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।",
+
+  "supportTicketDetailTitle": "टिकट",
+
+  "supportTicketDetailNotFound": "यह टिकट नहीं मिल सका",
+
+  "supportTicketDetailNoMessages": "अभी तक कोई संदेश नहीं",
+
+  "supportTicketDetailYou": "आप",
+
+  "supportTicketDetailStaff": "स्टाफ",
+
+  "supportTicketDetailComposerHint": "संदेश टाइप करें…",
+
+  "supportTicketDetailDemoModeHint": "डेमो मोड — जवाब देना बंद है",
+
+  "supportTicketDetailSendTooltip": "संदेश भेजें",
+
+  "supportTicketFormTitle": "टिकट दर्ज करें",
+
+  "supportTicketFormSubjectLabel": "विषय",
+
+  "supportTicketFormSubjectHint": "जैसे: ऋण वितरण में देरी",
+
+  "supportTicketFormDescriptionLabel": "अपनी समस्या बताएं",
+
+  "supportTicketFormDescriptionHint": "जितना हो सके उतना विवरण दें",
+
+  "supportTicketFormSubjectRequired": "अपनी समस्या का विषय दर्ज करें",
+
+  "supportTicketFormSubmitting": "सबमिट हो रहा है…",
+
+  "supportTicketFormSubmit": "टिकट सबमिट करें",
+
+  "supportTicketFormRaisedSuccess": "टिकट दर्ज हो गया",
+
+  "supportTicketFormDemoModeMessage": "डेमो मोड — टिकट सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "supportTicketFormRaiseError": "यह टिकट दर्ज नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "supportVoiceTitle": "आवाज़ सहायता",
+
+  "supportVoiceTapToAsk": "सवाल पूछने के लिए टैप करें",
+
+  "supportVoiceListening": "सुन रहा है…",
+
+  "supportVoiceThinking": "जवाब ढूंढ रहे हैं…",
+
+  "supportVoiceTapToAskAgain": "फिर से पूछने के लिए टैप करें",
+
+  "supportVoiceError": "माफ़ कीजिए, कुछ गलत हो गया। कृपया फिर से कोशिश करें।",
+
+  "supportVoiceYouAsked": "आपने पूछा",
+
+  "supportVoiceAnswerLabel": "जवाब",
+
+  "memberDetailTitle": "सदस्य विवरण",
+
+  "memberDetailNotFound": "यह सदस्य नहीं मिल सका",
+
+  "memberDetailTotalSavings": "कुल बचत",
+
+  "memberDetailLoanOutstanding": "बकाया ऋण",
+
+  "memberDetailContactSection": "संपर्क",
+
+  "memberDetailMobileLabel": "मोबाइल",
+
+  "memberDetailVillageLabel": "गांव",
+
+  "shgHomeTitle": "मेरा SHG",
+
+  "shgHomeNotLinked": "आप अभी तक किसी SHG से जुड़े नहीं हैं",
+
+  "shgHomeRegNumberLabel": "रजि. नं. {regNumber}",
+
+  "shgHomeMembersTile": "सदस्य",
+
+  "shgHomeDocumentsTile": "दस्तावेज़",
+
+  "shgHomeFederationSection": "फेडरेशन",
+
+  "shgHomeVillageOrgLabel": "ग्राम संगठन",
+
+  "shgHomeClfLabel": "CLF",
+
+  "shgHomeMandalLabel": "मंडल",
+
+  "shgHomeFormedLabel": "स्थापना",
+
+  "shgHomeBankDetailsSection": "बैंक विवरण",
+
+  "shgHomeBankLabel": "बैंक",
+
+  "shgHomeAccountLabel": "खाता",
+
+  "shgHomeIfscLabel": "IFSC",
+
+  "shgJoinRequestsApproved": "अनुरोध स्वीकृत हो गया",
+
+  "shgJoinRequestsRejected": "अनुरोध अस्वीकृत हो गया",
+
+  "shgJoinRequestsDemoMode": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "shgJoinRequestsProcessError": "यह अनुरोध पूरा नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "shgJoinRequestsTitle": "जुड़ने के अनुरोध",
+
+  "shgJoinRequestsEmpty": "फ़िलहाल जुड़ने का कोई अनुरोध लंबित नहीं है",
+
+  "shgJoinRequestsMemberFallback": "सदस्य",
+
+  "shgJoinRequestsRequestedOn": "{date} को अनुरोध किया गया",
+
+  "shgJoinRequestsReject": "अस्वीकार करें",
+
+  "shgJoinRequestsWorking": "प्रोसेस हो रहा है…",
+
+  "shgJoinRequestsApprove": "स्वीकार करें",
+
+  "shgMembersTitle": "सदस्य",
+
+  "shgMembersJoinRequestsTooltip": "जुड़ने के अनुरोध",
+
+  "shgMembersEmpty": "कोई सदस्य नहीं मिला",
+
+  "certificatesTitle": "सर्टिफिकेट",
+
+  "certificatesEmptyState": "अभी तक कोई सर्टिफिकेट नहीं मिला — एक पाने के लिए कोर्स क्विज़ पूरा करें",
+
+  "certificatesCompletedOn": "{topic} · {date} को पूरा हुआ",
+
+  "courseDetailTitle": "कोर्स विवरण",
+
+  "courseDetailProgressDemoMode": "डेमो मोड — प्रगति सेव नहीं हुई (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "courseDetailProgressError": "आपकी प्रगति सेव नहीं हो सकी। कृपया फिर से कोशिश करें।",
+
+  "courseDetailNotFound": "यह कोर्स नहीं मिल सका",
+
+  "courseDetailCertifiedBadge": "सर्टिफाइड",
+
+  "courseDetailPercentComplete": "{pct}% पूरा",
+
+  "courseDetailSaving": "सेव हो रहा है…",
+
+  "courseDetailStartCourse": "कोर्स शुरू करें",
+
+  "courseDetailContinue": "जारी रखें",
+
+  "courseDetailTakeQuiz": "क्विज़ लें और सर्टिफिकेट पाएं",
+
+  "courseDetailCertificateEarned": "आपने इस कोर्स के लिए सर्टिफिकेट पा लिया है!",
+
+  "courseQuizTitle": "कोर्स क्विज़",
+
+  "courseQuizScoreResult": "आपको {score}/{total} अंक मिले। पास करने के लिए फिर से कोशिश करें।",
+
+  "courseQuizPassed": "पास हो गए! सर्टिफिकेट मिल गया।",
+
+  "courseQuizPassedDemoMode": "पास हो गए! डेमो मोड — सर्टिफिकेट सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "courseQuizSaveError": "आपका सर्टिफिकेट सेव नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "courseQuizNotFound": "यह कोर्स नहीं मिल सका",
+
+  "courseQuizNoQuizAvailable": "अभी इस कोर्स के लिए कोई क्विज़ उपलब्ध नहीं है",
+
+  "courseQuizSubmitButton": "क्विज़ सबमिट करें",
+
+  "courseQuizSubmitting": "सबमिट हो रहा है…",
+
+  "trainingHomeTitle": "प्रशिक्षण",
+
+  "trainingHomeCertificatesTooltip": "मेरे सर्टिफिकेट",
+
+  "trainingHomeEmpty": "अभी तक कोई कोर्स उपलब्ध नहीं है",
+
+  "trainingHomeCoursesSection": "कोर्स",
+
+  "trainingHomeCertifiedBadge": "सर्टिफाइड",
+
+  "loanApplyTitle": "ऋण के लिए आवेदन करें",
+
+  "loanApplyPurposeLabel": "उद्देश्य",
+
+  "loanApplyPurposeHint": "जैसे — डेयरी: दुधारू गाय खरीदना",
+
+  "loanApplyAmountLabel": "मांगी गई राशि",
+
+  "loanApplyTenureLabel": "अवधि",
+
+  "loanApplyTenureMonths": "{months} महीने",
+
+  "loanApplySubmitting": "सबमिट हो रहा है…",
+
+  "loanApplySubmitButton": "आवेदन सबमिट करें",
+
+  "loanApplyPurposeRequiredError": "ऋण किस लिए है, यह बताएं",
+
+  "loanApplyInvalidAmountError": "एक सही राशि दर्ज करें",
+
+  "loanApplyAmountTooLargeError": "राशि असामान्य रूप से अधिक लग रही है — कृपया जांचकर फिर से दर्ज करें",
+
+  "loanApplyNoShgError": "आप किसी SHG से जुड़े नहीं हैं, इसलिए इस ऋण के लिए आवेदन करने का कोई आधार नहीं है।",
+
+  "loanApplySuccessMessage": "ऋण आवेदन समीक्षा के लिए भेज दिया गया",
+
+  "loanApplyDemoModeMessage": "डेमो मोड — आवेदन सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "loanApplySubmitError": "यह आवेदन सबमिट नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "loansHomeTitle": "ऋण",
+
+  "loansHomeApplyTooltip": "ऋण के लिए आवेदन करें",
+
+  "loansHomeGroupOutstandingLabel": "समूह की बकाया राशि",
+
+  "loansHomeMyOutstandingLabel": "मेरी बकाया राशि",
+
+  "loansHomeLoanCount": "{count} ऋण",
+
+  "loansHomePendingApprovalLabel": "अनुमोदन लंबित",
+
+  "loansHomeOverdueLabel": "अतिदेय",
+
+  "loansHomeNeedsReviewTrend": "समीक्षा जरूरी",
+
+  "loansHomeActionNeededTrend": "कार्रवाई जरूरी",
+
+  "loansHomeOnTrackTrend": "समय पर",
+
+  "loansHomeApplyLabel": "आवेदन करें",
+
+  "loansHomeTrackingLabel": "ट्रैकिंग",
+
+  "loansHomeApprovalsLabel": "अनुमोदन",
+
+  "loansHomeApprovalsBadgeSemanticLabel": "अनुमोदन, {count} लंबित",
+
+  "loansHomeAllLoansTitle": "सभी ऋण",
+
+  "loansHomeMyLoansTitle": "मेरे ऋण",
+
+  "loansHomeEmptyMessage": "अभी तक कोई ऋण नहीं",
+
+  "loansHomeOutstandingOfAmount": "₹{amount} में से ₹{outstanding} बकाया",
+
+  "loanTrackingTitle": "ऋण ट्रैकिंग",
+
+  "loanTrackingEmptyMessage": "ट्रैक करने के लिए कोई सक्रिय ऋण नहीं है",
+
+  "loanTrackingOfAmount": "₹{amount} में से",
+
+  "loanTrackingEmiDueBadge": "EMI ₹{emi}, {dueDate} को देय",
+
+  "loanTrackingDetailsLink": "विवरण",
+
+  "analyticsDashboardTitle": "एनालिटिक्स",
+
+  "analyticsDashboardTotalShgs": "कुल SHGs",
+
+  "analyticsDashboardActiveMembers": "सक्रिय सदस्य",
+
+  "analyticsDashboardTotalSavings": "कुल बचत",
+
+  "analyticsDashboardLoansDisbursed": "वितरित ऋण",
+
+  "analyticsDashboardLoanRecoveryRate": "ऋण वसूली दर",
+
+  "analyticsDashboardMonitorShgs": "SHG की निगरानी करें",
+
+  "analyticsDashboardPerGroupHealthScores": "प्रत्येक समूह का स्वास्थ्य स्कोर",
+
+  "analyticsDashboardChartsLabel": "चार्ट",
+
+  "analyticsDashboardSavingsTrends": "बचत का रुझान",
+
+  "analyticsDashboardLoanTrends": "ऋण का रुझान",
+
+  "analyticsDashboardRevenueTrends": "राजस्व का रुझान",
+
+  "analyticsDashboardAttendanceTrends": "उपस्थिति का रुझान",
+
+  "analyticsDashboardNoDataYet": "अभी तक कोई डेटा नहीं",
+
+  "analyticsShgDetailTitle": "SHG एनालिटिक्स",
+
+  "analyticsShgDetailNotFound": "यह SHG नहीं मिल सका",
+
+  "analyticsShgDetailMembersLabel": "सदस्य",
+
+  "analyticsShgDetailTotalSavings": "कुल बचत",
+
+  "analyticsShgDetailHealthScore": "स्वास्थ्य स्कोर",
+
+  "analyticsShgDetailHealthScoreNote": "समाप्त हुई बैठकों की उपस्थिति दर के आधार पर",
+
+  "analyticsShgListTitle": "SHG निगरानी",
+
+  "analyticsShgListEmptyState": "निगरानी के लिए अभी कोई SHG नहीं है",
+
+  "analyticsShgListVillageMemberCount": "{village} · {count} सदस्य",
+
+  "livelihoodEntryTitle": "गतिविधि जोड़ें",
+
+  "livelihoodEntryActivityTypeLabel": "गतिविधि प्रकार",
+
+  "livelihoodEntryTypeDairy": "डेयरी",
+
+  "livelihoodEntryTypeTailoring": "सिलाई",
+
+  "livelihoodEntryTypeRetail": "खुदरा",
+
+  "livelihoodEntryTypePoultry": "मुर्गी पालन",
+
+  "livelihoodEntryTypeAgriculture": "कृषि",
+
+  "livelihoodEntryTypeHandicrafts": "हस्तशिल्प",
+
+  "livelihoodEntryTypeOther": "अन्य",
+
+  "livelihoodEntryDescriptionLabel": "विवरण",
+
+  "livelihoodEntryDescriptionHint": "जैसे, दुधारू गाय पालन — 2 गायें",
+
+  "livelihoodEntryInvestmentLabel": "शुरुआती निवेश",
+
+  "livelihoodEntryDescribeRequired": "गतिविधि का विवरण दें",
+
+  "livelihoodEntryInvalidInvestment": "मान्य निवेश राशि दर्ज करें",
+
+  "livelihoodEntryNoShg": "आप किसी SHG से जुड़े नहीं हैं, इसलिए इस गतिविधि को दर्ज करने के लिए कुछ नहीं है।",
+
+  "livelihoodEntryAdded": "गतिविधि जोड़ी गई",
+
+  "livelihoodEntryDemoMode": "डेमो मोड — गतिविधि सेव नहीं हुई (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "livelihoodEntrySaveError": "यह गतिविधि सेव नहीं हो सकी। कृपया फिर से कोशिश करें।",
+
+  "livelihoodEntrySaving": "सेव हो रहा है…",
+
+  "livelihoodHomeTitle": "आजीविका",
+
+  "livelihoodHomeAddActivityTooltip": "गतिविधि जोड़ें",
+
+  "livelihoodHomeTotalInvestment": "कुल निवेश",
+
+  "livelihoodHomeTotalRevenue": "कुल राजस्व",
+
+  "livelihoodHomeEmpty": "अभी तक कोई आजीविका गतिविधि नहीं",
+
+  "livelihoodHomeNetAmount": "नेट {amount}",
+
+  "paymentsHistoryTitle": "भुगतान इतिहास",
+
+  "paymentsHistoryEmpty": "अभी तक कोई भुगतान नहीं",
+
+  "paymentsHistoryModePayment": "{mode} भुगतान",
+
+  "paymentsHomeTitle": "डिजिटल भुगतान",
+
+  "paymentsHomeScanPay": "स्कैन करें और भुगतान करें",
+
+  "paymentsHomeHistory": "इतिहास",
+
+  "paymentsHomeRecentPayments": "हाल के भुगतान",
+
+  "paymentsHomeViewAll": "सभी देखें",
+
+  "paymentsHomeEmpty": "अभी तक कोई भुगतान नहीं",
+
+  "adminMonitoringTitle": "सिस्टम मॉनिटरिंग",
+
+  "adminMonitoringTotalUsers": "कुल उपयोगकर्ता",
+
+  "adminMonitoringTotalShgs": "कुल SHGs",
+
+  "adminMonitoringSavingsEntries": "बचत एंट्रियां",
+
+  "adminMonitoringLoansPending": "ऋण (लंबित)",
+
+  "adminMonitoringPlaceholderLabel": "प्लेसहोल्डर मेट्रिक्स",
+
+  "adminMonitoringPlaceholderDescription": "ये सिर्फ बुनियादी रो काउंट हैं, असली इन्फ्रास्ट्रक्चर मेट्रिक्स (अपटाइम, लेटेंसी, एरर रेट) नहीं। असली मॉनिटरिंग जोड़ने के लिए एक अलग Edge Function या बाहरी सेवा की ज़रूरत होगी।",
+
+  "adminMonitoringCheckedAt": "{date} को जांचा गया",
+
+  "aiHubTitle": "AI सलाहकार",
+
+  "aiHubAskAdvisor": "किसी सलाहकार से पूछें",
+
+  "aiHubFinancialAdvisorTitle": "वित्तीय सलाहकार",
+
+  "aiHubFinancialAdvisorSubtitle": "बचत, ऋण और बजट पर मार्गदर्शन",
+
+  "aiHubSchemeRecommenderTitle": "योजना सलाहकार",
+
+  "aiHubSchemeRecommenderSubtitle": "वे सरकारी योजनाएं खोजें जिनके लिए आप योग्य हैं",
+
+  "aiHubMarketAdvisorTitle": "बाज़ार सलाहकार",
+
+  "aiHubMarketAdvisorSubtitle": "आपके उत्पादों के लिए मूल्य और बिक्री के सुझाव",
+
+  "aiHubVoiceAssistantTitle": "वॉइस असिस्टेंट",
+
+  "aiHubVoiceAssistantSubtitle": "तेलुगु, हिंदी या अंग्रेज़ी में पूछें — हाथों का उपयोग किए बिना",
+
+  "announcementDetailTitle": "घोषणा",
+
+  "announcementDetailNotFound": "यह घोषणा नहीं मिली",
+
+  "splashBrandName": "NAVASAKHI",
+
+  "splashHeadline": "महिलाओं का सशक्तिकरण।\nसमुदायों में बदलाव।",
+
+  "splashSubtitle": "बचत, ऋण, बैठकें, योजनाएं, बाज़ार और भी बहुत कुछ — आपके SHG की हर ज़रूरत, एक ही ऐप में।",
+
+  "splashFeatureSavingsLoans": "बचत और ऋण",
+
+  "splashFeatureGroupManagement": "समूह प्रबंधन",
+
+  "splashFeatureGovtSchemes": "सरकारी योजनाएं",
+
+  "splashFeatureLivelihoods": "आजीविका",
+
+  "splashGetStarted": "शुरू करें",
+
+  "splashAvailableLanguages": "इन भाषाओं में उपलब्ध: English · తెలుగు · हिंदी",
+
+  "financialLedgerCashbookLabel": "कैशबुक",
+
+  "financialLedgerLedgerLabel": "लेजर",
+
+  "financialLedgerBankLabel": "बैंक",
+
+  "financialLedgerAuditLabel": "ऑडिट",
+
+  "financialLedgerAddEntryTooltip": "एंट्री जोड़ें",
+
+  "financialLedgerEntryAdded": "एंट्री जोड़ी गई",
+
+  "financialLedgerDemoMode": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "financialLedgerEmpty": "अभी तक कोई {title} एंट्री नहीं",
+
+  "servicesSavingsLabel": "बचत",
+
+  "servicesLoansLabel": "ऋण",
+
+  "servicesMeetingsLabel": "बैठकें",
+
+  "servicesFinancialRecordsLabel": "वित्तीय रिकॉर्ड",
+
+  "servicesLivelihoodsLabel": "आजीविका",
+
+  "servicesMarketplaceLabel": "बाज़ार",
+
+  "servicesDigitalPaymentsLabel": "डिजिटल भुगतान",
+
+  "servicesGovtSchemesLabel": "सरकारी योजनाएं",
+
+  "servicesTrainingLabel": "प्रशिक्षण",
+
+  "servicesSupportLabel": "सहायता",
+
+  "servicesAiAdvisorsLabel": "AI सलाहकार",
+
+  "servicesAnnouncementsLabel": "घोषणाएं",
+
+  "servicesReportsLabel": "रिपोर्ट",
+
+  "servicesAnalyticsLabel": "एनालिटिक्स",
+
+  "servicesManageUsersLabel": "उपयोगकर्ता प्रबंधन",
+
+  "servicesManageSchemesLabel": "योजना प्रबंधन",
+
+  "servicesSystemMonitoringLabel": "सिस्टम मॉनिटरिंग",
+
+  "servicesShgManagementSection": "SHG प्रबंधन",
+
+  "servicesCommerceSection": "कारोबार",
+
+  "servicesLearningSupportSection": "सीखना और सहायता",
+
+  "servicesInsightsSection": "इनसाइट्स",
+
+  "servicesAdminToolsSection": "एडमिन टूल्स",
+
+  "schemeEligibilityShgMembershipMet": "SHG सदस्यता — आप SHG से जुड़े हैं",
+
+  "schemeEligibilityShgMembershipUnmet": "SHG सदस्यता आवश्यक है — आप किसी SHG से जुड़े नहीं हैं",
+
+  "schemeEligibilityAgeMet": "SHG {actual}+ महीने से पंजीकृत है (आवश्यकता {required}+)",
+
+  "schemeEligibilityAgeUnmetNoShg": "SHG को {required}+ महीने पंजीकृत होना चाहिए — आप किसी SHG से जुड़े नहीं हैं",
+
+  "schemeEligibilityAgeUnmetNoRecord": "SHG को {required}+ महीने पंजीकृत होना चाहिए — आपकी SHG की पंजीकरण तारीख दर्ज नहीं है",
+
+  "schemeEligibilityAgeUnmet": "SHG को {required}+ महीने पंजीकृत होना चाहिए — आपकी SHG केवल {actual} महीने से पंजीकृत है",
+
+  "schemeEligibilityGradeMet": "SHG ग्रेड {grade}, {required}-या-उससे-ऊपर की आवश्यकता को पूरा करता है",
+
+  "schemeEligibilityGradeUnmetNoShg": "SHG ग्रेड {required} या उससे ऊपर आवश्यक है — आप किसी SHG से जुड़े नहीं हैं",
+
+  "schemeEligibilityGradeUnmetNoRecord": "SHG ग्रेड {required} या उससे ऊपर आवश्यक है — आपकी SHG का ग्रेड दर्ज नहीं है",
+
+  "schemeEligibilityGradeUnmet": "SHG ग्रेड {required} या उससे ऊपर आवश्यक है — आपकी SHG का ग्रेड {grade} है",
+
+  "adminDashboardActivityNewUser": "नया उपयोगकर्ता पंजीकृत — {name}",
+
+  "adminDashboardActivityNewShg": "नई SHG पंजीकृत — {name}",
+
+  "adminDashboardActivityDocument": "दस्तावेज़ अपलोड किया गया — {name}",
+
+  "aiAdvisorUpstreamUnavailable": "सलाहकार सेवा अभी अस्थायी रूप से उपलब्ध नहीं है। कृपया थोड़ी देर बाद फिर से प्रयास करें।"
 }

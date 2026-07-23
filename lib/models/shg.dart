@@ -75,15 +75,17 @@ class ShgDocument {
   final String name;
   final String? type;
   final String? size;
+  final String? storagePath;
   final DateTime createdAt;
 
-  const ShgDocument({required this.id, required this.name, this.type, this.size, required this.createdAt});
+  const ShgDocument({required this.id, required this.name, this.type, this.size, this.storagePath, required this.createdAt});
 
   factory ShgDocument.fromMap(Map<String, dynamic> map) => ShgDocument(
         id: map['id'] as String,
         name: map['name'] as String,
         type: map['type'] as String?,
         size: map['size'] as String?,
+        storagePath: map['storage_path'] as String?,
         // `created_at` is `timestamptz` (UTC). Convert to local (IST) here
         // so `shg_documents_page.dart`'s date-only `DateFormat` never shows
         // the wrong calendar day for a document uploaded near local midnight.

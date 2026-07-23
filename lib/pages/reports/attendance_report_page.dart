@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/meeting.dart';
 import '../../repositories/meeting_repository.dart';
@@ -15,18 +16,19 @@ class AttendanceReportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final memberId = appState.profile?.id;
     final shgId = appState.profile?.shgId;
     final repo = MeetingRepository();
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Attendance Report'),
+      appBar: PageHeader(title: l10n.attendanceReportTitle),
       body: AppAsyncBuilder<List<MemberAttendanceRecord>>(
         future: () => repo.fetchAttendanceHistory(memberId, shgId),
         builder: (context, records) {
           if (records.isEmpty) {
-            return const AppEmptyState(icon: Icons.event_available_rounded, message: 'No completed meetings yet');
+            return AppEmptyState(icon: Icons.event_available_rounded, message: l10n.attendanceReportEmpty);
           }
           final presentCount = records.where((r) => r.present).length;
           final pct = (presentCount / records.length) * 100;
@@ -52,7 +54,7 @@ class AttendanceReportPage extends StatelessWidget {
                               // otherwise protected. Same pattern as the
                               // "Amount / Outstanding" row fix in
                               // loan_statement_page.dart.
-                              Flexible(child: Text('Overall Attendance', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700))),
+                              Flexible(child: Text(l10n.attendanceReportOverallLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700))),
                               const SizedBox(width: 8),
                               Text('${pct.toStringAsFixed(0)}%', style: AppTheme.sans(15, weight: FontWeight.w700, color: Brand.c600)),
                             ]),
@@ -62,7 +64,7 @@ class AttendanceReportPage extends StatelessWidget {
                               child: LinearProgressIndicator(value: pct / 100, minHeight: 8, backgroundColor: Neutral.c100, color: Brand.c500),
                             ),
                             const SizedBox(height: 6),
-                            Text('$presentCount of ${records.length} meetings attended', style: AppTheme.sans(11, color: Neutral.c500)),
+                            Text(l10n.attendanceReportSummary(presentCount, records.length), style: AppTheme.sans(11, color: Neutral.c500)),
                           ],
                         ),
                       ),

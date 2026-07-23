@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shg_saathi/l10n/gen/app_localizations.dart';
 import 'package:shg_saathi/pages/announcements/announcement_detail_page.dart';
 import 'package:shg_saathi/state/app_state.dart';
 
@@ -12,7 +14,7 @@ import 'package:shg_saathi/state/app_state.dart';
 void main() {
   Widget harness(String id) => ChangeNotifierProvider<AppState>(
         create: (_) => AppState(),
-        child: MaterialApp(home: AnnouncementDetailPage(announcementId: id)),
+        child: MaterialApp(home: AnnouncementDetailPage(announcementId: id), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales, ),
       );
 
   testWidgets('announcement title and body render in demo mode', (tester) async {

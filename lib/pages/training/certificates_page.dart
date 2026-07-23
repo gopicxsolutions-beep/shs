@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/training.dart';
 import '../../repositories/training_repository.dart';
@@ -24,9 +25,10 @@ class CertificatesPage extends StatelessWidget {
     final appState = context.watch<AppState>();
     final repo = TrainingRepository();
     final memberId = appState.profile?.id;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Certificates'),
+      appBar: PageHeader(title: l10n.certificatesTitle),
       body: AppAsyncBuilder<List<_CertificateData>>(
         future: () async {
           final courses = await repo.fetchCertificates(memberId);
@@ -41,7 +43,7 @@ class CertificatesPage extends StatelessWidget {
         },
         builder: (context, certificates) {
           if (certificates.isEmpty) {
-            return const AppEmptyState(icon: Icons.workspace_premium_rounded, message: 'No certificates earned yet — complete a course quiz to get one');
+            return AppEmptyState(icon: Icons.workspace_premium_rounded, message: l10n.certificatesEmptyState);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -61,7 +63,9 @@ class CertificatesPage extends StatelessWidget {
                         children: [
                           Text(c.title, style: AppTheme.sans(13, weight: FontWeight.w700)),
                           Text(
-                            cert.completedOn != null ? '${c.topic} · Completed ${DateFormat('dd MMM yyyy').format(cert.completedOn!)}' : c.topic,
+                            cert.completedOn != null
+                                ? l10n.certificatesCompletedOn(c.topic, DateFormat('dd MMM yyyy').format(cert.completedOn!))
+                                : c.topic,
                             style: AppTheme.sans(11, color: Neutral.c500),
                           ),
                         ],

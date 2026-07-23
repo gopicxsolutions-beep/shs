@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/training.dart';
 import '../../repositories/training_repository.dart';
@@ -34,11 +35,12 @@ class TrainingHomePage extends StatelessWidget {
     final appState = context.watch<AppState>();
     final repo = TrainingRepository();
     final memberId = appState.profile?.id;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: PageHeader(
-        title: 'Training',
-        right: IconButton(icon: const Icon(Icons.workspace_premium_rounded, color: Brand.c600), onPressed: () => context.go(Paths.trainingCertificates), tooltip: 'My certificates'),
+        title: l10n.trainingHomeTitle,
+        right: IconButton(icon: const Icon(Icons.workspace_premium_rounded, color: Brand.c600), onPressed: () => context.go(Paths.trainingCertificates), tooltip: l10n.trainingHomeCertificatesTooltip),
       ),
       body: AppAsyncBuilder<_TrainingData>(
         future: () async {
@@ -48,7 +50,7 @@ class TrainingHomePage extends StatelessWidget {
         },
         builder: (context, data) {
           if (data.courses.isEmpty) {
-            return const AppEmptyState(icon: Icons.school_rounded, message: 'No courses available yet');
+            return AppEmptyState(icon: Icons.school_rounded, message: l10n.trainingHomeEmpty);
           }
           // CustomScrollView/Sliver split so the course list is genuinely
           // lazy (`SliverList.builder`) instead of every card getting built
@@ -62,7 +64,7 @@ class TrainingHomePage extends StatelessWidget {
             slivers: [
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                sliver: SliverToBoxAdapter(child: SectionHeader(title: 'Courses')),
+                sliver: SliverToBoxAdapter(child: SectionHeader(title: l10n.trainingHomeCoursesSection)),
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -93,7 +95,7 @@ class TrainingHomePage extends StatelessWidget {
                               ),
                               Flexible(
                                 child: p?.certified == true
-                                    ? const AppBadge(text: 'Certified', tone: BadgeTone.success)
+                                    ? AppBadge(text: l10n.trainingHomeCertifiedBadge, tone: BadgeTone.success)
                                     : Text('$pct%', overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                               ),
                             ]),

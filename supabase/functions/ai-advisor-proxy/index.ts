@@ -16,15 +16,49 @@
 // request/response shape used here is the now-common OpenAI-style
 // chat-completions contract most providers implement.
 //
-// Expects: { advisor_type: 'financial'|'scheme'|'market', query: string }.
+// Expects: { advisor_type: 'financial'|'scheme'|'market', query: string,
+// history?: { query: string, response: string }[] }. `history` is optional
+// cross-turn conversation memory — a bounded, most-recent slice of the
+// current chat session's prior turns (see ./history.ts for the shape
+// validation, size bounds, and how it's turned into real prior
+// user/assistant messages for the Groq request; docs/AI_MODULES.md §2.1
+// previously disclosed this as a gap — no prior turn was ever sent back to
+// the model).
 // Requires `LLM_API_KEY` set via `supabase secrets set LLM_API_KEY=...`
 // before deploying — this function throws immediately if that secret is
 // absent, rather than silently falling back to a canned response (that
 // fallback already exists client-side in MockAiAdvisorService; this
 // function's only job is the real integration).
+//
+// Basic content moderation and prompt-injection hardening (see
+// ./moderation.ts for the full honest-scope writeup, and docs/AI_MODULES.md
+// §6 for how this changes that section's "explicitly absent" list): a cheap
+// keyword/pattern pre-filter rejects the most obvious self-harm/hate-speech/
+// jailbreak attempts with a 400 *before* the Groq call below is ever made;
+// the system+user messages are built through a delimiter + instruction-
+// reinforcement wrapper so the member's raw text is unambiguously framed as
+// "a question to answer", not "instructions to follow"; and the completion
+// gets one cheap check for looking like an echoed system-prompt-extraction
+// attempt before being returned. None of this is enterprise-grade
+// moderation — it's a deliberately lightweight, maintainable first line of
+// defense built on pattern matching alone, using only the already-
+// provisioned Groq key (no new moderation vendor).
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  buildSystemPrompt,
+  checkQueryForDisallowedContent,
+  looksLikeSystemPromptLeak,
+  SAFE_FALLBACK_ON_SUSPECTED_LEAK,
+} from './moderation.ts';
+import {
+  boundHistory,
+  buildMessagesWithHistory,
+  checkHistoryForDisallowedContent,
+  InvalidHistoryError,
+  validateHistoryShape,
+} from './history.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -104,18 +138,31 @@ serve(async (req) => {
       throw new HttpError(500, 'LLM_API_KEY secret is not configured — run `supabase secrets set LLM_API_KEY=...` before deploying this function for real use.');
     }
 
-    const { advisor_type, query } = await req.json();
+    const { advisor_type, query, history: rawHistory } = await req.json();
     if (!advisor_type || !query || typeof query !== 'string') throw new HttpError(400, 'advisor_type and a string query are required');
     if (query.length > MAX_QUERY_LENGTH) throw new HttpError(400, `query is too long (max ${MAX_QUERY_LENGTH} characters)`);
     const systemPrompt = SYSTEM_PROMPTS[advisor_type];
-    if (!systemPrompt) throw new HttpError(400, `unknown advisor_type: ${advisor_type}`);
+    // Defense-in-depth length cap on the echoed value: advisor_type is
+    // expected to be one of 3 short known strings, but the client-supplied
+    // raw value is otherwise unbounded before this point — cap what's
+    // echoed back so a client can't get an arbitrarily large payload
+    // reflected into this 400's error field (the chat page currently shows
+    // every 400 reason verbatim, see ai_advisor_chat_page.dart).
+    if (!systemPrompt) {
+      const shown = typeof advisor_type === 'string' ? advisor_type.slice(0, 40) : String(advisor_type).slice(0, 40);
+      throw new HttpError(400, `unknown advisor_type: ${shown}`);
+    }
 
-    // Fail closed, not open: this check exists specifically to bound real
-    // provider spend, so a caller we can't identify or a rate-limit-store
-    // failure must not silently fall through to an unmetered call to a paid
-    // API. (Requires migration 0031_ai_advisor_rate_limit.sql to be
-    // deployed — without it this RPC call errors and every request is
-    // correctly rejected rather than silently unlimited.)
+    // Identify the caller and enforce the rate limit BEFORE any of the
+    // (potentially more expensive, and now more elaborate) history
+    // validation/moderation checks below. This intentionally runs ahead of
+    // those checks — an adversarial review found that a caller could
+    // otherwise send unlimited requests per minute for free by crafting
+    // each one to be rejected by validation/moderation (which returned
+    // before ever reaching this RPC), completely undermining the
+    // 10-requests/60s budget this exists to enforce. Every request now
+    // counts against the budget regardless of whether it's ultimately
+    // accepted or rejected for some other reason.
     const memberId = memberIdFromAuthHeader(req);
     if (!memberId) throw new HttpError(401, 'Could not identify the authenticated caller.');
 
@@ -131,15 +178,46 @@ serve(async (req) => {
     }
     if (!withinLimit) throw new HttpError(429, 'Too many requests. Please wait a minute before asking again.');
 
+    // Cross-turn memory: validate the optional, client-supplied bounded
+    // slice of this session's prior turns (shape only here — MAX_QUERY_LENGTH
+    // above only bounds the *new* query, not accumulated history), then
+    // independently re-enforce our own count/size bounds regardless of what
+    // the caller sent (see ./history.ts). validateHistoryShape itself caps
+    // the number of raw entries it will iterate before this point, so a
+    // client cannot inflate validation cost by sending an enormous array.
+    let history;
+    try {
+      history = boundHistory(validateHistoryShape(rawHistory));
+    } catch (e) {
+      if (e instanceof InvalidHistoryError) throw new HttpError(400, e.message);
+      throw e;
+    }
+
+    // Basic content pre-filter — cheap keyword/pattern matching only (see
+    // ./moderation.ts for the full honest-scope note). Applied to every
+    // history entry (both `query` and `response` — see
+    // checkHistoryForDisallowedContent's doc comment for why `response`
+    // needs this too) as well as the live query.
+    const historyFilter = checkHistoryForDisallowedContent(history);
+    if (historyFilter.blocked) throw new HttpError(400, historyFilter.reason);
+    const preFilter = checkQueryForDisallowedContent(query);
+    if (preFilter.blocked) throw new HttpError(400, preFilter.reason);
+
+    // Prompt-injection hardening: the member's raw query (and every history
+    // query) is wrapped in clear delimiters and framed as "a question to
+    // answer", and the system prompt gets an explicit instruction not to
+    // follow anything embedded in that delimited text (see ./moderation.ts
+    // and ./history.ts). Standard, well-known mitigation — not foolproof,
+    // but a real improvement over passing raw text straight through with no
+    // framing at all. Prior turns (if any) are included as real
+    // user/assistant messages, not folded into the system prompt — genuine
+    // cross-turn memory rather than a text summary of it.
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: query },
-        ],
+        messages: buildMessagesWithHistory(buildSystemPrompt(systemPrompt), history, query),
         max_tokens: 150,
       }),
     });
@@ -150,7 +228,17 @@ serve(async (req) => {
       throw new HttpError(502, 'The advisor service is temporarily unavailable. Please try again.');
     }
     const completion = await response.json();
-    const answer: string = completion.choices?.[0]?.message?.content ?? 'Sorry, I could not find an answer.';
+    let answer: string = completion.choices?.[0]?.message?.content ?? 'Sorry, I could not find an answer.';
+
+    // Output-side sanity check: a cheap heuristic, not a real classifier
+    // (see ./moderation.ts) — if the completion looks like it echoed back a
+    // meaningful chunk of the (undecorated) base system prompt verbatim,
+    // that's the clearest cheap signal of a successful prompt-extraction
+    // attempt, so swap in a safe generic answer instead of returning it.
+    if (looksLikeSystemPromptLeak(answer, systemPrompt)) {
+      console.warn(`ai-advisor-proxy: completion for advisor_type=${advisor_type} looked like a system-prompt echo; substituting safe fallback.`);
+      answer = SAFE_FALLBACK_ON_SUSPECTED_LEAK;
+    }
 
     return new Response(JSON.stringify({ ok: true, response: answer }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (err) {

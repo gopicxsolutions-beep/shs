@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/loan.dart';
 import '../../repositories/loan_repository.dart';
@@ -19,18 +20,19 @@ class LoanTrackingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final repo = LoanRepository();
     final memberId = appState.profile?.id;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Loan Tracking'),
+      appBar: PageHeader(title: l10n.loanTrackingTitle),
       body: AppAsyncBuilder<List<Loan>>(
         future: () => repo.fetchForMember(memberId),
         builder: (context, loans) {
           final active = loans.where((l) => l.status == 'active' || l.status == 'overdue').toList();
           if (active.isEmpty) {
-            return const AppEmptyState(icon: Icons.trending_up_rounded, message: 'No active loans to track');
+            return AppEmptyState(icon: Icons.trending_up_rounded, message: l10n.loanTrackingEmptyMessage);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -52,7 +54,7 @@ class LoanTrackingPage extends StatelessWidget {
                       Row(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                         Flexible(child: Text('₹${NumberFormat('#,##,##0', 'en_IN').format(l.outstanding)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.display(18))),
                         const SizedBox(width: 8),
-                        Flexible(child: Text('of ₹${NumberFormat('#,##,##0', 'en_IN').format(l.amount)}', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: AppTheme.sans(12, color: Neutral.c500))),
+                        Flexible(child: Text(l10n.loanTrackingOfAmount(NumberFormat('#,##,##0', 'en_IN').format(l.amount)), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: AppTheme.sans(12, color: Neutral.c500))),
                       ]),
                       const SizedBox(height: 8),
                       AppProgressBar(value: paid, max: l.amount, tone: l.status == 'overdue' ? ProgressTone.danger : ProgressTone.gold),
@@ -60,11 +62,11 @@ class LoanTrackingPage extends StatelessWidget {
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                         if (l.nextDueDate != null)
                           Flexible(
-                            child: AppBadge(text: 'EMI ₹${NumberFormat('#,##,##0', 'en_IN').format(l.emi)} due ${DateFormat('dd MMM yyyy').format(l.nextDueDate!)}', tone: BadgeTone.warning, dot: true),
+                            child: AppBadge(text: l10n.loanTrackingEmiDueBadge(NumberFormat('#,##,##0', 'en_IN').format(l.emi), DateFormat('dd MMM yyyy').format(l.nextDueDate!)), tone: BadgeTone.warning, dot: true),
                           ),
                         GestureDetector(
                           onTap: () => context.go(Paths.loanDetail(l.id)),
-                          child: Text('Details', style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
+                          child: Text(l10n.loanTrackingDetailsLink, style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
                         ),
                       ]),
                     ],

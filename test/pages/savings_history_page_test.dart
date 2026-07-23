@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shg_saathi/l10n/gen/app_localizations.dart';
 import 'package:shg_saathi/models/profile.dart';
 import 'package:shg_saathi/models/savings.dart';
 import 'package:shg_saathi/pages/savings/savings_history_page.dart';
@@ -16,7 +18,7 @@ import 'package:shg_saathi/widgets/async_state.dart';
 void main() {
   Widget harness(AppState appState) => ChangeNotifierProvider<AppState>.value(
         value: appState,
-        child: const MaterialApp(home: SavingsHistoryPage()),
+        child: MaterialApp(home: const SavingsHistoryPage(), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales, ),
       );
 
   testWidgets('SavingsHistoryPage shows the loaded entries, not the loading or empty state', (tester) async {

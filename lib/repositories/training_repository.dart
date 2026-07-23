@@ -38,6 +38,23 @@ class TrainingRepository {
     return row == null ? null : Course.fromMap(row);
   }
 
+  /// Real per-course quiz content backed by `public.quiz_questions`
+  /// (migration 0041) in live mode; `lib/data/training.dart`'s
+  /// `quizQuestions` map in demo mode. Ordered deterministically (by
+  /// `order_index`/list position) so the same course always presents its
+  /// questions in the same order.
+  Future<List<QuizQuestion>> fetchQuizQuestions(String courseId) async {
+    if (!_live) {
+      final mockQs = mock.quizQuestions[courseId] ?? const <mock.MockQuizQuestion>[];
+      return [
+        for (var i = 0; i < mockQs.length; i++)
+          QuizQuestion(id: '$courseId-q$i', courseId: courseId, question: mockQs[i].question, options: mockQs[i].options, correctIndex: mockQs[i].correctIndex),
+      ];
+    }
+    final rows = await _client.from('quiz_questions').select().eq('course_id', courseId).order('order_index');
+    return (rows as List).map((r) => QuizQuestion.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
   Future<Map<String, CourseProgress>> fetchMyProgress(String? memberId) async {
     if (!_live) {
       return {

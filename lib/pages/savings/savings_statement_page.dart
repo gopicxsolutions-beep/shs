@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/savings.dart';
 import '../../repositories/savings_repository.dart';
@@ -15,12 +16,13 @@ class SavingsStatementPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final repo = SavingsRepository();
     final memberId = appState.profile?.id;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Savings Statement'),
+      appBar: PageHeader(title: l10n.savingsStatementTitle),
       body: AppAsyncBuilder<List<SavingsEntry>>(
         future: () => repo.fetchForMember(memberId),
         builder: (context, entries) {
@@ -36,7 +38,7 @@ class SavingsStatementPage extends StatelessWidget {
           // row apart from a confirmed one in the transaction list.
           final verified = entries.where((e) => e.status == 'verified').toList();
           if (verified.isEmpty) {
-            return const Center(child: AppEmptyState(icon: Icons.receipt_long_rounded, message: 'No entries to statement yet'));
+            return Center(child: AppEmptyState(icon: Icons.receipt_long_rounded, message: l10n.savingsStatementEmpty));
           }
           // Statement reads oldest → newest with a running balance.
           final chronological = verified.reversed.toList();
@@ -73,7 +75,7 @@ class SavingsStatementPage extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Closing Balance', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                                  Text(l10n.savingsStatementClosingBalance, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
                                   const SizedBox(height: 4),
                                   Text(
                                     '₹${NumberFormat('#,##,##0', 'en_IN').format(closingBalance)}',
@@ -88,7 +90,7 @@ class SavingsStatementPage extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text('${chronological.length} transactions', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                                  Text(l10n.savingsStatementTransactionsCount(chronological.length), style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
                                   const SizedBox(height: 4),
                                   Text(
                                     '${DateFormat('dd MMM yy').format(chronological.first.date)} – ${DateFormat('dd MMM yy').format(chronological.last.date)}',
@@ -118,9 +120,9 @@ class SavingsStatementPage extends StatelessWidget {
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                   child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                    Flexible(child: Text('DATE / MODE', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(10, weight: FontWeight.w700, color: Neutral.c400))),
+                                    Flexible(child: Text(l10n.savingsStatementDateModeHeader, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(10, weight: FontWeight.w700, color: Neutral.c400))),
                                     const SizedBox(width: 8),
-                                    Flexible(child: Text('AMOUNT / BALANCE', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end, style: AppTheme.sans(10, weight: FontWeight.w700, color: Neutral.c400))),
+                                    Flexible(child: Text(l10n.savingsStatementAmountBalanceHeader, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end, style: AppTheme.sans(10, weight: FontWeight.w700, color: Neutral.c400))),
                                   ]),
                                 ),
                                 const Divider(height: 1, color: Neutral.c100),

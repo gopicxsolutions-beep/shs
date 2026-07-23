@@ -104,14 +104,17 @@ class AnalyticsRepository {
       savingsByShg[shgId] = (savingsByShg[shgId] ?? 0) + (map['amount'] as num);
     }
 
-    // `status = 'completed'` never actually matches in live mode — nothing
-    // in the app ever calls `MeetingRepository.setStatus()` (see
-    // `Meeting.hasPassed`'s doc comment), so a real meeting's status stays
-    // 'upcoming' forever. Use the meeting's own date instead, the same fix
-    // already applied in `MeetingRepository.fetchAttendanceHistory()` and
-    // `ReportRepository`'s attendance queries — without this, every SHG's
-    // `healthScore` here (and the CRP dashboard's "Avg. Health Score" stat)
-    // was permanently stuck at 0%.
+    // `status = 'completed'` never actually matches in live mode —
+    // `MeetingRepository.setStatus()` is only ever called to set
+    // 'cancelled' (see its doc comment), never 'completed', so a real
+    // meeting's status stays 'upcoming' forever on its own. Use the
+    // meeting's own date instead, the same fix already applied in
+    // `MeetingRepository.fetchAttendanceHistory()` and `ReportRepository`'s
+    // attendance queries — without this, every SHG's `healthScore` here
+    // (and the CRP dashboard's "Avg. Health Score" stat) was permanently
+    // stuck at 0%. `.neq('status', 'cancelled')` still excludes a meeting
+    // cancelled after its date passed, so it doesn't count toward
+    // `meetingsTotal` as a completed-with-0%-attendance meeting.
     final todayStr = DateTime.now().toIso8601String().split('T').first;
     final completedMeetings = await _client.from('meetings').select('id, shg_id').inFilter('shg_id', shgIds).neq('status', 'cancelled').lt('meeting_date', todayStr);
     final meetingRows = (completedMeetings as List).cast<Map<String, dynamic>>();

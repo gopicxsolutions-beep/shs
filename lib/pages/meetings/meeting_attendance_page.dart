@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/meeting.dart';
 import '../../repositories/meeting_repository.dart';
@@ -29,14 +30,29 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final shgId = appState.profile?.shgId;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Attendance'),
+      appBar: PageHeader(title: l10n.meetingAttendanceTitle),
       body: AppAsyncBuilder<List<Meeting>>(
         future: () => _repo.fetchForShg(shgId),
         builder: (context, meetings) {
           if (meetings.isEmpty) {
-            return const AppEmptyState(icon: Icons.event_busy_rounded, message: 'No meetings to mark attendance for');
+            return AppEmptyState(icon: Icons.event_busy_rounded, message: l10n.meetingAttendanceNoMeetings);
+          }
+          // A cancelled meeting must never be attendance-editable (mirrors
+          // `MeetingDetailPage`'s "Cancel Meeting" action, which is itself
+          // only offered for a still-genuinely-upcoming meeting) — excluding
+          // it here from the picker entirely, not merely from the default
+          // selection below, closes the gap where a leader could still pick
+          // an already-cancelled meeting from this dropdown and flip its
+          // attendance switches after the fact: writing fresh attendance
+          // rows tied to a cancelled meeting, visibly inconsistent with that
+          // meeting's own detail page (a red "cancelled" badge sitting
+          // directly above a live, freshly-editable roster).
+          final selectableMeetings = meetings.where((m) => m.status != 'cancelled').toList();
+          if (selectableMeetings.isEmpty) {
+            return AppEmptyState(icon: Icons.event_busy_rounded, message: l10n.meetingAttendanceNoMeetings);
           }
           // Same fix as meeting_qr_page.dart: `fetchForShg` sorts newest-
           // scheduled-date-first, so naively taking the first 'upcoming'
@@ -52,8 +68,16 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
           // first and keep defaulting the roster to stale history instead
           // of today's meeting, forever, once the SHG has more than one
           // meeting on record.
-          final upcomingMeetings = meetings.where((m) => m.status == 'upcoming' && !m.hasPassed).toList()..sort((a, b) => a.date.compareTo(b.date));
-          _selected ??= upcomingMeetings.isNotEmpty ? upcomingMeetings.first : meetings.first;
+          final upcomingMeetings = selectableMeetings.where((m) => m.status == 'upcoming' && !m.hasPassed).toList()..sort((a, b) => a.date.compareTo(b.date));
+          // If the previously-selected meeting is no longer selectable (e.g.
+          // it was the one just cancelled), fall back to the default below
+          // instead of leaving `_selected` pointing at a meeting that is no
+          // longer among `selectableMeetings`' items (which would otherwise
+          // desync `DropdownButton`'s `value` from its own `items`).
+          if (_selected != null && !selectableMeetings.any((m) => m.id == _selected!.id)) {
+            _selected = null;
+          }
+          _selected ??= upcomingMeetings.isNotEmpty ? upcomingMeetings.first : selectableMeetings.first;
           final meeting = _selected!;
 
           return Column(
@@ -76,7 +100,7 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                       DropdownButton<Meeting>(
                         value: meeting,
                         underline: const SizedBox(),
-                        items: meetings
+                        items: selectableMeetings
                             .map((m) => DropdownMenuItem(value: m, child: Text(DateFormat('dd MMM').format(m.date), style: AppTheme.sans(12, weight: FontWeight.w600))))
                             .toList(),
                         onChanged: (m) => setState(() => _selected = m),
@@ -91,7 +115,7 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                   future: () => _repo.fetchAttendance(meeting.id, shgId),
                   builder: (context, roster) {
                     if (roster.isEmpty) {
-                      return const AppEmptyState(icon: Icons.groups_rounded, message: 'No members to mark attendance for');
+                      return AppEmptyState(icon: Icons.groups_rounded, message: l10n.meetingAttendanceNoMembers);
                     }
                     final presentCount = roster.where((r) => r.present).length;
                     return Column(
@@ -100,7 +124,7 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Align(
                             alignment: Alignment.centerLeft,
-                            child: Text('$presentCount / ${roster.length} present', style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
+                            child: Text(l10n.meetingAttendancePresentCount(presentCount, roster.length), style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -135,7 +159,7 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                                                   });
                                                 } catch (_) {
                                                   if (context.mounted) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update attendance. Please try again.')));
+                                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.meetingAttendanceUpdateError)));
                                                   }
                                                 } finally {
                                                   if (context.mounted) setState(() => _updating.remove(row.memberId));

@@ -4,6 +4,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/ai_advisor.dart';
 import '../../repositories/ai_advisor_repository.dart';
+import '../../services/ai_advisor_service.dart' show AiAdvisorRequestException;
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -23,11 +24,17 @@ class AiAdvisorChatPage extends StatefulWidget {
   final String advisorType;
   final String title;
   final String hint;
+  // Production call sites never pass this — it exists so tests can inject a
+  // repository backed by a fake AiAdvisorService that throws a specific
+  // error shape, to verify each distinguishable failure renders its own
+  // message (see test/pages/ai_advisor_chat_error_messages_test.dart).
+  final AiAdvisorRepository? repository;
   const AiAdvisorChatPage({
     super.key,
     required this.advisorType,
     required this.title,
     required this.hint,
+    this.repository,
   });
 
   @override
@@ -35,12 +42,18 @@ class AiAdvisorChatPage extends StatefulWidget {
 }
 
 class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
-  final _repo = AiAdvisorRepository();
+  late final AiAdvisorRepository _repo;
   final _query = TextEditingController();
   final _scroll = ScrollController();
   final List<_ChatEntry> _entries = [];
   bool _loaded = false;
   bool _asking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _repo = widget.repository ?? AiAdvisorRepository();
+  }
 
   @override
   void dispose() {
@@ -101,23 +114,49 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
       _scrollToEnd();
     } catch (e) {
       if (!mounted) return;
-      // Same isNetworkError-branched, localized message the rest of the app
-      // uses (AppAsyncBuilder, otp_page.dart) instead of one hardcoded
-      // English string regardless of cause — a dropped connection and a
-      // genuine advisor-service failure (rate limit, malformed response)
-      // are different problems and shouldn't look identical to the member.
       final l10n = AppLocalizations.of(context);
-      final message = isNetworkError(e)
-          ? (l10n?.asyncErrorNetwork ??
-                'Check your internet connection and try again.')
-          : (l10n?.asyncErrorGeneric ??
-                'Something went wrong. Please try again.');
+      final message = _errorMessageFor(e, l10n);
       setState(() {
         _entries.add(_ChatEntry(mine: false, text: message));
         _asking = false;
       });
       _scrollToEnd();
     }
+  }
+
+  // Threads the ai-advisor-proxy Edge Function's actual, distinguishable
+  // failure reason through to the member instead of flattening every
+  // rejection into one of two generic messages (docs/AI_MODULES.md §2.2 /
+  // §6's previously-disclosed gap). The function already crafts a specific,
+  // member-safe message per case (see AiAdvisorRequestException's doc
+  // comment and supabase/functions/ai-advisor-proxy/index.ts +
+  // moderation.ts) — most importantly the content-moderation pre-filter's
+  // supportive, safety-oriented self-harm rejection text, which must reach
+  // the member verbatim rather than as "something went wrong".
+  String _errorMessageFor(Object error, AppLocalizations? l10n) {
+    if (error is AiAdvisorRequestException) {
+      // 400 (validation/moderation pre-filter) and 429 (rate limit): the
+      // server's own `reason` is already written to be shown to the member
+      // as-is — show it verbatim.
+      if (error.statusCode == 400 || error.statusCode == 429) {
+        return error.reason;
+      }
+      // 401/500/502: an upstream/auth/provider failure that's the
+      // service's fault, not the member's. Some of those raw reasons (e.g.
+      // "Internal error") aren't written for end users, so this bucket
+      // gets one shared, honest message instead of the raw reason.
+      return l10n?.aiAdvisorUpstreamUnavailable ?? 'The advisor service is temporarily unavailable right now. Please try again in a moment.';
+    }
+    // Same isNetworkError-branched, localized message the rest of the app
+    // uses (AppAsyncBuilder, otp_page.dart) instead of one hardcoded
+    // English string regardless of cause — a dropped connection and a
+    // genuinely unclassifiable failure are different problems and
+    // shouldn't look identical to the member.
+    return isNetworkError(error)
+        ? (l10n?.asyncErrorNetwork ??
+              'Check your internet connection and try again.')
+        : (l10n?.asyncErrorGeneric ??
+              'Something went wrong. Please try again.');
   }
 
   @override

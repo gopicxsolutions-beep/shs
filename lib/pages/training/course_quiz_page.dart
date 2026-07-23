@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/training.dart';
 import '../../repositories/training_repository.dart';
@@ -13,17 +14,24 @@ import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 
-class _Question {
-  final String text;
-  final List<String> options;
-  final int correctIndex;
-  const _Question(this.text, this.options, this.correctIndex);
+class _QuizData {
+  final Course course;
+  final List<QuizQuestion> questions;
+  const _QuizData(this.course, this.questions);
 }
 
-/// A small generic quiz (not tied to specific course content — there's no
-/// quiz-content table in the schema yet). Passing ≥2/3 marks the course
-/// certified. This is a deliberate placeholder, not a real course-specific
-/// assessment engine — see docs/DEVELOPMENT_PROGRESS.md.
+/// The number of correct answers required to pass a quiz of [total]
+/// questions. Proportional to the original fixed 3-question quiz's ≥2/3
+/// threshold (now that real per-course content means the question count
+/// varies course to course) — rounded UP so a longer quiz never becomes
+/// easier to pass than the original 2-out-of-3 bar.
+int requiredScoreToPass(int total) => (total * 2 / 3).ceil();
+
+/// Real, per-course quiz content fetched from `public.quiz_questions`
+/// (`TrainingRepository.fetchQuizQuestions`) in live mode, or
+/// `lib/data/training.dart`'s `quizQuestions` map in demo mode — no longer
+/// the one generic hardcoded question set shared by every course. Passing
+/// ≥[requiredScoreToPass] of the course's own questions marks it certified.
 class CourseQuizPage extends StatefulWidget {
   final String courseId;
   const CourseQuizPage({super.key, required this.courseId});
@@ -33,20 +41,15 @@ class CourseQuizPage extends StatefulWidget {
 
 class _CourseQuizPageState extends State<CourseQuizPage> {
   final _repo = TrainingRepository();
-  final List<int?> _answers = [null, null, null];
+  List<int?> _answers = [];
   bool _submitting = false;
 
-  static const _questions = [
-    _Question('Why is it important to save regularly in an SHG?', ['It builds a financial cushion for the group', 'It has no real benefit', 'It is only for the leader'], 0),
-    _Question('What should you do before taking a loan?', ['Understand the repayment terms and EMI', 'Ignore the interest rate', 'Borrow as much as possible'], 0),
-    _Question('Who benefits from accurate meeting records?', ['The whole SHG, for transparency', 'No one', 'Only the CRP'], 0),
-  ];
-
-  Future<void> _submit() async {
-    final score = List.generate(_questions.length, (i) => _answers[i] == _questions[i].correctIndex ? 1 : 0).reduce((a, b) => a + b);
-    final passed = score >= 2;
+  Future<void> _submit(List<QuizQuestion> questions) async {
+    final score = List.generate(questions.length, (i) => _answers[i] == questions[i].correctIndex ? 1 : 0).reduce((a, b) => a + b);
+    final required = requiredScoreToPass(questions.length);
+    final passed = score >= required;
     if (!passed) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('You scored $score/${_questions.length}. Try again to pass.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.courseQuizScoreResult(score, questions.length))));
       return;
     }
     setState(() => _submitting = true);
@@ -58,14 +61,15 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
         // before navigating drops the SnackBar, since context.go() replaces
         // this page's Scaffold before it ever gets a frame to render.
         final messenger = ScaffoldMessenger.of(context);
+        final l10n = AppLocalizations.of(context)!;
         context.go(Paths.trainingDetail(widget.courseId));
         messenger.showSnackBar(
-          SnackBar(content: Text(SupabaseService.isConfigured ? 'Passed! Certificate earned.' : 'Passed! Demo mode — certificate not saved (connect Supabase to persist)')),
+          SnackBar(content: Text(SupabaseService.isConfigured ? l10n.courseQuizPassed : l10n.courseQuizPassedDemoMode)),
         );
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not save your certificate. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.courseQuizSaveError)));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -74,54 +78,71 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: const PageHeader(title: 'Course Quiz'),
+      appBar: PageHeader(title: l10n.courseQuizTitle),
       // Unlike CourseDetailPage (the only in-app link to this page, which
       // guards on fetchCourseById returning null), a direct URL visit (e.g.
       // #/app/training/does-not-exist/quiz) skipped that check entirely —
-      // the quiz content here is generic/hardcoded (not fetched per-course,
-      // see the class doc comment above), so a bogus courseId still
-      // rendered a fully-answerable quiz with a working "Submit" button
-      // before failing (or, in demo mode, silently "succeeding") on a
-      // course that doesn't exist. Guarding on the course's own existence
-      // first, mirroring every other :id detail page's AppEmptyState
-      // pattern.
-      body: AppAsyncBuilder<Course?>(
-        future: () => _repo.fetchCourseById(widget.courseId),
-        builder: (context, course) {
-          if (course == null) {
-            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This course could not be found');
+      // guard on the course's own existence first, mirroring every other
+      // :id detail page's AppEmptyState pattern, before ever fetching quiz
+      // content for a course that doesn't exist.
+      body: AppAsyncBuilder<_QuizData?>(
+        future: () async {
+          final course = await _repo.fetchCourseById(widget.courseId);
+          if (course == null) return null;
+          final questions = await _repo.fetchQuizQuestions(widget.courseId);
+          return _QuizData(course, questions);
+        },
+        builder: (context, data) {
+          if (data == null) {
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.courseQuizNotFound);
           }
-          return _buildQuiz(context);
+          if (data.questions.isEmpty) {
+            // A real (not-yet-authored) course whose staff/admin hasn't
+            // added quiz questions yet — every demo course ships with a
+            // seeded set, so this is a live-mode-only edge case.
+            return AppEmptyState(icon: Icons.quiz_outlined, message: l10n.courseQuizNoQuizAvailable);
+          }
+          // Lazily size _answers to this course's actual question count the
+          // first time data resolves. Guarded on a length mismatch (rather
+          // than unconditionally reassigning) so this doesn't wipe the
+          // learner's in-progress answers on every rebuild this State
+          // triggers (e.g. each radio-button tap calls setState here).
+          if (_answers.length != data.questions.length) {
+            _answers = List<int?>.filled(data.questions.length, null);
+          }
+          return _buildQuiz(context, data.questions);
         },
       ),
     );
   }
 
-  Widget _buildQuiz(BuildContext context) {
+  Widget _buildQuiz(BuildContext context, List<QuizQuestion> questions) {
+    final l10n = AppLocalizations.of(context)!;
     final allAnswered = _answers.every((a) => a != null);
     return ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          for (var qi = 0; qi < _questions.length; qi++) ...[
+          for (var qi = 0; qi < questions.length; qi++) ...[
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${qi + 1}. ${_questions[qi].text}', style: AppTheme.sans(13, weight: FontWeight.w700)),
+                  Text('${qi + 1}. ${questions[qi].question}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                   const SizedBox(height: 8),
                   RadioGroup<int>(
                     groupValue: _answers[qi],
                     onChanged: (v) => setState(() => _answers[qi] = v),
                     child: Column(
                       children: [
-                        for (var oi = 0; oi < _questions[qi].options.length; oi++)
+                        for (var oi = 0; oi < questions[qi].options.length; oi++)
                           RadioListTile<int>(
                             contentPadding: EdgeInsets.zero,
                             dense: true,
                             value: oi,
                             activeColor: Brand.c600,
-                            title: Text(_questions[qi].options[oi], style: AppTheme.sans(12)),
+                            title: Text(questions[qi].options[oi], style: AppTheme.sans(12)),
                           ),
                       ],
                     ),
@@ -132,10 +153,10 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
             const SizedBox(height: 12),
           ],
           AppButton(
-            label: _submitting ? 'Submitting…' : 'Submit Quiz',
+            label: _submitting ? l10n.courseQuizSubmitting : l10n.courseQuizSubmitButton,
             fullWidth: true,
             size: ButtonSize.lg,
-            onPressed: allAnswered && !_submitting ? _submit : null,
+            onPressed: allAnswered && !_submitting ? () => _submit(questions) : null,
           ),
         ],
       );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
+import '../../models/paged_result.dart';
 import '../../models/profile.dart';
 import '../../models/types.dart';
 import '../../repositories/admin_repository.dart';
@@ -31,9 +32,45 @@ class AdminUsersPage extends StatefulWidget {
 
 class _AdminUsersPageState extends State<AdminUsersPage> {
   final _repo = AdminRepository();
-  final GlobalKey<AppAsyncBuilderState<List<Profile>>> _key = GlobalKey();
+  final GlobalKey<AppAsyncBuilderState<PagedResult<Profile>>> _key = GlobalKey();
   String? _changingRoleFor;
   String? _assigningShgFor;
+
+  // Local, appendable copy of the loaded pages — kept separate from the
+  // AppAsyncBuilder's own snapshot data (which only ever holds the single
+  // most-recently-*fetched* page) so a "Load more" tap can append to what's
+  // already on screen instead of the next rebuild discarding it. Reset by
+  // `_loadFirstPage` whenever the whole list reloads (e.g. after a role
+  // change), which is the same "start over" semantics `reload()` already has
+  // everywhere else in this app.
+  List<Profile> _users = [];
+  bool _hasMore = false;
+  bool _loadingMore = false;
+
+  Future<PagedResult<Profile>> _loadFirstPage() async {
+    final page = await _repo.fetchAllUsers();
+    _users = page.items;
+    _hasMore = page.hasMore;
+    return page;
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore || _users.isEmpty) return;
+    setState(() => _loadingMore = true);
+    try {
+      final page = await _repo.fetchAllUsers(afterName: _users.last.name);
+      setState(() {
+        _users = [..._users, ...page.items];
+        _hasMore = page.hasMore;
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not load more users. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
 
   Future<void> _changeRole(Profile user) async {
     final selected = await showDialog<Role>(
@@ -143,18 +180,33 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
 
     return Scaffold(
       appBar: const PageHeader(title: 'Manage Users'),
-      body: AppAsyncBuilder<List<Profile>>(
+      body: AppAsyncBuilder<PagedResult<Profile>>(
         key: _key,
-        future: _repo.fetchAllUsers,
-        builder: (context, users) {
-          if (users.isEmpty) {
+        future: _loadFirstPage,
+        // Renders `_users`/`_hasMore` (this State's own appendable copy),
+        // not the `data` snapshot directly — see their doc comment above:
+        // `data` only ever reflects the single page this exact future
+        // resolved to, so re-rendering straight from it would silently
+        // drop anything a prior "Load more" tap had already appended.
+        builder: (context, data) {
+          if (_users.isEmpty) {
             return const AppEmptyState(icon: Icons.people_rounded, message: 'No users found');
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: users.length,
+            itemCount: _users.length + (_hasMore ? 1 : 0),
             itemBuilder: (context, i) {
-              final u = users[i];
+              if (i == _users.length) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Center(
+                    child: _loadingMore
+                        ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                        : TextButton(onPressed: _loadMore, child: const Text('Load more')),
+                  ),
+                );
+              }
+              final u = _users[i];
               final busy = _changingRoleFor == u.id;
               final assigningShg = _assigningShgFor == u.id;
               return Padding(

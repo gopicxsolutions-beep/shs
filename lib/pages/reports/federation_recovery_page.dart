@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/analytics.dart';
 import '../../repositories/analytics_repository.dart';
@@ -13,10 +14,11 @@ class FederationRecoveryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final repo = AnalyticsRepository();
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Loan Recovery'),
+      appBar: PageHeader(title: l10n.federationRecoveryTitle),
       body: AppAsyncBuilder<PlatformKpis>(
         future: repo.fetchPlatformKpis,
         builder: (context, k) {
@@ -24,9 +26,9 @@ class FederationRecoveryPage extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               Row(children: [
-                Expanded(child: StatCard(label: 'Loans Disbursed', value: '₹${(k.loansDisbursed / 100000).toStringAsFixed(1)}L', tone: StatTone.brand, icon: Icons.account_balance_rounded)),
+                Expanded(child: StatCard(label: l10n.federationRecoveryLoansDisbursed, value: '₹${(k.loansDisbursed / 100000).toStringAsFixed(1)}L', tone: StatTone.brand, icon: Icons.account_balance_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Recovery Rate', value: '${k.recoveryRatePct.toStringAsFixed(1)}%', tone: StatTone.gold, icon: Icons.trending_up_rounded)),
+                Expanded(child: StatCard(label: l10n.federationRecoveryRateLabel, value: '${k.recoveryRatePct.toStringAsFixed(1)}%', tone: StatTone.gold, icon: Icons.trending_up_rounded)),
               ]),
               const SizedBox(height: 16),
               AppCard(
@@ -34,7 +36,7 @@ class FederationRecoveryPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Flexible(child: Text('Recovered', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700))),
+                      Flexible(child: Text(l10n.federationRecoveryRecoveredLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700))),
                       const SizedBox(width: 8),
                       Flexible(child: Text('${k.recoveryRatePct.toStringAsFixed(1)}%', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600))),
                     ]),
@@ -44,7 +46,7 @@ class FederationRecoveryPage extends StatelessWidget {
                       child: LinearProgressIndicator(value: (k.recoveryRatePct / 100).clamp(0.0, 1.0), minHeight: 8, backgroundColor: Neutral.c100, color: Brand.c500),
                     ),
                     const SizedBox(height: 6),
-                    Text('Across active, overdue & closed loans in every SHG', style: AppTheme.sans(11, color: Neutral.c500)),
+                    Text(l10n.federationRecoveryFootnote, style: AppTheme.sans(11, color: Neutral.c500)),
                   ],
                 ),
               ),

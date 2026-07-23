@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shg_saathi/l10n/gen/app_localizations.dart';
 import 'package:shg_saathi/pages/support/support_voice_page.dart';
 import 'package:shg_saathi/services/voice_support_service.dart';
 
@@ -20,7 +22,7 @@ class _ThrowingVoiceService implements VoiceSupportService {
 /// friendly error message instead of hanging.
 void main() {
   testWidgets('a transcription failure resets the mic control instead of leaving it stuck', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: SupportVoicePage(service: _ThrowingVoiceService())));
+    await tester.pumpWidget(MaterialApp(home: SupportVoicePage(service: _ThrowingVoiceService()), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales, ));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.mic_rounded));

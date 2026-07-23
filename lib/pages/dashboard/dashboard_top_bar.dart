@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/types.dart';
 import '../../repositories/announcement_repository.dart';
 import '../../routes/paths.dart';
@@ -36,6 +37,7 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
     final user = context.watch<AppState>().user;
     final roleInfo = roleInfoFor(user.role);
     final unread = _unread;
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 64),
       decoration: const BoxDecoration(
@@ -78,7 +80,7 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text('Namaste, ${user.name.split(' ').first} 🙏', style: AppTheme.display(18, color: Colors.white)),
+                Text(l10n.dashboardTopBarGreeting(user.name.split(' ').first), style: AppTheme.display(18, color: Colors.white)),
                 if (user.shgName.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(user.shgName, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.7))),
@@ -89,7 +91,7 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
           Row(
             children: [
               Tooltip(
-                message: unread > 0 ? '$unread unread announcements' : 'Announcements',
+                message: unread > 0 ? l10n.dashboardTopBarUnreadAnnouncementsTooltip(unread) : l10n.dashboardTopBarAnnouncementsTooltip,
                 child: InkWell(
                   onTap: () => context.go(Paths.announcements),
                   borderRadius: BorderRadius.circular(999),
@@ -109,7 +111,7 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
               ),
               const SizedBox(width: 10),
               Tooltip(
-                message: 'Profile',
+                message: l10n.profileTitle,
                 child: InkWell(
                   onTap: () => context.go(Paths.profile),
                   child: AppAvatar(name: user.name, size: 40, ringColor: Colors.white.withValues(alpha: 0.4)),

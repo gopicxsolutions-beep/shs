@@ -43,11 +43,12 @@ Edge Functions).
 
 **Explicitly out of scope / not yet real** (see each module section and
 [ARCHITECTURE.md](ARCHITECTURE.md) §7 for the full list): real bank/UPI
-settlement, real government scheme e-filing, real infrastructure monitoring,
-real speech-to-text/text-to-speech, and real file/document upload. Each of
-these has a working UI/workflow with a mocked or metadata-only backend,
-architected so the real integration is a bounded, one-file swap when
-commissioned.
+settlement, real government scheme e-filing, and real infrastructure
+monitoring. Each of these has a working UI/workflow with a mocked or
+metadata-only backend, architected so the real integration is a bounded,
+one-file swap when commissioned. Speech-to-text/text-to-speech and file/
+document upload were in this same category but are now real — on-device STT/
+TTS (no vendor key needed) and Supabase Storage-backed uploads respectively.
 
 ### 1.3 Definitions and Acronyms
 
@@ -211,11 +212,18 @@ Role Select/RLS already control.
   SHGs and this dashboard renders eagerly).
 - **CLF**: village-wide KPIs, a village-wise SHG bar chart, and
   financial-oversight mini-cards (loans disbursed, recovery rate).
-- **Admin**: real total-SHG/active-member counts, but **the system-uptime
-  figure, training-completion percentage, pending-verification count, and
-  recent-activity feed are hardcoded placeholders with no backing query** —
-  there is no KYC-review or system-activity-log concept anywhere in the
-  schema. This must not be presented as live data.
+- **Admin**: real total-SHG/active-member counts, plus a genuinely computed
+  training-completion percentage (from real course-progress rows), a real
+  pending-review count (from scheme applications actually awaiting review —
+  the same queue Manage Schemes/Applications acts on, hidden entirely at
+  zero rather than shown as "0 pending"), and a recent-activity feed
+  assembled from real, recently-created profile/SHG/document rows across the
+  platform — replacing the old hardcoded numbers and static 3-row feed that
+  had no backing query at all. **Only the system-uptime figure remains a
+  placeholder** (true uptime/latency/error-rate needs a real external
+  infrastructure-monitoring service this app doesn't have), and it is now
+  honestly labeled "Not live-monitored" in the UI rather than implying it's
+  real telemetry.
 
 | ID | Requirement | Roles |
 |---|---|---|
@@ -223,7 +231,7 @@ Role Select/RLS already control.
 | FR-DASH-2 | Leader dashboard: group financials, defaulter alert, pending approvals, SHG health | Leader |
 | FR-DASH-3 | CRP dashboard: monitored-SHG list with health/grade, training catalog preview | CRP |
 | FR-DASH-4 | CLF dashboard: village-wide KPIs and financial oversight | CLF |
-| FR-DASH-5 | Admin dashboard: platform KPIs and quick links; uptime/training-completion/activity-feed figures are disclosed placeholders, not live metrics | Admin |
+| FR-DASH-5 | Admin dashboard: platform KPIs and quick links; training-completion/pending-review/recent-activity are now genuinely computed; only system uptime remains a disclosed placeholder | Admin |
 
 ### 3.3 Savings (`savings/`)
 
@@ -343,13 +351,18 @@ omission).
 ### 3.6 Meetings (`meetings/`)
 
 **How it works.** A leader schedules a meeting (date, time, required venue,
-optional agenda). **A meeting's `status` column never advances past
-`'upcoming'` in current code** — the repository method that would flip it to
-`'completed'` exists but has zero call sites anywhere in the app. Every
-screen that needs to know "has this meeting happened" therefore derives it
-from date math (`meeting_date` vs. today) instead of trusting `status` — this
-is a deliberate, documented workaround for a real, previously-diagnosed bug
-family, not an oversight in this SRS.
+optional agenda). A leader/staff can now genuinely **cancel** a scheduled
+meeting (a confirm dialog on the detail page calls
+`MeetingRepository.setStatus(id, 'cancelled')`) — this was previously dead
+code with zero call sites anywhere in the app, so `status` could never
+actually change. `status` still never advances to `'completed'` on its own:
+"has this meeting happened" is derived from date math (`meeting_date` vs.
+today) everywhere it's used, **except** that a cancelled meeting is now
+correctly excluded from every completed-meeting/attendance-percentage
+calculation regardless of its date — a meeting a leader cancelled no longer
+silently counts as a "completed meeting with 0% attendance" and drags down
+the SHG's real stats, which it did before this fix (since nothing could ever
+mark a meeting cancelled).
 
 Check-in has two entry points — "Scan QR" and "Check In Without Scanning" —
 that both call the **identical** attendance-marking logic. Scanning a QR code
@@ -367,7 +380,12 @@ Leader-side attendance marking is a per-row toggle switch with no separate
 append-only: each "add decision" writes a brand-new row containing the entire
 updated decision list, and the page always displays only the latest row.
 Action items have per-item ownership: only the item's owner, the SHG leader,
-or staff can toggle it done.
+or staff can toggle it done — a leader/staff now genuinely **assigns** an
+action item to a specific SHG member via a roster picker when creating it
+(previously `ownerId` was always written as null with no UI to set it, so a
+plain member could never satisfy the "I'm the owner" branch and only
+leader/staff could ever toggle any item, regardless of who it was actually
+for).
 
 **Enforcement**: leader/staff can schedule and mark attendance; deletion of
 meeting records is staff-only (hardened specifically because a leader could
@@ -379,8 +397,8 @@ every member's attendance record via foreign-key cascade).
 | FR-MTG-1 | Leader schedules a meeting (date/time/venue/agenda) | Leader |
 | FR-MTG-2 | Any member self-checks-in (via QR gesture or a plain button — functionally identical) for whichever meeting is scheduled *today* | Member |
 | FR-MTG-3 | Leader marks/edits the attendance roster via per-row toggle | Leader |
-| FR-MTG-4 | "Has this meeting happened" is derived from date, not from `status`, everywhere it's used — `status` reaching `'completed'` is not implemented in current code | System |
-| FR-MTG-5 | Leader/owner records Minutes of Meeting (append-only decisions) and action items (per-owner toggle) | Leader |
+| FR-MTG-4 | "Has this meeting happened" is derived from date, not from `status` — `status` reaching `'completed'` is still not implemented — but a leader/staff can genuinely cancel a meeting, and a cancelled meeting is correctly excluded from every completed/attendance stat regardless of date | Leader, staff |
+| FR-MTG-5 | Leader/owner records Minutes of Meeting (append-only decisions) and action items, assignable to a specific SHG member via a roster picker, with per-owner toggle | Leader |
 | FR-MTG-6 | Meeting record deletion is staff-only, to protect minutes/attendance from cascade-loss | System |
 
 ### 3.7 Livelihoods (`livelihood/`)
@@ -407,7 +425,13 @@ no history of intermediate updates retained.
 **How it works.** This module is explicitly **cross-SHG** — any member can
 list a product and any other member across the whole platform can browse and
 buy it. Listing sets a price (capped at ₹1,000,000, same fat-finger guard
-pattern as other money fields) and a stock count. Placing an order calls an
+pattern as other money fields), a stock count, and an **optional photo** —
+picked via `file_picker` (5 MB cap, JPEG/PNG/WEBP) and uploaded to the public
+`product-images` Storage bucket under the seller's own folder; the resulting
+public URL is stored on the product row and shown on both the catalog grid
+and the product detail page, falling back to the original storefront-icon
+placeholder for products with no photo (including every product listed
+before this feature shipped). Placing an order calls an
 atomic RPC (`decrement_product_stock`) that decrements stock in a single
 guarded statement (`stock - 1 where stock > 0`) — this closes a real,
 previously-live bug where a buyer's own client-side stock decrement was
@@ -456,17 +480,22 @@ constraint on `(scheme_id, member_id)`; there is no application-withdrawal
 feature — an application, once filed, is a permanent record (no DELETE
 policy exists for it at all).
 
-**The Eligibility Checker is a client-side keyword-matching heuristic, not a
-real eligibility engine** — this must not be presented to a member as
-authoritative. It asks 4 fixed yes/no questions (all defaulted to "yes"),
-each mapped to a short list of lowercase substrings (e.g. "6+ months"/"6
-month" for the SHG-tenure question). A scheme is marked ineligible only if
-one of its free-text eligibility criteria *textually contains* one of those
-substrings *and* the user answered the matching question "no" — any criterion
-that doesn't happen to contain one of roughly 7 specific substrings can never
-disqualify a scheme, and a substring match can misfire on unrelated or even
-inverted phrasing. The result is a same-session, no-server-round-trip filter
-useful as a rough first pass, not a determination a member should rely on.
+**The Eligibility Checker is now a real structured rules engine, not a
+keyword heuristic.** `EligibilityCriteria`/`evaluateSchemeEligibility()`
+(`lib/models/scheme.dart`) evaluates a scheme's structured
+`requiresShgMembership`/`minShgAgeMonths`/`minShgGrade` criteria (stored in
+`schemes.eligibility_criteria`, a JSONB column, migration `0040`) against the
+member's *actual* SHG membership/registration age/grade, and shows an
+itemized ✓/✗ result per criterion with a plain-language reason ("✓ SHG
+registered 18+ months (requires 12+)", "✗ Requires SHG grade B or above —
+yours is graded C"). This is deliberately scoped to the only structured
+member/SHG facts this app's data model actually carries — there is no
+income, gender, caste/category, age, or occupation field anywhere in
+`profiles`, so no criteria were invented for those; a scheme's existing
+free-text eligibility list is still shown for requirements that genuinely
+need manual/documentary verification. This is a real evaluation over real
+stored facts, not a connection to any government eligibility API (none
+exists or is reachable from this project).
 
 Staff review pending applications from a shared, platform-wide queue (not
 scoped to their own SHG); Approve/Reject goes through an atomic RPC
@@ -477,7 +506,7 @@ guard pattern used for loan approval.
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-SCH-1 | Any user browses the scheme catalog and scheme detail | All |
-| FR-SCH-2 | Eligibility checker gives a client-side keyword-heuristic estimate — **not an authoritative eligibility determination** | All |
+| FR-SCH-2 | Eligibility checker evaluates real structured SHG-membership/age/grade criteria and shows an itemized ✓/✗ result — still not a government e-filing determination, and criteria needing income/gender/caste/occupation data remain manual-verification-only | All |
 | FR-SCH-3 | Member applies to a scheme (self-service only) before its deadline; tracks application status; no withdrawal path exists | Member |
 | FR-SCH-4 | Staff review and decide pending applications from a shared platform-wide queue, with an already-decided race guard | CRP, CLF, Admin |
 | FR-SCH-5 | Admin manages the scheme catalog (create/edit/delete) | Admin |
@@ -492,20 +521,29 @@ video-watched percentage, no scroll tracking); two taps takes any course from
 is granted only by passing a quiz, reachable at any time regardless of
 displayed progress.
 
-**The quiz is a generic, fixed 3-question placeholder, identical for every
-course regardless of topic or format** — this must not be presented as
-course-specific assessment. The 3 questions are hardcoded (general SHG
-savings/loan/meeting-record knowledge, not tied to any course's actual
-content); passing requires ≥2 of 3 correct, with no attempt limit or cooldown
-on retrying. Passing upserts `certified:true` and a completion date — this is
-the *only* path to certification; reaching 100% progress via the Continue
-button does not by itself certify a course.
+**The quiz now has real, per-course content**, backed by a new
+`quiz_questions` table (migration `0041`: course-scoped question/options/
+correct-index rows, RLS mirroring `training_courses` — any authenticated
+user reads, only staff/admin authors). Each demo course was seeded with a
+genuine, on-topic starting set of questions (household budgeting, EMI/
+interest mechanics, micro-enterprise basics, UPI/QR payment safety, etc. —
+written from that course's own real title/topic, not generic filler) —
+replacing the old single fixed 3-question set shared by every course
+regardless of topic. Passing requires a proportional ≥2/3 correct (a
+generalization of the old fixed rule to a variable question count per
+course), with no attempt limit or cooldown on retrying. Passing upserts
+`certified:true` and a completion date — this is the *only* path to
+certification; reaching 100% progress via the Continue button does not by
+itself certify a course. This seeded content is a genuine starting set, not
+a transcription of any real curriculum — a subject-matter expert should
+review/extend it before this is treated as the app owner's final course
+material.
 
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-TRN-1 | Any user browses the course catalog and course detail | All |
 | FR-TRN-2 | Progress advances via a flat increment per "Continue" tap — not real content-consumption tracking | All |
-| FR-TRN-3 | A fixed, generic 3-question quiz (identical across all courses) is the sole path to certification, pass threshold ≥2/3, unlimited retries | All |
+| FR-TRN-3 | A real per-course quiz (`quiz_questions` table) is the sole path to certification, proportional ≥2/3 pass threshold, unlimited retries | All |
 | FR-TRN-4 | A certificate/completion date is issued on quiz pass | All |
 | FR-TRN-5 | Staff/CRP view training completion at an aggregate level | CRP, CLF, Admin |
 
@@ -633,25 +671,32 @@ there is no re-decision path; a member must file a fresh request (with any
 prior pending request from her automatically superseded/deleted to satisfy a
 one-pending-per-member constraint).
 
-The Documents screen stores **metadata only** — name and type, with an unused
-`storagePath` field — no actual file upload is wired (no Storage bucket, no
-file-picker integration). This is a disclosed placeholder, not a finished
-feature. Both this write path and the write path to Bank Details visibility
-are genuinely leader/staff-gated at the RLS layer, unlike the read-visibility
-gap noted above.
+The Documents screen wires a real upload: "Add document" requires picking a
+PDF/JPEG/PNG/WEBP file (`file_picker`, 10 MB cap) alongside the name, uploads
+it to the `shg-documents` Storage bucket under the SHG's own folder, and
+persists the resulting `storagePath` (plus a human-readable size) on the
+`shg_documents` row. The list's download icon requests a short-lived signed
+URL (the bucket is private) and opens it — pre-existing metadata-only rows
+from before this feature (or demo-mode's mock records) correctly show "No
+file is attached to this record" instead of attempting to open nothing. Both
+this write path and the write path to Bank Details visibility are genuinely
+leader/staff-gated at the RLS layer, unlike the read-visibility gap noted
+above.
 
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-SHG-1 | Any user searches/browses SHGs via a safe public directory view (bank fields never exposed through it) | All |
 | FR-SHG-2 | Leader views the member roster and per-member detail | Leader |
 | FR-SHG-3 | Leader (or staff, via the same RPC) approves/rejects join requests; a rejected request cannot be re-decided | Leader, staff |
-| FR-SHG-4 | Document repository stores metadata only — **no real file upload is wired** | Leader, staff |
+| FR-SHG-4 | Document repository requires and uploads a real file (PDF/JPEG/PNG/WEBP, 10 MB cap) to Supabase Storage; downloads via a short-lived signed URL | Leader, staff |
 | FR-SHG-5 | Bank account/IFSC are hidden from members in the UI, but not independently RLS-restricted from them at the table level — flagged for a deliberate decision, not currently a database-enforced boundary | — |
 
 ### 3.17 Admin Console (`admin/`)
 
-**How it works.** Manage Users lists all profiles (capped at 500, no
-pagination past that) and lets an admin change a user's role through a
+**How it works.** Manage Users lists all profiles via real keyset pagination
+(a "Load more" control fetches the next page by cursor rather than the old
+flat `LIMIT 500` with an unreachable alphabetical tail) and lets an admin
+change a user's role through a
 two-step confirmation dialog (deliberately two steps, since a role change can
 grant or revoke admin authority) or assign an SHG to a staff account that has
 none (staff signups have no join-request path, so without this screen they'd
@@ -709,12 +754,13 @@ avoid the two documents drifting out of sync.
 |---|---|---|
 | Supabase Auth | Phone/OTP authentication | Real |
 | Supabase Postgres/PostgREST | All CRUD, gated by RLS | Real |
-| Supabase Storage | Document/avatar storage | **Not wired** — `shg_documents` stores metadata only |
+| Supabase Storage | Document/product-image storage | Real — `shg-documents` (private)/`product-images` (public) buckets, real `file_picker` upload UI |
 | Groq LLM API | AI Advisor chat completions | Real, see [AI_MODULES.md](AI_MODULES.md) |
-| Device speech (STT/TTS) | Voice Assistant, Voice Support | **Fully mocked** — no platform speech API or permission wired |
+| Device speech (STT/TTS) | Voice Assistant, Voice Support | Real — on-device `speech_to_text`/`flutter_tts`, no vendor key; see [AI_MODULES.md](AI_MODULES.md) §3 |
 | Payment gateway | Real money movement | **Mocked** — `MockPaymentProcessor` always succeeds; `payment-webhook-handler` Edge Function exists as the integration point for a real gateway |
 | Device camera | QR scanning (meeting check-in, pay) | Real (`mobile_scanner`) |
 | Device SMS | OTP delivery | Real (Supabase Auth phone provider) |
+| Device local notifications | Meeting/loan-due/announcement reminders (Settings toggles) | Real, **local-only** — `flutter_local_notifications`, no push/remote backend (would need a Firebase/APNs project this app doesn't have); cannot be click-tested in a web browser preview, only via a real device/emulator |
 
 Convention: any new third-party API gets an interface in `lib/services/` with
 a `Mock*` implementation, so swapping the real provider later is a one-file

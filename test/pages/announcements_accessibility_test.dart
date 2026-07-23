@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shg_saathi/pages/announcements/announcements_home_page.dart';
 import 'package:shg_saathi/services/supabase_service.dart';
 import 'package:shg_saathi/state/app_state.dart';
@@ -11,6 +12,13 @@ import 'package:shg_saathi/state/app_state.dart';
 void main() {
   setUp(() {
     SupabaseService.isConfigured = false;
+    // AnnouncementsHomePage now opportunistically checks
+    // `announcementNotificationsEnabled()`/`notifyNewAnnouncements` on load
+    // (see notification_service.dart) — both touch SharedPreferences, which
+    // needs its test mock backend initialized before `getInstance()` is
+    // ever called, or the call hangs indefinitely instead of erroring
+    // (unlike a real missing-plugin failure, which resolves promptly).
+    SharedPreferences.setMockInitialValues({});
   });
 
   testWidgets('an unread announcement carries an "Unread" semantic label', (tester) async {

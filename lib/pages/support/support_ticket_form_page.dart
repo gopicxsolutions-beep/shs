@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../repositories/support_repository.dart';
 import '../../routes/paths.dart';
@@ -32,8 +33,9 @@ class _SupportTicketFormPageState extends State<SupportTicketFormPage> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_subject.text.trim().isEmpty) {
-      setState(() => _error = 'Enter a subject for your issue');
+      setState(() => _error = l10n.supportTicketFormSubjectRequired);
       return;
     }
     setState(() {
@@ -54,10 +56,10 @@ class _SupportTicketFormPageState extends State<SupportTicketFormPage> {
       final messenger = ScaffoldMessenger.of(context);
       context.go(ticketId != null ? Paths.supportTicketDetail(ticketId) : Paths.supportChat);
       messenger.showSnackBar(SnackBar(
-        content: Text(SupabaseService.isConfigured ? 'Ticket raised' : 'Demo mode — ticket not saved (connect Supabase to persist)'),
+        content: Text(SupabaseService.isConfigured ? l10n.supportTicketFormRaisedSuccess : l10n.supportTicketFormDemoModeMessage),
       ));
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not raise this ticket. Please try again.');
+      if (mounted) setState(() => _error = l10n.supportTicketFormRaiseError);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -65,8 +67,9 @@ class _SupportTicketFormPageState extends State<SupportTicketFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: const PageHeader(title: 'Raise a Ticket'),
+      appBar: PageHeader(title: l10n.supportTicketFormTitle),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -76,14 +79,14 @@ class _SupportTicketFormPageState extends State<SupportTicketFormPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Subject', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                  Text(l10n.supportTicketFormSubjectLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _subject,
                     maxLength: 150,
                     textInputAction: TextInputAction.next,
                     style: AppTheme.sans(14),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'e.g. Loan disbursement delay', counterText: ''),
+                    decoration: InputDecoration(border: InputBorder.none, hintText: l10n.supportTicketFormSubjectHint, counterText: ''),
                     onChanged: (_) => setState(() => _error = null),
                   ),
                 ],
@@ -94,7 +97,7 @@ class _SupportTicketFormPageState extends State<SupportTicketFormPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Describe your issue', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                  Text(l10n.supportTicketFormDescriptionLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _description,
@@ -102,7 +105,7 @@ class _SupportTicketFormPageState extends State<SupportTicketFormPage> {
                     maxLength: 1000,
                     textInputAction: TextInputAction.done,
                     style: AppTheme.sans(14),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'Give as much detail as you can', counterText: ''),
+                    decoration: InputDecoration(border: InputBorder.none, hintText: l10n.supportTicketFormDescriptionHint, counterText: ''),
                   ),
                 ],
               ),
@@ -112,7 +115,7 @@ class _SupportTicketFormPageState extends State<SupportTicketFormPage> {
               Text(_error!, style: AppTheme.sans(12, color: Accent.red600)),
             ],
             const SizedBox(height: 24),
-            AppButton(label: _saving ? 'Submitting…' : 'Submit Ticket', fullWidth: true, size: ButtonSize.lg, onPressed: _saving ? null : _submit),
+            AppButton(label: _saving ? l10n.supportTicketFormSubmitting : l10n.supportTicketFormSubmit, fullWidth: true, size: ButtonSize.lg, onPressed: _saving ? null : _submit),
           ],
         ),
       ),

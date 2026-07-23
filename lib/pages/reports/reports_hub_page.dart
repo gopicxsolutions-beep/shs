@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/types.dart';
 import '../../routes/paths.dart';
@@ -15,20 +16,21 @@ class ReportsHubPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final role = context.watch<AppState>().user.role;
     final isLeaderOrStaff = role != Role.member;
     final isFederationStaff = const {Role.crp, Role.clf, Role.admin}.contains(role);
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Reports'),
+      appBar: PageHeader(title: l10n.reportsHubTitle),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _ReportCard(
             icon: Icons.person_rounded,
             tone: TileTone.brand,
-            title: 'My Reports',
-            subtitle: 'Your savings, loans & attendance summary',
+            title: l10n.reportsHubMyReportsTitle,
+            subtitle: l10n.reportsHubMyReportsSubtitle,
             onTap: () => context.go(Paths.reportsMember),
           ),
           if (isLeaderOrStaff) ...[
@@ -36,8 +38,8 @@ class ReportsHubPage extends StatelessWidget {
             _ReportCard(
               icon: Icons.groups_rounded,
               tone: TileTone.gold,
-              title: 'SHG Reports',
-              subtitle: 'Group-wide savings, loans & attendance',
+              title: l10n.reportsHubShgReportsTitle,
+              subtitle: l10n.reportsHubShgReportsSubtitle,
               onTap: () => context.go(Paths.reportsShg),
             ),
           ],
@@ -46,8 +48,8 @@ class ReportsHubPage extends StatelessWidget {
             _ReportCard(
               icon: Icons.apartment_rounded,
               tone: TileTone.violet,
-              title: 'Federation Reports',
-              subtitle: 'Aggregated across every SHG',
+              title: l10n.reportsHubFederationReportsTitle,
+              subtitle: l10n.reportsHubFederationReportsSubtitle,
               onTap: () => context.go(Paths.reportsFederation),
             ),
           ],

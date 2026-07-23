@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/marketplace.dart';
 import '../../repositories/marketplace_repository.dart';
@@ -18,11 +19,12 @@ class MarketplaceHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repo = MarketplaceRepository();
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: PageHeader(
-        title: 'Marketplace',
-        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.marketplaceAddProduct), tooltip: 'Add product'),
+        title: l10n.marketplaceHomeTitle,
+        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.marketplaceAddProduct), tooltip: l10n.marketplaceHomeAddProductTooltip),
       ),
       body: AppAsyncBuilder<List<Product>>(
         future: repo.fetchProducts,
@@ -49,14 +51,14 @@ class MarketplaceHomePage extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          IconTile(onTap: () => context.go(Paths.marketplaceAddProduct), icon: Icons.add_business_rounded, label: 'Sell', tone: TileTone.brand),
-                          IconTile(onTap: () => context.go(Paths.marketplaceOrders), icon: Icons.receipt_long_rounded, label: 'Orders', tone: TileTone.gold),
-                          IconTile(onTap: () => context.go(Paths.marketplaceReviews), icon: Icons.star_rounded, label: 'Reviews', tone: TileTone.sky),
+                          IconTile(onTap: () => context.go(Paths.marketplaceAddProduct), icon: Icons.add_business_rounded, label: l10n.marketplaceHomeSellTile, tone: TileTone.brand),
+                          IconTile(onTap: () => context.go(Paths.marketplaceOrders), icon: Icons.receipt_long_rounded, label: l10n.marketplaceHomeOrdersTile, tone: TileTone.gold),
+                          IconTile(onTap: () => context.go(Paths.marketplaceReviews), icon: Icons.star_rounded, label: l10n.marketplaceHomeReviewsTile, tone: TileTone.sky),
                         ],
                       ),
                       const SizedBox(height: 20),
-                      const SectionHeader(title: 'Browse Products'),
-                      if (products.isEmpty) const AppEmptyState(icon: Icons.storefront_rounded, message: 'No products listed yet'),
+                      SectionHeader(title: l10n.marketplaceHomeBrowseProducts),
+                      if (products.isEmpty) AppEmptyState(icon: Icons.storefront_rounded, message: l10n.marketplaceHomeEmptyProducts),
                     ],
                   ),
                 ),
@@ -104,10 +106,22 @@ class MarketplaceHomePage extends StatelessWidget {
                               // block itself shrink to give the growing text
                               // the room it needs instead of overflowing.
                               Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(color: Brand.c50, borderRadius: BorderRadius.circular(10)),
-                                  alignment: Alignment.center,
-                                  child: Icon(Icons.storefront_rounded, color: Brand.c500, size: 28),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    decoration: BoxDecoration(color: Brand.c50),
+                                    alignment: Alignment.center,
+                                    width: double.infinity,
+                                    child: p.imageUrl == null
+                                        ? Icon(Icons.storefront_rounded, color: Brand.c500, size: 28)
+                                        : Image.network(
+                                            p.imageUrl!,
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                            height: double.infinity,
+                                            errorBuilder: (context, error, stackTrace) => Icon(Icons.storefront_rounded, color: Brand.c500, size: 28),
+                                          ),
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 8),

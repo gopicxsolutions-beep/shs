@@ -17,6 +17,32 @@ class Course {
       );
 }
 
+/// Mirrors a row in `public.quiz_questions` — one multiple-choice question
+/// belonging to a specific course's certification quiz.
+class QuizQuestion {
+  final String id;
+  final String courseId;
+  final String question;
+  final List<String> options;
+  final int correctIndex;
+
+  const QuizQuestion({
+    required this.id,
+    required this.courseId,
+    required this.question,
+    required this.options,
+    required this.correctIndex,
+  });
+
+  factory QuizQuestion.fromMap(Map<String, dynamic> map) => QuizQuestion(
+        id: map['id'] as String,
+        courseId: map['course_id'] as String,
+        question: map['question'] as String,
+        options: (map['options'] as List).map((e) => e as String).toList(),
+        correctIndex: map['correct_index'] as int,
+      );
+}
+
 /// Mirrors a row in `public.course_progress` for one member/course pair.
 class CourseProgress {
   final String courseId;

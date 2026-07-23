@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/marketplace.dart';
 import '../../models/types.dart';
@@ -34,12 +35,12 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       if (mounted) {
         _key.currentState?.reload();
         if (!SupabaseService.isConfigured) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo mode — not saved (connect Supabase to persist)')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.profileUpdateDemoMode)));
         }
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update the order status. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.orderDetailUpdateStatusError)));
       }
     } finally {
       if (mounted) setState(() => _updating = false);
@@ -48,14 +49,15 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: const PageHeader(title: 'Order Detail'),
+      appBar: PageHeader(title: l10n.orderDetailTitle),
       body: AppAsyncBuilder<MarketOrder?>(
         key: _key,
         future: () => _repo.fetchOrderById(widget.orderId),
         builder: (context, order) {
           if (order == null) {
-            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This order could not be found');
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.orderDetailNotFound);
           }
           final currentIndex = _statusFlow.indexOf(order.status);
           // `marketplace_orders_update_seller_or_staff` (RLS) only lets the
@@ -80,8 +82,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                       AppBadge(text: order.status, tone: BadgeTone.brand),
                     ]),
                     const SizedBox(height: 6),
-                    Text('Buyer: ${order.buyerName}', style: AppTheme.sans(12, color: Neutral.c500)),
-                    Text('Ordered ${DateFormat('dd MMM yyyy').format(order.orderDate)}', style: AppTheme.sans(12, color: Neutral.c500)),
+                    Text(l10n.orderDetailBuyerLabel(order.buyerName), style: AppTheme.sans(12, color: Neutral.c500)),
+                    Text(l10n.orderDetailOrderedOn(DateFormat('dd MMM yyyy').format(order.orderDate)), style: AppTheme.sans(12, color: Neutral.c500)),
                     const SizedBox(height: 8),
                     Text('₹${NumberFormat('#,##,##0', 'en_IN').format(order.amount)}', style: AppTheme.display(18)),
                   ],
@@ -89,7 +91,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
               ),
               if (canUpdateStatus) ...[
                 const SizedBox(height: 20),
-                Text('Update status', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                Text(l10n.orderDetailUpdateStatusLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,

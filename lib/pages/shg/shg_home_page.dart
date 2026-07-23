@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg.dart';
 import '../../models/types.dart';
@@ -25,14 +26,15 @@ class ShgHomePage extends StatelessWidget {
     final isLeaderOrStaff = appState.user.role != Role.member;
     final repo = ShgRepository();
     final shgId = appState.profile?.shgId;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'My SHG'),
+      appBar: PageHeader(title: l10n.shgHomeTitle),
       body: AppAsyncBuilder<ShgProfile?>(
         future: () => repo.fetchShg(shgId),
         builder: (context, shg) {
           if (shg == null) {
-            return const AppEmptyState(icon: Icons.groups_rounded, message: "You're not linked to an SHG yet");
+            return AppEmptyState(icon: Icons.groups_rounded, message: l10n.shgHomeNotLinked);
           }
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -50,7 +52,7 @@ class ShgHomePage extends StatelessWidget {
                     Text('${shg.village ?? ''}, ${shg.district ?? ''}', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
                     if (shg.regNumber != null) ...[
                       const SizedBox(height: 8),
-                      Text('Reg. ${shg.regNumber}', style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
+                      Text(l10n.shgHomeRegNumberLabel(shg.regNumber!), style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
                     ],
                   ],
                 ),
@@ -59,45 +61,46 @@ class ShgHomePage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconTile(onTap: () => context.go(Paths.shgMembers), icon: Icons.groups_rounded, label: 'Members', tone: TileTone.brand),
-                  IconTile(onTap: () => context.go(Paths.shgDocuments), icon: Icons.folder_rounded, label: 'Documents', tone: TileTone.gold),
+                  IconTile(onTap: () => context.go(Paths.shgMembers), icon: Icons.groups_rounded, label: l10n.shgHomeMembersTile, tone: TileTone.brand),
+                  IconTile(onTap: () => context.go(Paths.shgDocuments), icon: Icons.folder_rounded, label: l10n.shgHomeDocumentsTile, tone: TileTone.gold),
                 ],
               ),
               const SizedBox(height: 24),
-              const SectionHeader(title: 'Federation'),
+              SectionHeader(title: l10n.shgHomeFederationSection),
               AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Soft hyphen gives the narrow label column a sensible
-                    // break point instead of an arbitrary mid-word cut.
-                    _row('Village Organi­sation', shg.vo ?? '—'),
+                    // Soft hyphen (baked into the localized string itself)
+                    // gives the narrow label column a sensible break point
+                    // instead of an arbitrary mid-word cut.
+                    _row(l10n.shgHomeVillageOrgLabel, shg.vo ?? '—'),
                     const SizedBox(height: 8),
-                    _row('CLF', shg.clf ?? '—'),
+                    _row(l10n.shgHomeClfLabel, shg.clf ?? '—'),
                     const SizedBox(height: 8),
-                    _row('Mandal', shg.mandal ?? '—'),
+                    _row(l10n.shgHomeMandalLabel, shg.mandal ?? '—'),
                     const SizedBox(height: 8),
                     // `ShgProfile.formationDate` (`shgs.formation_date`) was
                     // parsed by `ShgRepository.fetchShg()` but never
                     // displayed anywhere — a real, populated field with no
                     // UI to show it, the same "data with no way to see it"
                     // shape as round 65's orphaned routes.
-                    _row('Formed', shg.formationDate != null ? DateFormat('dd MMM yyyy').format(shg.formationDate!) : '—'),
+                    _row(l10n.shgHomeFormedLabel, shg.formationDate != null ? DateFormat('dd MMM yyyy').format(shg.formationDate!) : '—'),
                   ],
                 ),
               ),
               if (isLeaderOrStaff) ...[
                 const SizedBox(height: 20),
-                const SectionHeader(title: 'Bank Details'),
+                SectionHeader(title: l10n.shgHomeBankDetailsSection),
                 AppCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _row('Bank', shg.bankName ?? '—'),
+                      _row(l10n.shgHomeBankLabel, shg.bankName ?? '—'),
                       const SizedBox(height: 8),
-                      _row('Account', shg.bankAccount ?? '—'),
+                      _row(l10n.shgHomeAccountLabel, shg.bankAccount ?? '—'),
                       const SizedBox(height: 8),
-                      _row('IFSC', shg.ifsc ?? '—'),
+                      _row(l10n.shgHomeIfscLabel, shg.ifsc ?? '—'),
                     ],
                   ),
                 ),

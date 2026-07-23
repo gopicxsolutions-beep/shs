@@ -1,6 +1,8 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg.dart';
@@ -18,6 +20,26 @@ const _typeIcons = <String, IconData>{
   'IMG': Icons.image_rounded,
 };
 
+// Mirrors the shg-documents bucket's own allow-list
+// (0028_storage_bucket_size_and_type_limits.sql): PDF, JPEG, PNG, WEBP.
+const _allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
+const _maxDocumentBytes = 10 * 1024 * 1024; // mirrors the bucket's 10 MiB cap
+
+String _docTypeFor(String? extension) => extension?.toLowerCase() == 'pdf' ? 'PDF' : 'IMG';
+
+String _contentTypeFor(String? extension) => switch (extension?.toLowerCase()) {
+  'pdf' => 'application/pdf',
+  'png' => 'image/png',
+  'webp' => 'image/webp',
+  _ => 'image/jpeg',
+};
+
+String _humanSize(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
+  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+}
+
 class ShgDocumentsPage extends StatefulWidget {
   const ShgDocumentsPage({super.key});
   @override
@@ -29,6 +51,7 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
   final GlobalKey<AppAsyncBuilderState<List<ShgDocument>>> _key = GlobalKey();
   final _nameController = TextEditingController();
   bool _busy = false;
+  bool _opening = false;
 
   @override
   void dispose() {
@@ -37,20 +60,47 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
   }
 
   Future<void> _addDocument(String? shgId) async {
-    final name = await showDialog<String>(
+    PlatformFile? picked;
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add document record'),
-        content: TextField(controller: _nameController, maxLength: 100, textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'Document name')),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(_nameController.text.trim()), child: Text(AppLocalizations.of(context)?.actionAdd ?? 'Add')),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Add document'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(controller: _nameController, maxLength: 100, textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'Document name')),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: _allowedExtensions, withData: true);
+                  final file = result?.files.isNotEmpty == true ? result!.files.first : null;
+                  if (file == null || file.bytes == null) return;
+                  if (file.size > _maxDocumentBytes) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('File is too large — please choose one under 10 MB')));
+                    }
+                    return;
+                  }
+                  setDialogState(() => picked = file);
+                },
+                icon: const Icon(Icons.attach_file_rounded, size: 18),
+                label: Text(picked == null ? 'Choose file (PDF, JPG, PNG, WEBP)' : picked!.name, overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
+            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(AppLocalizations.of(context)?.actionAdd ?? 'Add')),
+          ],
+        ),
       ),
     );
     if (!mounted) return;
+    final name = _nameController.text.trim();
     _nameController.clear();
-    if (name == null) return;
+    if (confirmed != true) return;
     if (name.isEmpty) {
       // Without this, tapping "Add" on a blank document name silently
       // closed the dialog and added nothing — indistinguishable from a
@@ -59,9 +109,28 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Document name is required.')));
       return;
     }
+    if (picked == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please choose a file to upload.')));
+      return;
+    }
     setState(() => _busy = true);
     try {
-      final saved = await _repo.addDocument(shgId: shgId, name: name, type: 'PDF');
+      String? storagePath;
+      if (SupabaseService.isConfigured && shgId != null) {
+        storagePath = await _repo.uploadDocument(
+          shgId: shgId,
+          bytes: picked!.bytes!,
+          fileName: picked!.name,
+          contentType: _contentTypeFor(picked!.extension),
+        );
+      }
+      final saved = await _repo.addDocument(
+        shgId: shgId,
+        name: name,
+        type: _docTypeFor(picked!.extension),
+        size: _humanSize(picked!.size),
+        storagePath: storagePath,
+      );
       if (mounted) {
         if (!saved) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -80,6 +149,29 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
       }
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _openDocument(ShgDocument d) async {
+    if (_opening) return;
+    if (d.storagePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No file is attached to this record.')));
+      return;
+    }
+    setState(() => _opening = true);
+    try {
+      final url = await _repo.getDownloadUrl(d.storagePath!);
+      if (!mounted) return;
+      final opened = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open this document.')));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open this document.')));
+      }
+    } finally {
+      if (mounted) setState(() => _opening = false);
     }
   }
 
@@ -125,8 +217,9 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
                     ),
                     title: d.name,
                     subtitle: '${d.size ?? ''} · ${DateFormat('dd MMM yyyy').format(d.createdAt)}',
-                    trailing: Icon(Icons.download_rounded, size: 18, color: Neutral.c400),
+                    trailing: Icon(Icons.download_rounded, size: 18, color: _opening ? Neutral.c200 : Neutral.c400),
                     chevron: false,
+                    onTap: _opening ? null : () => _openDocument(d),
                   ),
                 ),
               );

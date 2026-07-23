@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shg_saathi/l10n/gen/app_localizations.dart';
 import 'package:shg_saathi/pages/meetings/meeting_schedule_page.dart';
 import 'package:shg_saathi/state/app_state.dart';
 
@@ -11,7 +13,7 @@ import 'package:shg_saathi/state/app_state.dart';
 void main() {
   Widget harness() => ChangeNotifierProvider<AppState>(
         create: (_) => AppState(),
-        child: const MaterialApp(home: MeetingSchedulePage()),
+        child: MaterialApp(home: const MeetingSchedulePage(), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales, ),
       );
 
   testWidgets('Venue and Agenda fields enforce their maxLength', (tester) async {

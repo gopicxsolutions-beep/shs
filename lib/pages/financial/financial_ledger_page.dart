@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/financial_entry.dart';
 import '../../models/types.dart';
@@ -22,7 +23,12 @@ import 'financial_entry_dialog.dart';
 /// Reports), so Ledger and Bank Reconciliation had no way to be reached from
 /// the UI at all — this in-page switcher fixes that by letting any of the
 /// four link to the other three.
-const _recordTypes = <(String entryType, String label, String path, IconData icon, TileTone tone)>[('cashbook', 'Cashbook', Paths.financialCashbook, Icons.receipt_long_rounded, TileTone.ink), ('ledger', 'Ledger', Paths.financialLedger, Icons.menu_book_rounded, TileTone.sky), ('bank', 'Bank', Paths.financialBank, Icons.account_balance_rounded, TileTone.gold), ('audit', 'Audit', Paths.financialAudit, Icons.fact_check_rounded, TileTone.violet)];
+List<(String entryType, String label, String path, IconData icon, TileTone tone)> _recordTypes(AppLocalizations l10n) => [
+  ('cashbook', l10n.financialLedgerCashbookLabel, Paths.financialCashbook, Icons.receipt_long_rounded, TileTone.ink),
+  ('ledger', l10n.financialLedgerLedgerLabel, Paths.financialLedger, Icons.menu_book_rounded, TileTone.sky),
+  ('bank', l10n.financialLedgerBankLabel, Paths.financialBank, Icons.account_balance_rounded, TileTone.gold),
+  ('audit', l10n.financialLedgerAuditLabel, Paths.financialAudit, Icons.fact_check_rounded, TileTone.violet),
+];
 
 class FinancialLedgerPage extends StatefulWidget {
   final String entryType;
@@ -42,6 +48,8 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
     final appState = context.watch<AppState>();
     final isLeaderOrStaff = appState.user.role != Role.member;
     final shgId = appState.profile?.shgId;
+    final l10n = AppLocalizations.of(context)!;
+    final recordTypes = _recordTypes(l10n);
 
     return Scaffold(
       appBar: PageHeader(
@@ -49,13 +57,13 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
         right: isLeaderOrStaff
             ? IconButton(
                 icon: Icon(Icons.add_circle_rounded, color: Brand.c600),
-                tooltip: 'Add entry',
+                tooltip: l10n.financialLedgerAddEntryTooltip,
                 onPressed: () async {
                   final added = await showFinancialEntryDialog(context, _repo, shgId: shgId, createdBy: appState.profile?.id, entryType: widget.entryType);
                   if (added == true) {
                     _key.currentState?.reload();
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(SupabaseService.isConfigured ? 'Entry added' : 'Demo mode — not saved (connect Supabase to persist)')));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(SupabaseService.isConfigured ? l10n.financialLedgerEntryAdded : l10n.financialLedgerDemoMode)));
                     }
                   }
                 },
@@ -68,7 +76,7 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [for (final t in _recordTypes.where((t) => t.$1 != widget.entryType)) IconTile(onTap: () => context.go(t.$3), icon: t.$4, label: t.$2, tone: t.$5)],
+              children: [for (final t in recordTypes.where((t) => t.$1 != widget.entryType)) IconTile(onTap: () => context.go(t.$3), icon: t.$4, label: t.$2, tone: t.$5)],
             ),
           ),
           Expanded(
@@ -77,7 +85,7 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
               future: () => _repo.fetchForShg(shgId, widget.entryType),
               builder: (context, entries) {
                 if (entries.isEmpty) {
-                  return AppEmptyState(icon: Icons.receipt_long_rounded, message: 'No ${widget.title.toLowerCase()} entries yet');
+                  return AppEmptyState(icon: Icons.receipt_long_rounded, message: l10n.financialLedgerEmpty(widget.title.toLowerCase()));
                 }
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),

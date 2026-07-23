@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/analytics.dart';
 import '../../repositories/analytics_repository.dart';
@@ -19,14 +20,15 @@ class AnalyticsShgListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repo = AnalyticsRepository();
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'SHGs Monitoring'),
+      appBar: PageHeader(title: l10n.analyticsShgListTitle),
       body: AppAsyncBuilder<List<ShgHealth>>(
         future: repo.fetchShgList,
         builder: (context, shgs) {
           if (shgs.isEmpty) {
-            return const AppEmptyState(icon: Icons.apartment_rounded, message: 'No SHGs to monitor yet');
+            return AppEmptyState(icon: Icons.apartment_rounded, message: l10n.analyticsShgListEmptyState);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -46,7 +48,7 @@ class AnalyticsShgListPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(g.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(14, weight: FontWeight.w700)),
-                              Text('${g.village} · ${g.memberCount} members', style: AppTheme.sans(12, color: Neutral.c500)),
+                              Text(l10n.analyticsShgListVillageMemberCount(g.village, g.memberCount), style: AppTheme.sans(12, color: Neutral.c500)),
                             ],
                           ),
                         ),

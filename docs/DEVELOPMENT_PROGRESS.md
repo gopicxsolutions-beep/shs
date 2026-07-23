@@ -6608,6 +6608,91 @@ changes this round — both real fixes were RLS-only).
 Session running total: **277 real, confirmed, fixed bugs across 82
 rounds.**
 
+## Update (round 83) — 2 parallel agents: 6 real security bugs found and fixed, all deployed — the largest single-round security-bug count this session
+
+Rounds 81-82 proved that an earlier round's own "verified clean" sweep
+is not infallible: fresh, skeptical, column-by-column re-derivation of
+the UPDATE-policy sweep found 3 real gaps 46-48's original pass had
+missed. This round applied that same discipline to the two RLS
+dimensions never yet re-derived with this rigor — SELECT (read) scope,
+and a fresh, adversarial pass over INSERT (write) scope that explicitly
+refused to trust 0015/0027's own "verified correct" verdicts. Both
+paid off substantially. Two agents each independently wrote a new
+migration in the same round; both correctly checked for a numbering
+collision before writing (`0037`, `0038`) and neither collided this
+time — the process discipline round 82 established held.
+
+**SELECT-scope overexposure — 2 real bugs found and fixed**: fresh
+re-derivation of every read policy (never re-checked with this rigor
+since the original round 46-50 sweep) found that
+`scheme_applications_select_related` and `course_progress_select_related`
+each let ANY ordinary SHG member read EVERY fellow member's row
+directly via REST — including still-undecided government scheme
+applications and exact per-course quiz/certification progress. No app
+UI, for any role, ever shows a plain member this data; every real
+fetch method in the app always scopes to the caller's own `member_id`.
+Correctly distinguished from `savings`/`loans`/`meetings`/
+`financial_ledger`/`livelihood_activities` — CLAUDE.md's and `0002`'s
+own documented intentionally-shared-transparency family — by tracing
+that neither table even has a `shg_id` column at all (both needed a
+more contrived `profile_shg_id()` indirection to reach cross-member
+visibility in the first place, a real signal of accidental scope
+creep, not deliberate design). New migration
+`0037_select_scope_overexposure_fix.sql` narrows both to
+`member_id = auth.uid() or is_staff()`, matching the existing
+`payments_select_self_or_staff` precedent for the same "individual
+record, not shared ledger" shape.
+
+**INSERT-scope gaps — 4 real bugs found and fixed, the headline
+finding of the whole round**: (1-2) `savings_insert_self_leader_or_staff`
+and `livelihood_insert_self_leader_or_staff` both had the identical,
+previously-undisclosed shape — the SELF branch of `with check` was
+NEVER given a `shg_id` constraint, only the LEADER branch was (0015's
+original fix asked "does the leader's target member belong to her
+SHG" but never asked the mirror question "does the self-branch's
+target SHG belong to the caller"). A plain member could self-insert a
+savings deposit or livelihood activity crediting herself but
+attributed to a COMPLETELY DIFFERENT SHG — which that other SHG's own
+leader would see sitting in her legitimate verification queue with
+nothing distinguishing it as fraudulent, and could "Verify" in good
+faith, instantly corrupting that group's real savings total and
+`shgs.grade` (which gates loan/scheme eligibility for every actual
+member). This gap survived unchanged since `0002`, through 0015, 0027,
+AND rounds 81/82's own dedicated deep-dives on these exact two tables
+— because those dives were explicitly UPDATE-only in scope, an
+important reminder that a table being "recently, thoroughly audited"
+for one bug shape says nothing about a different shape on the same
+table. (3) `meeting_attendance_insert_self_or_leader`'s self branch had
+no date restriction at all — round 80's `isScheduledToday` fix and
+round 82's own 0035 UPDATE-side fix both only closed this fraud
+through the app's own Dart-side filtering and the UPDATE-retarget
+path respectively; the underlying INSERT policy itself was never
+touched by either round, so a member could still self-mark "present"
+for any past or future meeting in her own SHG via direct REST,
+completing the loop the previous two rounds had each closed one
+adjacent door of. (4) `meeting_minutes_insert_leader_or_staff` never
+locked `created_at`, letting a leader post fabricated minutes dated
+into 2099 that would permanently win every subsequent genuine entry's
+`order by created_at desc limit 1` query forever — the identical
+"falsify created_at to win a most-recent-wins query" shape already
+closed for `announcements` (0024/0027) but never applied here. New
+migration `0038_insert_self_branch_shg_scope_and_temporal_gaps.sql`
+closes all four, verified against real call sites (`SavingsEntryPage`,
+`LivelihoodEntryPage`, `meeting_qr_page.dart`, `MeetingRepository.saveMinutes()`)
+confirming zero functional cost — the app itself never needed any of
+the now-locked values to be anything other than what's required. A
+full re-derived table-by-table verdict for all 29 tables' INSERT
+policies is recorded in the migration's own header, with every
+already-disclosed judgment call (loan payments, audit log, marketplace
+order amount) re-verified fresh rather than re-asserted, and none
+found to deserve overturning.
+
+`flutter analyze` 0 issues, `flutter test` all passing (no `.dart`
+files touched this round — both real fixes are pure RLS/SQL).
+Migrations `0037` and `0038` dry-run verified then deployed live.
+Session running total: **283 real, confirmed, fixed bugs across 83
+rounds.**
+
 ## Update (round 83) — production documentation suite written, then 2 disclosed gaps it surfaced closed same-session: AI disclaimer + crash reporting
 
 A full production-grade documentation pass was written this round:
@@ -6674,3 +6759,520 @@ all.
 Session running total: **279 real, confirmed, fixed issues across 83
 rounds** (277 RLS/security bugs from rounds 1-82, plus these 2 disclosed
 product/quality gaps closed this round).
+
+## Update (round 84) — finished the in-progress Voice STT/TTS work, wired real file/image upload, and caught a P0 blank-app regression left by round 83
+
+User asked to implement the app's remaining incomplete features. Found the
+repo already had an uncommitted, ~90%-done swap of the Voice Assistant/Voice
+Support from `MockVoiceRecognitionService`/`MockVoiceSupportService` to real
+on-device STT/TTS (`speech_to_text`/`flutter_tts`, new
+`device_voice_recognition_service.dart`/`device_voice_support_service.dart`/
+`voice_intent_classifier.dart`, plus the `RECORD_AUDIO`/
+`NSMicrophoneUsageDescription`/`NSSpeechRecognitionUsageDescription`
+permissions), and a `file_picker` dependency added to `pubspec.yaml` but never
+actually used anywhere — the long-documented "no file/image upload feature
+exists anywhere in this app" gap. Asked the user via `AskUserQuestion` which
+to prioritize given the sheer scope of already-"✅ done" modules in this
+file's own status table; both were selected.
+
+**Voice STT/TTS — finished, not just left as found**: `flutter analyze` on
+the uncommitted work showed 5 `deprecated_member_use` infos (`speech_to_text`
+7.x deprecated the old `listen(localeId:, listenFor:, pauseFor:)` params in
+favor of a single `SpeechListenOptions` object) — fixed in both
+`device_voice_recognition_service.dart` (`ListenMode.confirmation`, matching
+the bounded-command-set use case) and `device_voice_support_service.dart`
+(`ListenMode.dictation`, matching its longer free-form questions), back to
+`flutter analyze` clean. Updated the stale doc comments on
+`VoiceRecognitionService`/`VoiceSupportService` (still said "No real STT
+provider is wired yet") to describe the real Device* implementations. Added
+`test/services/voice_intent_classifier_test.dart` (13 new tests across all 3
+languages) for the one piece of genuinely new, previously-uncovered logic
+this swap introduced — a real STT engine returns arbitrary free text, so
+something has to classify it into the bounded `VoiceIntent` set, which the
+mock never needed.
+
+**File/image upload — built from scratch**, reusing the `shg-documents`
+(private, 10 MB, PDF/JPEG/PNG/WEBP)/`product-images` (public, 5 MB,
+JPEG/PNG/WEBP) Storage buckets + RLS that a much earlier round already
+deployed and live-tested but never got a client-side UI for (see this file's
+"Real Twilio phone-OTP..." entry). Added `imageUrl`/`storagePath` fields to
+the `Product`/`ShgDocument` models, `uploadProductImage`/`uploadDocument`/
+`getDownloadUrl` methods to `MarketplaceRepository`/`ShgRepository`
+(`uploadBinary` to the seller's/SHG's own folder per each bucket's existing
+RLS folder convention; `getPublicUrl`/`createSignedUrl` respectively, since
+one bucket is public and the other private). **Marketplace Add Product**
+gained an optional photo picker (`file_picker`, 5 MB client-side pre-check
+mirroring the bucket's own server-side cap) with a live preview/remove
+control; the catalog grid and product detail page now render the real image
+when present, falling back to the original storefront icon otherwise — zero
+behavior change for the many products listed before this shipped. **SHG
+Documents**' "Add document" dialog now *requires* picking a file (previously
+name-only metadata), uploads it, and infers `type`/`size` from the real file
+instead of hardcoding `type: 'PDF'`; the previously-decorative download icon
+now requests a signed URL and opens it via `url_launcher` (promoted from a
+transitive to a direct dependency), with pre-existing metadata-only rows (and
+demo-mode's mock records) correctly showing "No file is attached to this
+record" instead of trying to open nothing. Added
+`test/repositories/file_upload_wiring_test.dart` (8 tests: model mapping,
+demo-mode round-trip), `test/pages/shg_documents_page_test.dart` (2 tests:
+the new "choose a file" validation path, the no-file-attached download path)
+and `test/pages/add_product_page_test.dart` (2 tests) — none tap the actual
+file-picker button, since that invokes a real platform channel unavailable
+under `flutter test` (same documented class of limitation as the camera QR
+scanner and this round's own voice mic, see below).
+
+**A critical, undiscovered P0 regression found via this round's own required
+live-mode verification**: per this file's standing rule, backend/
+functionality changes must be verified against a real running app, not just
+`flutter analyze`/`flutter test`. Booting the `flutter-web-demo` preview to
+verify the upload UI hit a **completely blank page** — `flt-glass-pane` with
+zero children, no visible content at all — in the Browser pane, with a
+"Zone mismatch" assertion in the console: *"The Flutter bindings were
+initialized in a different zone than is now being used... It is important to
+use the same zone when calling `ensureInitialized` on the binding as when
+calling `runApp` later."* Reproduced identically on `flutter-web-live`
+(real Supabase). Root-caused via `git log -p -- lib/main.dart`: the
+immediately-prior commit (round 83's crash-reporting/Sentry wiring) had
+restructured `main()` from the original
+`runZonedGuarded(() async { WidgetsFlutterBinding.ensureInitialized(); ...
+runApp(...); })` (init and `runApp` in the same zone) into calling
+`ensureInitialized()` at the top of `main()` — the **root zone** — while
+`runApp()` (inside the new `_startApp()`) still ran inside a **child** zone
+established by either `runZonedGuarded(_startApp, ...)` or
+`SentryFlutter.init(..., appRunner: _startApp)`. That round's own
+verification only ran `flutter analyze`/`flutter test` (which pump widgets
+directly and never call real `main()`, so this bug class is structurally
+invisible to the entire test suite) — this is the first time real `main()`
+has run in a browser since that change landed, and it revealed the app has
+been fully blank in **both** demo and live web mode since that commit.
+**Fixed** by moving `WidgetsFlutterBinding.ensureInitialized()` to be the
+first statement inside `_startApp()` itself — since `_startApp` is the exact
+function both zone-establishing wrappers invoke, initializing inside it
+guarantees the same zone as `runApp()` regardless of which wrapper is active,
+restoring the original working invariant without giving up the Sentry
+branch. Re-verified live in the Browser pane: both `flutter-web-demo` and
+`flutter-web-live` now render the real splash screen content correctly
+(confirmed via screenshot after resizing off the tool's cramped default
+viewport, not just semantics-tree reads, since Flutter web's CanvasKit
+renderer doesn't populate DOM/semantics nodes until accessibility is
+explicitly toggled — a wrinkle worth remembering for future live-testing
+sessions in this same environment).
+
+**Live-mode verification, and its honest limits**: the `flutter-web-live` tab
+had a still-authenticated **QA account session** (localStorage token
+survived, "QA Leader" role) — used it to navigate to the real Add Product
+page and confirm the new photo-picker card ("Add a photo (optional)")
+rendered correctly with zero console errors against the actual live
+Supabase-backed app, not demo mode. Did **not** tap the picker button itself
+or attempt a real upload: `file_picker` on web opens a native OS file-choice
+dialog, and this project's own prior sessions documented that camera/mic
+*permission* prompts left the Browser pane's screenshot/compositor globally
+wedged for the rest of the session — a native modal file dialog carries the
+same or worse risk (likely un-dismissable by this tool at all), so this was
+judged not worth risking mid-verification. Also did not create a live test
+product, since no service-role/Management-API credential was available this
+session to guarantee cleanup afterward per this file's own `__TEST__`-fixture
+rule. Net: the upload *UI* is live-verified; the actual Storage
+`.uploadBinary()`/`.createSignedUrl()` calls rest on the bucket
+RLS/size/mime-type contracts already live-tested in the earlier round that
+created them, plus this round's direct reading of those exact migrations to
+confirm the Dart code's bucket names/folder conventions match — disclosed
+honestly rather than claimed as a full click-through.
+
+**One more thing found, not fixed — flagged for follow-up instead**: while
+live-testing, the SHG Documents page showed no "Add document" button at all
+for the QA Leader account, even though the Profile page confirmed the
+account's real role is Leader and the button's visibility check
+(`isLeaderOrStaff`) depends only on role, not SHG linkage. This looks like a
+genuine pre-existing bug unrelated to this round's changes, but root-causing
+it (a `Role`-string-parsing mismatch between `AppState.user.role` and
+whatever the Profile page reads, or a stale-account data anomaly) was out of
+scope for this round — spawned as a separate background-task suggestion
+rather than pulled in here.
+
+`flutter analyze`: 0 issues (was 5 `deprecated_member_use` infos before the
+`SpeechListenOptions` fix). `flutter test`: **737/737 passing** (was 713
+before this round — new coverage added across
+`test/services/voice_intent_classifier_test.dart` (13 tests),
+`test/repositories/file_upload_wiring_test.dart` (8 tests),
+`test/pages/shg_documents_page_test.dart` (2 tests), and
+`test/pages/add_product_page_test.dart` (2 tests)). Docs updated in the same change per
+this file's own standing rule: [AI_MODULES.md](AI_MODULES.md) §3 rewritten
+from "no real STT/TTS anywhere" to describe the real Device*
+implementations and this round's live-testing limits;
+[ARCHITECTURE.md](ARCHITECTURE.md) §7, [QUALITY_MANAGEMENT.md](QUALITY_MANAGEMENT.md)'s
+production-readiness table, and [SRS.md](SRS.md)'s external-interfaces table
+and Marketplace/My SHG sections all moved file upload and voice STT/TTS from
+"mocked"/"not wired" to "real."
+
+## Update (round 85) — audited every remaining known gap, implemented 8 more in parallel, then adversarially re-verified and fixed 12 real bugs the first pass introduced or missed
+
+User asked to keep implementing incomplete features. Rather than working from
+memory, ran a 5-agent parallel audit reading the actual current code (not
+just the docs) across: the docs' own self-disclosed placeholder tables,
+a repo-wide grep for TODO/placeholder/mock markers, exact i18n coverage,
+the admin list-pagination gap, and rebrand completeness. This surfaced a
+clean split: things genuinely blocked on external paid credentials/business
+decisions the app owner must supply (payment gateway, Sentry DSN,
+`CRON_SECRET`, Android release keystore, App Store account, the permanent
+Android `applicationId`/iOS bundle identifier, real logo/icon artwork) versus
+things a coding session can actually fix. Asked the user to prioritize among
+the fixable ones; the question was dismissed, then the user said "implement
+and fix all issues we observed" — read as authorization to close every
+fixable gap the audit found, not just a subset.
+
+**8 features implemented in parallel** (one agent per area, each on a
+disjoint file set, each required to add regression tests and keep
+`flutter analyze`/`flutter test` clean within its own scope):
+
+1. **Meetings lifecycle** — `MeetingRepository.setStatus()` had zero call
+   sites anywhere in the app (dead code); added a real "Cancel Meeting"
+   action (leader/staff, confirm dialog) on `meeting_detail_page.dart`, and
+   fixed `report_repository.dart`/`trend_repository.dart` to correctly
+   exclude a cancelled-after-the-fact meeting from every completed-meeting/
+   attendance-percentage calculation. Also fixed `MeetingActionItem.ownerId`
+   being permanently null (no UI ever set it) by adding a real member-picker
+   to `meeting_mom_page.dart`'s "add action item" flow, so a member can
+   finally satisfy the "I'm the owner" toggle-gate for her own assigned task.
+2. **Admin module** — real keyset "Load more" pagination on Manage Users/
+   Manage SHGs (`PagedResult<T>`, replacing the old silent `LIMIT 500`
+   truncation), plus replaced the Admin Dashboard's hardcoded fake stats
+   (training completion %, pending-review count, a static 3-row "recent
+   activity" feed) with genuinely computed values from real data.
+3. **Government scheme eligibility** — replaced the keyword-matching
+   heuristic with a real structured rules engine
+   (`EligibilityCriteria`/`evaluateSchemeEligibility()`, migration `0040`)
+   over the only structured member/SHG facts this app's data model actually
+   has: SHG membership, registration age, and grade.
+4. **Training course quiz** — replaced the single generic 3-question set
+   (identical for every course) with real per-course content (`quiz_questions`
+   table, migration `0041`), seeded with a genuine, on-topic starter question
+   set per demo course.
+5. **AI advisor moderation** — added a basic, deployable-now first line of
+   defense to `ai-advisor-proxy`: delimiter-based prompt-injection hardening,
+   a keyword/pattern pre-filter for obvious self-harm/hate-speech/jailbreak
+   attempts, and an output-side system-prompt-leak heuristic — explicitly
+   disclosed as a basic layer, not enterprise-grade moderation.
+6. **Local notifications** — wired the previously-inert Settings toggles
+   (meeting reminders, loan-due alerts, announcements) to real on-device
+   scheduling via `flutter_local_notifications`, local-only (no push
+   backend).
+7. **SHG Documents role-bug investigation** — root-caused a live-testing
+   report (a Leader account not seeing the "Add document" button despite a
+   correct Profile-page role badge) down to the single `AppState.user`
+   getter both call sites share, proved via a test that renders both pages
+   off the identical `AppState` instance that they structurally cannot
+   diverge — concluding it's very likely a stale-session/timing artifact
+   from that live-testing round, not a reproducible code bug.
+8. **CI** — added `.github/workflows/ci.yml` running `flutter analyze`/
+   `flutter test` on every push and PR (demo mode, no secrets needed).
+
+**Then independently adversarially reviewed all of it** — 4 fresh agents,
+none of which had written the code, each told to actually execute
+reproduction scenarios rather than just read and reason. This is exactly
+the kind of pass this project's own history keeps finding value in, and it
+found real, genuine bugs in every single one of the 4 areas it looked at:
+
+- **Admin stats**: both "real" demo-mode numbers were still stale —
+  `pendingReviewCount` and `trainingCompletionPct` read the immutable mock
+  catalogs instead of the actual mutable demo-mode state
+  `SchemeRepository.decideApplication()`/`TrainingRepository.markCertified()`
+  write to, reproduced by execution (approve every pending application, the
+  dashboard still said "2 pending" forever). Live-mode
+  `trainingCompletionPct` also had a denominator-selection bias — it only
+  averaged over member/course pairs someone had actually opened, not over
+  all members × all courses, so 3 out of 500 members completing one course
+  each computed as "100% training completion." The still-fake System Uptime
+  figure's visual hierarchy made the fabricated number, not its disclaimer,
+  the salient takeaway.
+- **Scheme eligibility**: the new `minShgAgeMonths`/`minShgGrade` criteria
+  had **no live write path at all** — `createShg()` never accepted
+  `formation_date`/`grade`, there was no Edit-SHG UI anywhere — so those two
+  criteria could never be satisfied by any real SHG created through this
+  app, only the one hardcoded demo record. Also a defensive gap: an
+  out-of-vocabulary stored grade value would crash the admin edit-scheme
+  dropdown.
+- **Notifications**: turning a reminder toggle off could silently and
+  permanently fail to cancel already-scheduled reminders if the underlying
+  fetch threw (e.g. a flaky connection) — the preference still flipped to
+  "off" and stayed off, but the stale device notifications kept firing
+  forever with no retry and no visible error. Also no proactive OS
+  permission request — since all three toggles default to enabled, a member
+  who never opens Settings gets reminders that look "on" but are silently
+  dropped by the OS because permission was never granted.
+- **Meeting cancel**: the most serious finding — the Cancel Meeting gate had
+  no check that the meeting hadn't already passed, and since nothing in the
+  app ever advances a meeting to `'completed'`, *every meeting that has ever
+  happened* sits at `status = 'upcoming'` forever and was one tap away from
+  being cancelled — which, given this same round's own stats-exclusion fix,
+  means a leader could retroactively erase a real, already-attended meeting
+  (and its real attendance) from her own SHG's health score with no warning
+  the confirm dialog gave about it. A cancelled meeting could also still
+  have attendance marked/edited afterward through the Attendance page's
+  unfiltered meeting picker — visibly inconsistent with the same meeting's
+  detail page showing a red "cancelled" badge. And in demo mode, the SHG-level
+  report and the member-level report disagreed after a cancellation, since
+  only one of the two sibling repository methods actually consulted the
+  cancellation state.
+
+**All of the above were then fixed and re-verified**, including moving the
+meeting-cancel fix down to the actual RLS layer (migration `0042`, reusing
+existing `current_shg_id()`/`current_role()`/`is_staff()`/`profile_shg_id()`
+helpers — the earlier fix was UI-only and a direct REST call could still
+retroactively cancel a past meeting or edit a cancelled one's attendance).
+While re-verifying, one of the fix agents found and fixed a genuine deadlock
+in a test file itself (a bare real-timer `Future.delayed` inside a
+`testWidgets` body, which never advances under the virtualized frame clock
+used by `flutter_test`) that had been silently starving ~27 *other*,
+unrelated tests of CPU during a full-suite run and making them look like
+spurious failures — not a real regression, but a real bug in the test suite
+that would have kept confusing future verification passes if left in place.
+
+`flutter analyze`: 0 issues. `flutter test`: **895/895 passing** (up from
+848 before this round). Two new migrations (`0040_scheme_eligibility_criteria.sql`,
+`0041_quiz_questions.sql`) plus the RLS-hardening migration
+(`0042_meeting_cancel_and_attendance_lifecycle_guards.sql`) are written,
+follow every existing convention, and — like every migration in this log —
+still need live deployment by whoever holds Management API/DB access; none
+of this round's live-mode paths were executed against a real Supabase
+project, only verified by code/RLS review, consistently disclosed as such.
+Also noticed (not part of this round's assigned scope, left alone) a small,
+safe, already-tested addition to `MockPaymentProcessor`: a reserved
+"magic" test amount that deterministically simulates a gateway decline, so
+this app's own payment-failure UI path is finally exercisable by tests
+instead of relying on the mock's previous always-succeeds behavior.
+
+Docs updated in the same change: [ARCHITECTURE.md](ARCHITECTURE.md) §2's
+table (28 tables now, `quiz_questions` added, `schemes.eligibility_criteria`
+noted) and §7's placeholder table; [SRS.md](SRS.md)'s Meetings/Schemes/
+Training/Dashboards/Admin/My SHG sections and external-interfaces table;
+[QUALITY_MANAGEMENT.md](QUALITY_MANAGEMENT.md)'s production-readiness
+checklist, definition-of-done placeholder list, and native-platform-audit
+sections (new `POST_NOTIFICATIONS`/`SCHEDULE_EXACT_ALARM` Android
+permissions, iOS `AppDelegate` notification-center wiring);
+[TESTING_STRATEGY.md](TESTING_STRATEGY.md)'s CI/test-inventory sections; and
+[AI_MODULES.md](AI_MODULES.md) §6/§7's moderation accounting, all moved from
+"absent"/"mocked" to describing what's actually there now, including the
+honest residual gaps (basic keyword moderation, not ML-based; local-only
+notifications, not push; a genuine starter quiz-content set, not a real
+curriculum; live-mode paths unexecuted against a real database this
+session).
+
+**Still open, by design, not fixed this round**: everything genuinely
+blocked on an external paid credential or a business/design decision only
+the app owner can make (payment gateway, Sentry DSN, `CRON_SECRET`, Android
+release keystore, App Store account, the permanent `applicationId`/bundle
+identifier, real rebrand logo/icon artwork) — these were correctly excluded
+from this round's scope at the audit stage, not silently dropped. The
+i18n completion gap (~69 of 92 page files still 100% English-only) remains
+the single largest fixable gap left and was deliberately deferred to its own
+follow-up round given its size (a multi-hundred-key initiative across every
+module, not a bounded feature fix).
+
+## Update (round 86) — closed the i18n gap completely (638 new keys, 91/92 pages), and completed AI Advisor functionality except the Voice Assistant (explicitly excluded)
+
+User asked to fix the remaining i18n gap and bring the AI modules to full
+functionality, explicitly excluding the AI Voice Assistant. Ran 15 parallel
+agents in one workflow: 12 translation batches (grouped by module, ~3-11
+files each) plus 3 agents on AI Advisor functionality.
+
+**i18n**: each batch agent found every hardcoded English string in its
+assigned files, wrote natural Hindi and Telugu translations (instructed to
+grep the existing `.arb` files first and reuse established terminology/
+register — colloquial, common tech terms transliterated rather than
+formally translated, matching this app's existing style), edited its own
+disjoint set of Dart files to call `AppLocalizations.of(context)!`, and
+returned every new key via structured output *without* touching the shared
+`.arb` files itself — done specifically to avoid 12 agents concurrently
+writing the same 3 files. All 638 returned keys were then merged centrally
+(a small Node script, since hand-editing 638 entries across 3 files
+individually wasn't practical) — zero key-name collisions across batches,
+zero collisions with existing keys. `flutter gen-l10n` regenerated the
+localization classes cleanly on the first attempt: every one of the 12
+agents' Dart edits referenced its own reported keys with zero typos.
+**91 of 92 page files now use `AppLocalizations`** (the 92nd,
+`dashboard_page.dart`, has no literal UI strings — a pure role-based routing
+switch, confirmed by its batch agent). `app_en.arb` now has 841 entries (up
+from 130).
+
+The merge did surface 35 test failures — not from the translation work
+itself, but from 14 pre-existing test files that pump a bare `MaterialApp`
+with no `localizationsDelegates`, a known bug shape this exact codebase has
+hit before (see the `shg_join_approval_test.dart` fix in an earlier round):
+once the page under test gained a real `AppLocalizations.of(context)!` call,
+the missing delegates surfaced as a null-check crash. Fixed all 14
+mechanically (added the standard 4 delegates + `supportedLocales` to each
+harness, following the exact pattern already established elsewhere in this
+test suite) — `flutter analyze` clean, `flutter test` **915/915 passing**.
+
+**AI Advisor functionality** (financial/scheme/market chat — the Voice
+Assistant was explicitly out of scope and untouched):
+1. **Cross-turn memory** — `AiAdvisorRepository` now keeps the current
+   session's prior exchanges (capped at 6 exchanges / 6,000 characters) and
+   forwards them to Groq as real prior user/assistant turns, not folded into
+   the system prompt. Session-scoped by construction (a fresh repository
+   instance per open chat page, no extra bookkeeping needed). The content
+   pre-filter now runs over every forwarded history entry too, closing a
+   real bypass (hiding disallowed content in history instead of the live
+   query).
+2. **Error surfacing** — found and fixed a genuine, previously-undiscovered
+   root cause: `supabase_flutter`'s `FunctionsClient.invoke()` throws a
+   `FunctionException` for any non-2xx response, so the old
+   `data['ok'] != true` check that was supposed to distinguish server
+   rejections *never actually ran*. Every real failure — a rate limit, the
+   new moderation pre-filter's rejection, an upstream error — surfaced as an
+   indistinguishable generic exception. Fixed with a real mapping from the
+   exception's status/reason to a specific, member-facing message,
+   including finally surfacing the moderation pre-filter's supportive
+   self-harm-resources message when that's why a request was rejected.
+3. **Log retention** — migration `0043` adds a `SECURITY DEFINER` purge
+   function (180-day retention, `EXECUTE` grantable only to `service_role`,
+   no new client-facing DELETE path) scheduled nightly via the already-
+   enabled `pg_cron`, mirroring the sibling `ai_advisor_rate_limits` table's
+   self-pruning pattern.
+
+All three AI-advisor fixes were independently re-verified this round (not
+just trusted from the agents' own reports): `deno test` — 25/25 passing
+(12 new history tests + 13 pre-existing moderation tests) — and `deno lint`
+clean across all 5 files in `ai-advisor-proxy/`, run directly rather than
+only reading the agents' self-reported results. One transient concern an
+agent flagged mid-session (a possibly-missing import in `index.ts` from
+concurrent editing) was checked directly and confirmed resolved in the
+final merged state — both `buildUserMessage` and `buildMessagesWithHistory`
+are correctly exported/imported/wired.
+
+`flutter analyze`: 0 issues. `flutter test`: **915/915 passing** (up from
+895 before this round). Two new files this round need live deployment like
+every migration in this log: migration `0043` (log retention) — no live
+Supabase access this session, so none of the live-mode paths for either the
+i18n pass or the AI-advisor changes were executed against a real backend,
+only verified by code review/unit test, consistently disclosed as such.
+
+**Honest caveat on translation quality**: the 638 new Hindi/Telugu strings
+were produced by parallel agents in one pass, instructed to reuse this
+app's established terminology and register — verified structurally (compiles,
+renders under each locale via the existing `l10n_test.dart` smoke tests,
+`flutter analyze`/`flutter test` clean) but **not reviewed string-by-string
+by a native Hindi/Telugu speaker**. Structurally complete does not mean
+linguistically perfect; a human QA pass on translation quality is still
+worth doing before treating this as launch-ready copy, and is noted as such
+in [TESTING_STRATEGY.md](TESTING_STRATEGY.md).
+
+Docs updated in the same change: [AI_MODULES.md](AI_MODULES.md) §2.1/§2.2/
+§2.3/§4/§7 (memory, error surfacing, and log retention all moved from
+"absent"/"flattened"/"none" to describing what's actually there now);
+[QUALITY_MANAGEMENT.md](QUALITY_MANAGEMENT.md)'s localization section and
+production-readiness checklist; [TESTING_STRATEGY.md](TESTING_STRATEGY.md)'s
+known-gaps list; and [MANIFESTO.md](MANIFESTO.md)'s placeholder-examples list
+(scheme eligibility and course quiz were stale examples of "intentionally
+not-yet-real" from before an earlier round upgraded both to real
+implementations — replaced with still-accurate examples).
+
+## Update (round 87) — adversarial review of round 86's work found and fixed a CRITICAL AI-moderation bypass, 5 real-Hindi/Telugu RenderFlex overflows, and 2 leftover localization gaps
+
+Round 86 finished the i18n pass and the AI Advisor functionality work, but
+per this session's established discipline, freshly-completed work gets an
+independent adversarial review before being called done rather than trusted
+from its own self-report. Launched reviewer agents (who did not write the
+round-86 code) specifically instructed to *execute* checks — real Hindi/
+Telugu text at real text scale, real security-bypass attempts against the
+Edge Function — not just re-read the diff. This found real bugs:
+
+**CRITICAL — AI moderation bypass via history `response`.** The content
+pre-filter (`checkQueryForDisallowedContent`) was only ever called on
+`turn.query` for each forwarded history entry, never `turn.response`. The
+legitimate Flutter client always populates `response` from its own prior
+`ask()` return, so it reads as safe to trust — but nothing server-side
+enforces that assumption. Anyone calling the Edge Function directly could
+plant a fabricated "assistant" turn containing an unfiltered jailbreak/
+persona-shift as `response`, priming the live model immediately before an
+otherwise-innocent live query, completely bypassing the pre-filter. Fixed by
+adding `checkHistoryForDisallowedContent()` in `history.ts`, which checks
+**both** fields of every history entry, called from `index.ts` in place of
+the old query-only loop. Proven by a new test asserting a disallowed history
+*response* (not query) is blocked — the exact scenario this closes.
+
+**HIGH — jailbreak regex gap.** The ignore/disregard/forget "...previous
+instructions" patterns allowed only a single fixed qualifier (all/any/the)
+before previous/prior/above/earlier — natural possessive-pronoun phrasings
+("ignore **your** previous instructions", "disregard **our** previous
+instructions") slipped through unblocked. Fixed by expanding each pattern to
+allow two optional qualifier groups covering all/any/the/your/my/our; added
+7 new regression cases.
+
+**MEDIUM — rate-limit-before-moderation ordering bug.** History validation
+and content moderation ran *before* the rate-limit RPC check, so a caller
+could send unlimited requests per minute for free by ensuring every request
+was rejected by validation/moderation before it ever reached the
+rate-limited RPC. Fixed by reordering `index.ts` so member identification +
+the rate-limit check run immediately after the basic shape check, before
+history validation/moderation. Also added `MAX_HISTORY_RAW_ENTRIES = 20`
+(bounds the cost of validating an oversized raw history array before
+per-entry validation runs) and a 40-char cap on the `advisor_type` value
+echoed back in the "unknown advisor_type" 400 error.
+
+**5 real RenderFlex overflows at actual Hindi/Telugu text, 2.0x scale** —
+the systemic shape: a trailing `InkWell`/`AppBadge` as the last child of a
+`Row` alongside a preceding `Expanded`/`Flexible` sibling, where English text
+was short enough to never overflow but the real (longer) Hindi/Telugu
+translation pushed the sibling past zero width. This is exactly the gap
+`text_scale_stress_test.dart`/`narrow_screen_large_text_stress_test.dart`
+couldn't catch — both only ever stress English text at scale, never a
+non-English locale. Found and fixed in `admin_dashboard.dart` (pending-review
+"Review" link, recent-activity time badge), `member_dashboard.dart` ("Pay
+Now" link), `leader_dashboard.dart` ("View" link — found proactively via
+grep once the pattern was known), and `scheme_eligibility_page.dart`
+(Eligible/Not-eligible badge). Fix pattern throughout: wrap the trailing
+widget in `Flexible(child: ...)` with `TextOverflow.ellipsis`.
+
+**2 leftover localization gaps**: `evaluateSchemeEligibility()` in
+`models/scheme.dart` still built its 10 label strings from hardcoded English
+— missed by round 86's page-scoped batching since it's a model function, not
+a page. Now takes a required `l10n` parameter and calls through it (10 new
+`.arb` keys, with placeholder metadata for the age/grade variants). Similarly
+`AdminActivityItem` in `models/admin.dart` pre-formatted its activity-feed
+message in English at construction time (`"Member joined — Priya"`) instead
+of storing raw data; changed to store `subjectName` only, with a new
+`_activityMessage()` switch in `admin_dashboard.dart` doing the l10n-aware
+formatting at render time (3 new `.arb` keys). Also found and localized one
+last hardcoded English fallback string in `ai_advisor_chat_page.dart` (1 new
+`.arb` key: `aiAdvisorUpstreamUnavailable`). New `.arb` totals: en 866,
+hi/te 778 each (up from 841/803/803 — the hi/te counts undercounted some
+round-86 keys pending a translation follow-up, now reconciled).
+
+**5 translation-consistency fixes** found by grep-diffing hi/te against en
+for near-duplicate concepts translated inconsistently across files:
+`clfDashboardFederationReportsAction`, `clfDashboardRecoveryRateLabel`,
+`servicesSupportLabel`, `shgJoinRequestsMemberFallback` (te), and
+`schemeDetailSubmitting` (hi).
+
+**Test-suite hardening**: a reviewer found `meeting_attendance_page_test.dart`
+had a bare `await Future.delayed(...)` inside a `testWidgets` body — under
+`flutter_test`'s virtualized frame clock this never resolves, and was
+silently hanging for the test framework's ~10-minute timeout on every full-
+suite run, starving ~27 unrelated tests of CPU and making them look like
+spurious failures. Fixed by wrapping in `tester.runAsync(...)`. Also promoted
+a reviewer's own throwaway scratch test
+([hi_te_locale_overflow_test.dart](../test/routes/hi_te_locale_overflow_test.dart))
+into the permanent suite — it's the only test in the whole suite that
+exercises a non-English `Locale` combined with a large text scale, which is
+exactly the combination that caused the 5 overflow bugs above; the existing
+stress tests only ever cover English text at scale.
+
+`flutter analyze`: 0 issues. `flutter test`: **931/931 passing** (up from 915
+— +16 from the promoted locale-overflow test). `deno test` for
+`ai-advisor-proxy`: all passing including 4 new `history.test.ts` cases (the
+critical-bypass regression test, the raw-entries cap test) and 1 new
+`moderation.test.ts` case (7 possessive-pronoun jailbreak phrasings). No live
+Supabase access this session — the Edge Function fixes are verified by
+`deno test` against the pure-TypeScript logic, not against a deployed
+function; deploying `ai-advisor-proxy` and re-confirming the fixes hold
+against the real Groq-backed endpoint is still an outstanding step before
+calling this launch-verified.
+
+Docs updated in the same change:
+[AI_MODULES.md](AI_MODULES.md) §2.1 (history validation bounds + pre-filter
+now covers both fields), §5 (rate-limit ordering bug and fix), §6 (jailbreak
+regex fix, the critical history-response bypass and its fix, corrected the
+stale "no cross-turn abuse detection" bullet to reflect that per-turn
+detection now exists — only *gradual* multi-turn abuse remains undetected).

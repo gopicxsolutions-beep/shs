@@ -8,6 +8,7 @@ class Product {
   final num price;
   final int stock;
   final String? category;
+  final String? imageUrl;
 
   const Product({
     required this.id,
@@ -18,6 +19,7 @@ class Product {
     required this.price,
     required this.stock,
     this.category,
+    this.imageUrl,
   });
 
   factory Product.fromMap(Map<String, dynamic> map) => Product(
@@ -29,6 +31,7 @@ class Product {
         price: map['price'] as num,
         stock: map['stock'] as int? ?? 0,
         category: map['category'] as String?,
+        imageUrl: map['image_url'] as String?,
       );
 }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/report.dart';
 import '../../repositories/report_repository.dart';
@@ -13,15 +14,16 @@ class FederationVillagesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final repo = ReportRepository();
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Village-wise SHGs'),
+      appBar: PageHeader(title: l10n.federationVillagesTitle),
       body: AppAsyncBuilder<List<VillageShgGroup>>(
         future: repo.fetchVillageWiseShgs,
         builder: (context, groups) {
           if (groups.isEmpty) {
-            return const AppEmptyState(icon: Icons.apartment_rounded, message: 'No SHGs registered yet');
+            return AppEmptyState(icon: Icons.apartment_rounded, message: l10n.federationVillagesEmpty);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -40,7 +42,7 @@ class FederationVillagesPage extends StatelessWidget {
                           children: [
                             Text(g.village, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(14, weight: FontWeight.w700)),
                             const SizedBox(height: 2),
-                            Text('${g.shgCount} SHGs', style: AppTheme.sans(12, color: Neutral.c500)),
+                            Text(l10n.federationVillagesShgCount(g.shgCount), style: AppTheme.sans(12, color: Neutral.c500)),
                           ],
                         ),
                       ),
