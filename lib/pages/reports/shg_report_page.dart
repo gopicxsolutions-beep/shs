@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../routes/paths.dart';
 import '../../theme/app_theme.dart';
@@ -13,29 +14,30 @@ class ShgReportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: const PageHeader(title: 'SHG Reports'),
+      appBar: PageHeader(title: l10n.shgReportsTitle),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _ReportTile(
             icon: Icons.account_balance_wallet_rounded,
-            title: 'Financial Summary',
-            subtitle: 'Savings, loans & attendance at a glance',
+            title: l10n.shgReportsFinancialSummaryTitle,
+            subtitle: l10n.shgReportsFinancialSummarySubtitle,
             onTap: () => context.go(Paths.reportsShgFinancialSummary),
           ),
           const SizedBox(height: 8),
           _ReportTile(
             icon: Icons.fact_check_rounded,
-            title: 'Audit Report',
-            subtitle: 'Internal & external audit trail',
+            title: l10n.shgReportsAuditReportTitle,
+            subtitle: l10n.shgReportsAuditReportSubtitle,
             onTap: () => context.go(Paths.financialAudit),
           ),
           const SizedBox(height: 8),
           _ReportTile(
             icon: Icons.trending_up_rounded,
-            title: 'Performance Report',
-            subtitle: 'Attendance trend & loan activity',
+            title: l10n.shgReportsPerformanceReportTitle,
+            subtitle: l10n.shgReportsPerformanceReportSubtitle,
             onTap: () => context.go(Paths.reportsShgPerformance),
           ),
         ],

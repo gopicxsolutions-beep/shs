@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +12,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/shg_search_sheet.dart';
 
 class ProfileSetupPage extends StatefulWidget {
   const ProfileSetupPage({super.key});
@@ -28,6 +28,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   final _profileRepository = ProfileRepository();
   ShgSearchResult? _selectedShg;
   bool _saving = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -38,7 +39,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     super.dispose();
   }
 
-  Widget _field(String label, {String? placeholder, TextEditingController? controller}) {
+  Widget _field(String label, {String? placeholder, TextEditingController? controller, TextInputAction? textInputAction}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -51,6 +52,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           alignment: Alignment.centerLeft,
           child: TextField(
             controller: controller,
+            textInputAction: textInputAction,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(border: InputBorder.none, hintText: placeholder),
             style: AppTheme.sans(14),
@@ -72,18 +74,16 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           ));
       return;
     }
-    final result = await showModalBottomSheet<ShgSearchResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => _ShgSearchSheet(repository: _profileRepository),
-    );
+    final result = await showShgSearchSheet(context, search: _profileRepository.searchShgs);
+    if (!mounted) return;
     if (result != null) setState(() => _selectedShg = result);
   }
 
   Future<void> _continue() async {
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     final appState = context.read<AppState>();
     if (_selectedShg != null && SupabaseService.isConfigured) {
       appState.setPendingShg(_selectedShg!);
@@ -95,7 +95,17 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         mandal: _mandal.text.trim().isNotEmpty ? _mandal.text.trim() : _selectedShg?.mandal,
         district: _district.text.trim().isNotEmpty ? _district.text.trim() : _selectedShg?.district,
       );
-      if (mounted) context.go(Paths.roleSelect);
+      // Not always Role Select: this page is also the "Choose a different
+      // SHG" retry a rejected member reaches from ShgApprovalPendingPage,
+      // where Role Select was already completed in a prior session (see
+      // AppState.completeProfileSetup's `isNewProfile` guard). Navigating to
+      // the dashboard and letting the router's own redirect chain resolve
+      // the actual next step (Role Select for a genuinely new profile,
+      // ShgApprovalPendingPage again for the retry, or the dashboard itself)
+      // is correct for every case instead of hardcoding one destination.
+      if (mounted) context.go(Paths.dashboard);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Could not save your profile. Please try again.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -103,7 +113,16 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final valid = _name.text.trim().isNotEmpty && _selectedShg != null;
+    // An SHG is optional here, not required: completeProfileSetup() never
+    // writes _selectedShg onto the profile row itself — it only submits an
+    // optional join request for a leader to approve later (see
+    // AppState.completeProfileSetup's doc comment). Requiring one to even
+    // enable Continue was a client-side-only restriction with no backend
+    // basis, and it blocked every path through onboarding — including a
+    // future admin/crp/clf/leader, none of whom belong to a specific SHG at
+    // signup — whenever the SHG catalog was empty (e.g. a fresh deployment
+    // with no SHGs seeded yet: nobody could ever become the first admin).
+    final valid = _name.text.trim().isNotEmpty;
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Neutral.c50,
@@ -127,15 +146,15 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
               const SizedBox(height: 6),
               Text(l10n.profileSetupSubtitle, textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
               const SizedBox(height: 28),
-              _field(l10n.fieldFullName, placeholder: 'e.g. Lakshmi Devi', controller: _name),
+              _field(l10n.fieldFullName, placeholder: 'e.g. Lakshmi Devi', controller: _name, textInputAction: TextInputAction.next),
               const SizedBox(height: 14),
               Row(children: [
-                Expanded(child: _field(l10n.profileVillage, placeholder: 'Kondapur', controller: _village)),
+                Expanded(child: _field(l10n.profileVillage, placeholder: 'Kondapur', controller: _village, textInputAction: TextInputAction.next)),
                 const SizedBox(width: 12),
-                Expanded(child: _field(l10n.fieldMandal, placeholder: 'Hanamkonda', controller: _mandal)),
+                Expanded(child: _field(l10n.fieldMandal, placeholder: 'Hanamkonda', controller: _mandal, textInputAction: TextInputAction.next)),
               ]),
               const SizedBox(height: 14),
-              _field(l10n.fieldDistrict, placeholder: 'Warangal', controller: _district),
+              _field(l10n.fieldDistrict, placeholder: 'Warangal', controller: _district, textInputAction: TextInputAction.done),
               const SizedBox(height: 14),
               Text(l10n.yourShg, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
               const SizedBox(height: 6),
@@ -162,123 +181,19 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                     : Row(children: [
                         Icon(Icons.search, size: 16, color: Neutral.c500),
                         const SizedBox(width: 8),
-                        Text(l10n.searchSelectShg, style: AppTheme.sans(14, color: Neutral.c500)),
+                        Expanded(child: Text(l10n.searchSelectShg, style: AppTheme.sans(14, color: Neutral.c500), overflow: TextOverflow.ellipsis)),
                       ]),
               ),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(_error!, style: AppTheme.sans(12, color: Accent.red600)),
+              ],
               const SizedBox(height: 24),
               AppButton(
                 label: _saving ? l10n.profileSetupSaving : l10n.profileSetupContinue,
                 fullWidth: true,
                 size: ButtonSize.lg,
                 onPressed: valid && !_saving ? _continue : null,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ShgSearchSheet extends StatefulWidget {
-  final ProfileRepository repository;
-  const _ShgSearchSheet({required this.repository});
-  @override
-  State<_ShgSearchSheet> createState() => _ShgSearchSheetState();
-}
-
-class _ShgSearchSheetState extends State<_ShgSearchSheet> {
-  final _query = TextEditingController();
-  Timer? _debounce;
-  List<ShgSearchResult> _results = [];
-  bool _loading = false;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _search('');
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _query.dispose();
-    super.dispose();
-  }
-
-  void _onChanged(String value) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () => _search(value));
-  }
-
-  Future<void> _search(String value) async {
-    setState(() => _loading = true);
-    try {
-      final results = await widget.repository.searchShgs(value);
-      if (mounted) setState(() => _results = results);
-    } catch (_) {
-      if (mounted) setState(() => _error = 'Could not load SHGs. Please try again.');
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: SizedBox(
-        height: 480,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.findYourShg, style: AppTheme.display(16)),
-              const SizedBox(height: 12),
-              Container(
-                decoration: BoxDecoration(border: Border.all(color: Neutral.c200), borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Row(children: [
-                  Icon(Icons.search, size: 16, color: Neutral.c400),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _query,
-                      onChanged: _onChanged,
-                      decoration: InputDecoration(border: InputBorder.none, hintText: l10n.searchShgHint),
-                      style: AppTheme.sans(14),
-                    ),
-                  ),
-                ]),
-              ),
-              const SizedBox(height: 12),
-              if (_error != null) Text(_error!, style: AppTheme.sans(12, color: Accent.red600)),
-              Expanded(
-                child: _loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _results.isEmpty
-                        ? Center(child: Text(l10n.noShgsFound, style: AppTheme.sans(13, color: Neutral.c400)))
-                        : ListView.separated(
-                            itemCount: _results.length,
-                            separatorBuilder: (_, _) => const SizedBox(height: 8),
-                            itemBuilder: (context, i) {
-                              final shg = _results[i];
-                              return AppCard(
-                                onTap: () => Navigator.of(context).pop(shg),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(shg.name, style: AppTheme.sans(14, weight: FontWeight.w700)),
-                                    const SizedBox(height: 2),
-                                    Text('${shg.village}, ${shg.district}', style: AppTheme.sans(12, color: Neutral.c500)),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
               ),
             ],
           ),

@@ -37,9 +37,9 @@ class MockFaq {
 }
 
 const mockFaqs = <MockFaq>[
-  MockFaq(question: 'How do I add a savings entry?', answer: 'Go to Savings → Add Entry, enter the amount and date, then submit.'),
-  MockFaq(question: 'How do I apply for a loan?', answer: 'Go to Loans → Apply, fill in the amount and purpose, then submit for leader approval.'),
+  MockFaq(question: 'How do I add a savings entry?', answer: 'Go to Savings > Add Entry, enter the amount and date, then submit.'),
+  MockFaq(question: 'How do I apply for a loan?', answer: 'Go to Loans > Apply, fill in the amount and purpose, then submit for leader approval.'),
   MockFaq(question: 'How do I check my SHG grade?', answer: 'Your SHG grade is shown on the My SHG screen along with member details.'),
   MockFaq(question: 'Who can post announcements?', answer: 'Only your SHG leader or program staff (CRP/CLF/Admin) can post announcements.'),
-  MockFaq(question: 'How do I raise a support ticket?', answer: 'Go to Support → Raise a Ticket, describe your issue, and submit. You can track replies in My Tickets.'),
+  MockFaq(question: 'How do I raise a support ticket?', answer: 'Go to Support > Raise a Ticket, describe your issue, and submit. You can track replies in My Tickets.'),
 ];

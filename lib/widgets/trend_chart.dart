@@ -14,9 +14,22 @@ class TrendChart extends StatelessWidget {
   final String suffix;
   const TrendChart({super.key, required this.points, this.color = Brand.c500, this.suffix = ''});
 
+  String get _semanticLabel {
+    if (points.isEmpty) return 'Trend chart: no data';
+    final parts = points.map((p) => '${p.month} ${p.value.toStringAsFixed(0)}$suffix').join(', ');
+    final first = points.first.value;
+    final last = points.last.value;
+    final trend = first == 0 ? null : ((last - first) / first * 100);
+    final trendText = trend == null ? '' : ', ${trend >= 0 ? 'up' : 'down'} ${trend.abs().toStringAsFixed(0)}% overall';
+    return 'Trend chart: $parts$trendText';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Semantics(
+      label: _semanticLabel,
+      child: ExcludeSemantics(
+        child: SizedBox(
       height: 160,
       child: LineChart(
         LineChartData(
@@ -30,6 +43,11 @@ class TrendChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 24,
+                // Without a fixed interval, fl_chart auto-generates ticks at
+                // "nice" fractional positions (0, 0.5, 1, 1.5, ...) — each
+                // pair truncates to the same point index via value.toInt(),
+                // so every month label was rendered twice in a row.
+                interval: 1,
                 getTitlesWidget: (value, meta) {
                   final i = value.toInt();
                   if (i < 0 || i >= points.length) return const SizedBox();
@@ -55,6 +73,8 @@ class TrendChart extends StatelessWidget {
               belowBarData: BarAreaData(show: true, color: color.withValues(alpha: 0.1)),
             ),
           ],
+        ),
+      ),
         ),
       ),
     );

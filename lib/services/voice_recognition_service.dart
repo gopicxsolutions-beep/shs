@@ -14,11 +14,11 @@ class RecognizedCommand {
   const RecognizedCommand({required this.transcript, required this.intent});
 }
 
-/// Abstraction over a real speech-to-text engine with Telugu/Hindi/English
-/// support. No real STT provider is wired yet — a production key would
-/// swap [MockVoiceRecognitionService] for a real implementation of this
-/// same interface without touching any call site. See
-/// docs/DEVELOPMENT_PROGRESS.md's "External API abstraction plan".
+/// Abstraction over a speech-to-text engine with Telugu/Hindi/English
+/// support. [DeviceVoiceRecognitionService] (`device_voice_recognition_service.dart`)
+/// is the live-mode implementation — real on-device recognition via the
+/// `speech_to_text` package, no vendor API key needed; [MockVoiceRecognitionService]
+/// is used in demo mode so the app stays fully explorable with no microphone.
 abstract class VoiceRecognitionService {
   Future<RecognizedCommand> listen(Language language);
 }

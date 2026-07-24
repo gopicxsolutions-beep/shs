@@ -1,7 +1,11 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../layout/app_shell.dart';
+import '../models/types.dart';
 import '../pages/admin/admin_monitoring_page.dart';
 import '../pages/admin/admin_schemes_page.dart';
+import '../pages/admin/admin_shgs_page.dart';
 import '../pages/admin/admin_users_page.dart';
 import '../pages/ai/ai_advisor_chat_page.dart';
 import '../pages/ai/ai_hub_page.dart';
@@ -11,6 +15,7 @@ import '../pages/analytics/analytics_shg_detail_page.dart';
 import '../pages/analytics/analytics_shg_list_page.dart';
 import '../pages/auth/login_page.dart';
 import '../pages/auth/otp_page.dart';
+import '../pages/auth/profile_load_error_page.dart';
 import '../pages/auth/profile_setup_page.dart';
 import '../pages/auth/role_select_page.dart';
 import '../pages/auth/shg_approval_pending_page.dart';
@@ -62,6 +67,7 @@ import '../pages/savings/savings_history_page.dart';
 import '../pages/savings/savings_home_page.dart';
 import '../pages/savings/savings_ledger_page.dart';
 import '../pages/savings/savings_statement_page.dart';
+import '../pages/schemes/scheme_applications_review_page.dart';
 import '../pages/schemes/scheme_detail_page.dart';
 import '../pages/schemes/scheme_eligibility_page.dart';
 import '../pages/schemes/scheme_tracking_page.dart';
@@ -86,24 +92,75 @@ import '../state/app_state.dart';
 import '../widgets/error_screen.dart';
 import 'paths.dart';
 
+const _leaderOrStaff = {Role.leader, Role.crp, Role.clf, Role.admin};
+const _federationStaff = {Role.crp, Role.clf, Role.admin};
+
+/// Screens the UI only ever links to from a leader/staff/admin-only nav
+/// item, but which were previously reachable by ANY authenticated role via
+/// direct URL — a member could open Loan Approvals, Admin > Manage Users,
+/// etc. and see (and, for Loan Approvals, act on) data meant for other
+/// roles. Checked by matchedLocation prefix since several of these are
+/// section roots with their own sub-routes (e.g. every /app/admin/* page).
+const _roleRestrictedPrefixes = <(String, Set<Role>)>[
+  ('/app/loans/approval', _leaderOrStaff),
+  ('/app/schemes/applications', _federationStaff),
+  ('/app/savings/ledger', _leaderOrStaff),
+  ('/app/meetings/schedule', _leaderOrStaff),
+  ('/app/meetings/attendance', _leaderOrStaff),
+  ('/app/shg/join-requests', {Role.leader}),
+  ('/app/reports/shg', _leaderOrStaff),
+  ('/app/reports/federation', _federationStaff),
+  ('/app/analytics', _federationStaff),
+  ('/app/admin', {Role.admin}),
+];
+
 GoRouter buildRouter(AppState appState) {
   return GoRouter(
     initialLocation: Paths.splash,
     refreshListenable: appState,
     errorBuilder: (context, state) => AppErrorScreen(
-      title: 'Page not found',
-      message: "The page you're looking for doesn't exist or may have moved.",
+      // Nullable, not `!` — see AppErrorScreen's own doc comment on why its
+      // callers fall back to English instead of asserting non-null here.
+      title: AppLocalizations.of(context)?.error404Title ?? 'Page not found',
+      message: AppLocalizations.of(context)?.error404Message ?? "The page you're looking for doesn't exist or may have moved.",
       onRetry: () => context.go(Paths.dashboard),
     ),
     redirect: (context, state) {
       final onAuthFlow = !state.matchedLocation.startsWith('/app');
 
       // No session yet (OTP not verified) — confined to the auth flow.
-      if (!appState.hasSession) return onAuthFlow ? null : Paths.splash;
+      if (!appState.hasSession) {
+        if (onAuthFlow) return null;
+        // Remember a genuine deep link so OtpPage can replay it after a
+        // successful sign-in instead of always landing on the dashboard —
+        // see AppState.capturePendingDeepLink and OtpPage._submit.
+        // `state.topRoute` is only non-null when `state.matchedLocation`
+        // actually resolved to a registered route (go_router's top-level
+        // redirect state is built from the just-computed RouteMatchList,
+        // whose match chain is empty for an unknown/malformed URL) — this
+        // keeps a stray bad link from being captured and replayed later as
+        // if it were a real destination.
+        if (state.topRoute != null) appState.capturePendingDeepLink(state.matchedLocation);
+        return Paths.splash;
+      }
 
-      // Session but no `profiles` row yet — must finish onboarding.
+      // Session but no `profiles` row yet — either genuinely still
+      // onboarding, or we simply couldn't check because the profile fetch
+      // failed due to a network error (see
+      // AppState.profileLoadFailedNetwork's doc comment). The latter must
+      // NOT be routed to Profile Setup — to a returning, already-onboarded
+      // offline user that would look exactly like the app forgot their
+      // account and silently invite them to re-submit onboarding data.
       if (!appState.hasProfile) {
-        final onboarding = state.matchedLocation == Paths.profileSetup || state.matchedLocation == Paths.roleSelect;
+        if (appState.profileLoadFailedNetwork) {
+          return state.matchedLocation == Paths.profileLoadError ? null : Paths.profileLoadError;
+        }
+        // `roleSelect` only belongs in this "still onboarding" set in demo
+        // mode (see AppState.roleSelectReachableWithoutProfile) — in live
+        // mode a direct URL visit to it here has no profile row for Role
+        // Select to act on at all.
+        final onboarding = state.matchedLocation == Paths.profileSetup ||
+            (appState.roleSelectReachableWithoutProfile && state.matchedLocation == Paths.roleSelect);
         return onboarding ? null : Paths.profileSetup;
       }
 
@@ -113,8 +170,13 @@ GoRouter buildRouter(AppState appState) {
       }
 
       // Member's SHG join request hasn't been approved by their leader yet.
-      // profileSetup stays reachable too, so a rejected member can pick a
-      // different SHG and submit a new request instead of being stuck.
+      // profileSetup stays reachable too, so a member can pick a different
+      // SHG and submit a new request instead of being stuck — both while
+      // still pending (ShgApprovalPendingPage's "Choose a different SHG" is
+      // now offered there too, not just after rejection — see migration
+      // 0033) and after rejection. ShgJoinRequestRepository.submit()
+      // replaces any existing pending row instead of erroring on the
+      // resubmit, so this is safe in both states.
       if (appState.needsShgApproval) {
         final allowed = state.matchedLocation == Paths.shgApprovalPending || state.matchedLocation == Paths.profileSetup;
         return allowed ? null : Paths.shgApprovalPending;
@@ -122,6 +184,13 @@ GoRouter buildRouter(AppState appState) {
 
       // Fully onboarded — keep out of the auth flow.
       if (onAuthFlow) return Paths.dashboard;
+
+      // Fully onboarded but this screen is restricted to other roles.
+      for (final (prefix, allowedRoles) in _roleRestrictedPrefixes) {
+        if (state.matchedLocation.startsWith(prefix) && !allowedRoles.contains(appState.user.role)) {
+          return Paths.dashboard;
+        }
+      }
       return null;
     },
     routes: [
@@ -131,6 +200,7 @@ GoRouter buildRouter(AppState appState) {
       GoRoute(path: Paths.profileSetup, builder: (context, state) => const ProfileSetupPage()),
       GoRoute(path: Paths.roleSelect, builder: (context, state) => const RoleSelectPage()),
       GoRoute(path: Paths.shgApprovalPending, builder: (context, state) => const ShgApprovalPendingPage()),
+      GoRoute(path: Paths.profileLoadError, builder: (context, state) => const ProfileLoadErrorPage()),
       ShellRoute(
         builder: (context, state, child) => AppShell(location: state.matchedLocation, child: child),
         routes: [
@@ -166,6 +236,7 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.marketplaceOrders, builder: (context, state) => const MarketplaceOrdersPage()),
           GoRoute(path: Paths.marketplaceReviews, builder: (context, state) => const MarketplaceReviewsPage()),
           GoRoute(path: Paths.schemes, builder: (context, state) => const SchemesHomePage()),
+          GoRoute(path: Paths.schemeApplications, builder: (context, state) => const SchemeApplicationsReviewPage()),
           GoRoute(path: Paths.schemeEligibility, builder: (context, state) => const SchemeEligibilityPage()),
           GoRoute(path: Paths.schemeTracking, builder: (context, state) => const SchemeTrackingPage()),
           GoRoute(path: Paths.training, builder: (context, state) => const TrainingHomePage()),
@@ -211,19 +282,67 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.adminUsers, builder: (context, state) => const AdminUsersPage()),
           GoRoute(path: Paths.adminSchemes, builder: (context, state) => const AdminSchemesPage()),
           GoRoute(path: Paths.adminMonitoring, builder: (context, state) => const AdminMonitoringPage()),
-          GoRoute(path: '/app/shg/members/:id', builder: (context, state) => MemberDetailPage(memberId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/loans/:id', builder: (context, state) => LoanDetailPage(loanId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/meetings/:id', builder: (context, state) => MeetingDetailPage(meetingId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/meetings/:id/mom', builder: (context, state) => MeetingMomPage(meetingId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/livelihood/:id', builder: (context, state) => LivelihoodDetailPage(activityId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/marketplace/product/:id', builder: (context, state) => ProductDetailPage(productId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/marketplace/orders/:id', builder: (context, state) => OrderDetailPage(orderId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/schemes/:id', builder: (context, state) => SchemeDetailPage(schemeId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/training/:id', builder: (context, state) => CourseDetailPage(courseId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/training/:id/quiz', builder: (context, state) => CourseQuizPage(courseId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/announcements/:id', builder: (context, state) => AnnouncementDetailPage(announcementId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/support/ticket/:id', builder: (context, state) => SupportTicketDetailPage(ticketId: state.pathParameters['id']!)),
-          GoRoute(path: '/app/analytics/shg/:id', builder: (context, state) => AnalyticsShgDetailPage(shgId: state.pathParameters['id']!)),
+          GoRoute(path: Paths.adminShgs, builder: (context, state) => const AdminShgsPage()),
+          // Each of the routes below is keyed on its :id path parameter.
+          // Without a ValueKey, go_router reuses the same Element when
+          // navigating between two matches of the same route pattern (e.g.
+          // one member's detail page to another's), so a page whose state
+          // fetches data in initState (like AppAsyncBuilder) would keep
+          // showing the first id's data after an in-app navigation.
+          GoRoute(
+            path: '/app/shg/members/:id',
+            builder: (context, state) => MemberDetailPage(key: ValueKey(state.pathParameters['id']), memberId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/loans/:id',
+            builder: (context, state) => LoanDetailPage(key: ValueKey(state.pathParameters['id']), loanId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/meetings/:id',
+            builder: (context, state) => MeetingDetailPage(key: ValueKey(state.pathParameters['id']), meetingId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/meetings/:id/mom',
+            builder: (context, state) => MeetingMomPage(key: ValueKey(state.pathParameters['id']), meetingId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/livelihood/:id',
+            builder: (context, state) => LivelihoodDetailPage(key: ValueKey(state.pathParameters['id']), activityId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/marketplace/product/:id',
+            builder: (context, state) => ProductDetailPage(key: ValueKey(state.pathParameters['id']), productId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/marketplace/orders/:id',
+            builder: (context, state) => OrderDetailPage(key: ValueKey(state.pathParameters['id']), orderId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/schemes/:id',
+            builder: (context, state) => SchemeDetailPage(key: ValueKey(state.pathParameters['id']), schemeId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/training/:id',
+            builder: (context, state) => CourseDetailPage(key: ValueKey(state.pathParameters['id']), courseId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/training/:id/quiz',
+            builder: (context, state) => CourseQuizPage(key: ValueKey(state.pathParameters['id']), courseId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/announcements/:id',
+            builder: (context, state) =>
+                AnnouncementDetailPage(key: ValueKey(state.pathParameters['id']), announcementId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/support/ticket/:id',
+            builder: (context, state) =>
+                SupportTicketDetailPage(key: ValueKey(state.pathParameters['id']), ticketId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/analytics/shg/:id',
+            builder: (context, state) => AnalyticsShgDetailPage(key: ValueKey(state.pathParameters['id']), shgId: state.pathParameters['id']!),
+          ),
         ],
       ),
     ],

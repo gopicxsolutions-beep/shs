@@ -10,9 +10,20 @@ class TrainingRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Demo mode has no backing table, so passing a quiz would otherwise never
+  // show as certified anywhere — track it here so it survives for the rest
+  // of the session, mirroring AnnouncementRepository._locallyRead.
+  static final Set<String> _locallyCertified = {};
+
   Future<List<Course>> fetchCourses() async {
     if (!_live) return mock.courses.map((c) => Course(id: c.id, title: c.title, topic: c.topic, format: c.format, duration: c.duration)).toList();
-    final rows = await _client.from('training_courses').select().order('created_at');
+    // Platform-wide catalog shared by every SHG (see class doc comment and
+    // TrainingHomePage's own note on this), not bounded by any one group's
+    // size — it grows as more content is added over time. Previously had no
+    // `.limit()` at all. Capped at a generous 500 rather than left
+    // unbounded, matching the same defensive cap now applied to the other
+    // platform-wide catalogs (marketplace products, admin user/SHG lists).
+    final rows = await _client.from('training_courses').select().order('created_at').limit(500);
     return (rows as List).map((r) => Course.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -27,10 +38,33 @@ class TrainingRepository {
     return row == null ? null : Course.fromMap(row);
   }
 
-  Future<Map<String, CourseProgress>> fetchMyProgress(String? memberId) async {
-    if (!_live || memberId == null) {
-      return {for (final c in mock.courses) c.id: CourseProgress(courseId: c.id, progress: c.progress, certified: c.certified)};
+  /// Real per-course quiz content backed by `public.quiz_questions`
+  /// (migration 0041) in live mode; `lib/data/training.dart`'s
+  /// `quizQuestions` map in demo mode. Ordered deterministically (by
+  /// `order_index`/list position) so the same course always presents its
+  /// questions in the same order.
+  Future<List<QuizQuestion>> fetchQuizQuestions(String courseId) async {
+    if (!_live) {
+      final mockQs = mock.quizQuestions[courseId] ?? const <mock.MockQuizQuestion>[];
+      return [
+        for (var i = 0; i < mockQs.length; i++)
+          QuizQuestion(id: '$courseId-q$i', courseId: courseId, question: mockQs[i].question, options: mockQs[i].options, correctIndex: mockQs[i].correctIndex),
+      ];
     }
+    final rows = await _client.from('quiz_questions').select().eq('course_id', courseId).order('order_index');
+    return (rows as List).map((r) => QuizQuestion.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
+  Future<Map<String, CourseProgress>> fetchMyProgress(String? memberId) async {
+    if (!_live) {
+      return {
+        for (final c in mock.courses)
+          c.id: _locallyCertified.contains(c.id)
+              ? CourseProgress(courseId: c.id, progress: 100, certified: true)
+              : CourseProgress(courseId: c.id, progress: c.progress, certified: c.certified),
+      };
+    }
+    if (memberId == null) return {};
     final rows = await _client.from('course_progress').select().eq('member_id', memberId);
     return {for (final r in rows as List) (r as Map<String, dynamic>)['course_id'] as String: CourseProgress.fromMap(r)};
   }
@@ -46,7 +80,10 @@ class TrainingRepository {
 
   /// Called after passing the quiz — marks the course complete + certified.
   Future<void> markCertified(String courseId, String? memberId) async {
-    if (!_live || memberId == null) return;
+    if (!_live) {
+      _locallyCertified.add(courseId);
+      return;
+    }
     await _client.from('course_progress').upsert({
       'course_id': courseId,
       'member_id': memberId,

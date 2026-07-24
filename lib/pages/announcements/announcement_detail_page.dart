@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/announcement.dart';
 import '../../repositories/announcement_repository.dart';
@@ -32,18 +33,25 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final memberId = appState.profile?.id;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Announcement'),
+      appBar: PageHeader(title: l10n.announcementDetailTitle),
       body: AppAsyncBuilder<Announcement?>(
         future: () async {
           final a = await _repo.fetchById(widget.announcementId, memberId);
-          if (a != null) await _repo.markRead(widget.announcementId, memberId);
+          if (a != null) {
+            try {
+              await _repo.markRead(widget.announcementId, memberId);
+            } catch (_) {
+              // read-receipt failure must not hide successfully-loaded content
+            }
+          }
           return a;
         },
         builder: (context, a) {
           if (a == null) {
-            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This announcement could not be found');
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.announcementDetailNotFound);
           }
           return ListView(
             padding: const EdgeInsets.all(16),

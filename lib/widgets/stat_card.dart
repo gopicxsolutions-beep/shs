@@ -29,31 +29,42 @@ class StatCard extends StatelessWidget {
           children: [
             Positioned(right: -16, top: -24, child: _dot(80)),
             Positioned(right: -32, bottom: 0, child: _dot(64)),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(label, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.75), fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 6),
-                      Text(value, style: const TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      if (trend != null) ...[
-                        const SizedBox(height: 4),
-                        Text(trend!, style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.7)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      ],
-                    ],
-                  ),
+            // The decorative dots above are absolutely-positioned and can
+            // overlap a neighboring card's bounds, which throws off screen
+            // readers' geometry-based traversal across a row of these
+            // (observed reading two cards' labels, then both their values,
+            // interleaved). Merging this card's text into one semantics
+            // node sidesteps that entirely.
+            Semantics(
+              label: [label, value, if (trend != null) trend].join(', '),
+              child: ExcludeSemantics(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(label, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.75), fontWeight: FontWeight.w500)),
+                          const SizedBox(height: 6),
+                          Text(value, style: const TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          if (trend != null) ...[
+                            const SizedBox(height: 4),
+                            Text(trend!, style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.7)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (icon != null)
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
+                        child: Icon(icon, size: 16, color: Colors.white),
+                      ),
+                  ],
                 ),
-                if (icon != null)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
-                    child: Icon(icon, size: 16, color: Colors.white),
-                  ),
-              ],
+              ),
             ),
           ],
         ),

@@ -10,6 +10,8 @@ import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/async_state.dart';
+import '../../widgets/input_formatters.dart';
 
 class OtpPage extends StatefulWidget {
   final String? phone;
@@ -25,6 +27,7 @@ class _OtpPageState extends State<OtpPage> {
   Timer? _timer;
   int _resendSeconds = 30;
   bool _verifying = false;
+  bool _resending = false;
   String? _error;
 
   String get _phone => widget.phone ?? '+91 98765 43210';
@@ -64,12 +67,18 @@ class _OtpPageState extends State<OtpPage> {
   }
 
   Future<void> _resend() async {
-    if (_resendSeconds > 0 || !SupabaseService.isConfigured) return;
+    if (_resendSeconds > 0 || _resending || !SupabaseService.isConfigured) return;
+    setState(() => _resending = true);
     try {
       await _authService.sendOtp(_phone);
-      _startResendTimer();
-    } catch (_) {
-      if (mounted) setState(() => _error = 'Could not resend the code. Please try again.');
+      if (mounted) _startResendTimer();
+    } catch (e) {
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        setState(() => _error = isNetworkError(e) ? l10n.asyncErrorNetwork : l10n.otpResendError);
+      }
+    } finally {
+      if (mounted) setState(() => _resending = false);
     }
   }
 
@@ -89,9 +98,21 @@ class _OtpPageState extends State<OtpPage> {
       final appState = context.read<AppState>();
       await appState.refreshProfile();
       if (!mounted) return;
-      context.go(appState.hasProfile ? Paths.dashboard : Paths.profileSetup);
-    } catch (_) {
-      if (mounted) setState(() => _error = 'Incorrect or expired code. Please try again.');
+      // Replay a deep link the router captured (see
+      // AppState.capturePendingDeepLink) only once onboarding is fully
+      // clear — if Role Select or SHG approval still needs to run first,
+      // `Paths.dashboard` is exactly what this went to before, and the
+      // router's own redirect chain takes it from there (Role Select / SHG
+      // Approval Pending / Profile Setup as appropriate); the deep link is
+      // left captured rather than threaded through those in-between screens.
+      final canReplayDeepLink = appState.hasProfile && !appState.needsRoleSelection && !appState.needsShgApproval;
+      final deepLink = canReplayDeepLink ? appState.consumePendingDeepLink() : null;
+      context.go(deepLink ?? (appState.hasProfile ? Paths.dashboard : Paths.profileSetup));
+    } catch (e) {
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        setState(() => _error = isNetworkError(e) ? l10n.asyncErrorNetwork : l10n.otpVerifyError);
+      }
     } finally {
       if (mounted) setState(() => _verifying = false);
     }
@@ -103,7 +124,7 @@ class _OtpPageState extends State<OtpPage> {
     return Scaffold(
       backgroundColor: Neutral.c50,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
           child: Column(
             children: [
@@ -128,13 +149,28 @@ class _OtpPageState extends State<OtpPage> {
               const SizedBox(height: 28),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(6, (i) => SizedBox(
+                // 6 visually-identical, unlabeled boxes: a sighted user infers
+                // "this is the OTP" from the title/hint above and the boxes'
+                // left-to-right position. A screen reader has no equivalent —
+                // without a per-box label it announces 6 indistinguishable
+                // "edit box" nodes with no indication they're digits 1-6 of
+                // one code. MergeSemantics folds the position label together
+                // with the field's own live value (the digit just typed) into
+                // a single announced node, instead of ExcludeSemantics (used
+                // elsewhere in this codebase for static content) which would
+                // silently drop that live value.
+                children: List.generate(6, (i) => MergeSemantics(
+                    child: Semantics(
+                      label: l10n.otpDigitLabel(i + 1),
+                      child: SizedBox(
                       width: 44, height: 52,
                       child: TextField(
                         controller: _digits[i],
                         focusNode: _focus[i],
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
+                        textInputAction: i < 5 ? TextInputAction.next : TextInputAction.done,
+                        inputFormatters: [OtpBoxFormatter(index: i, controllers: _digits, focusNodes: _focus, onFilled: () => setState(() {}))],
                         maxLength: 1,
                         style: AppTheme.sans(18, weight: FontWeight.w700),
                         decoration: InputDecoration(
@@ -147,7 +183,9 @@ class _OtpPageState extends State<OtpPage> {
                           if (v.isNotEmpty && i < 5) _focus[i + 1].requestFocus();
                         },
                       ),
-                    )),
+                    ),
+                  ),
+                )),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
@@ -155,7 +193,7 @@ class _OtpPageState extends State<OtpPage> {
               ],
               const SizedBox(height: 20),
               InkWell(
-                onTap: _resend,
+                onTap: _resendSeconds > 0 || _resending ? null : _resend,
                 child: Text.rich(
                   TextSpan(style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600), children: [
                     if (_resendSeconds > 0) ...[
@@ -173,7 +211,7 @@ class _OtpPageState extends State<OtpPage> {
                 size: ButtonSize.lg,
                 onPressed: _filled && !_verifying ? _submit : null,
               ),
-              const Spacer(),
+              const SizedBox(height: 32),
               Text(l10n.otpDidntReceive, style: AppTheme.sans(11, color: Neutral.c400)),
             ],
           ),

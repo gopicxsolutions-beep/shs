@@ -1,0 +1,68 @@
+-- Join-request CREATION-flow audit (this session had extensively audited
+-- the APPROVAL side -- approve_shg_join_request(), round 46's
+-- self-promotion fix, round 68's concurrent-decision race checks -- but
+-- never the request itself). Four of five checked angles came back clean:
+--   1. Duplicate pending requests (same SHG or different SHGs at once) --
+--      already impossible: 0004's `shg_join_requests_one_pending_per_member`
+--      partial unique index blocks a SECOND pending row for a member
+--      regardless of target shg_id, so the "leader approves one, a stale
+--      pending request to a different SHG is left dangling" scenario this
+--      audit set out to check for cannot occur in the first place.
+--   3. Self-approval via a data anomaly -- traced approve_shg_join_request's
+--      (0004/0023) authorization check against 0009/0022/0023's profiles
+--      self-update lockdown: a member can never set her OWN shg_id to a
+--      DIFFERENT SHG outside of a real approval, so "become leader of the
+--      target SHG, then approve your own request" is a chicken-and-egg
+--      dead end -- already closed.
+--   4. Malformed/stale shg_id at request time -- `shg_id uuid not null
+--      references public.shgs (id) on delete cascade` (0004) already makes
+--      this impossible at the database layer; a stale cached search result
+--      pointing at a deleted SHG fails the FK check on insert instead of
+--      creating an orphan. `shgs` also has no soft-delete/active flag to
+--      route around, so there is no "exists but inactive" case either.
+--   5. An already-approved member (profiles.shg_id already set) reaching
+--      Profile Setup again and filing a second request -- the router
+--      (lib/routes/router.dart) only keeps `/profile-setup` reachable while
+--      `needsShgApproval` is true, which requires `shg_id is null`; once
+--      approved it unconditionally redirects to the dashboard. Confirmed
+--      unreachable via stale bookmark/back button.
+--
+-- 2. Withdrawal/cancellation is the one real, confirmed gap.
+-- `ShgApprovalPendingPage` only offers "Choose a different SHG" when
+-- `request.status == 'rejected'` -- while a request is still PENDING (the
+-- far more common case: most of the time nobody has decided yet), the only
+-- actions are "Check Status" and "Sign Out", neither of which cancels
+-- anything (signing back in returns to the exact same pending state). A
+-- member who picked the wrong SHG, or whose leader is slow/unresponsive,
+-- has no self-service way out and is stuck indefinitely at the mercy of a
+-- leader who has no reason to actively reject a legitimate-looking request
+-- just so the member can leave.
+--
+-- This is compounded by a real, reachable crash: the router's own
+-- `needsShgApproval` redirect guard keeps `/profile-setup` open in BOTH the
+-- pending and rejected states (its comment claims this is "so a rejected
+-- member can pick a different SHG", but the actual boolean doesn't
+-- distinguish the two). A member with a still-pending request who reaches
+-- that route anyway (deep link, browser back/forward, a future UI tweak
+-- that surfaces the button while pending) and taps Continue hits
+-- `ShgJoinRequestRepository.submit()`'s bare `insert()`, which collides
+-- with the one-pending-per-member unique index above and throws --
+-- surfaced to the user as a generic "Could not save your profile. Please
+-- try again." even though her name/village DID save moments earlier in the
+-- same call (`AppState.completeProfileSetup()` upserts the profile row
+-- before attempting the join-request insert). Retrying repeats the same
+-- failure forever, with no indication of what actually went wrong.
+--
+-- Fix: let a member cancel/replace her own STILL-PENDING request.
+-- Already-DECIDED rows (approved/rejected) are deliberately left immutable
+-- -- a leader's or staff's decision must never be erasable by the member it
+-- was made about, preserving the audit trail 0027 locked `decided_by`/
+-- `decided_at` down for. `ShgJoinRequestRepository.submit()` (Dart) is
+-- updated in the same change to delete any existing pending row for the
+-- caller before inserting the new one, so resubmitting while pending
+-- replaces cleanly instead of crashing, and `ShgApprovalPendingPage` now
+-- offers "Choose a different SHG" in the pending state too, not just
+-- rejected.
+
+create policy "shg_join_requests_delete_self_pending" on public.shg_join_requests
+  for delete using (member_id = auth.uid() and status = 'pending');

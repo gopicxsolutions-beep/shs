@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg.dart';
 import '../../models/types.dart';
@@ -29,13 +30,14 @@ class ShgMembersPage extends StatelessWidget {
     final appState = context.watch<AppState>();
     final repo = ShgRepository();
     final shgId = appState.profile?.shgId;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: PageHeader(
-        title: 'Members',
+        title: l10n.shgMembersTitle,
         right: appState.user.role == Role.leader
             ? IconButton(
-                tooltip: 'Join requests',
+                tooltip: l10n.shgMembersJoinRequestsTooltip,
                 icon: Icon(Icons.person_add_alt_1_rounded, color: Brand.c600),
                 onPressed: () => context.go(Paths.shgJoinRequests),
               )
@@ -45,7 +47,7 @@ class ShgMembersPage extends StatelessWidget {
         future: () => repo.fetchMembers(shgId),
         builder: (context, members) {
           if (members.isEmpty) {
-            return const AppEmptyState(icon: Icons.groups_rounded, message: 'No members found');
+            return AppEmptyState(icon: Icons.groups_rounded, message: l10n.shgMembersEmpty);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),

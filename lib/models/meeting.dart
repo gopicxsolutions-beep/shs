@@ -27,6 +27,73 @@ class Meeting {
         agenda: map['agenda'] as String?,
         status: map['status'] as String,
       );
+
+  /// True once this meeting's scheduled date has passed — regardless of the
+  /// stored `status`. `MeetingRepository.setStatus()` is only ever called to
+  /// set `'cancelled'` (`meeting_detail_page.dart`'s "Cancel Meeting"
+  /// action) — nothing in the app ever transitions a meeting to
+  /// `'completed'`, so a real meeting's `status` stays `'upcoming'` forever
+  /// after creation (unless explicitly cancelled), even long after its date
+  /// has come and gone. Callers that need to know whether a meeting has
+  /// actually happened yet (picking "the next meeting" to check into, or
+  /// bucketing Upcoming vs. Past) must check this instead of trusting
+  /// `status` alone.
+  bool get hasPassed {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return date.isBefore(today);
+  }
+
+  /// True only on the meeting's own scheduled calendar day (day granularity,
+  /// same as [hasPassed]) — used to gate the member-facing self check-in
+  /// flow (`meeting_qr_page.dart`) so a member can't mark herself "present"
+  /// for a meeting that is still days/weeks away. `hasPassed` alone isn't
+  /// enough for that: it only excludes meetings whose date has already gone
+  /// by, so a naive `!hasPassed` filter is future-inclusive and would happily
+  /// resolve to an SHG's next scheduled meeting even if it's a month out,
+  /// letting a member self-check-in for it (and get counted in
+  /// `avg_attendance_pct`) long before it actually happens.
+  bool get isScheduledToday {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
+  }
+
+  static final RegExp _time12h = RegExp(r'^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$');
+  static final RegExp _time24h = RegExp(r'^(\d{1,2}):(\d{2})$');
+
+  /// Best-effort combination of [date] (day-only) with [time] into a full
+  /// instant — used to compute meeting-reminder fire times
+  /// (`lib/services/notification_service.dart`). `meeting_time` is stored as
+  /// free-form text, not a structured time column, so the format actually
+  /// seen varies with whoever produced it: `lib/data/meetings.dart`'s mock
+  /// rows and `MeetingSchedulePage`'s 12-hour-locale `TimeOfDay.format()`
+  /// both look like "4:00 PM", but a device with 24-hour formatting enabled
+  /// produces "16:00" instead — both are handled here. Falls back to 9:00 AM
+  /// on the meeting's date when [time] is null or doesn't match either
+  /// shape; this only ever affects *when a reminder fires*, never the actual
+  /// time shown to users elsewhere (that always renders the raw [time]
+  /// string as-is).
+  DateTime get scheduledAt {
+    final fallback = DateTime(date.year, date.month, date.day, 9, 0);
+    final t = time?.trim();
+    if (t == null || t.isEmpty) return fallback;
+    final m12 = _time12h.firstMatch(t);
+    if (m12 != null) {
+      var hour = int.parse(m12.group(1)!) % 12;
+      final minute = int.parse(m12.group(2)!);
+      if (m12.group(3)!.toUpperCase() == 'PM') hour += 12;
+      if (minute > 59) return fallback;
+      return DateTime(date.year, date.month, date.day, hour, minute);
+    }
+    final m24 = _time24h.firstMatch(t);
+    if (m24 != null) {
+      final hour = int.parse(m24.group(1)!);
+      final minute = int.parse(m24.group(2)!);
+      if (hour > 23 || minute > 59) return fallback;
+      return DateTime(date.year, date.month, date.day, hour, minute);
+    }
+    return fallback;
+  }
 }
 
 /// A roster member merged with their attendance for one meeting (built in

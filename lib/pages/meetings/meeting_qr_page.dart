@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/meeting.dart';
 import '../../repositories/meeting_repository.dart';
@@ -30,18 +31,32 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
   bool _checkedIn = false;
 
   Future<void> _checkIn(Meeting meeting, String? memberId) async {
-    if (memberId == null) return;
+    // A real memberId is required to persist in live mode, but demo mode
+    // never has one (AppState.profile is always null there) and its
+    // markAttendance() no-ops regardless of the id passed — so only bail
+    // out when live mode actually needs a real id to write.
+    if (memberId == null && SupabaseService.isConfigured) return;
     setState(() => _checkingIn = true);
     try {
-      await _repo.markAttendance(meeting.id, memberId, true);
-      if (mounted) setState(() => _checkedIn = true);
+      await _repo.markAttendance(meeting.id, memberId ?? 'demo-member', true);
+      if (mounted) {
+        setState(() => _checkedIn = true);
+        if (!SupabaseService.isConfigured) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo mode — check-in not saved (connect Supabase to persist)')));
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not check you in. Please try again.')));
+      }
     } finally {
       if (mounted) setState(() => _checkingIn = false);
     }
   }
 
   Future<void> _scanAndCheckIn(Meeting meeting, String? memberId) async {
-    final code = await showQrScanner(context, title: 'Scan Attendance QR', instructions: 'Point your camera at the QR code displayed at the venue');
+    final l10n = AppLocalizations.of(context)!;
+    final code = await showQrScanner(context, title: l10n.qrScanAttendanceTitle, instructions: l10n.qrScanAttendanceInstructions);
     if (code == null || !mounted) return;
     await _checkIn(meeting, memberId);
   }
@@ -57,7 +72,31 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
       body: AppAsyncBuilder<List<Meeting>>(
         future: () => _repo.fetchForShg(shgId),
         builder: (context, meetings) {
-          final upcoming = meetings.where((m) => m.status == 'upcoming');
+          // `fetchForShg` sorts newest-scheduled-date-first (for the
+          // meetings list/history view) — if an SHG has more than one
+          // upcoming meeting at once (e.g. next week's and next month's
+          // both scheduled), naively taking `.first` here picked the
+          // farthest-future one instead of the one actually happening now,
+          // silently checking members into the wrong meeting.
+          //
+          // `m.isScheduledToday` (not the weaker `!m.hasPassed`) further
+          // restricts this to meetings happening on today's calendar date.
+          // This screen performs a real, immediate write the instant a
+          // member taps a button (`markAttendance(..., present: true)`,
+          // upserted straight into `meeting_attendance`, which feeds
+          // `avg_attendance_pct` used for SHG grading elsewhere) — a plain
+          // `!m.hasPassed` filter is future-inclusive, so whenever the SHG's
+          // *next* scheduled meeting was still days or weeks away (and no
+          // meeting was happening today), this screen would resolve to that
+          // future meeting anyway and let a member self-check-in for it —
+          // marking herself "present" at a meeting that hasn't happened yet,
+          // with no leader involved and nothing to trigger a correction
+          // unless a leader happens to notice and un-toggle it later on the
+          // roster page. Restricting to today's date closes that: if no
+          // meeting is scheduled for today, this correctly falls through to
+          // the "No meeting scheduled to check in to right now" empty state
+          // below instead of offering a future meeting to check into early.
+          final upcoming = meetings.where((m) => m.status == 'upcoming' && m.isScheduledToday).toList()..sort((a, b) => a.date.compareTo(b.date));
           if (upcoming.isEmpty) {
             return const AppEmptyState(icon: Icons.event_busy_rounded, message: 'No meeting scheduled to check in to right now');
           }
@@ -93,14 +132,14 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
                     icon: Icons.qr_code_scanner_rounded,
                     fullWidth: true,
                     size: ButtonSize.lg,
-                    onPressed: !SupabaseService.isConfigured || _checkingIn ? null : () => _scanAndCheckIn(meeting, memberId),
+                    onPressed: _checkingIn ? null : () => _scanAndCheckIn(meeting, memberId),
                   ),
                   const SizedBox(height: 10),
                   AppButton(
                     label: _checkingIn ? 'Checking in…' : 'Check In Without Scanning',
                     variant: ButtonVariant.outline,
                     fullWidth: true,
-                    onPressed: !SupabaseService.isConfigured || _checkingIn ? null : () => _checkIn(meeting, memberId),
+                    onPressed: _checkingIn ? null : () => _checkIn(meeting, memberId),
                   ),
                 ],
               ],

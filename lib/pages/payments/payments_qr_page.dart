@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../repositories/payment_repository.dart';
 import '../../routes/paths.dart';
-import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/input_formatters.dart';
 import '../../widgets/qr_scanner_sheet.dart';
 
 /// Scans a UPI-style QR code (`upi://pay?pa=...&pn=...&am=...`) and prefills
@@ -30,6 +31,7 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
   String? _payeeName;
 
   static const _modes = ['UPI', 'QR', 'Card', 'NetBanking'];
+  static const _maxAmount = 1000000;
 
   @override
   void dispose() {
@@ -38,7 +40,8 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
   }
 
   Future<void> _scan() async {
-    final code = await showQrScanner(context, title: 'Scan to Pay', instructions: 'Point your camera at the merchant\'s UPI QR code');
+    final l10n = AppLocalizations.of(context)!;
+    final code = await showQrScanner(context, title: l10n.qrScanToPayTitle, instructions: l10n.qrScanToPayInstructions);
     if (code == null || !mounted) return;
 
     String? payee;
@@ -68,6 +71,10 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
       setState(() => _error = 'Enter a valid amount');
       return;
     }
+    if (amount > _maxAmount) {
+      setState(() => _error = 'Amount seems unusually large — please check and re-enter');
+      return;
+    }
     setState(() {
       _paying = true;
       _error = null;
@@ -76,10 +83,14 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
     try {
       final result = await _repo.pay(memberId: appState.profile?.id, amount: amount, mode: _mode);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        // Navigate first, then show on the captured messenger — showing
+        // before navigating drops the SnackBar, since context.go() replaces
+        // this page's Scaffold before it ever gets a frame to render.
+        final messenger = ScaffoldMessenger.of(context);
+        context.go(Paths.payments);
+        messenger.showSnackBar(SnackBar(
           content: Text(result.success ? 'Payment successful · Ref ${result.reference}' : 'Payment failed'),
         ));
-        context.go(Paths.payments);
       }
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not process this payment. Please try again.');
@@ -101,7 +112,12 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
               onTap: _scan,
               borderRadius: BorderRadius.circular(16),
               child: Container(
-                height: 160,
+                // A fixed 160px height fits this comfortably at normal text
+                // scale, but "Tap to scan a QR code" (plus the optional
+                // "Paying <name>" line) needs more vertical room once text
+                // scale is turned up — minHeight (not a hard height) lets
+                // the box grow to fit instead of clipping/overflowing.
+                constraints: const BoxConstraints(minHeight: 160),
                 decoration: BoxDecoration(color: Neutral.c100, borderRadius: BorderRadius.circular(16)),
                 alignment: Alignment.center,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -129,8 +145,11 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
                       child: TextField(
                         controller: _amount,
                         keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                        inputFormatters: wholeNumberInputFormatters,
+                        textInputAction: TextInputAction.done,
+                        maxLength: 7,
                         style: AppTheme.display(22),
-                        decoration: const InputDecoration(border: InputBorder.none, hintText: '0'),
+                        decoration: const InputDecoration(border: InputBorder.none, hintText: '0', counterText: ''),
                         onChanged: (_) => setState(() => _error = null),
                       ),
                     ),
@@ -173,7 +192,7 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
               label: _paying ? 'Processing…' : 'Pay Now',
               fullWidth: true,
               size: ButtonSize.lg,
-              onPressed: !SupabaseService.isConfigured || _paying ? null : _pay,
+              onPressed: _paying ? null : _pay,
             ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/marketplace.dart';
 import '../../repositories/marketplace_repository.dart';
@@ -17,14 +18,15 @@ class MarketplaceReviewsPage extends StatelessWidget {
     final appState = context.watch<AppState>();
     final repo = MarketplaceRepository();
     final sellerId = appState.profile?.id;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Reviews'),
+      appBar: PageHeader(title: l10n.marketplaceReviewsTitle),
       body: AppAsyncBuilder<List<Review>>(
         future: () => repo.fetchReviewsForSeller(sellerId),
         builder: (context, reviews) {
           if (reviews.isEmpty) {
-            return const AppEmptyState(icon: Icons.star_border_rounded, message: 'No reviews on your products yet');
+            return AppEmptyState(icon: Icons.star_border_rounded, message: l10n.marketplaceReviewsEmpty);
           }
           final avg = reviews.fold<num>(0, (s, r) => s + r.rating) / reviews.length;
           return ListView(
@@ -36,7 +38,7 @@ class MarketplaceReviewsPage extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(avg.toStringAsFixed(1), style: AppTheme.display(22)),
                   const SizedBox(width: 8),
-                  Text('from ${reviews.length} review${reviews.length == 1 ? '' : 's'}', style: AppTheme.sans(12, color: Neutral.c500)),
+                  Flexible(child: Text(l10n.marketplaceReviewsFromCount(reviews.length), maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500))),
                 ]),
               ),
               const SizedBox(height: 16),
@@ -49,9 +51,14 @@ class MarketplaceReviewsPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(children: [
-                              Text(r.reviewerName, style: AppTheme.sans(12, weight: FontWeight.w700)),
+                              Flexible(child: Text(r.reviewerName, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700))),
                               const SizedBox(width: 8),
-                              Row(children: List.generate(5, (i) => Icon(i < r.rating ? Icons.star_rounded : Icons.star_border_rounded, size: 14, color: Gold.c500))),
+                              Semantics(
+                                label: l10n.marketplaceReviewsRatingSemantics(r.rating),
+                                child: ExcludeSemantics(
+                                  child: Row(children: List.generate(5, (i) => Icon(i < r.rating ? Icons.star_rounded : Icons.star_border_rounded, size: 14, color: Gold.c500))),
+                                ),
+                              ),
                             ]),
                             if (r.comment != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(r.comment!, style: AppTheme.sans(12, color: Neutral.c600))),
                           ],

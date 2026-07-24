@@ -1,6 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/report.dart';
 import '../services/supabase_service.dart';
+import 'loan_repository.dart';
+import 'meeting_repository.dart';
+import 'savings_repository.dart';
+import 'shg_repository.dart';
+import 'trend_repository.dart';
 
 /// `public.report_snapshots` exists so an Edge Function can eventually
 /// generate these server-side and cache them (`report_snapshots_write_staff`
@@ -14,10 +19,43 @@ class ReportRepository {
   bool get _live => SupabaseService.isConfigured;
 
   Future<MemberReport> fetchMemberReport({required String? memberId, required String? shgId}) async {
-    if (!_live || memberId == null || shgId == null) {
-      return const MemberReport(totalSavings: 48200, savingsEntryCount: 12, totalOutstanding: 22000, activeLoanCount: 1, meetingsAttended: 10, meetingsTotal: 12, period: 'All time');
+    if (!_live) {
+      // Computed from the same mock data the Savings/Loans/Meetings pages
+      // show, rather than a fixed snapshot, so this doesn't drift out of
+      // sync with what tapping through to those pages actually displays.
+      final savings = await SavingsRepository().fetchForMember(memberId);
+      final loans = await LoanRepository().fetchForMember(memberId);
+      // Only count verified savings toward the total — a pending entry is
+      // an unconfirmed self-report, not yet reconciled by the SHG leader.
+      final totalSavings = savings.where((e) => e.status == 'verified').fold<num>(0, (s, e) => s + e.amount);
+      final activeLoans = loans.where((l) => l.status == 'active' || l.status == 'overdue').toList();
+      final totalOutstanding = activeLoans.fold<num>(0, (s, l) => s + l.outstanding);
+      // Mock meetings carry no per-member attendance, so the demo persona is
+      // treated as present at every completed meeting — same assumption
+      // MeetingRepository.fetchAttendanceHistory's demo branch makes. Reads
+      // through MeetingRepository (not the raw `lib/data/meetings.dart` list
+      // directly) so this stays in sync with a meeting cancelled via
+      // `MeetingDetailPage`'s "Cancel Meeting" action in the same demo
+      // session — a cancelled meeting's status flips to 'cancelled' there
+      // (see `MeetingRepository._locallyCancelled`), so it no longer
+      // matches `status == 'completed'` here either, instead of this report
+      // silently disagreeing with what the Meetings tab now shows.
+      final meetings = await MeetingRepository().fetchForShg(shgId);
+      final completedMeetings = meetings.where((m) => m.status == 'completed').length;
+      return MemberReport(
+        totalSavings: totalSavings,
+        savingsEntryCount: savings.length,
+        totalOutstanding: totalOutstanding,
+        activeLoanCount: activeLoans.length,
+        meetingsAttended: completedMeetings,
+        meetingsTotal: completedMeetings,
+        period: 'All time',
+      );
     }
-    final savings = await _client.from('savings_entries').select('amount').eq('member_id', memberId);
+    if (memberId == null || shgId == null) {
+      return const MemberReport(totalSavings: 0, savingsEntryCount: 0, totalOutstanding: 0, activeLoanCount: 0, meetingsAttended: 0, meetingsTotal: 0, period: 'All time');
+    }
+    final savings = await _client.from('savings_entries').select('amount').eq('member_id', memberId).eq('status', 'verified');
     final totalSavings = (savings as List).fold<num>(0, (s, r) => s + ((r as Map<String, dynamic>)['amount'] as num));
 
     final loans = await _client.from('loans').select('outstanding, status').eq('member_id', memberId);
@@ -32,9 +70,26 @@ class ReportRepository {
       }
     }
 
-    final completedMeetings = await _client.from('meetings').select('id').eq('shg_id', shgId).eq('status', 'completed');
+    // Filtering on `status = 'completed'` here would always return zero rows
+    // in live mode — `MeetingRepository.setStatus()` is only ever called to
+    // set 'cancelled' (see its doc comment), never 'completed', so a real
+    // meeting's status never actually advances past 'upcoming' on its own.
+    // Use the meeting's own date instead, same fix `MeetingRepository.
+    // fetchAttendanceHistory()` already applies — without this, a member's
+    // dashboard "Attendance" stat was permanently stuck at 0% since
+    // `meetingsTotal` could never be non-zero. `.neq('status', 'cancelled')`
+    // still excludes a meeting explicitly cancelled after its date passed,
+    // so it doesn't count as a completed-with-0%-attendance meeting here.
+    final todayStr = DateTime.now().toIso8601String().split('T').first;
+    final completedMeetings = await _client.from('meetings').select('id').eq('shg_id', shgId).neq('status', 'cancelled').lt('meeting_date', todayStr);
     final meetingsTotal = (completedMeetings as List).length;
-    final attendance = await _client.from('meeting_attendance').select('present, meetings!inner(status)').eq('member_id', memberId).eq('meetings.status', 'completed');
+    final attendance = await _client
+        .from('meeting_attendance')
+        .select('present, meetings!inner(shg_id, status, meeting_date)')
+        .eq('member_id', memberId)
+        .eq('meetings.shg_id', shgId)
+        .neq('meetings.status', 'cancelled')
+        .lt('meetings.meeting_date', todayStr);
     final meetingsAttended = (attendance as List).where((r) => (r as Map<String, dynamic>)['present'] == true).length;
 
     return MemberReport(
@@ -49,13 +104,42 @@ class ReportRepository {
   }
 
   Future<ShgReportData> fetchShgReport(String? shgId) async {
-    if (!_live || shgId == null) {
-      return const ShgReportData(memberCount: 14, totalSavings: 612500, totalOutstanding: 184000, activeLoanCount: 6, avgAttendancePct: 82, period: 'All time');
+    if (!_live) {
+      // Computed from the same mock data the Members/Savings/Loans pages
+      // show, rather than a fixed snapshot, so this doesn't drift out of
+      // sync with what tapping through to those pages actually displays.
+      final savings = await SavingsRepository().fetchForShg(shgId);
+      final loans = await LoanRepository().fetchForShg(shgId);
+      // Only count verified savings — see fetchMemberReport's comment above.
+      final totalSavings = savings.where((e) => e.status == 'verified').fold<num>(0, (s, e) => s + e.amount);
+      final activeLoans = loans.where((l) => l.status == 'active' || l.status == 'overdue').toList();
+      final totalOutstanding = activeLoans.fold<num>(0, (s, l) => s + l.outstanding);
+      final memberCount = (await ShgRepository().fetchMembers(shgId)).length;
+      // Derived from the same monthly points the Performance Report's own
+      // trend chart plots (TrendRepository.attendanceTrend), rather than
+      // recomputed independently from the raw meeting records — two
+      // separate calculations here previously drifted apart (88% headline
+      // vs a ~83% trend-chart average) since they read different fields.
+      final attendancePoints = await TrendRepository().attendanceTrend(shgId: shgId);
+      final avgAttendancePct = attendancePoints.isEmpty
+          ? 0.0
+          : attendancePoints.fold<num>(0, (s, p) => s + p.value) / attendancePoints.length;
+      return ShgReportData(
+        memberCount: memberCount,
+        totalSavings: totalSavings,
+        totalOutstanding: totalOutstanding,
+        activeLoanCount: activeLoans.length,
+        avgAttendancePct: avgAttendancePct,
+        period: 'All time',
+      );
+    }
+    if (shgId == null) {
+      return const ShgReportData(memberCount: 0, totalSavings: 0, totalOutstanding: 0, activeLoanCount: 0, avgAttendancePct: 0, period: 'All time');
     }
     final members = await _client.from('profiles').select('id').eq('shg_id', shgId);
     final memberCount = (members as List).length;
 
-    final savings = await _client.from('savings_entries').select('amount').eq('shg_id', shgId);
+    final savings = await _client.from('savings_entries').select('amount').eq('shg_id', shgId).eq('status', 'verified');
     final totalSavings = (savings as List).fold<num>(0, (s, r) => s + ((r as Map<String, dynamic>)['amount'] as num));
 
     final loans = await _client.from('loans').select('outstanding, status').eq('shg_id', shgId);
@@ -70,11 +154,21 @@ class ReportRepository {
       }
     }
 
-    final completedMeetings = await _client.from('meetings').select('id').eq('shg_id', shgId).eq('status', 'completed');
+    // Same never-advances-past-'upcoming' issue as fetchMemberReport above —
+    // use the meeting's own date instead of the unreachable `status =
+    // 'completed'`. Without this, the leader dashboard's "SHG Health" ->
+    // Attendance tile was permanently stuck at 0%.
+    final todayStr = DateTime.now().toIso8601String().split('T').first;
+    final completedMeetings = await _client.from('meetings').select('id').eq('shg_id', shgId).neq('status', 'cancelled').lt('meeting_date', todayStr);
     final meetingsTotal = (completedMeetings as List).length;
     double avgAttendancePct = 0;
     if (meetingsTotal > 0 && memberCount > 0) {
-      final attendance = await _client.from('meeting_attendance').select('present, meetings!inner(shg_id, status)').eq('meetings.shg_id', shgId).eq('meetings.status', 'completed');
+      final attendance = await _client
+          .from('meeting_attendance')
+          .select('present, meetings!inner(shg_id, status, meeting_date)')
+          .eq('meetings.shg_id', shgId)
+          .neq('meetings.status', 'cancelled')
+          .lt('meetings.meeting_date', todayStr);
       final presentCount = (attendance as List).where((r) => (r as Map<String, dynamic>)['present'] == true).length;
       avgAttendancePct = (presentCount / (meetingsTotal * memberCount)) * 100;
     }
@@ -102,7 +196,7 @@ class ReportRepository {
     final members = await _client.from('profiles').select('id').eq('role', 'member');
     final memberCount = (members as List).length;
 
-    final savings = await _client.from('savings_entries').select('amount');
+    final savings = await _client.from('savings_entries').select('amount').eq('status', 'verified');
     final totalSavings = (savings as List).fold<num>(0, (s, r) => s + ((r as Map<String, dynamic>)['amount'] as num));
 
     final loans = await _client.from('loans').select('outstanding, status');
@@ -138,7 +232,7 @@ class ReportRepository {
     final shgList = shgs as List;
     final villageByShgId = <String, String>{for (final r in shgList) (r as Map<String, dynamic>)['id'] as String: (r['village'] as String?) ?? 'Unknown'};
 
-    final savings = await _client.from('savings_entries').select('shg_id, amount');
+    final savings = await _client.from('savings_entries').select('shg_id, amount').eq('status', 'verified');
     final savingsByShg = <String, num>{};
     for (final r in savings as List) {
       final map = r as Map<String, dynamic>;

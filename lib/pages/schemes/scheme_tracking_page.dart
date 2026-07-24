@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/scheme.dart';
 import '../../repositories/scheme_repository.dart';
@@ -29,12 +30,13 @@ class SchemeTrackingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final repo = SchemeRepository();
     final memberId = appState.profile?.id;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Application Tracking'),
+      appBar: PageHeader(title: l10n.schemeTrackingTitle),
       body: AppAsyncBuilder<List<_TrackingRow>>(
         future: () async {
           final schemes = await repo.fetchSchemes();
@@ -43,7 +45,7 @@ class SchemeTrackingPage extends StatelessWidget {
         },
         builder: (context, rows) {
           if (rows.isEmpty) {
-            return const AppEmptyState(icon: Icons.timeline_rounded, message: "You haven't applied to any schemes yet");
+            return AppEmptyState(icon: Icons.timeline_rounded, message: l10n.schemeTrackingEmptyState);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),

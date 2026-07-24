@@ -12,20 +12,36 @@ class SupportRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
+  // Demo mode has no backing table, so a raised ticket would otherwise
+  // vanish the instant the list reloads — track it here so it survives
+  // for the rest of the session, mirroring AnnouncementRepository._locallyRead.
+  static final List<SupportTicket> _locallyAdded = [];
+
   Future<List<SupportTicket>> fetchTickets({required String? memberId, required bool isStaff}) async {
-    if (!_live || memberId == null) {
-      return mock.mockTickets
-          .map((t) => SupportTicket(id: t.id, memberId: memberId ?? 'me', subject: t.subject, description: t.description, status: t.status, createdAt: _parseMockDate(t.date)))
-          .toList();
+    if (!_live) {
+      final mockTickets = mock.mockTickets
+          .map((t) => SupportTicket(id: t.id, memberId: memberId ?? 'me', subject: t.subject, description: t.description, status: t.status, createdAt: _parseMockDate(t.date)));
+      return [..._locallyAdded.reversed, ...mockTickets];
     }
     var query = _client.from('support_tickets').select('*, profiles(name)');
-    if (!isStaff) query = query.eq('member_id', memberId);
-    final rows = await query.order('created_at', ascending: false);
+    if (!isStaff) {
+      if (memberId == null) return [];
+      query = query.eq('member_id', memberId);
+    }
+    // For staff this is every ticket ever raised across the whole platform,
+    // in every status (not just open ones, so it never self-drains as
+    // tickets get resolved) — genuinely unbounded growth over the life of
+    // the deployment. Previously had no `.limit()` at all. Capped at a
+    // generous 500 rather than left unbounded; newest-first ordering means
+    // it's old, already-resolved tickets that fall past the cap first.
+    final rows = await query.order('created_at', ascending: false).limit(500);
     return (rows as List).map((r) => SupportTicket.fromMap(r as Map<String, dynamic>)).toList();
   }
 
   Future<SupportTicket?> fetchTicket(String id) async {
     if (!_live) {
+      final local = _locallyAdded.where((t) => t.id == id);
+      if (local.isNotEmpty) return local.first;
       final matches = mock.mockTickets.where((t) => t.id == id);
       if (matches.isEmpty) return null;
       final t = matches.first;
@@ -50,7 +66,18 @@ class SupportRepository {
   /// Raises a new ticket and returns its id, so the caller can navigate
   /// straight into the chat thread.
   Future<String?> raiseTicket({required String? memberId, required String subject, required String description}) async {
-    if (!_live || memberId == null) return null;
+    if (!_live) {
+      final ticket = SupportTicket(
+        id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+        memberId: memberId ?? 'me',
+        subject: subject,
+        description: description,
+        status: 'open',
+        createdAt: DateTime.now(),
+      );
+      _locallyAdded.add(ticket);
+      return ticket.id;
+    }
     final row = await _client.from('support_tickets').insert({
       'member_id': memberId,
       'subject': subject,

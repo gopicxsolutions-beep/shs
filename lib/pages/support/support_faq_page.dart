@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/support.dart' as mock;
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -10,8 +11,9 @@ class SupportFaqPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: const PageHeader(title: 'FAQs'),
+      appBar: PageHeader(title: l10n.supportFaqTitle),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: mock.mockFaqs.length,

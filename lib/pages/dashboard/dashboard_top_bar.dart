@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/types.dart';
 import '../../repositories/announcement_repository.dart';
 import '../../routes/paths.dart';
@@ -26,6 +27,8 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
     final appState = context.read<AppState>();
     _repo.fetchForShg(appState.profile?.shgId, appState.profile?.id).then((list) {
       if (mounted) setState(() => _unread = list.where((a) => !a.read).length);
+    }).catchError((_) {
+      // unread count is a nice-to-have; failing to load it should not disrupt the dashboard
     });
   }
 
@@ -34,6 +37,7 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
     final user = context.watch<AppState>().user;
     final roleInfo = roleInfoFor(user.role);
     final unread = _unread;
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 64),
       decoration: const BoxDecoration(
@@ -55,7 +59,20 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(roleInfo.label, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                        // The full label (e.g. "SHG Leader / President") is
+                        // too wide for this pill on a real phone-width
+                        // screen — every role but the shortest overflowed
+                        // the row here. The short badge form ("Leader",
+                        // "Admin", ...) is what this compact pill is for;
+                        // the full label is shown elsewhere (e.g. Role
+                        // Select) where there's room for it.
+                        Flexible(
+                          child: Text(
+                            roleInfo.shortLabel,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
+                          ),
+                        ),
                         const SizedBox(width: 4),
                         Icon(Icons.unfold_more, size: 12, color: Colors.white.withValues(alpha: 0.6)),
                       ],
@@ -63,34 +80,42 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text('Namaste, ${user.name.split(' ').first} 🙏', style: AppTheme.display(18, color: Colors.white)),
-                const SizedBox(height: 2),
-                Text(user.shgName, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.7))),
+                Text(l10n.dashboardTopBarGreeting(user.name.split(' ').first), style: AppTheme.display(18, color: Colors.white)),
+                if (user.shgName.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(user.shgName, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.7))),
+                ],
               ],
             ),
           ),
           Row(
             children: [
-              InkWell(
-                onTap: () => context.go(Paths.announcements),
-                borderRadius: BorderRadius.circular(999),
-                child: Container(
-                  width: 40, height: 40,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
-                  child: Stack(children: [
-                    const Center(child: Icon(Icons.notifications_rounded, color: Colors.white, size: 18)),
-                    if (unread > 0)
-                      Positioned(
-                        right: 8, top: 8,
-                        child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Gold.c400, shape: BoxShape.circle, border: Border.all(color: Brand.c600, width: 2))),
-                      ),
-                  ]),
+              Tooltip(
+                message: unread > 0 ? l10n.dashboardTopBarUnreadAnnouncementsTooltip(unread) : l10n.dashboardTopBarAnnouncementsTooltip,
+                child: InkWell(
+                  onTap: () => context.go(Paths.announcements),
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
+                    child: Stack(children: [
+                      const Center(child: Icon(Icons.notifications_rounded, color: Colors.white, size: 18)),
+                      if (unread > 0)
+                        Positioned(
+                          right: 8, top: 8,
+                          child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Gold.c400, shape: BoxShape.circle, border: Border.all(color: Brand.c600, width: 2))),
+                        ),
+                    ]),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
-              InkWell(
-                onTap: () => context.go(Paths.profile),
-                child: AppAvatar(name: user.name, size: 40, ringColor: Colors.white.withValues(alpha: 0.4)),
+              Tooltip(
+                message: l10n.profileTitle,
+                child: InkWell(
+                  onTap: () => context.go(Paths.profile),
+                  child: AppAvatar(name: user.name, size: 40, ringColor: Colors.white.withValues(alpha: 0.4)),
+                ),
               ),
             ],
           ),

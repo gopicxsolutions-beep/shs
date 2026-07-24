@@ -50,9 +50,9 @@ class _ProfilePageState extends State<ProfilePage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: name, decoration: InputDecoration(hintText: l10n.profileName)),
+            TextField(controller: name, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.profileName)),
             const SizedBox(height: 12),
-            TextField(controller: village, decoration: InputDecoration(hintText: l10n.profileVillage)),
+            TextField(controller: village, maxLength: 100, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.profileVillage)),
           ],
         ),
         actions: [
@@ -61,14 +61,30 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
     );
-    if (saved != true || name.text.trim().isEmpty) return;
-    await _profileRepo.upsertMyProfile(name: name.text.trim(), role: profile.role, village: village.text.trim());
-    if (!mounted) return;
-    await context.read<AppState>().refreshProfile();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(SupabaseService.isConfigured ? 'Profile updated' : 'Demo mode — not saved (connect Supabase to persist)'),
-    ));
+    if (saved != true) return;
+    if (name.text.trim().isEmpty) {
+      // Without this, tapping "Save" with a blank name silently closed the
+      // dialog and updated nothing — indistinguishable from a broken button,
+      // same silent-no-op gap already fixed for "Add SHG"/"Add scheme" in
+      // admin_shgs_page.dart / admin_schemes_page.dart.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.profileNameRequired)));
+      }
+      return;
+    }
+    try {
+      await _profileRepo.updateNameVillage(name: name.text.trim(), village: village.text.trim());
+      if (!mounted) return;
+      await context.read<AppState>().refreshProfile();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(SupabaseService.isConfigured ? l10n.profileUpdated : l10n.profileUpdateDemoMode),
+      ));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.profileUpdateError)));
+      }
+    }
   }
 
   @override
@@ -81,7 +97,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: PageHeader(
         title: l10n.profileTitle,
-        right: IconButton(icon: const Icon(Icons.edit_rounded), tooltip: l10n.profileEditProfile, onPressed: () => _editProfile(profile)),
+        right: IconButton(icon: const Icon(Icons.edit_rounded, color: Brand.c600), tooltip: l10n.profileEditProfile, onPressed: () => _editProfile(profile)),
       ),
       body: AppAsyncBuilder<ShgProfile?>(
         key: _key,
@@ -131,7 +147,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 variant: ButtonVariant.outline,
                 fullWidth: true,
                 onPressed: () async {
-                  await context.read<AppState>().signOut();
+                  try {
+                    await context.read<AppState>().signOut();
+                  } catch (_) {
+                    // fall through — still navigate to splash below
+                  }
                   if (context.mounted) context.go(Paths.splash);
                 },
               ),

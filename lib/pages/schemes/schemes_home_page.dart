@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/scheme.dart';
+import '../../models/types.dart';
 import '../../repositories/scheme_repository.dart';
 import '../../routes/paths.dart';
 import '../../state/app_state.dart';
@@ -32,12 +34,14 @@ class SchemesHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final repo = SchemeRepository();
     final memberId = appState.profile?.id;
+    final isStaff = const {Role.crp, Role.clf, Role.admin}.contains(appState.user.role);
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Government Schemes'),
+      appBar: PageHeader(title: l10n.schemesHomeTitle),
       body: AppAsyncBuilder<_SchemesData>(
         future: () async {
           final schemes = await repo.fetchSchemes();
@@ -51,14 +55,15 @@ class SchemesHomePage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconTile(onTap: () => context.go(Paths.schemeEligibility), icon: Icons.fact_check_rounded, label: 'Eligibility', tone: TileTone.brand),
-                  IconTile(onTap: () => context.go(Paths.schemeTracking), icon: Icons.timeline_rounded, label: 'Tracking', tone: TileTone.gold),
+                  IconTile(onTap: () => context.go(Paths.schemeEligibility), icon: Icons.fact_check_rounded, label: l10n.schemesHomeEligibilityTile, tone: TileTone.brand),
+                  IconTile(onTap: () => context.go(Paths.schemeTracking), icon: Icons.timeline_rounded, label: l10n.schemesHomeTrackingTile, tone: TileTone.gold),
+                  if (isStaff) IconTile(onTap: () => context.go(Paths.schemeApplications), icon: Icons.rule_folder_rounded, label: l10n.schemesHomeApplicationsTile, tone: TileTone.sky),
                 ],
               ),
               const SizedBox(height: 20),
-              const SectionHeader(title: 'All Schemes'),
+              SectionHeader(title: l10n.schemesHomeAllSchemesSection),
               if (data.schemes.isEmpty)
-                const AppEmptyState(icon: Icons.shield_rounded, message: 'No schemes available right now')
+                AppEmptyState(icon: Icons.shield_rounded, message: l10n.schemesHomeEmptyState)
               else
                 ...data.schemes.map((s) {
                   final app = data.applications[s.id];
@@ -78,7 +83,7 @@ class SchemesHomePage extends StatelessWidget {
                             ],
                           ),
                         ),
-                        AppBadge(text: app?.status ?? 'not applied', tone: app != null ? (_statusTones[app.status] ?? BadgeTone.neutral) : BadgeTone.neutral),
+                        Flexible(child: AppBadge(text: app?.status ?? l10n.schemesHomeNotApplied, tone: app != null ? (_statusTones[app.status] ?? BadgeTone.neutral) : BadgeTone.neutral)),
                       ]),
                     ),
                   );

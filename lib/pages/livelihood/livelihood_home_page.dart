@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/livelihood.dart';
 import '../../models/types.dart';
@@ -32,11 +33,12 @@ class LivelihoodHomePage extends StatelessWidget {
     final repo = LivelihoodRepository();
     final shgId = appState.profile?.shgId;
     final memberId = appState.profile?.id;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: PageHeader(
-        title: 'Livelihoods',
-        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.livelihoodEntry), tooltip: 'Add activity'),
+        title: l10n.livelihoodHomeTitle,
+        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.livelihoodEntry), tooltip: l10n.livelihoodHomeAddActivityTooltip),
       ),
       body: AppAsyncBuilder<List<LivelihoodActivity>>(
         future: () => isLeaderOrStaff ? repo.fetchForShg(shgId) : repo.fetchForMember(memberId),
@@ -47,13 +49,13 @@ class LivelihoodHomePage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               Row(children: [
-                Expanded(child: StatCard(label: 'Total Investment', value: '₹${NumberFormat('#,##0').format(totalInvestment)}', tone: StatTone.gold, icon: Icons.trending_up_rounded)),
+                Expanded(child: StatCard(label: l10n.livelihoodHomeTotalInvestment, value: '₹${NumberFormat('#,##,##0', 'en_IN').format(totalInvestment)}', tone: StatTone.gold, icon: Icons.trending_up_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Total Revenue', value: '₹${NumberFormat('#,##0').format(totalRevenue)}', tone: StatTone.brand, icon: Icons.payments_rounded)),
+                Expanded(child: StatCard(label: l10n.livelihoodHomeTotalRevenue, value: '₹${NumberFormat('#,##,##0', 'en_IN').format(totalRevenue)}', tone: StatTone.brand, icon: Icons.payments_rounded)),
               ]),
               const SizedBox(height: 20),
               if (activities.isEmpty)
-                const AppEmptyState(icon: Icons.eco_rounded, message: 'No livelihood activities yet')
+                AppEmptyState(icon: Icons.eco_rounded, message: l10n.livelihoodHomeEmpty)
               else
                 ...activities.map((a) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
@@ -70,13 +72,21 @@ class LivelihoodHomePage extends StatelessWidget {
                               ],
                             ),
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              AppBadge(text: a.status, tone: _statusTones[a.status] ?? BadgeTone.neutral),
-                              const SizedBox(height: 4),
-                              Text('₹${a.revenue - a.investment} net', style: AppTheme.sans(11, color: a.profit >= 0 ? Brand.c600 : Accent.red600)),
-                            ],
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AppBadge(text: a.status, tone: _statusTones[a.status] ?? BadgeTone.neutral),
+                                const SizedBox(height: 4),
+                                Text(
+                                  l10n.livelihoodHomeNetAmount('${a.profit < 0 ? '-' : ''}₹${NumberFormat('#,##,##0', 'en_IN').format(a.profit.abs())}'),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTheme.sans(11, color: a.profit >= 0 ? Brand.c600 : Accent.red600),
+                                ),
+                              ],
+                            ),
                           ),
                         ]),
                       ),

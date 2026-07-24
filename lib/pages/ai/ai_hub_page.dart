@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../routes/paths.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
+import '../../widgets/ai_disclaimer_banner.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/icon_tile.dart';
 
@@ -12,43 +14,58 @@ class AiHubPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: const PageHeader(title: 'AI Advisors'),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      appBar: PageHeader(title: l10n.aiHubTitle),
+      body: Column(
         children: [
-          Text('Ask an advisor', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
-          const SizedBox(height: 12),
-          _AdvisorCard(
-            icon: Icons.savings_rounded,
-            tone: TileTone.brand,
-            title: 'Financial Advisor',
-            subtitle: 'Savings, loans & budgeting guidance',
-            onTap: () => context.go(Paths.aiFinancialAdvisor),
-          ),
-          const SizedBox(height: 12),
-          _AdvisorCard(
-            icon: Icons.description_rounded,
-            tone: TileTone.violet,
-            title: 'Scheme Recommender',
-            subtitle: 'Find government schemes you qualify for',
-            onTap: () => context.go(Paths.aiSchemeRecommender),
-          ),
-          const SizedBox(height: 12),
-          _AdvisorCard(
-            icon: Icons.storefront_rounded,
-            tone: TileTone.gold,
-            title: 'Market Advisor',
-            subtitle: 'Pricing & selling tips for your products',
-            onTap: () => context.go(Paths.aiMarketAdvisor),
-          ),
-          const SizedBox(height: 12),
-          _AdvisorCard(
-            icon: Icons.mic_rounded,
-            tone: TileTone.sky,
-            title: 'Voice Assistant',
-            subtitle: 'Ask in Telugu, Hindi or English — hands-free',
-            onTap: () => context.go(Paths.aiVoiceAssistant),
+          const AiDisclaimerBanner(),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text(
+                  l10n.aiHubAskAdvisor,
+                  style: AppTheme.sans(
+                    12,
+                    weight: FontWeight.w700,
+                    color: Neutral.c500,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _AdvisorCard(
+                  icon: Icons.savings_rounded,
+                  tone: TileTone.brand,
+                  title: l10n.aiHubFinancialAdvisorTitle,
+                  subtitle: l10n.aiHubFinancialAdvisorSubtitle,
+                  onTap: () => context.go(Paths.aiFinancialAdvisor),
+                ),
+                const SizedBox(height: 12),
+                _AdvisorCard(
+                  icon: Icons.description_rounded,
+                  tone: TileTone.violet,
+                  title: l10n.aiHubSchemeRecommenderTitle,
+                  subtitle: l10n.aiHubSchemeRecommenderSubtitle,
+                  onTap: () => context.go(Paths.aiSchemeRecommender),
+                ),
+                const SizedBox(height: 12),
+                _AdvisorCard(
+                  icon: Icons.storefront_rounded,
+                  tone: TileTone.gold,
+                  title: l10n.aiHubMarketAdvisorTitle,
+                  subtitle: l10n.aiHubMarketAdvisorSubtitle,
+                  onTap: () => context.go(Paths.aiMarketAdvisor),
+                ),
+                const SizedBox(height: 12),
+                _AdvisorCard(
+                  icon: Icons.mic_rounded,
+                  tone: TileTone.sky,
+                  title: l10n.aiHubVoiceAssistantTitle,
+                  subtitle: l10n.aiHubVoiceAssistantSubtitle,
+                  onTap: () => context.go(Paths.aiVoiceAssistant),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -62,7 +79,13 @@ class _AdvisorCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
-  const _AdvisorCard({required this.icon, required this.tone, required this.title, required this.subtitle, required this.onTap});
+  const _AdvisorCard({
+    required this.icon,
+    required this.tone,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +101,16 @@ class _AdvisorCard extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Container(width: 44, height: 44, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)), alignment: Alignment.center, child: Icon(icon, size: 20, color: fg)),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, size: 20, color: fg),
+          ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/report.dart';
 import '../../models/trend.dart';
@@ -32,10 +33,11 @@ class ShgPerformanceReportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final shgId = context.watch<AppState>().profile?.shgId;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Performance Report'),
+      appBar: PageHeader(title: l10n.shgPerformanceReportTitle),
       body: AppAsyncBuilder<_PerformanceData>(
         future: () => _load(shgId),
         builder: (context, data) {
@@ -44,16 +46,16 @@ class ShgPerformanceReportPage extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               Row(children: [
-                Expanded(child: StatCard(label: 'Avg. Attendance', value: '${r.avgAttendancePct.toStringAsFixed(0)}%', tone: StatTone.brand, icon: Icons.event_available_rounded)),
+                Expanded(child: StatCard(label: l10n.shgPerformanceAvgAttendanceLabel, value: '${r.avgAttendancePct.toStringAsFixed(0)}%', tone: StatTone.brand, icon: Icons.event_available_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Active Loans', value: '${r.activeLoanCount}', tone: StatTone.gold, icon: Icons.account_balance_rounded)),
+                Expanded(child: StatCard(label: l10n.shgPerformanceActiveLoansLabel, value: '${r.activeLoanCount}', tone: StatTone.gold, icon: Icons.account_balance_rounded)),
               ]),
               const SizedBox(height: 16),
-              Text('Attendance Trend', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
+              Text(l10n.shgPerformanceAttendanceTrendLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
               const SizedBox(height: 8),
               AppCard(
                 child: data.attendanceTrend.isEmpty
-                    ? Padding(padding: const EdgeInsets.symmetric(vertical: 24), child: Center(child: Text('No completed meetings yet', style: AppTheme.sans(12, color: Neutral.c500))))
+                    ? Padding(padding: const EdgeInsets.symmetric(vertical: 24), child: Center(child: Text(l10n.shgPerformanceEmptyTrend, style: AppTheme.sans(12, color: Neutral.c500))))
                     : TrendChart(points: data.attendanceTrend, color: Brand.c500, suffix: '%'),
               ),
             ],

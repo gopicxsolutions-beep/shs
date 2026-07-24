@@ -4,14 +4,20 @@ import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/types.dart';
 import '../../routes/paths.dart';
+import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_card.dart';
 
-class RoleSelectPage extends StatelessWidget {
+class RoleSelectPage extends StatefulWidget {
   const RoleSelectPage({super.key});
 
+  @override
+  State<RoleSelectPage> createState() => _RoleSelectPageState();
+}
+
+class _RoleSelectPageState extends State<RoleSelectPage> {
   static const _icons = <Role, IconData>{
     Role.member: Icons.groups_rounded,
     Role.leader: Icons.workspace_premium_rounded,
@@ -28,10 +34,31 @@ class RoleSelectPage extends StatelessWidget {
     Role.admin: (Accent.rose50, Accent.rose600),
   };
 
+  bool _saving = false;
+
+  Future<void> _selectRole(AppState appState, Role role) async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await appState.setRole(role);
+      if (mounted) context.go(Paths.dashboard);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.roleSelectSaveError)));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = context.read<AppState>();
     final l10n = AppLocalizations.of(context)!;
+    // Staff roles (crp/clf/admin) are never self-selectable in live mode —
+    // see AppState.setRole's doc comment. Demo mode keeps all 5 so every
+    // dashboard stays explorable without a backend (matches this page's
+    // long-standing demo behavior; there's no real account to escalate).
+    final selectableRoles = SupabaseService.isConfigured ? roles.where((r) => r.id == Role.member || r.id == Role.leader).toList() : roles;
     return Scaffold(
       backgroundColor: Neutral.c50,
       body: SafeArea(
@@ -43,15 +70,12 @@ class RoleSelectPage extends StatelessWidget {
               const SizedBox(height: 6),
               Text(l10n.roleSelectSubtitle, textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
               const SizedBox(height: 28),
-              ...roles.map((r) {
+              ...selectableRoles.map((r) {
                 final (bg, fg) = _tones[r.id]!;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: AppCard(
-                    onTap: () async {
-                      await appState.setRole(r.id);
-                      if (context.mounted) context.go(Paths.dashboard);
-                    },
+                    onTap: _saving ? null : () => _selectRole(appState, r.id),
                     child: Row(
                       children: [
                         Container(

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg.dart';
 import '../../repositories/loan_repository.dart';
@@ -38,14 +40,15 @@ class MemberDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: const PageHeader(title: 'Member Detail'),
+      appBar: PageHeader(title: l10n.memberDetailTitle),
       body: AppAsyncBuilder<_MemberDetail>(
         future: _load,
         builder: (context, detail) {
           final member = detail.member;
           if (member == null) {
-            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This member could not be found');
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.memberDetailNotFound);
           }
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -61,19 +64,19 @@ class MemberDetailPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Row(children: [
-                Expanded(child: StatCard(label: 'Total Savings', value: '₹${detail.totalSavings}', tone: StatTone.brand, icon: Icons.account_balance_wallet_rounded)),
+                Expanded(child: StatCard(label: l10n.memberDetailTotalSavings, value: '₹${NumberFormat('#,##,##0', 'en_IN').format(detail.totalSavings)}', tone: StatTone.brand, icon: Icons.account_balance_wallet_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Loan Outstanding', value: '₹${detail.totalOutstanding}', tone: StatTone.gold, icon: Icons.account_balance_rounded)),
+                Expanded(child: StatCard(label: l10n.memberDetailLoanOutstanding, value: '₹${NumberFormat('#,##,##0', 'en_IN').format(detail.totalOutstanding)}', tone: StatTone.gold, icon: Icons.account_balance_rounded)),
               ]),
               const SizedBox(height: 24),
-              const SectionHeader(title: 'Contact'),
+              SectionHeader(title: l10n.memberDetailContactSection),
               AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _row('Mobile', member.mobile ?? '—'),
+                    _row(l10n.memberDetailMobileLabel, member.mobile ?? '—'),
                     const SizedBox(height: 8),
-                    _row('Village', member.village ?? '—'),
+                    _row(l10n.memberDetailVillageLabel, member.village ?? '—'),
                   ],
                 ),
               ),
@@ -84,11 +87,17 @@ class MemberDetailPage extends StatelessWidget {
     );
   }
 
+  // `value` (a member's mobile number / village name) is real, unbounded
+  // data with no flex protection at all, so at a scaled-up accessibility
+  // text size it — combined with the label — could overflow the row.
+  // `Flexible`+ellipsis on both sides (same pattern as the sibling `_row`
+  // helper in shg_home_page.dart) keeps both visible instead of throwing.
   Widget _row(String label, String value) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: AppTheme.sans(12, color: Neutral.c500)),
-          Text(value, style: AppTheme.sans(12, weight: FontWeight.w700)),
+          Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500))),
+          const SizedBox(width: 8),
+          Flexible(child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: AppTheme.sans(12, weight: FontWeight.w700))),
         ],
       );
 }

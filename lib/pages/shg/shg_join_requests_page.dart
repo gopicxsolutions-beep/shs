@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg_join_request.dart';
 import '../../repositories/shg_join_request_repository.dart';
@@ -27,14 +28,19 @@ class _ShgJoinRequestsPageState extends State<ShgJoinRequestsPage> {
   String? _deciding;
 
   Future<void> _decide(ShgJoinRequest request, bool approve) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _deciding = request.id);
     try {
       await _repo.decide(request.id, approve);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? (approve ? 'Request approved' : 'Request rejected') : 'Demo mode — not saved (connect Supabase to persist)'),
+          content: Text(SupabaseService.isConfigured ? (approve ? l10n.shgJoinRequestsApproved : l10n.shgJoinRequestsRejected) : l10n.shgJoinRequestsDemoMode),
         ));
         _key.currentState?.reload();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.shgJoinRequestsProcessError)));
       }
     } finally {
       if (mounted) setState(() => _deciding = null);
@@ -44,15 +50,16 @@ class _ShgJoinRequestsPageState extends State<ShgJoinRequestsPage> {
   @override
   Widget build(BuildContext context) {
     final shgId = context.watch<AppState>().profile?.shgId;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Join Requests'),
+      appBar: PageHeader(title: l10n.shgJoinRequestsTitle),
       body: AppAsyncBuilder<List<ShgJoinRequest>>(
         key: _key,
         future: () => _repo.fetchPendingForShg(shgId),
         builder: (context, requests) {
           if (requests.isEmpty) {
-            return const AppEmptyState(icon: Icons.person_add_alt_1_rounded, message: 'No pending join requests');
+            return AppEmptyState(icon: Icons.person_add_alt_1_rounded, message: l10n.shgJoinRequestsEmpty);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -66,14 +73,23 @@ class _ShgJoinRequestsPageState extends State<ShgJoinRequestsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(r.memberName ?? 'Member', style: AppTheme.sans(14, weight: FontWeight.w700)),
+                      Text(r.memberName ?? l10n.shgJoinRequestsMemberFallback, style: AppTheme.sans(14, weight: FontWeight.w700)),
+                      if (r.memberMobile != null) ...[
+                        const SizedBox(height: 2),
+                        // Lets a leader distinguish two same-named requesters
+                        // or sanity-check identity before approving — the
+                        // name alone (migration 0045's fix for this being
+                        // silently unavailable at all) still isn't enough on
+                        // its own for that kind of decision.
+                        Text(r.memberMobile!, style: AppTheme.sans(12, color: Neutral.c600)),
+                      ],
                       const SizedBox(height: 2),
-                      Text('Requested ${DateFormat('dd MMM yyyy').format(r.requestedAt)}', style: AppTheme.sans(11, color: Neutral.c500)),
+                      Text(l10n.shgJoinRequestsRequestedOn(DateFormat('dd MMM yyyy').format(r.requestedAt)), style: AppTheme.sans(11, color: Neutral.c500)),
                       const SizedBox(height: 12),
                       Row(children: [
-                        Expanded(child: AppButton(label: 'Reject', variant: ButtonVariant.outline, fullWidth: true, onPressed: busy ? null : () => _decide(r, false))),
+                        Expanded(child: AppButton(label: l10n.shgJoinRequestsReject, variant: ButtonVariant.outline, fullWidth: true, onPressed: busy ? null : () => _decide(r, false))),
                         const SizedBox(width: 8),
-                        Expanded(child: AppButton(label: busy ? 'Working…' : 'Approve', fullWidth: true, onPressed: busy ? null : () => _decide(r, true))),
+                        Expanded(child: AppButton(label: busy ? l10n.shgJoinRequestsWorking : l10n.shgJoinRequestsApprove, fullWidth: true, onPressed: busy ? null : () => _decide(r, true))),
                       ]),
                     ],
                   ),

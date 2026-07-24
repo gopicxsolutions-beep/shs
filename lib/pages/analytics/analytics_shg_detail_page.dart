@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/analytics.dart';
 import '../../repositories/analytics_repository.dart';
@@ -19,14 +21,15 @@ class AnalyticsShgDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repo = AnalyticsRepository();
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'SHG Analytics'),
+      appBar: PageHeader(title: l10n.analyticsShgDetailTitle),
       body: AppAsyncBuilder<ShgHealth?>(
         future: () => repo.fetchShgDetail(shgId),
         builder: (context, g) {
           if (g == null) {
-            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This SHG could not be found');
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.analyticsShgDetailNotFound);
           }
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -48,9 +51,9 @@ class AnalyticsShgDetailPage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Row(children: [
-                Expanded(child: StatCard(label: 'Members', value: '${g.memberCount}', tone: StatTone.ink, icon: Icons.groups_rounded)),
+                Expanded(child: StatCard(label: l10n.analyticsShgDetailMembersLabel, value: '${g.memberCount}', tone: StatTone.ink, icon: Icons.groups_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Total Savings', value: '₹${g.totalSavings}', tone: StatTone.brand, icon: Icons.account_balance_wallet_rounded)),
+                Expanded(child: StatCard(label: l10n.analyticsShgDetailTotalSavings, value: '₹${NumberFormat('#,##,##0', 'en_IN').format(g.totalSavings)}', tone: StatTone.brand, icon: Icons.account_balance_wallet_rounded)),
               ]),
               const SizedBox(height: 12),
               AppCard(
@@ -58,13 +61,13 @@ class AnalyticsShgDetailPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('Health Score', style: AppTheme.sans(13, weight: FontWeight.w700)),
+                      Text(l10n.analyticsShgDetailHealthScore, style: AppTheme.sans(13, weight: FontWeight.w700)),
                       Text('${g.healthScore.toStringAsFixed(0)}%', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600)),
                     ]),
                     const SizedBox(height: 8),
                     AppProgressBar(value: g.healthScore, tone: g.healthScore > 80 ? ProgressTone.brand : g.healthScore > 60 ? ProgressTone.gold : ProgressTone.danger),
                     const SizedBox(height: 6),
-                    Text('Based on completed-meeting attendance rate', style: AppTheme.sans(11, color: Neutral.c500)),
+                    Text(l10n.analyticsShgDetailHealthScoreNote, style: AppTheme.sans(11, color: Neutral.c500)),
                   ],
                 ),
               ),

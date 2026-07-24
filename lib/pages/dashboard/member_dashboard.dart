@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/loan.dart';
 import '../../models/meeting.dart';
 import '../../models/report.dart';
@@ -87,7 +88,18 @@ class MemberDashboard extends StatelessWidget {
     final announcements = results[8] as List<dynamic>;
 
     final activeLoan = loans.where((l) => l.status == 'active' || l.status == 'overdue').firstOrNull;
-    final upcomingMeeting = meetings.where((m) => m.status == 'upcoming').firstOrNull;
+    // `meetings` is sorted newest-scheduled-date-first (for the meetings
+    // list view) — same bug already fixed in meeting_qr_page.dart and
+    // meeting_attendance_page.dart: naively taking the first 'upcoming'
+    // match picked the farthest-future meeting instead of the soonest one
+    // whenever more than one was scheduled, showing the wrong date on the
+    // dashboard's "MEETING ALERT" card. `!m.hasPassed` also excludes
+    // meetings whose date has already gone by — nothing in the app ever
+    // advances `status` away from 'upcoming' once a meeting happens (see
+    // `Meeting.hasPassed`'s doc comment), so without it a meeting from
+    // weeks ago would keep showing as the "next meeting" forever.
+    final upcomingMeetings = meetings.where((m) => m.status == 'upcoming' && !m.hasPassed).toList()..sort((a, b) => a.date.compareTo(b.date));
+    final upcomingMeeting = upcomingMeetings.firstOrNull;
 
     Course? inProgressCourse;
     int inProgressPct = 0;
@@ -132,6 +144,7 @@ class _MemberDashboardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final report = data.report;
     final myLoan = data.activeLoan;
     final upcomingMeeting = data.upcomingMeeting;
@@ -146,9 +159,9 @@ class _MemberDashboardBody extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(children: [
-              Expanded(child: StatCard(label: 'My Savings', value: '₹${report.totalSavings}', tone: StatTone.brand, trend: '${report.savingsEntryCount} entries', icon: Icons.account_balance_wallet_rounded)),
+              Expanded(child: StatCard(label: l10n.memberDashboardMySavingsLabel, value: '₹${NumberFormat('#,##,##0', 'en_IN').format(report.totalSavings)}', tone: StatTone.brand, trend: l10n.memberDashboardSavingsEntriesTrend(report.savingsEntryCount), icon: Icons.account_balance_wallet_rounded)),
               const SizedBox(width: 12),
-              Expanded(child: StatCard(label: 'Outstanding Loan', value: '₹${report.totalOutstanding}', tone: StatTone.gold, trend: myLoan?.nextDueDate != null ? 'Next EMI ${DateFormat('dd MMM').format(myLoan!.nextDueDate!)}' : 'No dues', icon: Icons.account_balance_rounded)),
+              Expanded(child: StatCard(label: l10n.memberDashboardOutstandingLoanLabel, value: '₹${NumberFormat('#,##,##0', 'en_IN').format(report.totalOutstanding)}', tone: StatTone.gold, trend: myLoan?.nextDueDate != null ? l10n.memberDashboardNextEmiTrend(DateFormat('dd MMM').format(myLoan!.nextDueDate!)) : l10n.memberDashboardNoDuesTrend, icon: Icons.account_balance_rounded)),
             ]),
           ),
         ),
@@ -159,10 +172,17 @@ class _MemberDashboardBody extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconTile(onTap: () => context.go(Paths.savingsEntry), icon: Icons.account_balance_wallet_rounded, label: 'Add Savings', tone: TileTone.brand),
-                IconTile(onTap: () => context.go(Paths.loanApply), icon: Icons.account_balance_rounded, label: 'Apply Loan', tone: TileTone.gold),
-                IconTile(onTap: () => context.go(Paths.meetingQr), icon: Icons.qr_code_rounded, label: 'Attendance', tone: TileTone.sky),
-                IconTile(onTap: () => context.go(Paths.schemes), icon: Icons.description_rounded, label: 'Schemes', tone: TileTone.violet, badge: newSchemesCount > 0 ? '$newSchemesCount' : null),
+                IconTile(onTap: () => context.go(Paths.savingsEntry), icon: Icons.account_balance_wallet_rounded, label: l10n.memberDashboardAddSavingsTile, tone: TileTone.brand),
+                IconTile(onTap: () => context.go(Paths.loanApply), icon: Icons.account_balance_rounded, label: l10n.memberDashboardApplyLoanTile, tone: TileTone.gold),
+                IconTile(onTap: () => context.go(Paths.meetingQr), icon: Icons.qr_code_rounded, label: l10n.memberDashboardAttendanceLabel, tone: TileTone.sky),
+                IconTile(
+                  onTap: () => context.go(Paths.schemes),
+                  icon: Icons.description_rounded,
+                  label: l10n.memberDashboardSchemesTile,
+                  tone: TileTone.violet,
+                  badge: newSchemesCount > 0 ? '$newSchemesCount' : null,
+                  badgeSemanticLabel: newSchemesCount > 0 ? l10n.memberDashboardSchemesNewBadge(newSchemesCount) : null,
+                ),
               ],
             ),
           ),
@@ -180,7 +200,7 @@ class _MemberDashboardBody extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('${report.attendancePct.round()}%', style: AppTheme.sans(14, weight: FontWeight.w700)),
-                      Text('Attendance', style: AppTheme.sans(10, color: Neutral.c500)),
+                      Text(l10n.memberDashboardAttendanceLabel, style: AppTheme.sans(10, color: Neutral.c500)),
                     ])),
                   ]),
                 ),
@@ -193,8 +213,8 @@ class _MemberDashboardBody extends StatelessWidget {
                     Icon(Icons.description_rounded, size: 16, color: Accent.violet600),
                     const SizedBox(width: 8),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('$newSchemesCount new', style: AppTheme.sans(14, weight: FontWeight.w700)),
-                      Text('Schemes available', style: AppTheme.sans(10, color: Neutral.c500)),
+                      Text(l10n.memberDashboardNewSchemesCount(newSchemesCount), style: AppTheme.sans(14, weight: FontWeight.w700)),
+                      Text(l10n.memberDashboardSchemesAvailableLabel, style: AppTheme.sans(10, color: Neutral.c500)),
                     ])),
                   ]),
                 ),
@@ -205,12 +225,12 @@ class _MemberDashboardBody extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SectionHeader(title: 'Savings Summary', action: 'View all', onAction: () => context.go(Paths.savings)),
+            SectionHeader(title: l10n.memberDashboardSavingsSummaryTitle, action: l10n.memberDashboardViewAllAction, onAction: () => context.go(Paths.savings)),
             AppCard(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('₹${report.totalSavings}', style: AppTheme.display(22)),
+                    Text('₹${NumberFormat('#,##,##0', 'en_IN').format(report.totalSavings)}', style: AppTheme.display(22)),
                     Text(report.period, style: AppTheme.sans(11, color: Neutral.c500)),
                   ]),
                 ]),
@@ -224,21 +244,27 @@ class _MemberDashboardBody extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              SectionHeader(title: 'Loan Summary', action: 'Track', onAction: () => context.go(Paths.loanTracking)),
+              SectionHeader(title: l10n.memberDashboardLoanSummaryTitle, action: l10n.memberDashboardTrackAction, onAction: () => context.go(Paths.loanTracking)),
               AppCard(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(myLoan.purpose, style: AppTheme.sans(12, color: Neutral.c500)),
                   const SizedBox(height: 8),
                   Row(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Text('₹${myLoan.outstanding}', style: AppTheme.display(18)),
-                    Text('of ₹${myLoan.amount}', style: AppTheme.sans(12, color: Neutral.c500)),
+                    Text('₹${NumberFormat('#,##,##0', 'en_IN').format(myLoan.outstanding)}', style: AppTheme.display(18)),
+                    Flexible(child: Text(l10n.memberDashboardOfAmount(NumberFormat('#,##,##0', 'en_IN').format(myLoan.amount)), maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500))),
                   ]),
                   const SizedBox(height: 8),
                   AppProgressBar(value: myLoan.amount - myLoan.outstanding, max: myLoan.amount, tone: ProgressTone.gold),
                   const SizedBox(height: 12),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    AppBadge(text: myLoan.nextDueDate != null ? 'EMI ₹${myLoan.emi} due ${DateFormat('dd MMM').format(myLoan.nextDueDate!)}' : 'EMI ₹${myLoan.emi}', tone: BadgeTone.warning, dot: true),
-                    InkWell(onTap: () => context.go(Paths.paymentsQr), child: Text('Pay now', style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600))),
+                    Flexible(child: AppBadge(text: myLoan.nextDueDate != null ? l10n.memberDashboardEmiDueBadge(NumberFormat('#,##,##0', 'en_IN').format(myLoan.emi), DateFormat('dd MMM').format(myLoan.nextDueDate!)) : l10n.memberDashboardEmiBadge(NumberFormat('#,##,##0', 'en_IN').format(myLoan.emi)), tone: BadgeTone.warning, dot: true)),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: InkWell(
+                        onTap: () => context.go(Paths.paymentsQr),
+                        child: Text(l10n.memberDashboardPayNowAction, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
+                      ),
+                    ),
                   ]),
                 ]),
               ),
@@ -251,13 +277,13 @@ class _MemberDashboardBody extends StatelessWidget {
               Expanded(
                 child: AppCard(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [Icon(Icons.event_note_rounded, size: 14, color: Brand.c600), const SizedBox(width: 6), Text('MEETING ALERT', style: AppTheme.sans(10, weight: FontWeight.w700, color: Brand.c600))]),
+                    Row(children: [Icon(Icons.event_note_rounded, size: 14, color: Brand.c600), const SizedBox(width: 6), Flexible(child: Text(l10n.memberDashboardMeetingAlertLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(10, weight: FontWeight.w700, color: Brand.c600)))]),
                     const SizedBox(height: 8),
                     Text(DateFormat('dd MMM yyyy').format(upcomingMeeting.date), style: AppTheme.sans(14, weight: FontWeight.w700)),
                     const SizedBox(height: 4),
-                    Text(upcomingMeeting.agenda ?? 'Meeting', maxLines: 2, overflow: TextOverflow.ellipsis, style: AppTheme.sans(11, color: Neutral.c500)),
+                    Text(upcomingMeeting.agenda ?? l10n.memberDashboardMeetingFallback, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppTheme.sans(11, color: Neutral.c500)),
                     const SizedBox(height: 8),
-                    InkWell(onTap: () => context.go(Paths.meetings), child: Text('Details', style: AppTheme.sans(11, weight: FontWeight.w700, color: Brand.c600))),
+                    InkWell(onTap: () => context.go(Paths.meetings), child: Text(l10n.memberDashboardDetailsAction, style: AppTheme.sans(11, weight: FontWeight.w700, color: Brand.c600))),
                   ]),
                 ),
               ),
@@ -266,13 +292,13 @@ class _MemberDashboardBody extends StatelessWidget {
               Expanded(
                 child: AppCard(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [Icon(Icons.school_rounded, size: 14, color: Gold.c600), const SizedBox(width: 6), Text('TRAINING ALERT', style: AppTheme.sans(10, weight: FontWeight.w700, color: Gold.c600))]),
+                    Row(children: [Icon(Icons.school_rounded, size: 14, color: Gold.c600), const SizedBox(width: 6), Flexible(child: Text(l10n.memberDashboardTrainingAlertLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(10, weight: FontWeight.w700, color: Gold.c600)))]),
                     const SizedBox(height: 8),
                     Text(inProgressCourse.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700)),
                     const SizedBox(height: 8),
                     AppProgressBar(value: data.inProgressCoursePct, tone: ProgressTone.gold),
                     const SizedBox(height: 8),
-                    InkWell(onTap: () => context.go(Paths.trainingDetail(inProgressCourse.id)), child: Text('Continue', style: AppTheme.sans(11, weight: FontWeight.w700, color: Gold.c600))),
+                    InkWell(onTap: () => context.go(Paths.trainingDetail(inProgressCourse.id)), child: Text(l10n.memberDashboardContinueAction, style: AppTheme.sans(11, weight: FontWeight.w700, color: Gold.c600))),
                   ]),
                 ),
               ),
@@ -286,35 +312,46 @@ class _MemberDashboardBody extends StatelessWidget {
               Container(width: 44, height: 44, decoration: BoxDecoration(color: Accent.violet100, borderRadius: BorderRadius.circular(16)), child: Icon(Icons.auto_awesome_rounded, color: Accent.violet600, size: 20)),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('AI Financial Advisor', style: AppTheme.sans(14, weight: FontWeight.w700)),
-                Text('Ask about savings, loans & budgeting', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500)),
+                Text(l10n.memberDashboardAiAdvisorTitle, style: AppTheme.sans(14, weight: FontWeight.w700)),
+                Text(l10n.memberDashboardAiAdvisorSubtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500)),
               ])),
-              Text('View', style: AppTheme.sans(12, weight: FontWeight.w700, color: Accent.violet600)),
+              Text(l10n.memberDashboardViewAction, style: AppTheme.sans(12, weight: FontWeight.w700, color: Accent.violet600)),
             ]),
           ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SectionHeader(title: 'Recent Announcements', action: 'See all', onAction: () => context.go(Paths.announcements)),
+            SectionHeader(title: l10n.memberDashboardRecentAnnouncementsTitle, action: l10n.memberDashboardSeeAllAction, onAction: () => context.go(Paths.announcements)),
             AppCard(
               padded: false,
               child: data.announcements.isEmpty
-                  ? Padding(padding: const EdgeInsets.all(16), child: Text('No announcements yet', style: AppTheme.sans(12, color: Neutral.c400)))
+                  ? Padding(padding: const EdgeInsets.all(16), child: Text(l10n.memberDashboardNoAnnouncementsYet, style: AppTheme.sans(12, color: Neutral.c400)))
                   : Column(
                       children: data.announcements.map((a) {
-                        return InkWell(
+                        return Semantics(
+                          label: [
+                            if (!a.read) l10n.memberDashboardUnreadLabel,
+                            a.title,
+                            DateFormat('dd MMM yyyy').format(a.createdAt),
+                          ].join(', '),
+                          button: true,
                           onTap: () => context.go(Paths.announcementDetail(a.id)),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              if (!a.read) Padding(padding: const EdgeInsets.only(top: 5, right: 8), child: Container(width: 6, height: 6, decoration: BoxDecoration(color: Brand.c500, shape: BoxShape.circle))),
-                              if (a.read) const SizedBox(width: 14),
-                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text(a.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c800)),
-                                Text(DateFormat('dd MMM yyyy').format(a.createdAt), style: AppTheme.sans(10, color: Neutral.c400)),
-                              ])),
-                            ]),
+                          child: ExcludeSemantics(
+                            child: InkWell(
+                              onTap: () => context.go(Paths.announcementDetail(a.id)),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  if (!a.read) Padding(padding: const EdgeInsets.only(top: 5, right: 8), child: Container(width: 6, height: 6, decoration: BoxDecoration(color: Brand.c500, shape: BoxShape.circle))),
+                                  if (a.read) const SizedBox(width: 14),
+                                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                    Text(a.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c800)),
+                                    Text(DateFormat('dd MMM yyyy').format(a.createdAt), style: AppTheme.sans(10, color: Neutral.c400)),
+                                  ])),
+                                ]),
+                              ),
+                            ),
                           ),
                         );
                       }).toList(),
@@ -331,25 +368,35 @@ class _SavingsTrendChart extends StatelessWidget {
   final List<MonthlyTotal> trend;
   const _SavingsTrendChart({required this.trend});
 
+  String _semanticLabel(AppLocalizations l10n) {
+    final parts = trend.map((t) => '${t.label} ${t.total.toStringAsFixed(0)}').join(', ');
+    return l10n.memberDashboardSavingsTrendChartSemanticLabel(parts);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (trend.isEmpty) return const SizedBox();
-    return LineChart(
-      LineChartData(
-        gridData: const FlGridData(show: false),
-        titlesData: const FlTitlesData(show: false),
-        borderData: FlBorderData(show: false),
-        lineTouchData: const LineTouchData(enabled: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: [for (var i = 0; i < trend.length; i++) FlSpot(i.toDouble(), trend[i].total.toDouble())],
-            isCurved: true,
-            color: Brand.c600,
-            barWidth: 2,
-            dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(show: true, color: Brand.c500.withValues(alpha: 0.18)),
+    return Semantics(
+      label: _semanticLabel(AppLocalizations.of(context)!),
+      child: ExcludeSemantics(
+        child: LineChart(
+          LineChartData(
+            gridData: const FlGridData(show: false),
+            titlesData: const FlTitlesData(show: false),
+            borderData: FlBorderData(show: false),
+            lineTouchData: const LineTouchData(enabled: false),
+            lineBarsData: [
+              LineChartBarData(
+                spots: [for (var i = 0; i < trend.length; i++) FlSpot(i.toDouble(), trend[i].total.toDouble())],
+                isCurved: true,
+                color: Brand.c600,
+                barWidth: 2,
+                dotData: const FlDotData(show: false),
+                belowBarData: BarAreaData(show: true, color: Brand.c500.withValues(alpha: 0.18)),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

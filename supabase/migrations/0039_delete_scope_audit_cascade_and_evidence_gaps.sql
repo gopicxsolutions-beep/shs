@@ -1,0 +1,243 @@
+-- Fresh, skeptical, column-by-column re-derivation of every DELETE policy in
+-- the schema — the same discipline rounds 81-83 applied to UPDATE/SELECT/
+-- INSERT (0034-0038), applied here to DELETE for the first time since 0014's
+-- original sweep (round 13) and 0026's meetings-family follow-up (round 48).
+-- Explicitly did NOT trust either migration's own "verified correct"
+-- language, or the table-by-table "Safe" verdicts recorded in the round-13
+-- session log for tables neither migration actually touched. Re-derived
+-- every multi-deleter-role DELETE policy (i.e. excluding tables where the
+-- only actor is `is_staff()`, which has no room for this bug shape) against
+-- two questions: (1) is the scope actually anchored to the right
+-- rows/SHG/actor, tracing the real join, not assuming; (2) can DELETE be
+-- used to destroy evidence of a completed workflow step or corrupt a
+-- downstream aggregate the app itself never needs to touch after the fact.
+-- Cross-checked every finding against real `.delete()` call sites in
+-- `lib/repositories/**` (grepped the whole tree: the only two hits anywhere
+-- in the entire app are `SchemeRepository.deleteScheme()`, admin-only, and
+-- `ShgJoinRequestRepository`'s own-pending-row cleanup, already matching
+-- `shg_join_requests_delete_self_pending` from 0033) — every gap fixed below
+-- is 100% direct-REST-only surface, unused by the app itself, zero
+-- functional cost to close.
+--
+-- Three real, previously-undisclosed gaps found. Everything else re-derived
+-- and confirmed already correct — see the full verdict list at the bottom.
+--
+-- ─────────────────────────────────────────────────────────────────────────
+-- 1. marketplace_products_write_seller_or_staff — the round-13 sweep's own
+--    verdict ("seller deletes only her own listings ... Standard seller
+--    CRUD. Safe") never considered the CASCADE blast radius, the exact same
+--    class of miss round 48 (0026) later found and fixed for `meetings`.
+-- ─────────────────────────────────────────────────────────────────────────
+-- Still the original, untouched 0002 policy: `for all using (seller_id =
+-- auth.uid() or is_staff()) with check (same)` — never split for DELETE by
+-- any later migration (0036 re-confirmed it "safe" but only re-derived the
+-- UPDATE column-lock angle, explicitly out of scope for DELETE/INSERT per
+-- its own stated scope note).
+--
+-- `0001_init_schema.sql` declares BOTH of these as `on delete cascade`
+-- foreign keys against `marketplace_products.id`:
+--   marketplace_orders.product_id  references marketplace_products(id) on delete cascade
+--   marketplace_reviews.product_id references marketplace_products(id) on delete cascade
+--
+-- Concretely: any member with a product listing (`seller_id = auth.uid()`)
+-- can `DELETE /rest/v1/marketplace_products?id=eq.<own-product>` and
+-- Postgres will cascade-delete, in the same transaction:
+--   * EVERY marketplace_orders row for that product — including already-
+--     `'delivered'` orders, i.e. completed, paid transactions with a real
+--     buyer on the other end — `marketplace_orders` itself has NO delete
+--     policy of its own (round 13's own verdict: "Order records
+--     intentionally non-deletable. Safe") specifically so a buyer's/staff's
+--     order history can't be erased directly — this cascade is a complete,
+--     unguarded backdoor around that exact protection.
+--   * EVERY marketplace_reviews row for that product — including reviews
+--     the seller does NOT own (`marketplace_reviews_delete_staff`,
+--     staff-only, exists precisely so a seller can't unilaterally remove an
+--     unfavorable review) — this cascade is an equally complete backdoor
+--     around that protection too.
+-- A seller who wants to erase a paper trail of a disputed/`'delivered'`
+-- order, or wipe every negative review off a listing, can do both in one
+-- DELETE call, then simply re-list an identical product under a fresh id
+-- with a clean (non-existent) history — no residual row anywhere records
+-- the original product, its orders, or its reviews ever existed.
+--
+-- Verified zero functional cost: grepped `lib/repositories/
+-- marketplace_repository.dart` and every file under `lib/pages/marketplace/`
+-- for `delete`/`remove` (case-insensitive) — no hit. There is no
+-- delete-listing feature anywhere in the app, for seller or staff, today.
+-- Fix: same split already established for `financial_ledger`/`meetings` —
+-- seller/staff keep their existing, actually-used INSERT/UPDATE rights
+-- (create a listing, edit its own price/stock/description) untouched;
+-- DELETE becomes staff-only.
+drop policy if exists "marketplace_products_write_seller_or_staff" on public.marketplace_products;
+
+create policy "marketplace_products_insert_seller_or_staff" on public.marketplace_products
+  for insert with check (seller_id = auth.uid() or public.is_staff());
+
+create policy "marketplace_products_update_seller_or_staff" on public.marketplace_products
+  for update using (seller_id = auth.uid() or public.is_staff())
+  with check (seller_id = auth.uid() or public.is_staff());
+
+create policy "marketplace_products_delete_staff" on public.marketplace_products
+  for delete using (public.is_staff());
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- 2. livelihood_activities (self/leader DELETE branch) — round-13's own
+--    verdict ("Deliberately-transparent business-activity log, not a
+--    ledger. Safe") used the identical "not financial, so safe" reasoning
+--    round 48 already proved doesn't hold up for `meetings`/
+--    `meeting_attendance` — and `livelihood_activities` directly feeds a
+--    per-SHG financial aggregate, which the `meetings` family didn't even
+--    have.
+-- ─────────────────────────────────────────────────────────────────────────
+-- Current policy (`livelihood_delete_self_leader_or_staff`, 0036, unchanged
+-- in scope from the original 0002/0015 `using` clause): `member_id =
+-- auth.uid() or (shg_id = current_shg_id() and current_role() = 'leader') or
+-- is_staff()`.
+--
+-- `livelihood_home_page.dart` computes the SHG-wide dashboard totals by
+-- folding directly over every row `fetchForShg(shgId)` returns:
+--   totalInvestment = activities.fold(0, (s, a) => s + a.investment)
+--   totalRevenue    = activities.fold(0, (s, a) => s + a.revenue)
+-- A member can `DELETE` her own `'completed'` activity — one that may carry
+-- real, previously-recorded `investment`/`revenue` figures — and it vanishes
+-- from both her own history AND the SHG's aggregate totals with no residual
+-- row, no status flag, nothing for a leader or fellow member to ever notice
+-- was removed. A leader can do the identical thing to ANY member's activity
+-- in her own SHG, e.g. to quietly erase a high-investment/low-revenue
+-- activity that makes the group's livelihoods portfolio look bad ahead of a
+-- CLF/bank review. This is the exact "financial record that should never be
+-- hard-deletable except by staff, since deleting it silently corrupts a
+-- running total with no trace" shape 0014 already used to fix
+-- `savings_entries`/`financial_ledger` — just never re-applied here because
+-- the original round-13 pass judged it "not a ledger" without checking
+-- whether anything downstream actually sums the column.
+--
+-- Verified zero functional cost: `lib/repositories/livelihood_repository.dart`
+-- has exactly two write methods anywhere in the file — `addActivity()`
+-- (`.insert()` only) and `updateProgress()` (`.update()` only, sending
+-- exactly `{'revenue': ..., 'status': ...}`) — no `.delete()` call site
+-- exists anywhere in the app for this table. Fix: restrict DELETE to staff
+-- only, matching the `savings_delete_staff`/`financial_ledger_delete_staff`
+-- precedent exactly; the self/leader INSERT and UPDATE rights (the policy's
+-- actual, real-app-used capabilities) are untouched.
+drop policy if exists "livelihood_delete_self_leader_or_staff" on public.livelihood_activities;
+
+create policy "livelihood_delete_staff" on public.livelihood_activities
+  for delete using (public.is_staff());
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- 3. announcements_delete_leader_or_staff — created by 0024 (round 47) when
+--    the original single `announcements_write_leader_or_staff` FOR ALL
+--    policy was split three ways to fix a `created_at` column-lock gap on
+--    UPDATE; the DELETE half was carried over unexamined and never
+--    independently re-derived by 0014 (predates the split) or 0026 (scoped
+--    explicitly to the meetings family only).
+-- ─────────────────────────────────────────────────────────────────────────
+-- Current policy: `for delete using ((shg_id = current_shg_id() and
+-- current_role() = 'leader') or is_staff())` — a leader can permanently
+-- delete any already-posted announcement in her own SHG's shared feed;
+-- staff can delete any announcement at all.
+--
+-- `AnnouncementRepository` (`lib/repositories/announcement_repository.dart`)
+-- has exactly one write method in the entire file — `post()`, a bare
+-- `.insert()` — there is no `.update()` or `.delete()` call site anywhere in
+-- the app for this table (`markRead()` only ever touches the separate
+-- `announcement_reads` table). Announcements are therefore append-only BY
+-- THE APP'S OWN DESIGN, the identical shape 0026 already used to fix
+-- `meeting_minutes` ("literally this schema's durable record ... already
+-- append-only by the app's own design — the DELETE branch ... directly
+-- contradicts that append-only intent"), and arguably higher-stakes here:
+-- `announcements_select_scope_or_staff` makes this a genuinely
+-- cross-membership, every-SHG-member-visible shared feed (0024's own
+-- reasoning for why it locked `created_at` in the first place, distinct
+-- from single-owner-scoped resources), so unlike a leader's own private
+-- draft, a deleted announcement was something every member in the SHG (or,
+-- for a global one, every user in the app) may have already been relying on
+-- as posted record. A leader can post a circular (a scheme deadline, an
+-- accountability notice, a "the cashbook doesn't add up, investigating"
+-- notice) and later delete it outright once it becomes inconvenient — a
+-- strictly worse capability than the already-closed `created_at`-forgery
+-- gap (0024), since deletion removes the record from the shared audit trail
+-- entirely rather than merely reordering it, with zero residual trace for
+-- staff or a fellow member to ever notice or dispute.
+--
+-- Fix: restrict DELETE to staff only, matching the
+-- `meeting_minutes_delete_staff` precedent exactly; the leader's existing,
+-- actually-used INSERT (post) and UPDATE (correct her own SHG's posted
+-- announcement) rights from 0024 are untouched.
+drop policy if exists "announcements_delete_leader_or_staff" on public.announcements;
+
+create policy "announcements_delete_staff" on public.announcements
+  for delete using (public.is_staff());
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- Full re-derived DELETE-policy verdict, every table in 0001_init_schema.sql
+-- plus 0004's shg_join_requests (29 RLS-enabled tables total). Only the
+-- three above are real, new, previously-undisclosed gaps — everything else
+-- re-traced fresh (not trusted from the round-13/round-48 session-log notes)
+-- and confirmed already correct:
+--
+--   shgs_delete_admin, profiles_delete_admin, loans_delete_staff,
+--   savings_delete_staff (0014), financial_ledger_delete_staff (0014),
+--   meetings_delete_staff / meeting_attendance_delete_staff /
+--   meeting_minutes_delete_staff (0026), marketplace_reviews_delete_staff,
+--   payments_delete_staff (0013), report_snapshots_write_staff,
+--   analytics_kpis_write_staff, training_courses_write_staff,
+--   schemes_write_admin -- all staff/admin-only, a single deleter category
+--     by construction; no room for a scope-anchoring or evidence-destruction
+--     gap of the shape this audit targets.
+--   loan_payments, marketplace_orders, scheme_applications, support_tickets,
+--   support_messages, ai_advisor_logs, audit_log -- confirmed (grepped every
+--     migration for each table name) no DELETE policy exists at all; with
+--     RLS enabled and zero permissive DELETE policy, Postgres denies the
+--     command outright for every role. `marketplace_orders` in particular
+--     is deliberately non-deletable BY DIRECT POLICY -- which is exactly why
+--     fix #1 above matters: that protection was already being bypassed via
+--     the `marketplace_products` cascade the whole time.
+--   shg_join_requests_delete_self_pending (0033) -- correctly anchored:
+--     `member_id = auth.uid() and status = 'pending'` only ever lets a
+--     member remove her OWN still-undecided request; already-decided
+--     (`approved`/`rejected`) rows -- the actual audit-trail-bearing state,
+--     recording who decided and when (`decided_by`/`decided_at`, locked by
+--     0027) -- are immutable to the requester. No other actor (leader/staff)
+--     has any DELETE branch on this table at all. Correct as-is.
+--   shg_documents_write_leader_or_staff (FOR ALL, unchanged since 0002) --
+--     re-derived fresh, not just re-trusted from 0014/0026's own notes: no
+--     child table anywhere in the schema has an `on delete cascade` FK
+--     pointing AT shg_documents (it's a leaf table), so there's no cascade
+--     angle to find. `shg_documents` is genuinely leader-managed CRUD (a
+--     leader curating her own SHG's uploaded-document list -- removing a
+--     superseded/expired file is a legitimate, intended action), not a
+--     record of a completed workflow step or a value any downstream
+--     aggregate sums -- matches 0014/0026's own disclosed verdict, held up
+--     under re-derivation.
+--   meeting_action_items_write_related (FOR ALL, unchanged since 0002) --
+--     re-confirmed the app never actually populates `owner_id`
+--     (`MeetingRepository.addActionItem()` is called from
+--     `meeting_mom_page.dart` with no `ownerId` argument ever passed), so
+--     the `owner_id = auth.uid()` DELETE branch is dead in practice for
+--     every real app-created row. The leader branch lets a leader delete a
+--     to-do/checklist item (`task`/`due_date`/`done`) in her own SHG's
+--     meeting -- unlike `meeting_minutes`, this isn't a durable decision
+--     record (the actual decision text lives in `meeting_minutes`, already
+--     staff-only-delete per 0026); it's an operational checklist a leader
+--     legitimately manages. Matches 0015/0024/0026's own explicit, written,
+--     already-disclosed low-stakes judgment call for this specific table --
+--     re-derived, not overturned.
+--   course_progress_write_self_or_staff (FOR ALL, unchanged since 0002) --
+--     a member deleting her own progress/certification row unlocks nothing
+--     `course_progress_write_self_or_staff`'s own INSERT/UPDATE branch
+--     doesn't already hand her directly: `TrainingRepository.markCertified()`
+--     lets a member upsert ANY `course_id` + `certified: true` with zero
+--     server-side gate today (0024's own explicit "self-certification IS
+--     the feature" verdict), so DELETE-then-reinsert reaches no state the
+--     app doesn't already permit via a single ordinary call. No downstream
+--     aggregate sums this table the way `livelihood_activities`/
+--     `savings_entries` are summed. Not a new gap.
+--   announcement_reads_self_or_staff (FOR ALL, unchanged since 0002) -- a
+--     member deleting her own read-receipt only affects her own "read"
+--     badge state, reversible by re-opening the announcement
+--     (`markRead()`'s upsert). No other member's or leader's data is
+--     touched, and it isn't evidence of anyone else's action -- a purely
+--     personal, low-stakes UI-state row. Not a new gap.
+-- ─────────────────────────────────────────────────────────────────────────

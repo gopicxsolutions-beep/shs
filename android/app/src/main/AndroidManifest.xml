@@ -1,7 +1,33 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Was only declared in src/debug and src/profile's manifests (added by
+         the Flutter template for hot-reload/DevTools, whose own comment says
+         so explicitly) — those source sets are never merged into a release
+         build, so a real `flutter build appbundle --release`/`apk --release`
+         shipped with NO network permission at all. Every Supabase call
+         (auth, OTP, every table read/write) would have failed outright at
+         runtime for any real user. Declared here in the main manifest
+         instead, which merges into every build type including release. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <!-- Real on-device speech recognition for the AI Voice Assistant and
+         Support's Voice Support (speech_to_text package) — replaces the
+         previous fully-mocked STT/TTS implementations. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <!-- Local (on-device) meeting/payment/announcement reminders
+         (flutter_local_notifications, see lib/services/notification_service.dart).
+         POST_NOTIFICATIONS is Android 13+'s runtime permission to show any
+         notification at all — the plugin also merges this in on its own from
+         version 16 onwards, but it's declared explicitly here too so it's
+         visible without having to read a dependency's merged manifest.
+         SCHEDULE_EXACT_ALARM is NOT auto-added by the plugin and is what lets
+         `requestExactAlarmsPermission()`/`AndroidScheduleMode.exactAllowWhileIdle`
+         actually fire a meeting reminder at its exact minute instead of being
+         silently deferred by the OS's inexact-alarm batching window. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <application
         android:label="NavaSakhi"
         android:name="${applicationName}"

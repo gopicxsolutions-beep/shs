@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/support.dart';
 import '../../models/types.dart';
@@ -23,18 +24,27 @@ const _statusTones = <String, BadgeTone>{
   'closed': BadgeTone.neutral,
 };
 
+String _statusLabel(AppLocalizations l10n, String status) => switch (status) {
+      'open' => l10n.supportStatusOpen,
+      'in_progress' => l10n.supportStatusInProgress,
+      'resolved' => l10n.supportStatusResolved,
+      'closed' => l10n.supportStatusClosed,
+      _ => status,
+    };
+
 class SupportHomePage extends StatelessWidget {
   const SupportHomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final isStaff = const {Role.crp, Role.clf, Role.admin}.contains(appState.user.role);
     final memberId = appState.profile?.id;
     final repo = SupportRepository();
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Support'),
+      appBar: PageHeader(title: l10n.supportHomeTitle),
       body: AppAsyncBuilder<List<SupportTicket>>(
         future: () => repo.fetchTickets(memberId: memberId, isStaff: isStaff),
         builder: (context, tickets) {
@@ -44,16 +54,16 @@ class SupportHomePage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconTile(onTap: () => context.go(Paths.supportChat), icon: Icons.forum_rounded, label: 'My Tickets', tone: TileTone.brand),
-                  IconTile(onTap: () => context.go(Paths.supportTicket), icon: Icons.add_comment_rounded, label: 'Raise Ticket', tone: TileTone.gold),
-                  IconTile(onTap: () => context.go(Paths.supportVoice), icon: Icons.mic_rounded, label: 'Voice Help', tone: TileTone.sky),
-                  IconTile(onTap: () => context.go(Paths.supportFaq), icon: Icons.help_rounded, label: 'FAQs', tone: TileTone.violet),
+                  IconTile(onTap: () => context.go(Paths.supportChat), icon: Icons.forum_rounded, label: l10n.supportHomeMyTickets, tone: TileTone.brand),
+                  IconTile(onTap: () => context.go(Paths.supportTicket), icon: Icons.add_comment_rounded, label: l10n.supportHomeRaiseTicket, tone: TileTone.gold),
+                  IconTile(onTap: () => context.go(Paths.supportVoice), icon: Icons.mic_rounded, label: l10n.supportHomeVoiceHelp, tone: TileTone.sky),
+                  IconTile(onTap: () => context.go(Paths.supportFaq), icon: Icons.help_rounded, label: l10n.supportHomeFaqs, tone: TileTone.violet),
                 ],
               ),
               const SizedBox(height: 20),
-              SectionHeader(title: isStaff ? 'All Tickets' : 'My Tickets', action: 'View all', onAction: () => context.go(Paths.supportChat)),
+              SectionHeader(title: isStaff ? l10n.supportHomeAllTickets : l10n.supportHomeMyTickets, action: l10n.supportHomeViewAll, onAction: () => context.go(Paths.supportChat)),
               if (tickets.isEmpty)
-                const AppEmptyState(icon: Icons.support_agent_rounded, message: 'No support tickets yet')
+                AppEmptyState(icon: Icons.support_agent_rounded, message: l10n.supportHomeEmptyMessage)
               else
                 ...tickets.take(5).map((t) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -76,7 +86,7 @@ class SupportHomePage extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            AppBadge(text: t.status.replaceAll('_', ' '), tone: _statusTones[t.status] ?? BadgeTone.neutral),
+                            Flexible(child: AppBadge(text: _statusLabel(l10n, t.status), tone: _statusTones[t.status] ?? BadgeTone.neutral)),
                           ],
                         ),
                       ),

@@ -28,9 +28,16 @@ class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
   Future<void> _checkStatus() async {
     setState(() => _checking = true);
     final appState = context.read<AppState>();
-    await appState.refreshProfile();
-    await _key.currentState?.reload();
-    if (mounted) setState(() => _checking = false);
+    try {
+      await appState.refreshProfile();
+      await _key.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.shgApprovalCheckError)));
+      }
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
   }
 
   @override
@@ -83,12 +90,27 @@ class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
                   const SizedBox(height: 24),
                   if (rejected)
                     AppButton(label: l10n.chooseDifferentShg, fullWidth: true, size: ButtonSize.lg, onPressed: () => context.go(Paths.profileSetup))
-                  else
+                  else ...[
                     AppButton(label: _checking ? l10n.checkingStatus : l10n.actionCheckStatus, fullWidth: true, size: ButtonSize.lg, onPressed: _checking ? null : _checkStatus),
+                    const SizedBox(height: 12),
+                    // A still-pending request previously had no escape at
+                    // all here — only Check Status and Sign Out, neither of
+                    // which lets a member who picked the wrong SHG (or whose
+                    // leader never acts) change her mind. This mirrors the
+                    // rejected-state button above; ShgJoinRequestRepository.
+                    // submit() (see its own doc comment) now replaces the
+                    // still-pending row instead of erroring on it.
+                    AppButton(label: l10n.chooseDifferentShg, fullWidth: true, size: ButtonSize.lg, variant: ButtonVariant.outline, onPressed: () => context.go(Paths.profileSetup)),
+                  ],
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: () async {
-                      await context.read<AppState>().signOut();
+                      try {
+                        await context.read<AppState>().signOut();
+                      } catch (_) {
+                        // Fall through to navigate regardless — local session
+                        // state is cleared even if the remote sign-out call fails.
+                      }
                       if (context.mounted) context.go(Paths.splash);
                     },
                     child: Text(l10n.actionSignOut, style: AppTheme.sans(13, color: Neutral.c500)),

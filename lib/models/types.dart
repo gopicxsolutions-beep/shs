@@ -34,12 +34,12 @@ class AppUser {
     required this.village,
   });
 
-  AppUser copyWith({Role? role}) => AppUser(
-        name: name,
+  AppUser copyWith({Role? role, String? name, String? village}) => AppUser(
+        name: name ?? this.name,
         mobile: mobile,
         role: role ?? this.role,
         shgName: shgName,
-        village: village,
+        village: village ?? this.village,
       );
 }
 

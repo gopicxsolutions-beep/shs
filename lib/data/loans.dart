@@ -30,6 +30,10 @@ const loans = <Loan>[
   Loan(id: 'l4', memberName: 'Durga Bhavani', purpose: 'Poultry farming', amount: 12000, outstanding: 9000, emi: 1000, tenureMonths: 12, disbursedOn: '15 Apr 2026', status: 'overdue', nextDueDate: '15 Jun 2026'),
   Loan(id: 'l5', memberName: 'Gowramma', purpose: 'Agriculture inputs — seeds & fertiliser', amount: 20000, outstanding: 15500, emi: 1700, tenureMonths: 12, disbursedOn: '02 May 2026', status: 'active', nextDueDate: '02 Jul 2026'),
   Loan(id: 'l6', memberName: 'Jyothi', purpose: 'Handicraft raw material', amount: 10000, outstanding: 8000, emi: 900, tenureMonths: 12, disbursedOn: '18 May 2026', status: 'active', nextDueDate: '18 Jul 2026'),
-  Loan(id: 'l7', memberName: 'Anasuya', purpose: 'Food processing unit expansion', amount: 35000, outstanding: 35000, emi: 0, tenureMonths: 18, disbursedOn: '', status: 'pending'),
+  // Disbursed on 25 Jun 2026 (see financial.dart's f2 ledger entry — "Loan
+  // disbursed — Anasuya", debit 35000, same date/amount) — this must stay in
+  // sync with 'active'/disbursedOn/emi/nextDueDate, and members.dart's m4
+  // (Anasuya) loanOutstanding must keep matching this loan's outstanding.
+  Loan(id: 'l7', memberName: 'Anasuya', purpose: 'Food processing unit expansion', amount: 35000, outstanding: 35000, emi: 2000, tenureMonths: 18, disbursedOn: '25 Jun 2026', status: 'active', nextDueDate: '25 Jul 2026'),
   Loan(id: 'l8', memberName: 'Hemalatha', purpose: 'Vegetable vending cart', amount: 8000, outstanding: 8000, emi: 0, tenureMonths: 10, disbursedOn: '', status: 'pending'),
 ];

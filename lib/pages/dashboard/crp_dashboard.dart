@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/analytics.dart';
 import '../../models/training.dart';
 import '../../repositories/analytics_repository.dart';
@@ -49,6 +50,7 @@ class _CrpDashboardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final shgs = data.shgs;
     final avgHealth = shgs.isEmpty ? 0 : (shgs.map((g) => g.healthScore).reduce((a, b) => a + b) / shgs.length).round();
 
@@ -60,20 +62,31 @@ class _CrpDashboardBody extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(children: [
-              Expanded(child: StatCard(label: 'SHGs Monitored', value: '${shgs.length}', tone: StatTone.brand, trend: shgs.isNotEmpty ? shgs.first.village : 'No SHGs yet', icon: Icons.apartment_rounded)),
+              Expanded(child: StatCard(label: l10n.crpDashboardShgsMonitoredLabel, value: '${shgs.length}', tone: StatTone.brand, trend: shgs.isNotEmpty ? shgs.first.village : l10n.crpDashboardNoShgsYetTrend, icon: Icons.apartment_rounded)),
               const SizedBox(width: 12),
-              Expanded(child: StatCard(label: 'Avg. Health Score', value: '$avgHealth%', tone: StatTone.gold, trend: 'Attendance-based proxy', icon: Icons.trending_up_rounded)),
+              Expanded(child: StatCard(label: l10n.crpDashboardAvgHealthScoreLabel, value: '$avgHealth%', tone: StatTone.gold, trend: l10n.crpDashboardAttendanceProxyTrend, icon: Icons.trending_up_rounded)),
             ]),
           ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SectionHeader(title: 'SHGs Under Monitoring', action: 'View all', onAction: () => context.go(Paths.analyticsShgList)),
+            SectionHeader(title: l10n.crpDashboardShgsUnderMonitoringTitle, action: l10n.crpDashboardViewAllAction, onAction: () => context.go(Paths.analyticsShgList)),
             if (shgs.isEmpty)
-              Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Text('No SHGs to monitor yet', style: AppTheme.sans(12, color: Neutral.c400)))
+              Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Text(l10n.crpDashboardNoShgsToMonitorYet, style: AppTheme.sans(12, color: Neutral.c400)))
             else
-              ...shgs.map((g) => Padding(
+              // Capped like the Training Catalog preview below (`.take(3)`)
+              // — this dashboard renders every card eagerly (it's a fixed
+              // `Column` inside the page's `SingleChildScrollView`, not a
+              // lazy `.builder`), and a CRP can realistically be assigned
+              // 30+ SHGs across a federation (see the N+1 query fix in this
+              // same file's history for that exact scale). Uncapped, every
+              // login built a full `AppCard` (with its own progress bar,
+              // badge, and multiple `Text`/`Row` children) for all of them
+              // on the landing dashboard, most never scrolled into view.
+              // The full, properly lazy `ListView.builder` list is one tap
+              // away via "View all" (`AnalyticsShgListPage`).
+              ...shgs.take(5).map((g) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: AppCard(
                       onTap: () => context.go(Paths.analyticsShgDetail(g.id)),
@@ -81,7 +94,7 @@ class _CrpDashboardBody extends StatelessWidget {
                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Text(g.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(14, weight: FontWeight.w700)),
-                            Text('${g.village} · ${g.memberCount} members', style: AppTheme.sans(12, color: Neutral.c500)),
+                            Text(l10n.crpDashboardShgVillageMembersSummary(g.village, g.memberCount), style: AppTheme.sans(12, color: Neutral.c500)),
                           ])),
                           AppBadge(text: g.grade ?? '—', tone: gradeTone[g.grade] ?? BadgeTone.neutral),
                         ]),
@@ -99,11 +112,11 @@ class _CrpDashboardBody extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SectionHeader(title: 'Training Catalog', action: 'Manage', onAction: () => context.go(Paths.training)),
+            SectionHeader(title: l10n.crpDashboardTrainingCatalogTitle, action: l10n.crpDashboardViewAllAction, onAction: () => context.go(Paths.training)),
             AppCard(
               padded: false,
               child: data.courses.isEmpty
-                  ? Padding(padding: const EdgeInsets.all(16), child: Text('No courses yet', style: AppTheme.sans(12, color: Neutral.c400)))
+                  ? Padding(padding: const EdgeInsets.all(16), child: Text(l10n.crpDashboardNoCoursesYet, style: AppTheme.sans(12, color: Neutral.c400)))
                   : Column(
                       children: data.courses.take(3).map((c) => InkWell(
                             onTap: () => context.go(Paths.trainingDetail(c.id)),

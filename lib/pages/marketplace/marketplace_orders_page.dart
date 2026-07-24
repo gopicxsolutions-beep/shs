@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/marketplace.dart';
 import '../../repositories/marketplace_repository.dart';
@@ -28,14 +29,15 @@ class MarketplaceOrdersPage extends StatelessWidget {
     final appState = context.watch<AppState>();
     final repo = MarketplaceRepository();
     final sellerId = appState.profile?.id;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Orders'),
+      appBar: PageHeader(title: l10n.marketplaceOrdersTitle),
       body: AppAsyncBuilder<List<MarketOrder>>(
         future: () => repo.fetchOrdersForSeller(sellerId),
         builder: (context, orders) {
           if (orders.isEmpty) {
-            return const AppEmptyState(icon: Icons.receipt_long_rounded, message: 'No orders yet');
+            return AppEmptyState(icon: Icons.receipt_long_rounded, message: l10n.marketplaceOrdersEmpty);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -53,7 +55,7 @@ class MarketplaceOrdersPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('₹${o.amount}', style: AppTheme.sans(13, weight: FontWeight.w700)),
+                        Text('₹${NumberFormat('#,##,##0', 'en_IN').format(o.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                         const SizedBox(height: 4),
                         AppBadge(text: o.status, tone: _statusTones[o.status] ?? BadgeTone.neutral),
                       ],

@@ -1,0 +1,48 @@
+-- Severe, previously-undiscovered live-mode bug found while doing end-to-end
+-- testing of the Savings module: `SavingsLedgerPage` (the leader/staff
+-- screen used to verify member deposits) has never worked against a real
+-- Supabase project, for anyone, ever. Confirmed by exercising it live:
+-- opening the page immediately hit the generic "Something went wrong"
+-- error state.
+--
+-- Root cause: `SavingsRepository.watchForShg()`
+-- (lib/repositories/savings_repository.dart) uses supabase_flutter's
+-- `.stream(primaryKey: ['id'])` realtime builder, which is backed by
+-- Postgres logical replication through a publication named
+-- `supabase_realtime` — a table must be explicitly added to that
+-- publication before ANY client can subscribe to its changes, independent
+-- of RLS. No migration in this project ever did that for any table (`select
+-- tablename from pg_publication_tables where pubname = 'supabase_realtime'`
+-- against the live project returned zero rows before this migration), so
+-- every `.stream()` call in the entire codebase was doomed to fail from the
+-- moment it was written — this is a Postgres/Realtime infrastructure gap,
+-- not an RLS or query-shape bug, and neither `flutter analyze` nor
+-- `flutter test` can catch it (demo mode never reaches this code path at
+-- all, and no live-mode automated test exercises a real Supabase Realtime
+-- connection).
+--
+-- Two call sites exist as of this migration:
+--   - `SavingsRepository.watchForShg()` -- actively wired into
+--     `savings_ledger_page.dart` and reachable by every leader/staff
+--     account; this was the one actually observed failing live.
+--   - `LoanRepository.watchForShg()` -- defined with the identical shape but
+--     not currently called from any page (grepped `lib/pages/` — zero
+--     hits). Fixed here too on the same principle that closed the
+--     `AiAdvisorRepository`/`LoanRepository`-parity gaps found elsewhere
+--     this session: an unused method with the same latent bug is a footgun
+--     for whoever wires it up next, and the fix costs nothing extra to
+--     include now.
+--
+-- Both tables already have RLS enabled (`savings_select_shg_or_staff`,
+-- `loans_select_shg_or_staff`-equivalent policies from 0002_rls_policies.sql)
+-- — adding a table to `supabase_realtime` does not bypass RLS. Supabase
+-- Realtime evaluates every change event against the *subscribing* client's
+-- own authenticated role and that table's existing RLS policies before
+-- delivering it (the same "postgres_changes respects RLS" behavior this
+-- project already relies on implicitly by pairing `.stream()` with
+-- `.eq('shg_id', shgId)` as a client-side convenience, not as the actual
+-- security boundary — RLS still is). No new cross-SHG or cross-role
+-- visibility is introduced by this migration; it only makes the mechanism
+-- the app already assumed was in place actually deliverable.
+alter publication supabase_realtime add table public.savings_entries;
+alter publication supabase_realtime add table public.loans;

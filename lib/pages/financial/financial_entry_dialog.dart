@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../repositories/financial_repository.dart';
+import '../../widgets/input_formatters.dart';
 
 /// Returns `true` if an entry was added, so the caller can refresh its list.
 Future<bool?> showFinancialEntryDialog(
@@ -12,6 +14,8 @@ Future<bool?> showFinancialEntryDialog(
   final descController = TextEditingController();
   final amountController = TextEditingController();
   var isCredit = true;
+  String? error;
+  var submitting = false;
 
   return showDialog<bool>(
     context: context,
@@ -22,9 +26,9 @@ Future<bool?> showFinancialEntryDialog(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(controller: descController, decoration: const InputDecoration(hintText: 'Description')),
+            TextField(controller: descController, maxLength: 200, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'Description')),
             const SizedBox(height: 12),
-            TextField(controller: amountController, keyboardType: TextInputType.number, decoration: const InputDecoration(prefixText: '₹', hintText: 'Amount')),
+            TextField(controller: amountController, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, textInputAction: TextInputAction.done, maxLength: 9, decoration: const InputDecoration(prefixText: '₹', hintText: 'Amount', counterText: '')),
             const SizedBox(height: 12),
             SegmentedButton<bool>(
               segments: const [
@@ -34,25 +38,60 @@ Future<bool?> showFinancialEntryDialog(
               selected: {isCredit},
               onSelectionChanged: (v) => setState(() => isCredit = v.first),
             ),
+            if (error != null) ...[
+              const SizedBox(height: 12),
+              Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+            ],
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
           FilledButton(
-            onPressed: () async {
-              final amount = num.tryParse(amountController.text);
-              if (descController.text.trim().isEmpty || amount == null || amount <= 0) return;
-              await repo.addEntry(
-                shgId: shgId,
-                createdBy: createdBy,
-                entryType: entryType,
-                description: descController.text.trim(),
-                debit: isCredit ? 0 : amount,
-                credit: isCredit ? amount : 0,
-              );
-              if (context.mounted) Navigator.of(context).pop(true);
-            },
-            child: const Text('Add'),
+            onPressed: submitting
+                ? null
+                : () async {
+                    final amount = num.tryParse(amountController.text);
+                    if (descController.text.trim().isEmpty) {
+                      setState(() => error = 'Enter a description');
+                      return;
+                    }
+                    if (amount == null || amount <= 0) {
+                      setState(() => error = 'Enter a valid amount');
+                      return;
+                    }
+                    setState(() {
+                      error = null;
+                      submitting = true;
+                    });
+                    try {
+                      final saved = await repo.addEntry(
+                        shgId: shgId,
+                        createdBy: createdBy,
+                        entryType: entryType,
+                        description: descController.text.trim(),
+                        debit: isCredit ? 0 : amount,
+                        credit: isCredit ? amount : 0,
+                      );
+                      if (!saved) {
+                        if (context.mounted) {
+                          setState(() {
+                            submitting = false;
+                            error = "You're not linked to an SHG, so there's nothing to record this entry against.";
+                          });
+                        }
+                        return;
+                      }
+                      if (context.mounted) Navigator.of(context).pop(true);
+                    } catch (_) {
+                      if (context.mounted) {
+                        setState(() {
+                          submitting = false;
+                          error = 'Could not save this entry. Please try again.';
+                        });
+                      }
+                    }
+                  },
+            child: Text(submitting ? 'Adding…' : 'Add'),
           ),
         ],
       ),

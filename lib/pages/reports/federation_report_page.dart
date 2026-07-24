@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../routes/paths.dart';
 import '../../theme/app_theme.dart';
@@ -13,29 +14,30 @@ class FederationReportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: const PageHeader(title: 'Federation Reports'),
+      appBar: PageHeader(title: l10n.federationReportsTitle),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _ReportTile(
             icon: Icons.apartment_rounded,
-            title: 'Village-wise SHGs',
-            subtitle: 'SHG count & savings per village',
+            title: l10n.federationReportsVillagesTitle,
+            subtitle: l10n.federationReportsVillagesSubtitle,
             onTap: () => context.go(Paths.reportsFederationVillages),
           ),
           const SizedBox(height: 8),
           _ReportTile(
             icon: Icons.account_balance_rounded,
-            title: 'Loan Recovery',
-            subtitle: 'Disbursed vs. repaid across every SHG',
+            title: l10n.federationReportsRecoveryTitle,
+            subtitle: l10n.federationReportsRecoverySubtitle,
             onTap: () => context.go(Paths.reportsFederationRecovery),
           ),
           const SizedBox(height: 8),
           _ReportTile(
             icon: Icons.trending_up_rounded,
-            title: 'Savings Growth',
-            subtitle: 'Monthly savings trend, federation-wide',
+            title: l10n.federationReportsGrowthTitle,
+            subtitle: l10n.federationReportsGrowthSubtitle,
             onTap: () => context.go(Paths.reportsFederationGrowth),
           ),
         ],

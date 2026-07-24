@@ -1,7 +1,23 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Real release signing (see https://flutter.dev/to/reference-keystore). `key.properties`
+// is git-ignored (android/.gitignore) and must be created locally / in CI with the
+// production keystore's real storeFile/storePassword/keyAlias/keyPassword before
+// building a release APK/AAB intended for Play Store distribution. Until that file
+// exists, `release` falls back to the debug keystore below — same as before, but now
+// an explicit, documented fallback instead of a silent permanent default.
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -12,6 +28,13 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Required by flutter_local_notifications 10+ to schedule local
+        // notifications with backwards compatibility on older Android
+        // versions (see its README's "Gradle setup" section) — needed even
+        // though sourceCompatibility is already Java 17, since this is about
+        // desugaring java.time-era APIs down to the device's actual API
+        // level, not the compiler's language level.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -23,13 +46,34 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // flutter_local_notifications' desugared code path pulls in enough
+        // extra method references to risk the legacy 64k DEX method limit on
+        // minSdk devices below 21's native multidex support.
+        multiDexEnabled = true
+    }
+
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Uses the real production keystore once android/key.properties (git-ignored)
+            // is present locally/in CI. Falls back to the debug keystore otherwise so
+            // `flutter build apk --release` / `flutter run --release` still work for local
+            // testing — but that fallback must NOT be used for real Play Store distribution.
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
@@ -38,6 +82,12 @@ kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
+}
+
+dependencies {
+    // Paired with `isCoreLibraryDesugaringEnabled` above — required by
+    // flutter_local_notifications for scheduled local notifications.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 flutter {

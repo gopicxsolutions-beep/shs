@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/analytics.dart';
 import '../../models/trend.dart';
@@ -46,8 +47,9 @@ class AnalyticsDashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: const PageHeader(title: 'Analytics'),
+      appBar: PageHeader(title: l10n.analyticsDashboardTitle),
       body: AppAsyncBuilder<_DashboardData>(
         future: _load,
         builder: (context, data) {
@@ -56,15 +58,15 @@ class AnalyticsDashboardPage extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               Row(children: [
-                Expanded(child: StatCard(label: 'Total SHGs', value: '${k.totalShgs}', tone: StatTone.brand, icon: Icons.apartment_rounded)),
+                Expanded(child: StatCard(label: l10n.analyticsDashboardTotalShgs, value: '${k.totalShgs}', tone: StatTone.brand, icon: Icons.apartment_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Active Members', value: '${k.activeMembers}', tone: StatTone.ink, icon: Icons.groups_rounded)),
+                Expanded(child: StatCard(label: l10n.analyticsDashboardActiveMembers, value: '${k.activeMembers}', tone: StatTone.ink, icon: Icons.groups_rounded)),
               ]),
               const SizedBox(height: 12),
               Row(children: [
-                Expanded(child: StatCard(label: 'Total Savings', value: '₹${(k.totalSavings / 100000).toStringAsFixed(1)}L', tone: StatTone.gold, icon: Icons.account_balance_wallet_rounded)),
+                Expanded(child: StatCard(label: l10n.analyticsDashboardTotalSavings, value: '₹${(k.totalSavings / 100000).toStringAsFixed(1)}L', tone: StatTone.gold, icon: Icons.account_balance_wallet_rounded)),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(label: 'Loans Disbursed', value: '₹${(k.loansDisbursed / 100000).toStringAsFixed(1)}L', tone: StatTone.brand, icon: Icons.account_balance_rounded)),
+                Expanded(child: StatCard(label: l10n.analyticsDashboardLoansDisbursed, value: '₹${(k.loansDisbursed / 100000).toStringAsFixed(1)}L', tone: StatTone.brand, icon: Icons.account_balance_rounded)),
               ]),
               const SizedBox(height: 12),
               AppCard(
@@ -72,7 +74,8 @@ class AnalyticsDashboardPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('Loan Recovery Rate', style: AppTheme.sans(13, weight: FontWeight.w700)),
+                      Flexible(child: Text(l10n.analyticsDashboardLoanRecoveryRate, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700))),
+                      const SizedBox(width: 8),
                       Text('${k.recoveryRatePct.toStringAsFixed(1)}%', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600)),
                     ]),
                     const SizedBox(height: 8),
@@ -93,8 +96,8 @@ class AnalyticsDashboardPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Monitor SHGs', style: AppTheme.sans(14, weight: FontWeight.w700)),
-                        Text('Per-group health scores', style: AppTheme.sans(12, color: Neutral.c500)),
+                        Text(l10n.analyticsDashboardMonitorShgs, style: AppTheme.sans(14, weight: FontWeight.w700)),
+                        Text(l10n.analyticsDashboardPerGroupHealthScores, style: AppTheme.sans(12, color: Neutral.c500)),
                       ],
                     ),
                   ),
@@ -102,15 +105,15 @@ class AnalyticsDashboardPage extends StatelessWidget {
                 ]),
               ),
               const SizedBox(height: 20),
-              Text('Charts', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
+              Text(l10n.analyticsDashboardChartsLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
               const SizedBox(height: 12),
-              _ChartCard(title: 'Savings Trends', points: data.savings, color: Brand.c500),
+              _ChartCard(title: l10n.analyticsDashboardSavingsTrends, points: data.savings, color: Brand.c500),
               const SizedBox(height: 12),
-              _ChartCard(title: 'Loan Trends', points: data.loans, color: Gold.c500),
+              _ChartCard(title: l10n.analyticsDashboardLoanTrends, points: data.loans, color: Gold.c500),
               const SizedBox(height: 12),
-              _ChartCard(title: 'Revenue Trends', points: data.revenue, color: Accent.violet600),
+              _ChartCard(title: l10n.analyticsDashboardRevenueTrends, points: data.revenue, color: Accent.violet600),
               const SizedBox(height: 12),
-              _ChartCard(title: 'Attendance Trends', points: data.attendance, color: Accent.sky600, suffix: '%'),
+              _ChartCard(title: l10n.analyticsDashboardAttendanceTrends, points: data.attendance, color: Accent.sky600, suffix: '%'),
             ],
           );
         },
@@ -128,6 +131,7 @@ class _ChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,7 +139,7 @@ class _ChartCard extends StatelessWidget {
           Text(title, style: AppTheme.sans(13, weight: FontWeight.w700)),
           const SizedBox(height: 8),
           points.isEmpty
-              ? Padding(padding: const EdgeInsets.symmetric(vertical: 24), child: Center(child: Text('No data yet', style: AppTheme.sans(12, color: Neutral.c500))))
+              ? Padding(padding: const EdgeInsets.symmetric(vertical: 24), child: Center(child: Text(l10n.analyticsDashboardNoDataYet, style: AppTheme.sans(12, color: Neutral.c500))))
               : TrendChart(points: points, color: color, suffix: suffix),
         ],
       ),

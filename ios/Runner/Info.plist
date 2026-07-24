@@ -15,13 +15,17 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>shg_saathi</string>
+	<string>NavaSakhi</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>NavaSakhi uses the camera to scan QR codes for meeting check-in and payments.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>NavaSakhi uses the microphone for the Voice Assistant and Voice Support features, so you can ask questions by speaking.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>NavaSakhi converts your spoken questions to text on-device to answer them in the Voice Assistant and Voice Support features.</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>

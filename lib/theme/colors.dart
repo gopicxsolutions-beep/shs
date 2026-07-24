@@ -46,8 +46,10 @@ class Neutral {
 class Accent {
   static const sky50 = Color(0xFFF0F9FF);
   static const sky600 = Color(0xFF0284C7);
+  static const sky700 = Color(0xFF0369A1);
   static const rose50 = Color(0xFFFFF1F2);
   static const rose600 = Color(0xFFE11D48);
+  static const rose700 = Color(0xFFBE123C);
   static const violet50 = Color(0xFFF5F3FF);
   static const violet100 = Color(0xFFEDE9FE);
   static const violet600 = Color(0xFF7C3AED);
