@@ -4132,6 +4132,234 @@ abstract class AppLocalizations {
   /// **'Details'**
   String get loanTrackingDetailsLink;
 
+  /// No description provided for @loanApprovalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Loan Approvals'**
+  String get loanApprovalTitle;
+
+  /// No description provided for @loanApprovalEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending loan applications'**
+  String get loanApprovalEmptyMessage;
+
+  /// No description provided for @loanApprovalTenureMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'{months} {months, plural, =1{month} other{months}} tenure'**
+  String loanApprovalTenureMonths(int months);
+
+  /// No description provided for @loanApprovalRejectButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get loanApprovalRejectButton;
+
+  /// No description provided for @loanApprovalRejectingButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejecting…'**
+  String get loanApprovalRejectingButton;
+
+  /// No description provided for @loanApprovalApproveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get loanApprovalApproveButton;
+
+  /// No description provided for @loanApprovalRejectedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Application rejected'**
+  String get loanApprovalRejectedMessage;
+
+  /// No description provided for @loanApprovalDemoModeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — decision not saved (connect Supabase to persist)'**
+  String get loanApprovalDemoModeMessage;
+
+  /// No description provided for @loanApprovalAlreadyDecidedRejectMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This application was already decided by someone else.'**
+  String get loanApprovalAlreadyDecidedRejectMessage;
+
+  /// No description provided for @loanApprovalRejectErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reject this application. Please try again.'**
+  String get loanApprovalRejectErrorMessage;
+
+  /// No description provided for @loanApprovalDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve loan'**
+  String get loanApprovalDialogTitle;
+
+  /// No description provided for @loanApprovalDialogEmiForMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly EMI for {name}'**
+  String loanApprovalDialogEmiForMember(String name);
+
+  /// No description provided for @loanApprovalEmiLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly EMI'**
+  String get loanApprovalEmiLabel;
+
+  /// No description provided for @loanApprovalInvalidEmiError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid EMI amount'**
+  String get loanApprovalInvalidEmiError;
+
+  /// No description provided for @loanApprovalApprovingButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Approving…'**
+  String get loanApprovalApprovingButton;
+
+  /// No description provided for @loanApprovalApproveErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not approve this loan. Please try again.'**
+  String get loanApprovalApproveErrorMessage;
+
+  /// No description provided for @loanApprovalApprovedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Loan approved'**
+  String get loanApprovalApprovedMessage;
+
+  /// No description provided for @loanApprovalAlreadyDecidedApproveMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This loan was already decided by someone else.'**
+  String get loanApprovalAlreadyDecidedApproveMessage;
+
+  /// No description provided for @loanDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Loan Detail'**
+  String get loanDetailTitle;
+
+  /// No description provided for @loanDetailNotFoundMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This loan could not be found'**
+  String get loanDetailNotFoundMessage;
+
+  /// No description provided for @loanDetailOutstandingOfAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'outstanding of ₹{amount}'**
+  String loanDetailOutstandingOfAmount(String amount);
+
+  /// No description provided for @loanDetailEmiLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'EMI'**
+  String get loanDetailEmiLabel;
+
+  /// No description provided for @loanDetailTenureLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tenure'**
+  String get loanDetailTenureLabel;
+
+  /// No description provided for @loanDetailTenureMonthsValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{months} {months, plural, =1{month} other{months}}'**
+  String loanDetailTenureMonthsValue(int months);
+
+  /// No description provided for @loanDetailDisbursedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Disbursed'**
+  String get loanDetailDisbursedLabel;
+
+  /// No description provided for @loanDetailNextDueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Due'**
+  String get loanDetailNextDueLabel;
+
+  /// No description provided for @loanDetailRecordPaymentButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Payment'**
+  String get loanDetailRecordPaymentButton;
+
+  /// No description provided for @loanDetailPaymentHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment History'**
+  String get loanDetailPaymentHistoryTitle;
+
+  /// No description provided for @loanDetailNoPaymentsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No payments recorded yet'**
+  String get loanDetailNoPaymentsMessage;
+
+  /// No description provided for @loanDetailRecordPaymentDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record payment'**
+  String get loanDetailRecordPaymentDialogTitle;
+
+  /// No description provided for @loanDetailPaymentAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment amount'**
+  String get loanDetailPaymentAmountLabel;
+
+  /// No description provided for @loanDetailInvalidAmountError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid amount'**
+  String get loanDetailInvalidAmountError;
+
+  /// No description provided for @loanDetailAmountExceedsOutstandingError.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount exceeds the outstanding balance of ₹{amount}'**
+  String loanDetailAmountExceedsOutstandingError(String amount);
+
+  /// No description provided for @loanDetailRecordingButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording…'**
+  String get loanDetailRecordingButton;
+
+  /// No description provided for @loanDetailRecordButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get loanDetailRecordButton;
+
+  /// No description provided for @loanDetailRecordErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not record this payment. Please try again.'**
+  String get loanDetailRecordErrorMessage;
+
+  /// No description provided for @loanDetailPaymentRecordedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment recorded'**
+  String get loanDetailPaymentRecordedMessage;
+
+  /// No description provided for @loanDetailDemoModeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — not saved (connect Supabase to persist)'**
+  String get loanDetailDemoModeMessage;
+
   /// No description provided for @analyticsDashboardTitle.
   ///
   /// In en, this message translates to:

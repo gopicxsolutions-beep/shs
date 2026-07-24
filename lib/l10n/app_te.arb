@@ -1240,6 +1240,82 @@
 
   "loanTrackingDetailsLink": "వివరాలు",
 
+  "loanApprovalTitle": "రుణ ఆమోదాలు",
+
+  "loanApprovalEmptyMessage": "పెండింగ్‌లో రుణ దరఖాస్తులు లేవు",
+
+  "loanApprovalTenureMonths": "{months} {months, plural, =1{నెల} other{నెలల}} వ్యవధి",
+
+  "loanApprovalRejectButton": "తిరస్కరించండి",
+
+  "loanApprovalRejectingButton": "తిరస్కరిస్తోంది…",
+
+  "loanApprovalApproveButton": "ఆమోదించండి",
+
+  "loanApprovalRejectedMessage": "దరఖాస్తు తిరస్కరించబడింది",
+
+  "loanApprovalDemoModeMessage": "డెమో మోడ్ — నిర్ణయం సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
+
+  "loanApprovalAlreadyDecidedRejectMessage": "ఈ దరఖాస్తుపై ఇప్పటికే మరొకరు నిర్ణయం తీసుకున్నారు.",
+
+  "loanApprovalRejectErrorMessage": "ఈ దరఖాస్తును తిరస్కరించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "loanApprovalDialogTitle": "రుణాన్ని ఆమోదించండి",
+
+  "loanApprovalDialogEmiForMember": "{name} కోసం నెలవారీ EMI",
+
+  "loanApprovalEmiLabel": "నెలవారీ EMI",
+
+  "loanApprovalInvalidEmiError": "సరైన EMI మొత్తాన్ని నమోదు చేయండి",
+
+  "loanApprovalApprovingButton": "ఆమోదిస్తోంది…",
+
+  "loanApprovalApproveErrorMessage": "ఈ రుణాన్ని ఆమోదించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "loanApprovalApprovedMessage": "రుణం ఆమోదించబడింది",
+
+  "loanApprovalAlreadyDecidedApproveMessage": "ఈ రుణంపై ఇప్పటికే మరొకరు నిర్ణయం తీసుకున్నారు.",
+
+  "loanDetailTitle": "రుణ వివరాలు",
+
+  "loanDetailNotFoundMessage": "ఈ రుణం కనుగొనబడలేదు",
+
+  "loanDetailOutstandingOfAmount": "₹{amount}లో బాకీ",
+
+  "loanDetailEmiLabel": "EMI",
+
+  "loanDetailTenureLabel": "వ్యవధి",
+
+  "loanDetailTenureMonthsValue": "{months} {months, plural, =1{నెల} other{నెలలు}}",
+
+  "loanDetailDisbursedLabel": "పంపిణీ చేయబడింది",
+
+  "loanDetailNextDueLabel": "తదుపరి గడువు",
+
+  "loanDetailRecordPaymentButton": "చెల్లింపు నమోదు చేయండి",
+
+  "loanDetailPaymentHistoryTitle": "చెల్లింపు చరిత్ర",
+
+  "loanDetailNoPaymentsMessage": "ఇంకా చెల్లింపులు నమోదు కాలేదు",
+
+  "loanDetailRecordPaymentDialogTitle": "చెల్లింపు నమోదు చేయండి",
+
+  "loanDetailPaymentAmountLabel": "చెల్లింపు మొత్తం",
+
+  "loanDetailInvalidAmountError": "సరైన మొత్తాన్ని నమోదు చేయండి",
+
+  "loanDetailAmountExceedsOutstandingError": "మొత్తం ₹{amount} బాకీ మొత్తాన్ని మించిపోయింది",
+
+  "loanDetailRecordingButton": "నమోదు అవుతోంది…",
+
+  "loanDetailRecordButton": "నమోదు చేయండి",
+
+  "loanDetailRecordErrorMessage": "ఈ చెల్లింపును నమోదు చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "loanDetailPaymentRecordedMessage": "చెల్లింపు నమోదైంది",
+
+  "loanDetailDemoModeMessage": "డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
+
   "analyticsDashboardTitle": "అనలిటిక్స్",
 
   "analyticsDashboardTotalShgs": "మొత్తం SHGలు",

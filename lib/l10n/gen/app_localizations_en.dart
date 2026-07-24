@@ -2354,6 +2354,149 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loanTrackingDetailsLink => 'Details';
 
   @override
+  String get loanApprovalTitle => 'Loan Approvals';
+
+  @override
+  String get loanApprovalEmptyMessage => 'No pending loan applications';
+
+  @override
+  String loanApprovalTenureMonths(int months) {
+    String _temp0 = intl.Intl.pluralLogic(
+      months,
+      locale: localeName,
+      other: 'months',
+      one: 'month',
+    );
+    return '$months $_temp0 tenure';
+  }
+
+  @override
+  String get loanApprovalRejectButton => 'Reject';
+
+  @override
+  String get loanApprovalRejectingButton => 'Rejecting…';
+
+  @override
+  String get loanApprovalApproveButton => 'Approve';
+
+  @override
+  String get loanApprovalRejectedMessage => 'Application rejected';
+
+  @override
+  String get loanApprovalDemoModeMessage =>
+      'Demo mode — decision not saved (connect Supabase to persist)';
+
+  @override
+  String get loanApprovalAlreadyDecidedRejectMessage =>
+      'This application was already decided by someone else.';
+
+  @override
+  String get loanApprovalRejectErrorMessage =>
+      'Could not reject this application. Please try again.';
+
+  @override
+  String get loanApprovalDialogTitle => 'Approve loan';
+
+  @override
+  String loanApprovalDialogEmiForMember(String name) {
+    return 'Monthly EMI for $name';
+  }
+
+  @override
+  String get loanApprovalEmiLabel => 'Monthly EMI';
+
+  @override
+  String get loanApprovalInvalidEmiError => 'Enter a valid EMI amount';
+
+  @override
+  String get loanApprovalApprovingButton => 'Approving…';
+
+  @override
+  String get loanApprovalApproveErrorMessage =>
+      'Could not approve this loan. Please try again.';
+
+  @override
+  String get loanApprovalApprovedMessage => 'Loan approved';
+
+  @override
+  String get loanApprovalAlreadyDecidedApproveMessage =>
+      'This loan was already decided by someone else.';
+
+  @override
+  String get loanDetailTitle => 'Loan Detail';
+
+  @override
+  String get loanDetailNotFoundMessage => 'This loan could not be found';
+
+  @override
+  String loanDetailOutstandingOfAmount(String amount) {
+    return 'outstanding of ₹$amount';
+  }
+
+  @override
+  String get loanDetailEmiLabel => 'EMI';
+
+  @override
+  String get loanDetailTenureLabel => 'Tenure';
+
+  @override
+  String loanDetailTenureMonthsValue(int months) {
+    String _temp0 = intl.Intl.pluralLogic(
+      months,
+      locale: localeName,
+      other: 'months',
+      one: 'month',
+    );
+    return '$months $_temp0';
+  }
+
+  @override
+  String get loanDetailDisbursedLabel => 'Disbursed';
+
+  @override
+  String get loanDetailNextDueLabel => 'Next Due';
+
+  @override
+  String get loanDetailRecordPaymentButton => 'Record Payment';
+
+  @override
+  String get loanDetailPaymentHistoryTitle => 'Payment History';
+
+  @override
+  String get loanDetailNoPaymentsMessage => 'No payments recorded yet';
+
+  @override
+  String get loanDetailRecordPaymentDialogTitle => 'Record payment';
+
+  @override
+  String get loanDetailPaymentAmountLabel => 'Payment amount';
+
+  @override
+  String get loanDetailInvalidAmountError => 'Enter a valid amount';
+
+  @override
+  String loanDetailAmountExceedsOutstandingError(String amount) {
+    return 'Amount exceeds the outstanding balance of ₹$amount';
+  }
+
+  @override
+  String get loanDetailRecordingButton => 'Recording…';
+
+  @override
+  String get loanDetailRecordButton => 'Record';
+
+  @override
+  String get loanDetailRecordErrorMessage =>
+      'Could not record this payment. Please try again.';
+
+  @override
+  String get loanDetailPaymentRecordedMessage => 'Payment recorded';
+
+  @override
+  String get loanDetailDemoModeMessage =>
+      'Demo mode — not saved (connect Supabase to persist)';
+
+  @override
   String get analyticsDashboardTitle => 'Analytics';
 
   @override

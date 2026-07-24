@@ -32,6 +32,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // `loans_update_leader_or_staff` (RLS) only lets the SHG's leader or
     // staff update a loan row — recording a payment updates `outstanding`,
     // so a member recording a payment on their own loan would insert the
@@ -41,16 +42,28 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
     // treasurer record EMI payments collected at meetings, not the member
     // themselves — so this gates the button to match both the backend
     // permission model and the real workflow, rather than loosening RLS.
-    final canRecordPayment = context.watch<AppState>().user.role != Role.member;
+    //
+    // The same policy's WITH CHECK also blocks a leader from updating her
+    // OWN loan (no identity may escalate itself — mirrors the identical
+    // self-check on approve/reject in loan_approval_page.dart), so a leader
+    // who has taken out a personal loan could never actually record a
+    // payment on it even though `role != Role.member` let the button show —
+    // found via live end-to-end testing (a leader test account applying for
+    // and being approved for her own loan), invisible in demo mode since
+    // demo mode has no real per-user identity to collide with the viewer.
+    final appState = context.watch<AppState>();
+    final isMemberRole = appState.user.role == Role.member;
+    final myId = appState.profile?.id;
     return Scaffold(
-      appBar: const PageHeader(title: 'Loan Detail'),
+      appBar: PageHeader(title: l10n.loanDetailTitle),
       body: AppAsyncBuilder<Loan?>(
         key: _key,
         future: () => _repo.fetchById(widget.loanId),
         builder: (context, loan) {
           if (loan == null) {
-            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This loan could not be found');
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.loanDetailNotFoundMessage);
           }
+          final canRecordPayment = !isMemberRole && loan.memberId != myId;
           final paid = loan.amount - loan.outstanding;
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -66,7 +79,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                     ]),
                     const SizedBox(height: 12),
                     Text('₹${NumberFormat('#,##,##0', 'en_IN').format(loan.outstanding)}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: Colors.white)),
-                    Text('outstanding of ₹${NumberFormat('#,##,##0', 'en_IN').format(loan.amount)}', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                    Text(l10n.loanDetailOutstandingOfAmount(NumberFormat('#,##,##0', 'en_IN').format(loan.amount)), style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
                     const SizedBox(height: 12),
                     AppProgressBar(value: paid, max: loan.amount, tone: ProgressTone.info),
                   ],
@@ -74,32 +87,32 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
               ),
               const SizedBox(height: 16),
               Row(children: [
-                Expanded(child: _infoTile('EMI', '₹${NumberFormat('#,##,##0', 'en_IN').format(loan.emi)}')),
+                Expanded(child: _infoTile(l10n.loanDetailEmiLabel, '₹${NumberFormat('#,##,##0', 'en_IN').format(loan.emi)}')),
                 const SizedBox(width: 12),
-                Expanded(child: _infoTile('Tenure', '${loan.tenureMonths} months')),
+                Expanded(child: _infoTile(l10n.loanDetailTenureLabel, l10n.loanDetailTenureMonthsValue(loan.tenureMonths))),
               ]),
               const SizedBox(height: 12),
               Row(children: [
-                Expanded(child: _infoTile('Disbursed', loan.disbursedOn != null ? DateFormat('dd MMM yyyy').format(loan.disbursedOn!) : '—')),
+                Expanded(child: _infoTile(l10n.loanDetailDisbursedLabel, loan.disbursedOn != null ? DateFormat('dd MMM yyyy').format(loan.disbursedOn!) : '—')),
                 const SizedBox(width: 12),
-                Expanded(child: _infoTile('Next Due', loan.nextDueDate != null ? DateFormat('dd MMM yyyy').format(loan.nextDueDate!) : '—')),
+                Expanded(child: _infoTile(l10n.loanDetailNextDueLabel, loan.nextDueDate != null ? DateFormat('dd MMM yyyy').format(loan.nextDueDate!) : '—')),
               ]),
               if (canRecordPayment && (loan.status == 'active' || loan.status == 'overdue')) ...[
                 const SizedBox(height: 20),
                 AppButton(
-                  label: 'Record Payment',
+                  label: l10n.loanDetailRecordPaymentButton,
                   fullWidth: true,
                   onPressed: () => _recordPayment(context, loan),
                 ),
               ],
               const SizedBox(height: 24),
-              const SectionHeader(title: 'Payment History'),
+              SectionHeader(title: l10n.loanDetailPaymentHistoryTitle),
               AppAsyncBuilder<List<LoanPayment>>(
                 key: _paymentsKey,
                 future: () => _repo.fetchPayments(widget.loanId),
                 builder: (context, payments) {
                   if (payments.isEmpty) {
-                    return const AppEmptyState(icon: Icons.receipt_long_rounded, message: 'No payments recorded yet');
+                    return AppEmptyState(icon: Icons.receipt_long_rounded, message: l10n.loanDetailNoPaymentsMessage);
                   }
                   return AppCard(
                     padded: false,
@@ -136,6 +149,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
       );
 
   Future<void> _recordPayment(BuildContext context, Loan loan) async {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: '${loan.emi}');
     String? error;
     var submitting = false;
@@ -143,7 +157,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Record payment'),
+          title: Text(l10n.loanDetailRecordPaymentDialogTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,7 +168,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                 inputFormatters: decimalAmountInputFormatters,
                 textInputAction: TextInputAction.done,
                 maxLength: 7,
-                decoration: const InputDecoration(prefixText: '₹', labelText: 'Payment amount', counterText: ''),
+                decoration: InputDecoration(prefixText: '₹', labelText: l10n.loanDetailPaymentAmountLabel, counterText: ''),
               ),
               if (error != null) ...[
                 const SizedBox(height: 12),
@@ -163,14 +177,14 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
+            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
             FilledButton(
               onPressed: submitting
                   ? null
                   : () async {
                       final amount = num.tryParse(controller.text);
                       if (amount == null || amount <= 0) {
-                        setState(() => error = 'Enter a valid amount');
+                        setState(() => error = l10n.loanDetailInvalidAmountError);
                         return;
                       }
                       // The RPC/demo-mode fallback both clamp `outstanding`
@@ -182,7 +196,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                       // (the payment history total would exceed loan.amount
                       // even though `outstanding` reads 0/closed).
                       if (amount > loan.outstanding) {
-                        setState(() => error = 'Amount exceeds the outstanding balance of ₹${NumberFormat('#,##,##0', 'en_IN').format(loan.outstanding)}');
+                        setState(() => error = l10n.loanDetailAmountExceedsOutstandingError(NumberFormat('#,##,##0', 'en_IN').format(loan.outstanding)));
                         return;
                       }
                       setState(() {
@@ -197,12 +211,12 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                         if (context.mounted) {
                           setState(() {
                             submitting = false;
-                            error = 'Could not record this payment. Please try again.';
+                            error = l10n.loanDetailRecordErrorMessage;
                           });
                         }
                       }
                     },
-              child: Text(submitting ? 'Recording…' : 'Record'),
+              child: Text(submitting ? l10n.loanDetailRecordingButton : l10n.loanDetailRecordButton),
             ),
           ],
         ),
@@ -213,7 +227,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
       _paymentsKey.currentState?.reload();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(SupabaseService.isConfigured ? 'Payment recorded' : 'Demo mode — not saved (connect Supabase to persist)')),
+          SnackBar(content: Text(SupabaseService.isConfigured ? l10n.loanDetailPaymentRecordedMessage : l10n.loanDetailDemoModeMessage)),
         );
       }
     }

@@ -2306,6 +2306,137 @@ class AppLocalizationsHi extends AppLocalizations {
   String get loanTrackingDetailsLink => 'विवरण';
 
   @override
+  String get loanApprovalTitle => 'ऋण अनुमोदन';
+
+  @override
+  String get loanApprovalEmptyMessage => 'कोई लंबित ऋण आवेदन नहीं है';
+
+  @override
+  String loanApprovalTenureMonths(int months) {
+    return '$months महीने की अवधि';
+  }
+
+  @override
+  String get loanApprovalRejectButton => 'अस्वीकार करें';
+
+  @override
+  String get loanApprovalRejectingButton => 'अस्वीकार हो रहा है…';
+
+  @override
+  String get loanApprovalApproveButton => 'स्वीकृत करें';
+
+  @override
+  String get loanApprovalRejectedMessage => 'आवेदन अस्वीकार कर दिया गया';
+
+  @override
+  String get loanApprovalDemoModeMessage =>
+      'डेमो मोड — निर्णय सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
+
+  @override
+  String get loanApprovalAlreadyDecidedRejectMessage =>
+      'इस आवेदन पर किसी और ने पहले ही निर्णय ले लिया है।';
+
+  @override
+  String get loanApprovalRejectErrorMessage =>
+      'यह आवेदन अस्वीकार नहीं हो सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get loanApprovalDialogTitle => 'ऋण स्वीकृत करें';
+
+  @override
+  String loanApprovalDialogEmiForMember(String name) {
+    return '$name के लिए मासिक EMI';
+  }
+
+  @override
+  String get loanApprovalEmiLabel => 'मासिक EMI';
+
+  @override
+  String get loanApprovalInvalidEmiError => 'एक मान्य EMI राशि दर्ज करें';
+
+  @override
+  String get loanApprovalApprovingButton => 'स्वीकृत हो रहा है…';
+
+  @override
+  String get loanApprovalApproveErrorMessage =>
+      'यह ऋण स्वीकृत नहीं हो सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get loanApprovalApprovedMessage => 'ऋण स्वीकृत हो गया';
+
+  @override
+  String get loanApprovalAlreadyDecidedApproveMessage =>
+      'इस ऋण पर किसी और ने पहले ही निर्णय ले लिया है।';
+
+  @override
+  String get loanDetailTitle => 'ऋण विवरण';
+
+  @override
+  String get loanDetailNotFoundMessage => 'यह ऋण नहीं मिल सका';
+
+  @override
+  String loanDetailOutstandingOfAmount(String amount) {
+    return '₹$amount में से बकाया';
+  }
+
+  @override
+  String get loanDetailEmiLabel => 'EMI';
+
+  @override
+  String get loanDetailTenureLabel => 'अवधि';
+
+  @override
+  String loanDetailTenureMonthsValue(int months) {
+    return '$months महीने';
+  }
+
+  @override
+  String get loanDetailDisbursedLabel => 'वितरित';
+
+  @override
+  String get loanDetailNextDueLabel => 'अगली देय तिथि';
+
+  @override
+  String get loanDetailRecordPaymentButton => 'भुगतान दर्ज करें';
+
+  @override
+  String get loanDetailPaymentHistoryTitle => 'भुगतान इतिहास';
+
+  @override
+  String get loanDetailNoPaymentsMessage => 'अभी तक कोई भुगतान दर्ज नहीं हुआ';
+
+  @override
+  String get loanDetailRecordPaymentDialogTitle => 'भुगतान दर्ज करें';
+
+  @override
+  String get loanDetailPaymentAmountLabel => 'भुगतान राशि';
+
+  @override
+  String get loanDetailInvalidAmountError => 'एक मान्य राशि दर्ज करें';
+
+  @override
+  String loanDetailAmountExceedsOutstandingError(String amount) {
+    return 'राशि ₹$amount की बकाया राशि से अधिक है';
+  }
+
+  @override
+  String get loanDetailRecordingButton => 'दर्ज हो रहा है…';
+
+  @override
+  String get loanDetailRecordButton => 'दर्ज करें';
+
+  @override
+  String get loanDetailRecordErrorMessage =>
+      'यह भुगतान दर्ज नहीं हो सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get loanDetailPaymentRecordedMessage => 'भुगतान दर्ज हो गया';
+
+  @override
+  String get loanDetailDemoModeMessage =>
+      'डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
+
+  @override
   String get analyticsDashboardTitle => 'एनालिटिक्स';
 
   @override

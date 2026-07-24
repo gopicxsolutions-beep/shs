@@ -1240,6 +1240,82 @@
 
   "loanTrackingDetailsLink": "विवरण",
 
+  "loanApprovalTitle": "ऋण अनुमोदन",
+
+  "loanApprovalEmptyMessage": "कोई लंबित ऋण आवेदन नहीं है",
+
+  "loanApprovalTenureMonths": "{months} महीने की अवधि",
+
+  "loanApprovalRejectButton": "अस्वीकार करें",
+
+  "loanApprovalRejectingButton": "अस्वीकार हो रहा है…",
+
+  "loanApprovalApproveButton": "स्वीकृत करें",
+
+  "loanApprovalRejectedMessage": "आवेदन अस्वीकार कर दिया गया",
+
+  "loanApprovalDemoModeMessage": "डेमो मोड — निर्णय सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "loanApprovalAlreadyDecidedRejectMessage": "इस आवेदन पर किसी और ने पहले ही निर्णय ले लिया है।",
+
+  "loanApprovalRejectErrorMessage": "यह आवेदन अस्वीकार नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "loanApprovalDialogTitle": "ऋण स्वीकृत करें",
+
+  "loanApprovalDialogEmiForMember": "{name} के लिए मासिक EMI",
+
+  "loanApprovalEmiLabel": "मासिक EMI",
+
+  "loanApprovalInvalidEmiError": "एक मान्य EMI राशि दर्ज करें",
+
+  "loanApprovalApprovingButton": "स्वीकृत हो रहा है…",
+
+  "loanApprovalApproveErrorMessage": "यह ऋण स्वीकृत नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "loanApprovalApprovedMessage": "ऋण स्वीकृत हो गया",
+
+  "loanApprovalAlreadyDecidedApproveMessage": "इस ऋण पर किसी और ने पहले ही निर्णय ले लिया है।",
+
+  "loanDetailTitle": "ऋण विवरण",
+
+  "loanDetailNotFoundMessage": "यह ऋण नहीं मिल सका",
+
+  "loanDetailOutstandingOfAmount": "₹{amount} में से बकाया",
+
+  "loanDetailEmiLabel": "EMI",
+
+  "loanDetailTenureLabel": "अवधि",
+
+  "loanDetailTenureMonthsValue": "{months} महीने",
+
+  "loanDetailDisbursedLabel": "वितरित",
+
+  "loanDetailNextDueLabel": "अगली देय तिथि",
+
+  "loanDetailRecordPaymentButton": "भुगतान दर्ज करें",
+
+  "loanDetailPaymentHistoryTitle": "भुगतान इतिहास",
+
+  "loanDetailNoPaymentsMessage": "अभी तक कोई भुगतान दर्ज नहीं हुआ",
+
+  "loanDetailRecordPaymentDialogTitle": "भुगतान दर्ज करें",
+
+  "loanDetailPaymentAmountLabel": "भुगतान राशि",
+
+  "loanDetailInvalidAmountError": "एक मान्य राशि दर्ज करें",
+
+  "loanDetailAmountExceedsOutstandingError": "राशि ₹{amount} की बकाया राशि से अधिक है",
+
+  "loanDetailRecordingButton": "दर्ज हो रहा है…",
+
+  "loanDetailRecordButton": "दर्ज करें",
+
+  "loanDetailRecordErrorMessage": "यह भुगतान दर्ज नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "loanDetailPaymentRecordedMessage": "भुगतान दर्ज हो गया",
+
+  "loanDetailDemoModeMessage": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
   "analyticsDashboardTitle": "एनालिटिक्स",
 
   "analyticsDashboardTotalShgs": "कुल SHGs",

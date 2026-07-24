@@ -140,7 +140,14 @@ class LoansHomePage extends StatelessWidget {
           // rejected, as real owed debt. Only active/overdue loans have
           // actually been disbursed and carry a genuine outstanding balance.
           final outstanding = loans.where((l) => l.status == 'active' || l.status == 'overdue').fold<num>(0, (sum, l) => sum + l.outstanding);
-          final pending = loans.where((l) => l.status == 'pending').length;
+          // `loans_update_leader_or_staff` (RLS) blocks a leader from
+          // approving/rejecting her OWN loan (no identity may escalate
+          // itself — see loan_approval_page.dart's matching filter), so a
+          // self-applied loan can never actually be actioned from this
+          // "Pending Approval" count. Excluding it keeps the badge in sync
+          // with what the Approvals list itself will show, rather than
+          // advertising a review queue item that always fails on tap.
+          final pending = loans.where((l) => l.status == 'pending' && l.memberId != memberId).length;
           final overdue = loans.where((l) => l.status == 'overdue').length;
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),

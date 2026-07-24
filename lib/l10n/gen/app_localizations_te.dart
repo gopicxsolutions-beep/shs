@@ -2358,6 +2358,149 @@ class AppLocalizationsTe extends AppLocalizations {
   String get loanTrackingDetailsLink => 'వివరాలు';
 
   @override
+  String get loanApprovalTitle => 'రుణ ఆమోదాలు';
+
+  @override
+  String get loanApprovalEmptyMessage => 'పెండింగ్‌లో రుణ దరఖాస్తులు లేవు';
+
+  @override
+  String loanApprovalTenureMonths(int months) {
+    String _temp0 = intl.Intl.pluralLogic(
+      months,
+      locale: localeName,
+      other: 'నెలల',
+      one: 'నెల',
+    );
+    return '$months $_temp0 వ్యవధి';
+  }
+
+  @override
+  String get loanApprovalRejectButton => 'తిరస్కరించండి';
+
+  @override
+  String get loanApprovalRejectingButton => 'తిరస్కరిస్తోంది…';
+
+  @override
+  String get loanApprovalApproveButton => 'ఆమోదించండి';
+
+  @override
+  String get loanApprovalRejectedMessage => 'దరఖాస్తు తిరస్కరించబడింది';
+
+  @override
+  String get loanApprovalDemoModeMessage =>
+      'డెమో మోడ్ — నిర్ణయం సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
+
+  @override
+  String get loanApprovalAlreadyDecidedRejectMessage =>
+      'ఈ దరఖాస్తుపై ఇప్పటికే మరొకరు నిర్ణయం తీసుకున్నారు.';
+
+  @override
+  String get loanApprovalRejectErrorMessage =>
+      'ఈ దరఖాస్తును తిరస్కరించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get loanApprovalDialogTitle => 'రుణాన్ని ఆమోదించండి';
+
+  @override
+  String loanApprovalDialogEmiForMember(String name) {
+    return '$name కోసం నెలవారీ EMI';
+  }
+
+  @override
+  String get loanApprovalEmiLabel => 'నెలవారీ EMI';
+
+  @override
+  String get loanApprovalInvalidEmiError => 'సరైన EMI మొత్తాన్ని నమోదు చేయండి';
+
+  @override
+  String get loanApprovalApprovingButton => 'ఆమోదిస్తోంది…';
+
+  @override
+  String get loanApprovalApproveErrorMessage =>
+      'ఈ రుణాన్ని ఆమోదించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get loanApprovalApprovedMessage => 'రుణం ఆమోదించబడింది';
+
+  @override
+  String get loanApprovalAlreadyDecidedApproveMessage =>
+      'ఈ రుణంపై ఇప్పటికే మరొకరు నిర్ణయం తీసుకున్నారు.';
+
+  @override
+  String get loanDetailTitle => 'రుణ వివరాలు';
+
+  @override
+  String get loanDetailNotFoundMessage => 'ఈ రుణం కనుగొనబడలేదు';
+
+  @override
+  String loanDetailOutstandingOfAmount(String amount) {
+    return '₹$amountలో బాకీ';
+  }
+
+  @override
+  String get loanDetailEmiLabel => 'EMI';
+
+  @override
+  String get loanDetailTenureLabel => 'వ్యవధి';
+
+  @override
+  String loanDetailTenureMonthsValue(int months) {
+    String _temp0 = intl.Intl.pluralLogic(
+      months,
+      locale: localeName,
+      other: 'నెలలు',
+      one: 'నెల',
+    );
+    return '$months $_temp0';
+  }
+
+  @override
+  String get loanDetailDisbursedLabel => 'పంపిణీ చేయబడింది';
+
+  @override
+  String get loanDetailNextDueLabel => 'తదుపరి గడువు';
+
+  @override
+  String get loanDetailRecordPaymentButton => 'చెల్లింపు నమోదు చేయండి';
+
+  @override
+  String get loanDetailPaymentHistoryTitle => 'చెల్లింపు చరిత్ర';
+
+  @override
+  String get loanDetailNoPaymentsMessage => 'ఇంకా చెల్లింపులు నమోదు కాలేదు';
+
+  @override
+  String get loanDetailRecordPaymentDialogTitle => 'చెల్లింపు నమోదు చేయండి';
+
+  @override
+  String get loanDetailPaymentAmountLabel => 'చెల్లింపు మొత్తం';
+
+  @override
+  String get loanDetailInvalidAmountError => 'సరైన మొత్తాన్ని నమోదు చేయండి';
+
+  @override
+  String loanDetailAmountExceedsOutstandingError(String amount) {
+    return 'మొత్తం ₹$amount బాకీ మొత్తాన్ని మించిపోయింది';
+  }
+
+  @override
+  String get loanDetailRecordingButton => 'నమోదు అవుతోంది…';
+
+  @override
+  String get loanDetailRecordButton => 'నమోదు చేయండి';
+
+  @override
+  String get loanDetailRecordErrorMessage =>
+      'ఈ చెల్లింపును నమోదు చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get loanDetailPaymentRecordedMessage => 'చెల్లింపు నమోదైంది';
+
+  @override
+  String get loanDetailDemoModeMessage =>
+      'డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
+
+  @override
   String get analyticsDashboardTitle => 'అనలిటిక్స్';
 
   @override

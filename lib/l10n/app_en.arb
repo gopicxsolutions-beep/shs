@@ -1628,6 +1628,107 @@
 
   "loanTrackingDetailsLink": "Details",
 
+  "loanApprovalTitle": "Loan Approvals",
+
+  "loanApprovalEmptyMessage": "No pending loan applications",
+
+  "loanApprovalTenureMonths": "{months} {months, plural, =1{month} other{months}} tenure",
+  "@loanApprovalTenureMonths": {
+    "placeholders": {
+      "months": {"type": "int"}
+    }
+  },
+
+  "loanApprovalRejectButton": "Reject",
+
+  "loanApprovalRejectingButton": "Rejecting…",
+
+  "loanApprovalApproveButton": "Approve",
+
+  "loanApprovalRejectedMessage": "Application rejected",
+
+  "loanApprovalDemoModeMessage": "Demo mode — decision not saved (connect Supabase to persist)",
+
+  "loanApprovalAlreadyDecidedRejectMessage": "This application was already decided by someone else.",
+
+  "loanApprovalRejectErrorMessage": "Could not reject this application. Please try again.",
+
+  "loanApprovalDialogTitle": "Approve loan",
+
+  "loanApprovalDialogEmiForMember": "Monthly EMI for {name}",
+  "@loanApprovalDialogEmiForMember": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "loanApprovalEmiLabel": "Monthly EMI",
+
+  "loanApprovalInvalidEmiError": "Enter a valid EMI amount",
+
+  "loanApprovalApprovingButton": "Approving…",
+
+  "loanApprovalApproveErrorMessage": "Could not approve this loan. Please try again.",
+
+  "loanApprovalApprovedMessage": "Loan approved",
+
+  "loanApprovalAlreadyDecidedApproveMessage": "This loan was already decided by someone else.",
+
+  "loanDetailTitle": "Loan Detail",
+
+  "loanDetailNotFoundMessage": "This loan could not be found",
+
+  "loanDetailOutstandingOfAmount": "outstanding of ₹{amount}",
+  "@loanDetailOutstandingOfAmount": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "loanDetailEmiLabel": "EMI",
+
+  "loanDetailTenureLabel": "Tenure",
+
+  "loanDetailTenureMonthsValue": "{months} {months, plural, =1{month} other{months}}",
+  "@loanDetailTenureMonthsValue": {
+    "placeholders": {
+      "months": {"type": "int"}
+    }
+  },
+
+  "loanDetailDisbursedLabel": "Disbursed",
+
+  "loanDetailNextDueLabel": "Next Due",
+
+  "loanDetailRecordPaymentButton": "Record Payment",
+
+  "loanDetailPaymentHistoryTitle": "Payment History",
+
+  "loanDetailNoPaymentsMessage": "No payments recorded yet",
+
+  "loanDetailRecordPaymentDialogTitle": "Record payment",
+
+  "loanDetailPaymentAmountLabel": "Payment amount",
+
+  "loanDetailInvalidAmountError": "Enter a valid amount",
+
+  "loanDetailAmountExceedsOutstandingError": "Amount exceeds the outstanding balance of ₹{amount}",
+  "@loanDetailAmountExceedsOutstandingError": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "loanDetailRecordingButton": "Recording…",
+
+  "loanDetailRecordButton": "Record",
+
+  "loanDetailRecordErrorMessage": "Could not record this payment. Please try again.",
+
+  "loanDetailPaymentRecordedMessage": "Payment recorded",
+
+  "loanDetailDemoModeMessage": "Demo mode — not saved (connect Supabase to persist)",
+
   "analyticsDashboardTitle": "Analytics",
 
   "analyticsDashboardTotalShgs": "Total SHGs",

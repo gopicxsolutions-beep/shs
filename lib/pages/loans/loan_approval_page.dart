@@ -24,21 +24,32 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
   final _repo = LoanRepository();
   final _key = GlobalKey<AppAsyncBuilderState<List<Loan>>>();
   final _rejecting = <String>{};
+  final _approving = <String>{};
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final shgId = appState.profile?.shgId;
+    final myId = appState.profile?.id;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Loan Approvals'),
+      appBar: PageHeader(title: l10n.loanApprovalTitle),
       body: AppAsyncBuilder<List<Loan>>(
         key: _key,
         future: () => _repo.fetchForShg(shgId),
         builder: (context, loans) {
-          final pending = loans.where((l) => l.status == 'pending').toList();
+          // `loans_update_leader_or_staff` (RLS) requires the loan's own
+          // member to NOT be the caller — a leader can never approve/reject
+          // her own loan (no identity may escalate itself). Without this
+          // filter her own self-applied loan sat in this list looking
+          // actionable, and tapping Approve/Reject always failed with a
+          // generic "please try again" that gave no hint why — found via
+          // live end-to-end testing, not visible in demo mode or code review
+          // alone, since demo mode has no real per-user identity to collide.
+          final pending = loans.where((l) => l.status == 'pending' && l.memberId != myId).toList();
           if (pending.isEmpty) {
-            return const AppEmptyState(icon: Icons.fact_check_rounded, message: 'No pending loan applications');
+            return AppEmptyState(icon: Icons.fact_check_rounded, message: l10n.loanApprovalEmptyMessage);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -64,10 +75,17 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                             ],
                           ),
                         ),
-                        Text('₹${NumberFormat('#,##,##0', 'en_IN').format(l.amount)}', style: AppTheme.display(16)),
+                        // Was a bare Text, not wrapped in Flexible — at
+                        // 1.3x-2x text scale a large loan amount (cap
+                        // ₹10,00,000) next to the fixed 40px avatar could
+                        // overflow the Row, since only the middle column
+                        // shrinks. loan_tracking_page.dart's equivalent
+                        // amount text already wraps in Flexible; matching
+                        // that here.
+                        Flexible(child: Text('₹${NumberFormat('#,##,##0', 'en_IN').format(l.amount)}', style: AppTheme.display(16), overflow: TextOverflow.ellipsis)),
                       ]),
                       const SizedBox(height: 4),
-                      Text('${l.tenureMonths} month tenure', style: AppTheme.sans(11, color: Neutral.c400)),
+                      Text(l10n.loanApprovalTenureMonths(l.tenureMonths), style: AppTheme.sans(11, color: Neutral.c400)),
                       const SizedBox(height: 12),
                       Row(children: [
                         Expanded(
@@ -81,7 +99,7 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                                       _key.currentState?.reload();
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text(SupabaseService.isConfigured ? 'Application rejected' : 'Demo mode — not saved (connect Supabase to persist)')),
+                                          SnackBar(content: Text(SupabaseService.isConfigured ? l10n.loanApprovalRejectedMessage : l10n.loanApprovalDemoModeMessage)),
                                         );
                                       }
                                     } on LoanAlreadyDecidedException {
@@ -93,13 +111,13 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                                       _key.currentState?.reload();
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('This application was already decided by someone else.')),
+                                          SnackBar(content: Text(l10n.loanApprovalAlreadyDecidedRejectMessage)),
                                         );
                                       }
                                     } catch (_) {
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Could not reject this application. Please try again.')),
+                                          SnackBar(content: Text(l10n.loanApprovalRejectErrorMessage)),
                                         );
                                       }
                                     } finally {
@@ -111,15 +129,23 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                               foregroundColor: Accent.red600,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            child: Text(rejecting ? 'Rejecting…' : 'Reject'),
+                            child: Text(rejecting ? l10n.loanApprovalRejectingButton : l10n.loanApprovalRejectButton),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: FilledButton(
-                            onPressed: () => _approve(context, l),
+                            // Mirrors Reject's `_rejecting` guard — without it, a
+                            // fast double-tap could open two stacked Approve
+                            // dialogs for the same loan before the first
+                            // resolves (the RPC's own race guard would still
+                            // prevent a bad outcome, but the second dialog would
+                            // surface a confusing "already decided" error for
+                            // what was really just a double-tap, not a genuine
+                            // race with another leader/staff account).
+                            onPressed: _approving.contains(l.id) ? null : () => _approve(context, l),
                             style: FilledButton.styleFrom(backgroundColor: Brand.c600, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                            child: const Text('Approve'),
+                            child: Text(l10n.loanApprovalApproveButton),
                           ),
                         ),
                       ]),
@@ -135,21 +161,23 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
   }
 
   Future<void> _approve(BuildContext context, Loan l) async {
+    final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     final suggestedEmi = (l.amount / l.tenureMonths).ceil();
     final emiController = TextEditingController(text: '$suggestedEmi');
     String? error;
     var submitting = false;
+    setState(() => _approving.add(l.id));
     final approved = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Approve loan'),
+          title: Text(l10n.loanApprovalDialogTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Monthly EMI for ${l.memberName}', style: AppTheme.sans(12, color: Neutral.c500)),
+              Text(l10n.loanApprovalDialogEmiForMember(l.memberName), style: AppTheme.sans(12, color: Neutral.c500)),
               const SizedBox(height: 8),
               TextField(
                 controller: emiController,
@@ -157,7 +185,7 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                 inputFormatters: decimalAmountInputFormatters,
                 textInputAction: TextInputAction.done,
                 maxLength: 7,
-                decoration: const InputDecoration(prefixText: '₹', labelText: 'Monthly EMI', counterText: ''),
+                decoration: InputDecoration(prefixText: '₹', labelText: l10n.loanApprovalEmiLabel, counterText: ''),
               ),
               if (error != null) ...[
                 const SizedBox(height: 12),
@@ -166,14 +194,14 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(null), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
+            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(null), child: Text(l10n.actionCancel)),
             FilledButton(
               onPressed: submitting
                   ? null
                   : () async {
                       final emi = num.tryParse(emiController.text);
                       if (emi == null || emi <= 0) {
-                        setState(() => error = 'Enter a valid EMI amount');
+                        setState(() => error = l10n.loanApprovalInvalidEmiError);
                         return;
                       }
                       setState(() {
@@ -193,26 +221,27 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                         if (context.mounted) {
                           setState(() {
                             submitting = false;
-                            error = 'Could not approve this loan. Please try again.';
+                            error = l10n.loanApprovalApproveErrorMessage;
                           });
                         }
                       }
                     },
-              child: Text(submitting ? 'Approving…' : 'Approve'),
+              child: Text(submitting ? l10n.loanApprovalApprovingButton : l10n.loanApprovalApproveButton),
             ),
           ],
         ),
       ),
     );
+    if (mounted) setState(() => _approving.remove(l.id));
     if (approved == true) {
       _key.currentState?.reload();
       messenger.showSnackBar(
-        SnackBar(content: Text(SupabaseService.isConfigured ? 'Loan approved' : 'Demo mode — not saved (connect Supabase to persist)')),
+        SnackBar(content: Text(SupabaseService.isConfigured ? l10n.loanApprovalApprovedMessage : l10n.loanApprovalDemoModeMessage)),
       );
     } else if (approved == false) {
       _key.currentState?.reload();
       messenger.showSnackBar(
-        const SnackBar(content: Text('This loan was already decided by someone else.')),
+        SnackBar(content: Text(l10n.loanApprovalAlreadyDecidedApproveMessage)),
       );
     }
   }

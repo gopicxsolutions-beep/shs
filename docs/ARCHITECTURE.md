@@ -137,6 +137,19 @@ inline an equivalent subquery.
   any other member's loan in her SHG but is mechanically blocked from deciding
   her own. The identical shape protects `profiles.role` (§3.3) and scheme
   application decisions.
+  - The RLS block alone isn't sufficient UX — the client must mirror it, or
+    the user hits a confusing generic failure for an action that could never
+    succeed. This was missed for two of the three loan screens until round
+    92's live testing: a leader who applies for her own loan (a legitimate
+    thing to do — she's still a real SHG member) saw her own pending loan
+    sitting in `loan_approval_page.dart`'s actionable list, and
+    `loan_detail_page.dart`'s "Record Payment" button for her own active
+    loan, both silently guaranteed to fail. Fixed by filtering
+    `loan.memberId != <viewer's own profile id>` in both places (and in the
+    "Pending Approval" badge count on `loans_home_page.dart`, so the count
+    stays consistent with what the list shows) — the same precedent
+    `loans_home_page.dart` already set by hiding "Apply" from leader/staff to
+    avoid an equivalent confusing affordance.
 - **Column-lock independent of row-access**: "can write this row" and "can
   write this column to this value" are enforced separately. A seller updating
   a marketplace order's `status` must not, in the same `WITH CHECK`, be able to

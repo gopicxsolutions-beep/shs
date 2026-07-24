@@ -7564,3 +7564,105 @@ Docs updated in the same change: [ARCHITECTURE.md](ARCHITECTURE.md) §4
 (new bullet on the `supabase_realtime` publication requirement for
 `.stream()`, so this exact gap isn't silently reintroduced by a future
 module reaching for realtime).
+
+## Update (round 92) — Loans module end-to-end testing found a real self-escalation UI gap the RLS layer already blocked, plus two missed i18n pages
+
+User asked for full end-to-end testing of the Loans feature. An audit agent
+checked the same three risk classes the two previous rounds surfaced: the
+`loans` table has only one FK into `profiles` (`member_id` — confirmed by
+grepping every migration for `alter table ... loans`), so round 90's
+PostgREST embed-ambiguity bug does not reproduce here; `LoanRepository.
+watchForShg()` exists with the same `.stream()` shape as Savings but has
+**no call site yet** (dead code — `0046` already added `loans` to the
+`supabase_realtime` publication proactively, so round 91's bug won't
+reproduce whenever a page does start using it); and the approve/reject/
+payment RLS + RPC lifecycle (self-approval block, locked fields on update,
+insert-time escalation guard, race-guarded decision RPCs) was traced through
+`0020`/`0023`/`0027`/`0029` and found already solid.
+
+Live end-to-end testing (apply → approve → track → detail → record payment,
+using a real leader test account) then surfaced a real gap the code-review
+pass couldn't have found on its own: this leader test account is the
+**only** member of its test SHG, so applying for her own loan and then
+trying to approve it hit `loans_update_leader_or_staff`'s WITH CHECK clause
+— `loans_member_id(id) <> auth.uid()` — which correctly rejected the
+self-approval (no identity may escalate itself, exactly as designed). But
+**nothing in the UI told her this was disallowed**: her own pending loan
+still appeared in `loan_approval_page.dart`'s approvals list looking fully
+actionable, and tapping Approve or Reject always failed with a generic
+"please try again" that gave no hint the action could never succeed. The
+identical asymmetry existed on `loan_detail_page.dart`'s "Record Payment"
+button — `canRecordPayment` only checked `role != Role.member`, not whether
+the viewer was also the loan's own member, so a leader with a personal
+active loan saw a payment button that always failed the same way (confirmed
+by reading `record_loan_payment`'s own doc comment, which already documented
+the identical RLS asymmetry between `loan_payments_insert_related` and
+`loans_update_leader_or_staff` — the failure mode was already known in
+comments but not actually gated in the UI). This is the same bug *class*
+`loans_home_page.dart` already fixed for "Apply" (hidden for leader/staff to
+avoid a confusing affordance that doesn't match the backend permission
+model) — just not yet applied to the other two loan-lifecycle screens.
+
+Fixed in three places, all filtering on `loan.memberId != <viewer's own
+profile id>`:
+- `loan_approval_page.dart` — excludes the viewer's own loan from the
+  actionable pending list.
+- `loans_home_page.dart` — the "Pending Approval" stat-card/badge count
+  excludes it too, so the count stays in sync with what the Approvals list
+  actually shows (previously the badge could say "1" while the list, after
+  the first fix alone, would have shown nothing — an equally confusing
+  mismatch).
+- `loan_detail_page.dart` — `canRecordPayment` now also requires
+  `loan.memberId != viewer's own id`, hiding "Record Payment" for a leader's
+  own loan the same way "Apply" is already hidden for her on the home page.
+
+Verified live end-to-end with the real deployed code: submitted a real loan
+application (₹15,000, "Dairy - buy milch cow", 12-month tenure) through the
+normal Apply flow; confirmed the self-approval WITH CHECK block by trying to
+approve it as the same account (got the generic failure, as RLS intends);
+approved it via a direct RPC call (`select approve_loan(...)`, bypassing RLS
+the same way a second leader/staff account legitimately would) to exercise
+the downstream screens — Tracking and Detail both rendered the correct
+outstanding/EMI/next-due-date; attempting to Record Payment on this
+leader's own now-active loan reproduced the exact bug above, confirmed via
+SQL that `record_loan_payment`'s transaction correctly rolled back the
+`loan_payments` insert alongside the rejected `loans` update (no orphan
+row). After the fix, inserted a second `__TEST__`-prefixed pending loan for
+the same self-member scenario and reloaded the live app: the "Pending
+Approval" badge correctly read **0** and the Approvals page correctly showed
+"No pending loan applications" despite a real pending loan existing for that
+SHG — proving the fix, not just the absence of an error. Both test loans
+were deleted afterward and re-confirmed via SQL that zero rows remain for
+the test SHG.
+
+Two further real gaps the audit found, both fixed in the same change:
+- **`loan_approval_page.dart` and `loan_detail_page.dart` had skipped the
+  earlier i18n completion pass entirely** — confirmed via `.arb` grep (zero
+  `loanApproval*`/`loanDetail*` keys existed, while the sibling
+  `loans_home_page.dart`/`loan_apply_page.dart`/`loan_tracking_page.dart`
+  were already fully covered). These are the two screens that actually
+  handle money movement in the loan lifecycle (approve/reject with EMI
+  entry, and recording/viewing repayments) — a Hindi/Telugu session would
+  have seen them render in English while every other loan screen was
+  correctly localized. Added 96 new keys (32 per file × 3 languages) and
+  wired them in.
+- **`loan_approval_page.dart`'s amount `Text` wasn't wrapped in
+  `Flexible`/`Expanded`** (only the middle name/purpose column was) — at
+  1.3x-2x text scale a large loan amount next to the fixed-width avatar
+  could overflow the Row, the same overflow pattern this project has fixed
+  repeatedly elsewhere. Wrapped in `Flexible` with `overflow: ellipsis`,
+  matching `loan_tracking_page.dart`'s existing equivalent. Also added a
+  double-tap guard on the Approve button (mirroring the existing `_rejecting`
+  guard on Reject) so a fast double-tap can't open two stacked approve
+  dialogs for the same loan.
+
+`flutter analyze`: 0 issues. `flutter test`: 940/940 passing (no regressions
+— these are page-level RLS/permission-model fixes verified via live E2E
+testing rather than new automated widget tests, since `loan_approval_page.dart`/
+`loan_detail_page.dart` aren't currently structured for repository injection
+the way `loans_home_page.dart` is). This round's core finding — a UI
+affordance the backend already correctly blocked, but silently and
+confusingly — could only have been found by testing with an account that is
+simultaneously the SHG's leader and (by applying for her own loan) one of
+its members, exactly the kind of identity collision demo mode can never
+produce and code review alone is unlikely to think to check.
