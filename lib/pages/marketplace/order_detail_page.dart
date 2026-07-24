@@ -69,7 +69,16 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           // reload to find the status unchanged with no explanation.
           final appState = context.watch<AppState>();
           final isStaff = const {Role.crp, Role.clf, Role.admin}.contains(appState.user.role);
-          final canUpdateStatus = isStaff || (order.sellerId != null && order.sellerId == appState.profile?.id);
+          // Demo mode has no real seller/buyer identity split — every demo
+          // order collapses to the one demo persona (see
+          // MarketplaceRepository's own class doc comment) and
+          // `appState.profile` is always null there, so `order.sellerId ==
+          // appState.profile?.id` could never match even for a demo order
+          // this same persona "sold." Without this, only a staff-role demo
+          // persona could ever see the status chips, making the seller
+          // fulfillment flow untestable in demo mode for the leader/member
+          // roles it actually exists for.
+          final canUpdateStatus = isStaff || !SupabaseService.isConfigured || (order.sellerId != null && order.sellerId == appState.profile?.id);
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [

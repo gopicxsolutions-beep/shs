@@ -49,6 +49,11 @@ class MarketplaceRepository {
     return (rows as List).map((r) => Product.fromMap(r as Map<String, dynamic>)).toList();
   }
 
+  // No current call site (kept for a future "My Listings" screen) — the
+  // demo branch ignores [sellerId] on purpose, not by omission: demo mode
+  // has no real seller/buyer identity split (see this class's own doc
+  // comment), so every demo-mode product is already "this persona's own,"
+  // matching how `placeOrder()`'s demo branch makes the same simplification.
   Future<List<Product>> fetchMyProducts(String? sellerId) async {
     if (!_live) return [..._locallyAddedProducts.reversed, ..._mockProducts()];
     if (sellerId == null) return [];

@@ -7909,3 +7909,76 @@ pages — worth treating as a standing pattern to check for directly in
 future module audits (grep every page for zero `AppLocalizations` usage
 against a non-empty matching `.arb` key set) rather than waiting to
 rediscover it module by module.
+
+## Update (round 96) — Marketplace: found and closed a genuine self-review integrity gap, missed by the audit and only caught by actually exploiting it live
+
+User asked for full end-to-end testing of the Marketplace feature
+(`marketplace_products`/`marketplace_orders`/`marketplace_reviews`). An
+audit agent confirmed this module as another mature one: no PostgREST embed
+ambiguity (each table has exactly one FK into `profiles`, one into
+`marketplace_products`), no Realtime usage at all, the stock-decrement race
+condition was closed from the start via an atomic `security definer` RPC
+(`decrement_product_stock`), order lifecycle columns are fully locked on
+UPDATE (only `status` writable by the seller), `order_detail_page.dart`
+already independently derived its `canUpdateStatus` gate to match RLS
+exactly (the round-92 Loans bug shape, already prevented here), and i18n
+coverage is complete (57/57 keys in all three languages, no hardcoded
+router-injected titles).
+
+While reading `product_detail_page.dart` and the reviews RLS side-by-side,
+a gap the audit's own re-verification pass hadn't specifically tested for
+stood out: `marketplace_reviews_insert_authenticated` (`0032`) correctly
+requires an identified reviewer to have a real order for the product being
+reviewed, but never checked *whose* product it is — and
+`marketplace_orders_insert_authenticated` has no buyer/seller cross-check
+either. Rather than trust that this was fine because the two policies
+individually looked correct, live-exploited it end-to-end as a single real
+test account: inserted a `__TEST__` product as its own seller, called
+`decrement_product_stock` on it, placed a `marketplace_orders` row as buyer
+against her own listing, then successfully inserted a 5-star
+`marketplace_reviews` row as reviewer — all three succeeded under the
+pre-fix policy. A bad-faith seller could inflate her own product's rating
+this way, directly undermining the trust signal
+`marketplace_reviews_page.dart`'s average and `product_detail_page.dart`'s
+review list exist to provide. This is the same "no identity may escalate
+itself" shape as loan self-approval and the meeting action-item owner gap —
+just reached through a different door (an order, not a role check) that the
+audit's policy-by-policy review didn't think to combine.
+
+Fixed via migration `0048`: added `not exists (select 1 from
+marketplace_products p where p.id = marketplace_reviews.product_id and
+p.seller_id = auth.uid())` to the identified-reviewer branch of
+`marketplace_reviews_insert_authenticated`. Verified live against the real
+deployed migration with all three boundary cases: the exact self-review
+sequence above now fails with a real `42501`; a genuine third-party
+identified review still succeeds; an anonymous (`reviewer_id is null`)
+review is unaffected. All test fixtures deleted afterward and re-confirmed
+via SQL that zero rows remain (cascade-deleted correctly through
+product → order/review).
+
+Two smaller real gaps the audit found, both fixed:
+- **`order_detail_page.dart`'s `canUpdateStatus` gate could never be true
+  for a leader/member demo persona** — `appState.profile` is always `null`
+  in demo mode and `placeOrder()`'s demo branch leaves `sellerId` null too,
+  so `order.sellerId == appState.profile?.id` could only ever match via the
+  `isStaff` branch, making the seller fulfillment flow (the status chips)
+  completely untestable in demo mode for the roles it actually exists for.
+  Fixed by falling back to always-allowed whenever `!SupabaseService.
+  isConfigured`, matching this module's own documented "no real seller/
+  buyer identity split in demo mode" design.
+- **`MarketplaceRepository.fetchMyProducts()` is dead code** (zero call
+  sites, kept for a plausible future "My Listings" screen) — the audit
+  flagged its demo branch as buggy for ignoring `sellerId`, but on closer
+  inspection this actually matches the same collapsed-single-identity
+  simplification `placeOrder()`'s demo branch already makes deliberately,
+  not an oversight. Left the behavior as-is and added a comment instead of
+  a code change, so a future reader doesn't "fix" working code into
+  something inconsistent with the rest of the module.
+
+`flutter analyze`: 0 issues. `flutter test`: 940/940 passing, no test
+changes needed. This round's most valuable finding came from treating the
+audit's "already correct" verdict on each individual reviews/orders policy
+as a starting point rather than a conclusion — the gap only existed at the
+*intersection* of two policies that were each independently fine, and was
+only confirmed real by actually performing the exploit end-to-end against
+the live project rather than reasoning about it from policy text alone.

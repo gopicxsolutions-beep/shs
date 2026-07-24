@@ -135,8 +135,17 @@ inline an equivalent subquery.
   the `WITH CHECK` clause — e.g. `loans_update_leader_or_staff`'s check
   includes `loans_member_id(loans.id) <> auth.uid()`, so a leader can approve
   any other member's loan in her SHG but is mechanically blocked from deciding
-  her own. The identical shape protects `profiles.role` (§3.3) and scheme
-  application decisions.
+  her own. The identical shape protects `profiles.role` (§3.3), scheme
+  application decisions, and — since round 96 — `marketplace_reviews`: a
+  seller could self-place an order against her own listing (nothing cross-
+  checks buyer/seller on `marketplace_orders`) and then use that order to
+  satisfy the "real purchase" requirement on her own review, inflating her
+  product's rating. Live-verified exploitable before the fix (self-product,
+  self-order, self-review all succeeded end-to-end as one test account).
+  Fixed in migration `0048` by adding `not exists (select 1 from
+  marketplace_products p where p.id = marketplace_reviews.product_id and
+  p.seller_id = auth.uid())` to the identified-reviewer branch of
+  `marketplace_reviews_insert_authenticated`.
   - The RLS block alone isn't sufficient UX — the client must mirror it, or
     the user hits a confusing generic failure for an action that could never
     succeed. This was missed for two of the three loan screens until round
