@@ -1588,6 +1588,30 @@
 
   "announcementDetailNotFound": "यह घोषणा नहीं मिली",
 
+  "announcementsHomeTitle": "घोषणाएं",
+
+  "announcementsHomeEmptyState": "अभी तक कोई घोषणा नहीं",
+
+  "announcementsHomePostTooltip": "घोषणा पोस्ट करें",
+
+  "announcementsHomeDialogTitle": "घोषणा पोस्ट करें",
+
+  "announcementsHomeTitleHint": "शीर्षक",
+
+  "announcementsHomeDetailsHint": "विवरण",
+
+  "announcementsHomePostButton": "पोस्ट करें",
+
+  "announcementsHomeTitleRequired": "शीर्षक आवश्यक है।",
+
+  "announcementsHomeNotLinkedError": "आप किसी SHG से जुड़े नहीं हैं, इसलिए इस घोषणा को पोस्ट करने के लिए कुछ भी नहीं है।",
+
+  "announcementsHomePostError": "यह घोषणा पोस्ट नहीं हो सकी। कृपया फिर से प्रयास करें।",
+
+  "announcementsHomeScopeShg": "यह केवल आपके SHG में पोस्ट होगी।",
+
+  "announcementsHomeScopePlatformWide": "यह सभी SHG में, पूरे प्लेटफ़ॉर्म पर दिखाई देगी।",
+
   "splashBrandName": "NAVASAKHI",
 
   "splashHeadline": "महिलाओं का सशक्तिकरण।\nसमुदायों में बदलाव।",

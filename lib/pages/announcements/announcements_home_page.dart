@@ -91,19 +91,20 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
     super.dispose();
   }
 
-  Future<void> _post(String? shgId, String? createdBy) async {
+  Future<void> _post(String? shgId, String? createdBy, bool isStaff) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Post announcement'),
+          title: Text(l10n.announcementsHomeDialogTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(controller: _title, maxLength: 100, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'Title')),
+              TextField(controller: _title, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.announcementsHomeTitleHint)),
               const SizedBox(height: 12),
-              TextField(controller: _body, maxLines: 3, maxLength: 1000, textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'Details')),
+              TextField(controller: _body, maxLines: 3, maxLength: 1000, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.announcementsHomeDetailsHint)),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -112,11 +113,22 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
                   return ChoiceChip(label: Text(c), selected: selected, onSelected: (_) => setState(() => _category = c));
                 }).toList(),
               ),
+              const SizedBox(height: 8),
+              // Leader posts are always SHG-scoped and staff posts are
+              // always platform-wide (see _repo.post's platformWide doc
+              // comment) — there's no toggle to get this wrong, but a
+              // silent scope with no confirmation is still worth surfacing
+              // before a staff account broadcasts to every SHG on the
+              // platform.
+              Text(
+                isStaff ? l10n.announcementsHomeScopePlatformWide : l10n.announcementsHomeScopeShg,
+                style: AppTheme.sans(11, color: Neutral.c500),
+              ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
-            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Post')),
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.announcementsHomePostButton)),
           ],
         ),
       ),
@@ -128,19 +140,17 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
       // same silent-no-op gap already fixed for "Add SHG"/"Add scheme" in
       // admin_shgs_page.dart / admin_schemes_page.dart.
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Title is required.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.announcementsHomeTitleRequired)));
       }
       return;
     }
     if (!mounted) return;
     setState(() => _busy = true);
     try {
-      final posted = await _repo.post(shgId: shgId, createdBy: createdBy, title: _title.text.trim(), body: _body.text.trim(), category: _category);
+      final posted = await _repo.post(shgId: shgId, createdBy: createdBy, title: _title.text.trim(), body: _body.text.trim(), category: _category, platformWide: isStaff);
       if (!mounted) return;
       if (!posted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("You're not linked to an SHG, so there's nothing to post this announcement to.")),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.announcementsHomeNotLinkedError)));
         return;
       }
       _title.clear();
@@ -148,9 +158,7 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
       _key.currentState?.reload();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not post this announcement. Please try again.')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.announcementsHomePostError)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -159,19 +167,21 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
+    final isStaff = const {Role.crp, Role.clf, Role.admin}.contains(appState.user.role);
     final isLeaderOrStaff = appState.user.role != Role.member;
     final shgId = appState.profile?.shgId;
     final memberId = appState.profile?.id;
 
     return Scaffold(
       appBar: PageHeader(
-        title: 'Announcements',
+        title: l10n.announcementsHomeTitle,
         right: isLeaderOrStaff
             ? IconButton(
                 icon: Icon(Icons.add_circle_rounded, color: SupabaseService.isConfigured && !_busy ? Brand.c600 : Neutral.c300),
-                onPressed: SupabaseService.isConfigured && !_busy ? () => _post(shgId, memberId) : null,
-                tooltip: 'Post announcement',
+                onPressed: SupabaseService.isConfigured && !_busy ? () => _post(shgId, memberId, isStaff) : null,
+                tooltip: l10n.announcementsHomePostTooltip,
               )
             : null,
       ),
@@ -180,7 +190,7 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
         future: () => _loadAndNotify(shgId, memberId),
         builder: (context, items) {
           if (items.isEmpty) {
-            return const AppEmptyState(icon: Icons.campaign_rounded, message: 'No announcements yet');
+            return AppEmptyState(icon: Icons.campaign_rounded, message: l10n.announcementsHomeEmptyState);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -191,7 +201,7 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Semantics(
                   label: [
-                    if (!a.read) 'Unread',
+                    if (!a.read) l10n.memberDashboardUnreadLabel,
                     a.title,
                     DateFormat('dd MMM yyyy').format(a.createdAt),
                     a.category,

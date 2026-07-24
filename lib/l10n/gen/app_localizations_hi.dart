@@ -2891,6 +2891,45 @@ class AppLocalizationsHi extends AppLocalizations {
   String get announcementDetailNotFound => 'यह घोषणा नहीं मिली';
 
   @override
+  String get announcementsHomeTitle => 'घोषणाएं';
+
+  @override
+  String get announcementsHomeEmptyState => 'अभी तक कोई घोषणा नहीं';
+
+  @override
+  String get announcementsHomePostTooltip => 'घोषणा पोस्ट करें';
+
+  @override
+  String get announcementsHomeDialogTitle => 'घोषणा पोस्ट करें';
+
+  @override
+  String get announcementsHomeTitleHint => 'शीर्षक';
+
+  @override
+  String get announcementsHomeDetailsHint => 'विवरण';
+
+  @override
+  String get announcementsHomePostButton => 'पोस्ट करें';
+
+  @override
+  String get announcementsHomeTitleRequired => 'शीर्षक आवश्यक है।';
+
+  @override
+  String get announcementsHomeNotLinkedError =>
+      'आप किसी SHG से जुड़े नहीं हैं, इसलिए इस घोषणा को पोस्ट करने के लिए कुछ भी नहीं है।';
+
+  @override
+  String get announcementsHomePostError =>
+      'यह घोषणा पोस्ट नहीं हो सकी। कृपया फिर से प्रयास करें।';
+
+  @override
+  String get announcementsHomeScopeShg => 'यह केवल आपके SHG में पोस्ट होगी।';
+
+  @override
+  String get announcementsHomeScopePlatformWide =>
+      'यह सभी SHG में, पूरे प्लेटफ़ॉर्म पर दिखाई देगी।';
+
+  @override
   String get splashBrandName => 'NAVASAKHI';
 
   @override

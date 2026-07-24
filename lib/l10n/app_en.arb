@@ -2053,6 +2053,30 @@
 
   "announcementDetailNotFound": "This announcement could not be found",
 
+  "announcementsHomeTitle": "Announcements",
+
+  "announcementsHomeEmptyState": "No announcements yet",
+
+  "announcementsHomePostTooltip": "Post announcement",
+
+  "announcementsHomeDialogTitle": "Post announcement",
+
+  "announcementsHomeTitleHint": "Title",
+
+  "announcementsHomeDetailsHint": "Details",
+
+  "announcementsHomePostButton": "Post",
+
+  "announcementsHomeTitleRequired": "Title is required.",
+
+  "announcementsHomeNotLinkedError": "You're not linked to an SHG, so there's nothing to post this announcement to.",
+
+  "announcementsHomePostError": "Could not post this announcement. Please try again.",
+
+  "announcementsHomeScopeShg": "This will be posted to your own SHG only.",
+
+  "announcementsHomeScopePlatformWide": "This will be visible to every SHG platform-wide.",
+
   "splashBrandName": "NAVASAKHI",
 
   "splashHeadline": "Empowering Women.\nTransforming Communities.",

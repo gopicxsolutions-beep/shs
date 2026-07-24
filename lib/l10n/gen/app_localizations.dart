@@ -5176,6 +5176,78 @@ abstract class AppLocalizations {
   /// **'This announcement could not be found'**
   String get announcementDetailNotFound;
 
+  /// No description provided for @announcementsHomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements'**
+  String get announcementsHomeTitle;
+
+  /// No description provided for @announcementsHomeEmptyState.
+  ///
+  /// In en, this message translates to:
+  /// **'No announcements yet'**
+  String get announcementsHomeEmptyState;
+
+  /// No description provided for @announcementsHomePostTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Post announcement'**
+  String get announcementsHomePostTooltip;
+
+  /// No description provided for @announcementsHomeDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Post announcement'**
+  String get announcementsHomeDialogTitle;
+
+  /// No description provided for @announcementsHomeTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get announcementsHomeTitleHint;
+
+  /// No description provided for @announcementsHomeDetailsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get announcementsHomeDetailsHint;
+
+  /// No description provided for @announcementsHomePostButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Post'**
+  String get announcementsHomePostButton;
+
+  /// No description provided for @announcementsHomeTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Title is required.'**
+  String get announcementsHomeTitleRequired;
+
+  /// No description provided for @announcementsHomeNotLinkedError.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re not linked to an SHG, so there\'s nothing to post this announcement to.'**
+  String get announcementsHomeNotLinkedError;
+
+  /// No description provided for @announcementsHomePostError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not post this announcement. Please try again.'**
+  String get announcementsHomePostError;
+
+  /// No description provided for @announcementsHomeScopeShg.
+  ///
+  /// In en, this message translates to:
+  /// **'This will be posted to your own SHG only.'**
+  String get announcementsHomeScopeShg;
+
+  /// No description provided for @announcementsHomeScopePlatformWide.
+  ///
+  /// In en, this message translates to:
+  /// **'This will be visible to every SHG platform-wide.'**
+  String get announcementsHomeScopePlatformWide;
+
   /// No description provided for @splashBrandName.
   ///
   /// In en, this message translates to:

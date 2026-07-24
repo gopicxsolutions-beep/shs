@@ -2965,6 +2965,46 @@ class AppLocalizationsTe extends AppLocalizations {
   String get announcementDetailNotFound => 'ఈ ప్రకటన కనుగొనబడలేదు';
 
   @override
+  String get announcementsHomeTitle => 'ప్రకటనలు';
+
+  @override
+  String get announcementsHomeEmptyState => 'ఇంకా ప్రకటనలు లేవు';
+
+  @override
+  String get announcementsHomePostTooltip => 'ప్రకటన పోస్ట్ చేయండి';
+
+  @override
+  String get announcementsHomeDialogTitle => 'ప్రకటన పోస్ట్ చేయండి';
+
+  @override
+  String get announcementsHomeTitleHint => 'శీర్షిక';
+
+  @override
+  String get announcementsHomeDetailsHint => 'వివరాలు';
+
+  @override
+  String get announcementsHomePostButton => 'పోస్ట్ చేయండి';
+
+  @override
+  String get announcementsHomeTitleRequired => 'శీర్షిక అవసరం.';
+
+  @override
+  String get announcementsHomeNotLinkedError =>
+      'మీరు ఏ SHGకి అనుసంధానించబడలేదు, కాబట్టి ఈ ప్రకటనను పోస్ట్ చేయడానికి ఏమీ లేదు.';
+
+  @override
+  String get announcementsHomePostError =>
+      'ఈ ప్రకటనను పోస్ట్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get announcementsHomeScopeShg =>
+      'ఇది మీ SHGలో మాత్రమే పోస్ట్ అవుతుంది.';
+
+  @override
+  String get announcementsHomeScopePlatformWide =>
+      'ఇది ప్లాట్‌ఫారమ్ అంతటా, అన్ని SHGలకు కనిపిస్తుంది.';
+
+  @override
   String get splashBrandName => 'NAVASAKHI';
 
   @override

@@ -1588,6 +1588,30 @@
 
   "announcementDetailNotFound": "ఈ ప్రకటన కనుగొనబడలేదు",
 
+  "announcementsHomeTitle": "ప్రకటనలు",
+
+  "announcementsHomeEmptyState": "ఇంకా ప్రకటనలు లేవు",
+
+  "announcementsHomePostTooltip": "ప్రకటన పోస్ట్ చేయండి",
+
+  "announcementsHomeDialogTitle": "ప్రకటన పోస్ట్ చేయండి",
+
+  "announcementsHomeTitleHint": "శీర్షిక",
+
+  "announcementsHomeDetailsHint": "వివరాలు",
+
+  "announcementsHomePostButton": "పోస్ట్ చేయండి",
+
+  "announcementsHomeTitleRequired": "శీర్షిక అవసరం.",
+
+  "announcementsHomeNotLinkedError": "మీరు ఏ SHGకి అనుసంధానించబడలేదు, కాబట్టి ఈ ప్రకటనను పోస్ట్ చేయడానికి ఏమీ లేదు.",
+
+  "announcementsHomePostError": "ఈ ప్రకటనను పోస్ట్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "announcementsHomeScopeShg": "ఇది మీ SHGలో మాత్రమే పోస్ట్ అవుతుంది.",
+
+  "announcementsHomeScopePlatformWide": "ఇది ప్లాట్‌ఫారమ్ అంతటా, అన్ని SHGలకు కనిపిస్తుంది.",
+
   "splashBrandName": "NAVASAKHI",
 
   "splashHeadline": "మహిళా సాధికారత.\nసమాజ పరివర్తన.",

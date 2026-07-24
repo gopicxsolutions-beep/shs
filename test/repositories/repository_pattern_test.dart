@@ -41,15 +41,47 @@ void main() {
       await repo.post(shgId: null, createdBy: null, title: 'x', body: 'y', category: 'Circular');
       // No exception means the demo-mode guard clauses did their job.
     });
+  });
 
-    test('AiAdvisorRepository defaults to MockAiAdvisorService (not the real Edge Function) when not configured', () async {
-      final repo = AiAdvisorRepository();
-      // The real EdgeFunctionAiAdvisorService would try to reach a live
-      // Supabase client and throw/hang without one — completing quickly
-      // with a plausible answer proves the demo-mode branch was chosen.
-      final response = await repo.ask(memberId: null, advisorType: 'financial', query: 'How much should I save?');
-      expect(response, isNotEmpty);
+  // These exercise AnnouncementRepository.post's live-mode guard clauses
+  // directly (the `shgId == null && !platformWide` check), which is safe to
+  // do without a real Supabase project: the guard returns `false` before the
+  // method ever reaches `_client`. This closes a real gap — until
+  // `platformWide` existed, no code path in the app ever called `post()`
+  // with `shgId: null`, so staff could never actually post a platform-wide
+  // announcement despite RLS already permitting it (`is_staff()` bypasses
+  // the `shg_id = current_shg_id()` check in
+  // `announcements_insert_leader_or_staff`).
+  group('AnnouncementRepository.post live-mode guard clauses (no live client needed)', () {
+    test('a null shgId with platformWide:false (the leader-with-no-SHG defensive case) is denied before reaching the network', () async {
+      SupabaseService.isConfigured = true;
+      final repo = AnnouncementRepository();
+      final posted = await repo.post(shgId: null, createdBy: 'leader-1', title: 'x', body: 'y', category: 'Circular');
+      expect(posted, isFalse);
     });
+
+    test('a null shgId with platformWide:true (the staff broadcast case) is NOT denied by the guard — it proceeds to the real insert', () async {
+      SupabaseService.isConfigured = true;
+      final repo = AnnouncementRepository();
+      // No live Supabase project is configured in this test process, so the
+      // guard clause passing means this reaches `_client.from(...).insert`,
+      // which throws because `Supabase.instance` was never initialized —
+      // confirming platformWide genuinely bypasses the null-shgId denial
+      // rather than silently no-op'ing the same way the pre-fix code did.
+      await expectLater(
+        repo.post(shgId: null, createdBy: 'staff-1', title: 'x', body: 'y', category: 'Circular', platformWide: true),
+        throwsA(anything),
+      );
+    });
+  });
+
+  test('AiAdvisorRepository defaults to MockAiAdvisorService (not the real Edge Function) when not configured', () async {
+    final repo = AiAdvisorRepository();
+    // The real EdgeFunctionAiAdvisorService would try to reach a live
+    // Supabase client and throw/hang without one — completing quickly
+    // with a plausible answer proves the demo-mode branch was chosen.
+    final response = await repo.ask(memberId: null, advisorType: 'financial', query: 'How much should I save?');
+    expect(response, isNotEmpty);
   });
 
   test('EdgeFunctionAiAdvisorService is a distinct real implementation of AiAdvisorService', () {

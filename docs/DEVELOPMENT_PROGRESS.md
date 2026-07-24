@@ -260,7 +260,7 @@ Meetings, etc.:
 | Government schemes | ✅ done | Model, repository, 4 screens (catalog, detail, eligibility checker, tracking). Eligibility checker is a client-side keyword-matching heuristic against each scheme's eligibility text, not a real rules engine — documented as a deliberate placeholder. Live-tested DB/RLS (own-application insert, deny-apply-for-another-member, deny-direct-catalog-edit) and UI (status badges render correctly, eligibility filter toggle verified to actually change results) |
 | Training | ✅ done | Model, repository, 4 screens (catalog, course detail, quiz, certificates). Quiz content is now real and per-course (`public.quiz_questions`, migration 0041, read via the masked `quiz_questions_public` view added in migration 0051 that never exposes `correct_index` to the client), not the old single generic 3-question set. Grading is entirely server-side via the `submit_quiz_attempt` security-definer RPC — the client sends only its answer indices, never sees correct answers in advance, and can no longer self-certify by calling the old direct upsert shape (RLS-rejected). Proportional ≥2/3 pass threshold (`requiredScoreToPass`) scales with each course's actual question count. Live-tested DB/RLS end to end (masked view hides answers, base table correctly `permission denied` even before RLS evaluates, RPC grades and certifies atomically on a pass, old self-certify upsert shape now rejected, legitimate progress-only upsert still works, failing score leaves no `course_progress` row) and UI (progress bars, per-course radio quiz, disabled-in-demo-mode submit, pass/fail messaging) |
 | Digital payments | ✅ done | `PaymentProcessor` abstraction (`lib/services/payment_processor.dart`) with a `MockPaymentProcessor` that always succeeds and synthesizes a reference — swapping in a real gateway later is a one-file change. 3 screens (home, scan & pay, history). Live-tested DB/RLS: payments are **private to the owning member**, not shared shg-wide like savings/loans (deliberate — confirmed correct), deny-recording-for-another-member also confirmed. UI-tested: amount entry, mode chips, disabled-in-demo-mode Pay button |
-| Announcements | ✅ done | Model, repository, 2 screens (home list with unread-dot indicator + leader/staff-only post dialog, detail with read-receipt tracking via `announcement_reads`). Global (`shg_id is null`) + shg-scoped announcements merged via `.or()` query. Live-tested DB/RLS (member-post denied, leader-post allowed, shared shg read visibility, own read-receipt insert allowed, marking another member's receipt denied) and UI (list + detail render correctly in demo mode, member correctly sees no post button) |
+| Announcements | ✅ done | Model, repository, 2 screens (home list with unread-dot indicator + leader/staff-only post dialog, detail with read-receipt tracking via `announcement_reads`). Global (`shg_id is null`) + shg-scoped announcements merged via `.or()` query. Staff can now actually reach the platform-wide post path (`shg_id: null`) that RLS's `is_staff()` bypass already permitted — previously `AnnouncementRepository.post()` hard-rejected any null `shgId`, so despite SRS.md always having claimed "staff may post platform-wide", no code path in the app ever sent one; a staff account with no SHG of its own hit the exact same dead-end message a leader without an approved SHG would. Fixed with a `platformWide` parameter (always `true` for `crp`/`clf`/`admin` callers), plus a small scope-hint caption in the compose dialog ("posted to your SHG only" vs. "visible to every SHG platform-wide") so the silent scope difference isn't invisible to the poster. Fully localized `announcements_home_page.dart` (title, empty state, compose dialog, all 3 snackbars, the "Unread" semantic label reusing the existing `memberDashboardUnreadLabel` key) across all 3 locales — previously only `announcement_detail_page.dart` was localized, an inconsistency within the same module the audit that started this round caught. Live-tested DB/RLS (member-post denied, leader-post allowed, shared shg read visibility, own read-receipt insert allowed, marking another member's receipt denied) and UI (list + detail render correctly in demo mode, member correctly sees no post button); the platform-wide staff path itself is verified by direct reading of the deployed `announcements_insert_leader_or_staff` policy text rather than a live insert (no RLS/migration changed this round — the policy's `is_staff()` OR-branch already unconditionally permits any `shg_id` value including null, a boolean-logic claim with no execution ambiguity, unlike the Training/Support rounds' new triggers/columns which did warrant a live round-trip) |
 | Support (chat/voice/FAQ/tickets) | ✅ done | Model, dual-mode repository, 5 screens (hub, full ticket list, raise-ticket form, ticket detail/chat thread with staff status-change menu, FAQ accordion) + `VoiceSupportService` abstraction (`MockVoiceSupportService` cycles canned Q&A pairs) for the record→transcribe→answer flow, wired incl. `/app/support/ticket/:id`. Tickets are private per-member, visible to staff (crp/clf/admin) — staff see all tickets with the member's name shown; member sees only their own. A resolved/closed ticket now carries `resolved_by`/`resolved_at` attribution (migrations 0052/0053, mirroring the pattern already used by `shg_join_requests.decided_by` and `scheme_applications.decided_by`/`decided_at`) — `resolved_at` is stamped by a `before update` trigger from the server's own clock rather than trusted from the client, and reopening a previously-resolved ticket by a different staff member is a supported, unblocked workflow. Live-tested DB/RLS (own-ticket insert, deny-insert-for-another-member, own-ticket read, deny-read-for-non-owner-non-staff, staff-can-read-any, own-message insert, deny-message-for-non-owner-non-staff, staff-can-message-any, own-status-update, deny-status-update-for-non-owner-non-staff, staff-can-update-any, resolution-timestamp-server-stamped-not-client-trusted — 11/11 passed) and UI (hub, ticket list, chat bubbles with correct mine/theirs alignment, raise-ticket form validation, FAQ accordion, voice support page all render correctly) |
 | AI Advisors (financial/scheme/market/voice) | ✅ done | Model, dual-mode repository, hub + one shared `AiAdvisorChatPage(advisorType, title, hint)` reused across all 3 chat routes (identical shape, scoped by type) — chat bubbles + composer, wired incl. `/app/ai/financial-advisor` etc. `AiAdvisorService` abstraction (`MockAiAdvisorService` keyword-matches canned responses per advisor type, generic fallback otherwise) — unlike Payments/Support, the ask flow works in both demo and live mode (only the log persistence is live-only), so the chat is fully interactive without a Supabase connection. Live-tested DB/RLS (own-log insert, deny-insert-for-another-member, own-log read, deny-read-for-non-owner-non-staff, staff-can-read-any — 5/5 passed), fixtures cleaned up and verified zero remnants. UI-tested: hub renders all 3 advisor cards, Financial Advisor chat loads mock history correctly, composer input focuses and accepts real keystrokes (confirmed via `activeElement.value`) — the final send-button tap hit the same coordinate-calibration friction as the Voice Support mic button in the prior iteration and wasn't click-verified, but the ask()/setState logic is structurally identical to the already-proven Support ticket composer. **Spec gap closed**: added a 4th, distinct "AI Voice Assistant" (`ai_voice_assistant_page.dart`) — deliberately separate from Support's generic FAQ-style Voice Support (`support_voice_page.dart`). New `VoiceRecognitionService`/`MockVoiceRecognitionService` abstraction recognizes a small fixed set of intents (loan details, savings-this-month, read-announcements, add-savings) in Telugu/Hindi/English (the spec's exact example Telugu phrases are the Telugu command set), then the *page* resolves each intent against real repositories (`LoanRepository`/`SavingsRepository`/`AnnouncementRepository`) rather than returning a canned answer — this is what makes it genuinely different from Voice Support, not just a reskin. "Fill forms through voice" from the spec is honestly scoped to voice-triggered navigation into the target form (real dictation into fields isn't feasible without a live STT engine) — recognizing "add a savings entry" navigates to the Savings Entry page. No new RLS surface (reuses repositories already proven in the Loans/Savings/Announcements modules). UI-tested on flutter-web-demo: confirmed via the semantics tree that Telugu glyphs render as real script (not tofu boxes) in a screenshot, then cycled through all 4 intents by tapping the mic repeatedly — each produced a real, data-accurate response (a real loan's outstanding balance, "₹0 this month across 0 entries" because the mock savings dates genuinely aren't in the current month, two real announcement titles), and the 4th correctly navigated to `/app/savings/entry` |
 | Reports | ✅ done | Models, dual-mode repository, role-gated top hub (My Reports always; SHG Reports for leader/staff; Federation Reports for crp/clf/admin), wired incl. this also activates the pre-existing dashboard link at `Paths.reportsMember`. The repository always computes client-side from live tables (savings/loans/meetings/attendance) — a documented placeholder for the server-side Edge Function generation `report_snapshots` (staff-write-only) is meant for; the Flutter client never reads/writes that table directly yet. **Spec gap closed**: each of the 3 top-level pages is now itself a hub linking to the spec's named sub-reports rather than one combined stat page — Member: Savings Statement (reuses the existing `SavingsStatementPage`), Loan Statement (new), Attendance Report (new, backed by a new `MeetingRepository.fetchAttendanceHistory()`); SHG: Financial Summary (the original combined page, kept and renamed), Audit Report (reuses the existing Financial Records audit trail at `Paths.financialAudit`), Performance Report (new — attendance % + a monthly attendance trend chart); Federation: Village-wise SHGs (new, live-grouped by `shgs.village`), Loan Recovery (reuses `AnalyticsRepository.fetchPlatformKpis`), Savings Growth (new — monthly federation-wide savings trend chart). The trend-chart infrastructure (`lib/models/trend.dart`, `lib/repositories/trend_repository.dart`, `lib/widgets/trend_chart.dart`, an `fl_chart` `LineChart` wrapper) was built once here and is reused unchanged by the Analytics dashboard's 4 trend charts (next task) — not duplicated. Live-tested: no new RLS surface was introduced (all 9 sub-reports reuse tables/policies already proven in the Reports/Analytics iterations), so verification focused on confirming the new query shapes (`meetings`/`meeting_attendance` join for attendance history, `shgs`+`savings_entries` grouping for village-wise) execute correctly against a fixture with known data — matched expectations exactly; fixtures cleaned up and verified zero remnants. UI-tested all 9 screens on flutter-web-demo: hub role-gating still correct, Loan Statement/Attendance Report/Performance Report (with its attendance trend line chart)/Village-wise SHGs/Loan Recovery/Savings Growth (with its savings trend line chart) all render correctly with mock data — the `fl_chart` `LineChart` renders a real visible curve with data points, no console errors beyond the pre-existing unrelated `app_shell.dart` 2px overflow |
@@ -8325,3 +8325,99 @@ updateStatus()` only conditionally sends `resolved_by`) rather than
 assuming a `with check` pin that looks like every other one in this schema
 would behave the same way in an UPDATE context that most of them were
 actually written for INSERT.
+
+## Update (round 100) — Announcements: closed a real doc-vs-code product-capability gap (staff could never actually post platform-wide) and an inconsistent l10n gap within the same module
+
+An audit agent read the model, repository, both pages, the router wiring,
+every migration touching `announcements`/`announcement_reads` (final
+reconstructed policy state, not just the latest patch), the `.arb` files,
+and all 3 existing test files for this module. Most of it held up clean —
+the model has no join complexity, the repository has no N+1 patterns and
+correctly batches the read-receipt lookup, every RLS policy reuses the
+shared `current_role()`/`current_shg_id()`/`is_staff()` helpers rather than
+reinventing a subquery, and the detail page's `markRead`-failure isolation
+(a read-receipt write error must never hide successfully-loaded content)
+was already correct. Two real gaps surfaced, both in
+`announcements_home_page.dart`:
+
+- **A genuine, previously-undiscovered product-capability gap, not a
+  security hole.** `docs/SRS.md` §3.12 and its FR-ANN-1 have always claimed
+  "staff may post platform-wide" (`shg_id: null`), and RLS has always
+  permitted it — `announcements_insert_leader_or_staff`'s `with check`
+  is `((shg_id = current_shg_id() and current_role() = 'leader') or
+  is_staff())`, and `is_staff()` unconditionally satisfies that OR branch
+  regardless of what `shg_id` is. But `AnnouncementRepository.post()` had
+  `if (shgId == null) return false;` as its very first guard, and no
+  caller anywhere in the app ever passed `shgId: null` — the compose
+  dialog always sent `appState.profile?.shgId`, never an explicit null.
+  Staff accounts overseeing multiple SHGs typically have no `shgId` of
+  their own, so every staff attempt to post hit the identical "you're not
+  linked to an SHG" dead-end a leader without an approved SHG would get.
+  RLS being the safe side of this mismatch is exactly why this sat
+  undetected for this many rounds — nothing was ever exploitable, just
+  quietly unreachable. Fixed with a `platformWide` parameter on `post()`
+  (`shg_id: null` sent whenever `true`, ignoring whatever `shgId` the
+  caller passed), set from `isStaff` (`{crp, clf, admin}.contains(role)`,
+  the same set-literal check used by 7+ other pages in this codebase) at
+  both of `_post()`'s two call sites. Added a small scope-hint caption in
+  the compose dialog — "posted to your SHG only" vs. "visible to every SHG
+  platform-wide" — since a staff account silently broadcasting to every
+  SHG on the platform with zero on-screen indication of that scope felt
+  like the wrong default to ship quietly.
+- **An l10n completeness gap that looked like an oversight, not a
+  deliberate scope split.** `announcement_detail_page.dart` was fully
+  localized; its sibling `announcements_home_page.dart` — despite
+  importing `AppLocalizations` — used it for exactly one string
+  (`actionCancel`, with an English fallback) and left every other
+  user-facing string as a raw literal: the page title, empty state, the
+  entire compose dialog (title, both hints, category chips' own labels
+  aside, Post button), and all 3 snackbars. Added 13 new keys
+  (`announcementsHome*`) across all three `.arb` files and wired them in;
+  reused the pre-existing `memberDashboardUnreadLabel` key (already
+  translated, identical English value) for the list row's "Unread"
+  screen-reader label rather than adding a duplicate key for the same
+  word.
+
+Closing the first gap changed `build()`'s localization from optional to
+load-bearing — `AppLocalizations.of(context)!` is now called
+unconditionally, which immediately broke
+`test/pages/announcements_accessibility_test.dart`: its `MaterialApp` had
+no localization delegates configured (never needed them before, since the
+page never touched `AppLocalizations` in a path that test exercised).
+Fixed by adding the same delegates/supportedLocales every other page test
+in this codebase already uses. This is the same class of regression as
+round 98's `course_quiz_page_test.dart` finding — a behavior change that
+only fires on a path a specific test happens to touch needs that exact
+test's harness checked, not just "does the page still compile."
+
+Added test coverage the audit flagged as missing: role-gated post-icon
+visibility (member never sees it; leader and staff — `Role.crp` tried
+specifically — both do), two repository-level tests for the new
+`platformWide` guard clause (a null `shgId` with `platformWide: false` is
+denied before ever reaching `_client`; the same null `shgId` with
+`platformWide: true` is *not* denied by that guard and proceeds far enough
+to reach the real Supabase client call, which throws in this test process
+precisely because no live project is configured here — confirming the
+bypass is real, not just a return-value coincidence), and an isolated
+pattern test for the `markRead`-failure-must-not-hide-content shape (using
+the same isolated-harness technique as `double_submit_guard_pattern_test
+.dart`, since `AnnouncementRepository` has no injectable seam to force a
+real throw through the actual page). One coverage gap remains disclosed
+rather than forced: the compose dialog's actual tap-to-open flow and its
+scope-hint caption can't be exercised through the real page in a widget
+test, because the post icon's `onPressed` is unconditionally `null`
+whenever `SupabaseService.isConfigured` is false — the same demo-mode
+data-fetch-vs-live-mode-write-gate architecture conflict already disclosed
+for `loan_detail_page.dart`'s Record Payment dialog.
+
+No RLS policy or migration changed this round — the fix only lets the
+client reach a permission that already existed, so the live-verification
+bar this repo normally holds for backend changes doesn't apply the same
+way it did for round 98/99's new triggers and columns. Verification
+instead rests on having read the deployed policy's exact `with check` text
+end to end: `is_staff()` is a plain boolean OR-branch with no `shg_id`
+dependency, so there's no execution ambiguity a live round-trip would be
+needed to resolve. `flutter analyze`: 0 issues. `flutter test`: 940 → 947
+(7 new: 3 role-visibility, 2 repository guard-clause, 2 read-receipt
+isolation-pattern; the accessibility test was fixed in place, not added),
+full suite passing.

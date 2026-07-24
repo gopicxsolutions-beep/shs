@@ -2962,6 +2962,46 @@ class AppLocalizationsEn extends AppLocalizations {
       'This announcement could not be found';
 
   @override
+  String get announcementsHomeTitle => 'Announcements';
+
+  @override
+  String get announcementsHomeEmptyState => 'No announcements yet';
+
+  @override
+  String get announcementsHomePostTooltip => 'Post announcement';
+
+  @override
+  String get announcementsHomeDialogTitle => 'Post announcement';
+
+  @override
+  String get announcementsHomeTitleHint => 'Title';
+
+  @override
+  String get announcementsHomeDetailsHint => 'Details';
+
+  @override
+  String get announcementsHomePostButton => 'Post';
+
+  @override
+  String get announcementsHomeTitleRequired => 'Title is required.';
+
+  @override
+  String get announcementsHomeNotLinkedError =>
+      'You\'re not linked to an SHG, so there\'s nothing to post this announcement to.';
+
+  @override
+  String get announcementsHomePostError =>
+      'Could not post this announcement. Please try again.';
+
+  @override
+  String get announcementsHomeScopeShg =>
+      'This will be posted to your own SHG only.';
+
+  @override
+  String get announcementsHomeScopePlatformWide =>
+      'This will be visible to every SHG platform-wide.';
+
+  @override
   String get splashBrandName => 'NAVASAKHI';
 
   @override

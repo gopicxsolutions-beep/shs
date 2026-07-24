@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shg_saathi/l10n/gen/app_localizations.dart';
+import 'package:shg_saathi/models/types.dart';
 import 'package:shg_saathi/pages/announcements/announcements_home_page.dart';
 import 'package:shg_saathi/services/notification_service.dart';
 import 'package:shg_saathi/state/app_state.dart';
@@ -116,6 +117,61 @@ void main() {
       expect(fake.shown, isEmpty, reason: 'permission was denied, so nothing should be notified this load');
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getBool(kNotifyAnnouncementsPrefKey), isFalse, reason: 'a denied OS permission must be honestly reflected back into the preference');
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  /// The post icon's visibility gate (`isLeaderOrStaff`) had no test at all
+  /// before this — a regression showing it to a member, or hiding it from a
+  /// leader/staff account, would have gone undetected. This only covers
+  /// visibility, not the tap-to-post flow itself: the button's `onPressed`
+  /// is unconditionally `null` in demo mode (`SupabaseService.isConfigured
+  /// && !_busy`), the same architecture conflict already documented for
+  /// `loan_detail_page.dart`'s Record Payment dialog in
+  /// `narrow_screen_stress_test.dart`'s era of testing — a write action
+  /// gated on live mode can't be tapped in a widget test that needs demo
+  /// mode for its data fetch to resolve at all.
+  group('the post icon is gated on role, not just present unconditionally', () {
+    Future<AppState> stateWithRole(Role role) async {
+      SharedPreferences.setMockInitialValues({});
+      final state = AppState();
+      await state.setRole(role);
+      return state;
+    }
+
+    Widget roleHarness(AppState state) => ChangeNotifierProvider<AppState>.value(
+          value: state,
+          child: MaterialApp(
+            home: const AnnouncementsHomePage(),
+            localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
+        );
+
+    testWidgets('a member does not see the post icon at all', (tester) async {
+      final state = await stateWithRole(Role.member);
+      await tester.pumpWidget(roleHarness(state));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.add_circle_rounded), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a leader sees the post icon', (tester) async {
+      final state = await stateWithRole(Role.leader);
+      await tester.pumpWidget(roleHarness(state));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.add_circle_rounded), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a staff account (crp/clf/admin) also sees the post icon', (tester) async {
+      final state = await stateWithRole(Role.crp);
+      await tester.pumpWidget(roleHarness(state));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.add_circle_rounded), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

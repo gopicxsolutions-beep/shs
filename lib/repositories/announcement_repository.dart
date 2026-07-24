@@ -61,14 +61,24 @@ class AnnouncementRepository {
   }
 
   /// Returns whether the announcement was actually posted — `false` (not
-  /// an exception) when a live staff account has no SHG to post it to, so
-  /// the caller can tell that apart from a genuine success instead of
-  /// silently clearing the compose form for a write that never happened.
-  Future<bool> post({required String? shgId, required String? createdBy, required String title, required String body, required String category}) async {
+  /// an exception) when a live leader account somehow has no SHG to post it
+  /// to (defensive; shouldn't happen in practice — leader status implies an
+  /// approved SHG), so the caller can tell that apart from a genuine success
+  /// instead of silently clearing the compose form for a write that never
+  /// happened.
+  ///
+  /// [platformWide] is the staff path (`shg_id: null`) — RLS's `is_staff()`
+  /// bypass already permits this (see `announcements_insert_leader_or_staff`),
+  /// but until this parameter existed no caller ever passed `shgId: null`, so
+  /// staff could never actually reach it through the app despite it being
+  /// the one posting capability the SRS specifically promises them. When
+  /// `true`, [shgId] is ignored entirely — a staff account's own `shgId` (if
+  /// it even has one) is irrelevant to a platform-wide post.
+  Future<bool> post({required String? shgId, required String? createdBy, required String title, required String body, required String category, bool platformWide = false}) async {
     if (!_live) return false;
-    if (shgId == null) return false;
+    if (shgId == null && !platformWide) return false;
     await _client.from('announcements').insert({
-      'shg_id': shgId,
+      'shg_id': platformWide ? null : shgId,
       'created_by': createdBy,
       'title': title,
       'body': body,
