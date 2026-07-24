@@ -203,6 +203,59 @@ class AdminRepository {
     return AdminDashboardStats(trainingCompletionPct: trainingCompletionPct, pendingReviewCount: pendingReviewCount, recentActivity: activity.take(5).toList());
   }
 
+  // 10-minute cron cadence (migration 0044) — a heartbeat is considered
+  // stale/unhealthy once more than double that window has elapsed since the
+  // last recorded one, allowing for ordinary cron/network jitter without
+  // flagging a false negative on every dashboard load.
+  static const _heartbeatHealthyWithin = Duration(minutes: 20);
+
+  /// Backs the Admin dashboard's "System Uptime" stat — replaces what used
+  /// to be a hardcoded `'N/A'` constant (`admin_dashboard.dart`'s
+  /// `_systemUptime`) with a real, if deliberately narrow, signal: whether
+  /// this project's own pg_cron scheduler is still alive (see
+  /// [SystemHeartbeatStatus]'s doc comment for exactly what this does and
+  /// does not claim to measure).
+  Future<SystemHeartbeatStatus> fetchSystemHeartbeatStatus() async {
+    if (!_live) {
+      // Demo mode has no real pg_cron to observe — shows a synthetic
+      // "just now" healthy heartbeat, consistent with how [fetchSystemHealth]
+      // already mixes in illustrative demo-mode figures elsewhere on this
+      // same dashboard rather than showing a real service's absence.
+      return SystemHeartbeatStatus(lastHeartbeatAt: DateTime.now(), healthy: true);
+    }
+    final rows = await _client.from('system_heartbeats').select('recorded_at').order('recorded_at', ascending: false).limit(1);
+    final list = rows as List;
+    if (list.isEmpty) {
+      // Migration 0044 not yet deployed, or pg_cron hasn't fired its first
+      // heartbeat yet since deployment — an honest "unknown/unhealthy"
+      // state, not a fabricated pass.
+      return const SystemHeartbeatStatus(lastHeartbeatAt: null, healthy: false);
+    }
+    final lastHeartbeatAt = DateTime.parse((list.first as Map<String, dynamic>)['recorded_at'] as String);
+    final healthy = DateTime.now().difference(lastHeartbeatAt) < _heartbeatHealthyWithin;
+    return SystemHeartbeatStatus(lastHeartbeatAt: lastHeartbeatAt, healthy: healthy);
+  }
+
+  /// Backs a staff-visible "AI Advisor moderation blocks (7 days)" stat on
+  /// the Admin Monitoring page — real counts from `ai_advisor_logs`'
+  /// `blocked`/`block_reason` columns (migration 0044), not a fabricated
+  /// figure. See [AiAdvisorModerationStats]'s doc comment for what gap this
+  /// closes.
+  Future<AiAdvisorModerationStats> fetchAiAdvisorModerationStats() async {
+    if (!_live) {
+      // Demo mode's mock AI advisor service never actually runs content
+      // moderation (see MockAiAdvisorService) — there is nothing real to
+      // count, so this honestly reports zero rather than fabricating
+      // illustrative abuse activity.
+      return const AiAdvisorModerationStats(blockedCount7d: 0, distinctMembersFlagged7d: 0);
+    }
+    final since = DateTime.now().subtract(const Duration(days: 7)).toIso8601String();
+    final rows = await _client.from('ai_advisor_logs').select('member_id').eq('blocked', true).gte('created_at', since);
+    final list = rows as List;
+    final distinctMembers = list.map((r) => (r as Map<String, dynamic>)['member_id'] as String).toSet().length;
+    return AiAdvisorModerationStats(blockedCount7d: list.length, distinctMembersFlagged7d: distinctMembers);
+  }
+
   /// Pure arithmetic for the live-mode training-completion percentage,
   /// factored out of [fetchDashboardStats] so it's directly unit-testable
   /// without a live Supabase project (no live DB is reachable from this

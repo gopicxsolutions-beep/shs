@@ -57,22 +57,19 @@ void main() {
     expect(find.textContaining('Aadhaar'), findsNothing);
   });
 
-  testWidgets('System Uptime is honestly labeled as not live-monitored instead of implying real telemetry', (tester) async {
+  testWidgets('System Uptime is now backed by a real (if narrowly-scoped) heartbeat status, not a hardcoded placeholder', (tester) async {
+    // Regression: this stat used to be a hardcoded `'N/A'` constant with
+    // "Not live-monitored" as static trend text, never backed by any real
+    // data. It's now AdminRepository.fetchSystemHeartbeatStatus() — demo
+    // mode reports a synthetic healthy heartbeat (see that method's own doc
+    // comment), rendered as "Healthy" with a "Heartbeat: just now" trend.
     await pumpDashboard(tester);
-    expect(find.text('Not live-monitored'), findsOneWidget);
+    expect(find.text('Healthy'), findsOneWidget);
+    expect(find.text('Heartbeat: Just now'), findsOneWidget);
+    expect(find.text('N/A'), findsNothing);
+    expect(find.text('Not live-monitored'), findsNothing);
     expect(find.text('All services normal'), findsNothing);
-  });
-
-  testWidgets('System Uptime shows a neutral placeholder as its headline StatCard value, not a fabricated-looking precise percentage', (tester) async {
-    // Regression: the card used to render "99.98%" as its large bold
-    // primary value with "Not live-monitored" only as small, dim trend text
-    // beneath it — a suspiciously precise, professional-looking percentage
-    // is exactly what a skimming user reads as genuine telemetry, disclaimer
-    // or not. The headline value itself must now be a neutral placeholder.
-    await pumpDashboard(tester);
     expect(find.text('99.98%'), findsNothing);
-    expect(find.text('N/A'), findsOneWidget);
-    expect(find.text('Not live-monitored'), findsOneWidget);
   });
 
   testWidgets('Recent System Activity is assembled from real mock records, not the old static 3-row feed', (tester) async {

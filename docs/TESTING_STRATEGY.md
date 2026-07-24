@@ -50,11 +50,13 @@ described in earlier rounds (see
 A literal grep for `test(`/`testWidgets(` call sites finds 183 static
 occurrences — this undercounts the real number, since the route-sweep files
 generate one test per route inside a loop. The **reliable figure is the one
-tracked by hand after each round's actual `flutter test` run**: **713 passing
-tests** as of the most recent recorded round. A single round (looping a new
-stress test over all 75 routes) added 152 permanent regression tests in one
-commit — this loop-generation pattern is *how* the suite grew from roughly 480
-to 713 tests without 230 hand-written test bodies.
+tracked by hand after each round's actual `flutter test` run**: **931 passing
+tests** as of the most recent recorded round. A single earlier round (looping
+a new stress test over all 75 routes) added 152 permanent regression tests in
+one commit — this loop-generation pattern is *part of how* the suite grew
+from roughly 480 to 713 tests without 230 hand-written test bodies, and it has
+continued to grow since (713 → 931) across subsequent rounds of module work
+and localization coverage.
 
 ---
 
@@ -148,7 +150,7 @@ each with a representative example and current status.
 | **Dead/stale lifecycle state after mutation** | Large family, 5+ rounds | `MeetingRepository.setStatus()` has zero call sites anywhere in the app — a meeting's `status` never advances past `'upcoming'`, silently breaking attendance reports, home-screen bucketing, and QR check-in's "today's meeting" lookup at 6+ independent call sites | Fixed by deriving "has this happened" from date math (`hasPassed`) everywhere, never trusting `status`; now has dedicated regression coverage |
 | **Stale UI after a successful same-page write** | 2 rounds | Placing a marketplace order genuinely decremented stock server-side every time, but the already-open product page never reloaded, so stock appeared unchanged — a strong, false nudge to re-order | Fixed with an explicit reload-after-write pattern; swept across all `AppAsyncBuilder` call sites for the same shape |
 | **Accessibility / screen-reader gaps** | 1 dedicated round, 5 gaps | The 6 OTP digit boxes at login — every single user's entry point — announced as 6 identical, indistinguishable nodes with no indication they're digits 1–6 | Fixed with `MergeSemantics` + per-digit labels; 5 new accessibility tests added |
-| **Localization gaps** | 1 dedicated round, 8 gaps | `AppAsyncBuilder`'s default error message and Retry button — backing 50+ call sites app-wide — were hardcoded English | Fixed for shared/high-traffic widgets; confirmed only 10/109 page/widget files use `AppLocalizations` at all — full coverage remains a deliberately out-of-scope, disclosed gap |
+| **Localization gaps** | 1 dedicated round, 8 gaps, plus a later full-coverage round | `AppAsyncBuilder`'s default error message and Retry button — backing 50+ call sites app-wide — were hardcoded English | Fixed for shared/high-traffic widgets first; full coverage has since been completed — 91 of 92 page files under `lib/pages/` reference `AppLocalizations` (the 92nd, `dashboard_page.dart`, is a pure role-dispatcher with no literal UI strings to localize) |
 | **N+1 queries** | 1 real instance, then a dedicated zero-new-found audit | An analytics repository issued 1+5N queries — 150+ round trips for a 30-SHG federation | Fixed; dedicated audit of all repositories found no further instances |
 | **Session/token expiry handling** | 1 dedicated round | The app's auth listener refetched the full profile on every auth event, including the hourly silent token-refresh tick — two unnecessary round trips per hour, per session | Fixed to skip refetch specifically for that event type |
 | **Double-submit / race conditions** | Multiple rounds | A support-ticket composer's Send button was correctly guarded against a double-tap, but the same composer's Enter-key path bypassed the guard entirely | Fixed; a systematic sweep of all write methods/call sites found this as the sole remaining gap |
@@ -169,7 +171,7 @@ covered.
 
 As of the most recent recorded round:
 - `flutter analyze`: 0 issues.
-- `flutter test`: 713/713 passing.
+- `flutter test`: 931/931 passing.
 - RLS CRUD sweep (SELECT/INSERT/UPDATE/DELETE, systematically re-derived
   against every column) declared complete across ~29 RLS-enabled tables — yet
   new instances of the same bug *shape* still surfaced afterward in tables not
@@ -177,8 +179,9 @@ As of the most recent recorded round:
   the table surface was not fully exhausted even after 82 rounds.
 
 **Disclosed, not hidden, gaps in the testing approach itself**:
-- CI is now wired (`.github/workflows/ci.yml`) but not yet committed/merged —
-  until it is, `analyze`/`test` still only run manually per round in practice.
+- CI is now wired (`.github/workflows/ci.yml`), committed on this working
+  branch, but not yet merged into main — until it is, `analyze`/`test` still
+  only run manually per round in practice.
 - No `integration_test` adoption, despite the project's own log flagging it as
   the more robust long-term answer to the manual live-SQL-simulation
   technique.
@@ -190,6 +193,6 @@ As of the most recent recorded round:
   Hindi/Telugu speaker. Worth a human linguistic QA pass before treating the
   translations as launch-ready, even though they are structurally complete.
 
-Before treating "713/713 passing, 0 analyze issues" as current, re-check
+Before treating "931/931 passing, 0 analyze issues" as current, re-check
 [docs/DEVELOPMENT_PROGRESS.md](DEVELOPMENT_PROGRESS.md)'s tail — these numbers
 are a point-in-time snapshot, not a live figure this document can guarantee.

@@ -457,7 +457,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminDashboardSystemUptimeLabel => 'System Uptime';
 
   @override
-  String get adminDashboardNotLiveMonitored => 'Not live-monitored';
+  String get adminDashboardHeartbeatHealthy => 'Healthy';
+
+  @override
+  String get adminDashboardHeartbeatStale => 'Stale';
+
+  @override
+  String adminDashboardHeartbeatTrend(String time) {
+    return 'Heartbeat: $time';
+  }
+
+  @override
+  String get adminDashboardHeartbeatPending => 'No heartbeat recorded yet';
 
   @override
   String get adminDashboardUsersTile => 'Users';
@@ -2473,6 +2484,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminMonitoringLoansPending => 'Loans (pending)';
+
+  @override
+  String get adminMonitoringAiModerationBlocksLabel => 'AI Advisor Blocks (7d)';
+
+  @override
+  String get adminMonitoringAiModerationMembersFlaggedLabel =>
+      'Members Flagged (7d)';
 
   @override
   String get adminMonitoringPlaceholderLabel => 'Placeholder metrics';

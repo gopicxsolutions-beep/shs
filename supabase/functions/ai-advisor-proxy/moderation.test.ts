@@ -12,7 +12,10 @@ import {
   buildUserMessage,
   checkQueryForDisallowedContent,
   looksLikeSystemPromptLeak,
+  parseLlamaGuardVerdict,
+  reasonForLlamaGuardVerdict,
   SAFE_FALLBACK_ON_SUSPECTED_LEAK,
+  SAFE_FALLBACK_ON_UNSAFE_OUTPUT,
 } from './moderation.ts';
 
 function assert(condition: boolean, message: string): void {
@@ -187,4 +190,73 @@ Deno.test('looksLikeSystemPromptLeak handles very short system prompts without t
 Deno.test('SAFE_FALLBACK_ON_SUSPECTED_LEAK is a non-empty, generic message', () => {
   assert(SAFE_FALLBACK_ON_SUSPECTED_LEAK.length > 0, 'fallback message should not be empty');
   assert(!/system prompt/i.test(SAFE_FALLBACK_ON_SUSPECTED_LEAK), 'fallback message itself should not reference the system prompt');
+});
+
+// --- parseLlamaGuardVerdict / reasonForLlamaGuardVerdict -----------------
+//
+// Regression coverage for the ML-based moderation layer added to close
+// docs/AI_MODULES.md §6/§7's "no ML-based classifier" gap. The live HTTP
+// call to Groq's Llama Guard model lives in index.ts (untestable offline);
+// this covers the pure parsing/reason-mapping logic that lives here.
+
+Deno.test('parseLlamaGuardVerdict treats a bare "safe" reply as not flagged', () => {
+  const verdict = parseLlamaGuardVerdict('safe');
+  assert(!verdict.flagged, 'a "safe" verdict should not be flagged');
+  assert(verdict.categories.length === 0, 'a safe verdict should have no categories');
+});
+
+Deno.test('parseLlamaGuardVerdict is case/whitespace tolerant for a safe reply', () => {
+  const verdict = parseLlamaGuardVerdict('  Safe  \n');
+  assert(!verdict.flagged, 'a differently-cased/whitespace-padded "safe" should still parse as unflagged');
+});
+
+Deno.test('parseLlamaGuardVerdict parses "unsafe" plus a category line', () => {
+  const verdict = parseLlamaGuardVerdict('unsafe\nS11');
+  assert(verdict.flagged, 'an "unsafe" reply should be flagged');
+  assert(verdict.categories.length === 1 && verdict.categories[0] === 'S11', 'should parse the single category code');
+});
+
+Deno.test('parseLlamaGuardVerdict parses multiple comma-separated category codes', () => {
+  const verdict = parseLlamaGuardVerdict('unsafe\nS1,S6,S11');
+  assert(verdict.flagged, 'should be flagged');
+  assert(verdict.categories.length === 3, `expected 3 categories, got ${verdict.categories.length}`);
+  assert(verdict.categories.includes('S1') && verdict.categories.includes('S6') && verdict.categories.includes('S11'), 'should include all three codes');
+});
+
+Deno.test('parseLlamaGuardVerdict treats "unsafe" with a missing/malformed category line as flagged with no known category, not a throw', () => {
+  const verdict = parseLlamaGuardVerdict('unsafe');
+  assert(verdict.flagged, 'a bare "unsafe" with no second line should still be flagged (fail toward blocking, not toward silently passing)');
+  assert(verdict.categories.length === 0, 'no category line means an empty category list, not a crash');
+});
+
+// Regression for an adversarial-review finding: an earlier version treated
+// any reply that wasn't literally "unsafe" as safe -- including a garbled,
+// truncated, or otherwise unrecognized reply -- which silently failed open
+// at the parse layer and directly contradicted this function's own stated
+// intent ("never silently fail open into an unclassified safe"). Only an
+// exact "safe" reply is now treated as safe; anything else, including a
+// reply that doesn't match Llama Guard's fixed format at all, is flagged.
+Deno.test('parseLlamaGuardVerdict treats an empty or unrecognized reply as FLAGGED, not fail-open', () => {
+  assert(parseLlamaGuardVerdict('').flagged, 'an empty reply must be treated as flagged, not silently allowed through');
+  assert(parseLlamaGuardVerdict('some unexpected free-form text').flagged, 'text not matching the fixed safe/unsafe format must be treated as flagged, not assumed safe');
+});
+
+Deno.test('parseLlamaGuardVerdict only treats an exact "safe" reply as unflagged, not merely one containing the word', () => {
+  const verdict = parseLlamaGuardVerdict('The content appears safe to me');
+  assert(verdict.flagged, 'a reply that merely contains "safe" as a word, rather than matching the fixed one-word format, must be treated as flagged');
+});
+
+Deno.test('reasonForLlamaGuardVerdict uses the supportive self-harm message for category S11', () => {
+  const reason = reasonForLlamaGuardVerdict({ flagged: true, categories: ['S11'] });
+  assert(/self-harm|helpline|reach out/i.test(reason), 'a self-harm-classified verdict should get the supportive self-harm reason, not a cold generic one');
+});
+
+Deno.test('reasonForLlamaGuardVerdict uses the generic reason for non-self-harm categories', () => {
+  const reason = reasonForLlamaGuardVerdict({ flagged: true, categories: ['S1'] });
+  assert(!/self-harm|helpline/i.test(reason), 'a non-self-harm category should not surface the self-harm-specific message');
+});
+
+Deno.test('SAFE_FALLBACK_ON_UNSAFE_OUTPUT is a non-empty message distinct from the leak fallback', () => {
+  assert(SAFE_FALLBACK_ON_UNSAFE_OUTPUT.length > 0, 'fallback message should not be empty');
+  assert((SAFE_FALLBACK_ON_UNSAFE_OUTPUT as string) !== (SAFE_FALLBACK_ON_SUSPECTED_LEAK as string), 'unsafe-output fallback should read distinctly from the system-prompt-leak fallback');
 });

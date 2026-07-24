@@ -174,3 +174,106 @@ export function looksLikeSystemPromptLeak(completion: string, baseSystemPrompt: 
 /// not the raw suspected-leak completion.
 export const SAFE_FALLBACK_ON_SUSPECTED_LEAK =
   "I can't share that. I can help with your financial, scheme, or market question instead — please ask that directly.";
+
+// ---------------------------------------------------------------------
+// 4. ML-based classification (Groq Llama Guard) — real second-pass layer
+// on top of the regex pre-filter above
+// ---------------------------------------------------------------------
+//
+// Everything above this point is pattern/keyword matching — cheap, fast,
+// and, per this file's own header, explicitly NOT a general-purpose content
+// classifier. docs/AI_MODULES.md §6/§7 named a real ML-based moderation
+// service as "the remaining highest-priority item" before scaling. This
+// section closes that gap using a real safety-purpose model — Meta's
+// Llama Guard 3, served by the same Groq account already provisioned for
+// the advisor completions themselves (`LLM_API_KEY`), so no new vendor,
+// contract, or secret is needed. Llama Guard is a model trained
+// specifically to classify a piece of text against a fixed policy taxonomy
+// (violent crime, self-harm, hate, sexual content, weapons, privacy,
+// election misinformation, etc.) and reply with a small, structured verdict
+// — "safe" or "unsafe" plus the violated category codes — rather than a
+// free-form chat answer. This is the genuine "real classifier" article the
+// docs call out as missing, not another regex list.
+//
+// This module stays dependency-free and Deno-free (see file header) so the
+// *parsing* of a Llama Guard verdict is unit-testable in isolation. The
+// actual HTTP call to Groq lives in index.ts, alongside the existing
+// completion call, using the same `fetch`/API-key plumbing — this file only
+// owns "given Llama Guard's raw text reply, what does it mean".
+
+export const LLAMA_GUARD_MODEL = 'llama-guard-3-8b';
+
+// Kept tiny: Llama Guard's own reply format is a short fixed vocabulary
+// ("safe" or "unsafe\nS1,S6" etc.) — nothing about a correct classification
+// ever needs more than a few tokens, and capping this bounds the (small)
+// extra Groq cost this second-pass call adds per request.
+export const LLAMA_GUARD_MAX_TOKENS = 20;
+
+// Llama Guard 3's fixed policy taxonomy. Only S11 (Self-Harm) needs special
+// handling here: everything else collapses to the same generic reason this
+// file already uses for hate-speech/jailbreak blocks, but a member typing
+// something Llama Guard classifies as self-harm deserves the same
+// supportive, resource-pointing message the regex self-harm filter already
+// gives — not a cold "this request cannot be processed."
+const LLAMA_GUARD_SELF_HARM_CATEGORY = 'S11';
+
+export type LlamaGuardVerdict = { flagged: boolean; categories: string[] };
+
+/// Parses Llama Guard's raw chat-completion reply text into a structured
+/// verdict. The model's documented reply format is exactly one of:
+///   "safe"
+///   "unsafe\nS1,S6" (one line "unsafe", then a second line of
+///     comma-separated category codes)
+/// Deliberately tolerant of surrounding whitespace and a missing/malformed
+/// *second* line (treated as "unsafe" with no known category rather than
+/// throwing) — a moderation-purpose model reply is never a place to let a
+/// parsing edge case silently fail open into an unclassified "safe".
+///
+/// That same "never silently fail open" rule applies to the *first* line
+/// too: only an exact (trimmed, case-insensitive) `"safe"` is treated as
+/// safe. Anything else — a garbled/truncated reply, unexpected preamble
+/// text, or anything not matching Llama Guard's fixed reply format — is
+/// treated as flagged (fail toward blocking, not toward guessing "probably
+/// fine"). An earlier version only checked for a literal "unsafe" first
+/// line and treated everything else (including totally unrecognized text)
+/// as safe, which directly contradicted this function's own stated intent —
+/// found by adversarial review. Note this is distinct from
+/// [classifyContentSafety] in index.ts, which deliberately DOES fail open
+/// when the HTTP call itself errors (network failure, non-200) — that's an
+/// availability trade-off for a defense-in-depth layer, not a parsing
+/// shortcut; this function only ever sees text from a call that already
+/// succeeded.
+export function parseLlamaGuardVerdict(raw: string): LlamaGuardVerdict {
+  const lines = raw
+    .trim()
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const first = (lines[0] ?? '').toLowerCase();
+  if (first === 'safe') return { flagged: false, categories: [] };
+  const categories = (lines[1] ?? '')
+    .split(',')
+    .map((c) => c.trim())
+    .filter(Boolean);
+  return { flagged: true, categories };
+}
+
+/// Builds the reason string shown to the member for an ML-flagged request,
+/// reusing the existing supportive self-harm message when Llama Guard's
+/// verdict includes the self-harm category, and the same generic reason the
+/// regex filter uses for every other category — deliberately not echoing
+/// Llama Guard's raw category codes back to the caller (meaningless to a
+/// member, and unnecessary detail to hand an adversarial one).
+export function reasonForLlamaGuardVerdict(verdict: LlamaGuardVerdict): string {
+  return verdict.categories.includes(LLAMA_GUARD_SELF_HARM_CATEGORY) ? SELF_HARM_REASON : ML_MODERATION_REASON;
+}
+
+const ML_MODERATION_REASON = 'This request cannot be processed.';
+
+/// Returned in place of a completion whose OUTPUT Llama Guard itself flags
+/// as unsafe — distinct wording from [SAFE_FALLBACK_ON_SUSPECTED_LEAK]
+/// (which is specifically about a system-prompt echo) since this covers the
+/// broader case of the model's own answer landing on unsafe ground, not
+/// necessarily a leak.
+export const SAFE_FALLBACK_ON_UNSAFE_OUTPUT =
+  "I can't help with that. I can help with your financial, scheme, or market question instead — please ask that directly.";

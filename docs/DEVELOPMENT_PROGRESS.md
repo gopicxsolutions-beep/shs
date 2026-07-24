@@ -7276,3 +7276,118 @@ now covers both fields), §5 (rate-limit ordering bug and fix), §6 (jailbreak
 regex fix, the critical history-response bypass and its fix, corrected the
 stale "no cross-turn abuse detection" bullet to reflect that per-turn
 detection now exists — only *gradual* multi-turn abuse remains undetected).
+
+## Update (round 88) — real ML-based AI moderation (Groq Llama Guard), blocked-request logging + staff abuse-review stat, and a real system-heartbeat metric replacing the Admin Dashboard's hardcoded uptime placeholder
+
+User asked to bring every remaining incomplete feature to full production
+grade, except the payment gateway (left intentionally mocked). Started with
+an audit agent sweeping the whole codebase against the docs to separate
+*real* remaining gaps from claims that were already stale (fixed in an
+earlier round but never reflected in the docs) — a second agent fixed the
+stale-doc half of that finding in parallel while this round's actual
+implementation work proceeded.
+
+**Stale documentation corrected** (no code changes, verified against actual
+code/tests before editing): [AI_MODULES.md](AI_MODULES.md) §6 had a leftover
+bullet claiming the client still flattens the pre-filter's rejection reason
+into a generic message — contradicted by §2.2 in the same document, which
+correctly describes this as already fixed; removed. [SRS.md](SRS.md)
+described the Voice Assistant's STT/TTS as "fully mocked" — stale since an
+earlier round wired real on-device `speech_to_text`/`flutter_tts`; corrected
+to match [AI_MODULES.md](AI_MODULES.md) §3's accurate account (real in live
+mode, mock fallback retained for demo mode). [TESTING_STRATEGY.md](TESTING_STRATEGY.md)
+claimed only 10/109 files were localized ("deliberately out-of-scope") —
+stale since the i18n-completion round; corrected to the real 91/92 figure.
+Test-count snapshots reconciled across docs to the actual freshly-run
+**931/931 passing**. CI workflow wording corrected from "not yet
+committed/merged" to "committed on this working branch, not yet merged into
+main" (verified via `git log`/`git merge-base`).
+
+**Real ML-based content moderation** — the AI Advisor's regex/keyword
+pre-filter was explicitly documented as "not enterprise-grade," with a real
+ML classifier named the single highest-priority remaining gap. Closed using
+Groq's **Llama Guard 3** model (`llama-guard-3-8b`), served by the same
+already-provisioned Groq account (no new vendor, contract, or secret):
+checks the live query after the regex filter passes and before the paid
+completion call, and separately checks the completion's own output —
+genuine input *and* output classification against Llama Guard's fixed safety
+taxonomy, not more regex. A flagged self-harm category gets the same
+supportive, resource-pointing message the regex self-harm filter already
+uses. Deliberately fails open only if the Llama Guard *call itself* errors
+(network/non-200) — a documented availability trade-off for a
+defense-in-depth layer, not the sole safety mechanism.
+
+**Blocked-request logging** — previously, a request rejected by content
+moderation left zero trace anywhere; only successful Q&A was ever logged.
+Migration `0044` adds `blocked`/`block_reason` columns to `ai_advisor_logs`;
+the Edge Function now inserts a row (via the service-role client it already
+holds for the rate-limit RPC — no new client-facing insert path) for every
+content-moderation rejection (regex, history-content check, or the new ML
+classifier), scoped deliberately to content rejections only, not ordinary
+validation 400s or 429s. A new "AI Advisor Blocks (7d)" / "Members Flagged
+(7d)" stat pair on the Admin Monitoring page (`AdminRepository.
+fetchAiAdvisorModerationStats()`) gives staff a real, if passive, abuse-
+review surface where none existed before.
+
+**Real system-heartbeat metric** — the Admin Dashboard's "System Uptime"
+stat had been a hardcoded `'N/A'` constant since it was added, honestly
+labeled but still a placeholder with nothing behind it. Migration `0044`
+also adds a `system_heartbeats` table written every 10 minutes by a
+`pg_cron`-scheduled `SECURITY DEFINER` function (mirroring this schema's
+existing self-pruning, privileged-function patterns). `AdminRepository.
+fetchSystemHeartbeatStatus()` reports healthy/stale from the most recent
+heartbeat (stale past 20 minutes — double the cron cadence, tolerating
+ordinary jitter). Deliberately narrow, honestly-scoped claim: this answers
+"is our own scheduled-job infrastructure alive," not "what is the uptime of
+every service in the stack" — the latter would need real external APM, out
+of scope here same as every other honestly-scoped placeholder in this
+codebase.
+
+**Adversarial review of this round's own work found 3 real bugs, all
+fixed same-round:**
+1. The new "AI Advisor Blocks" stat was placed as a bare `StatCard` directly
+   in the Admin Monitoring page's `ListView` instead of paired in a `Row`
+   like every other stat on that page — a `ListView`'s `SliverList` gives a
+   bare child *tight* constraints equal to the full viewport width, so it
+   rendered at roughly double the width of its siblings (measured 768px vs
+   378px), breaking the page's 2-column grid. Fixed by splitting it into two
+   paired half-width cards ("AI Advisor Blocks (7d)" / "Members Flagged
+   (7d)"), matching the established rhythm — plus a new regression test that
+   measures actual rendered widths via `tester.getSize()`, not just presence
+   of text.
+2. The history-content-check block path logged the **live** query to
+   `ai_advisor_logs`, not the actual offending history entry text that
+   triggered the block — a staff member reviewing a "self-harm"/"jailbreak"
+   row for this path would see an entirely innocuous current question with
+   no visible connection to why it was blocked (the real offending text
+   could be in a spoofed prior `response`, per the very bypass this history
+   check exists to close). Fixed by having `checkHistoryForDisallowedContent()`
+   return the actual matched text (`HistoryFilterResult.matchedText`), and
+   `index.ts`'s `logBlockedRequest()` log that instead of the live query for
+   this one path.
+3. `parseLlamaGuardVerdict()` contradicted its own doc comment: the comment
+   said a moderation-purpose model reply should never silently fail open on
+   a parsing edge case, but the code only checked for a literal `"unsafe"`
+   first line and treated *everything else* — including a garbled,
+   truncated, or entirely unrecognized reply — as safe. Fixed to only treat
+   an exact `"safe"` reply as unflagged; anything else (including
+   unrecognized text) is now flagged, fail-toward-blocking rather than
+   fail-toward-guessing. Kept distinct from `classifyContentSafety()`'s
+   deliberate transport-layer fail-open (network/HTTP failure) — that
+   remains an intentional availability trade-off, unrelated to this parsing
+   fix.
+
+`flutter analyze`: 0 issues. `flutter test`: **935/935 passing** (up from
+931). `deno test` for `ai-advisor-proxy`: **43/43 passing** (up from 25),
+`deno lint` clean across all touched files. No live Supabase access this
+session — migration `0044` and the Edge Function changes are verified by
+`deno test`/code review against the pure logic and RLS/SQL read-through, not
+against a deployed function or database; deploying and re-confirming against
+the real Groq-backed endpoint and a live `system_heartbeats` table remain
+outstanding steps before calling this launch-verified.
+
+Docs updated in the same change: [AI_MODULES.md](AI_MODULES.md) §4 (schema/
+logging update), §6 (the full ML-classifier writeup, blocked-logging
+writeup, staff-visible stat, and all 3 review-found fixes), §7 (moderation
+summary bullet); [QUALITY_MANAGEMENT.md](QUALITY_MANAGEMENT.md) §7
+(admin-dashboard-stats and AI-moderation checklist rows).

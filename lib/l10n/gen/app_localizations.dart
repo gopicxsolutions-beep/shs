@@ -898,11 +898,29 @@ abstract class AppLocalizations {
   /// **'System Uptime'**
   String get adminDashboardSystemUptimeLabel;
 
-  /// No description provided for @adminDashboardNotLiveMonitored.
+  /// No description provided for @adminDashboardHeartbeatHealthy.
   ///
   /// In en, this message translates to:
-  /// **'Not live-monitored'**
-  String get adminDashboardNotLiveMonitored;
+  /// **'Healthy'**
+  String get adminDashboardHeartbeatHealthy;
+
+  /// No description provided for @adminDashboardHeartbeatStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Stale'**
+  String get adminDashboardHeartbeatStale;
+
+  /// No description provided for @adminDashboardHeartbeatTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Heartbeat: {time}'**
+  String adminDashboardHeartbeatTrend(String time);
+
+  /// No description provided for @adminDashboardHeartbeatPending.
+  ///
+  /// In en, this message translates to:
+  /// **'No heartbeat recorded yet'**
+  String get adminDashboardHeartbeatPending;
 
   /// No description provided for @adminDashboardUsersTile.
   ///
@@ -4353,6 +4371,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loans (pending)'**
   String get adminMonitoringLoansPending;
+
+  /// No description provided for @adminMonitoringAiModerationBlocksLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Advisor Blocks (7d)'**
+  String get adminMonitoringAiModerationBlocksLabel;
+
+  /// No description provided for @adminMonitoringAiModerationMembersFlaggedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Members Flagged (7d)'**
+  String get adminMonitoringAiModerationMembersFlaggedLabel;
 
   /// No description provided for @adminMonitoringPlaceholderLabel.
   ///

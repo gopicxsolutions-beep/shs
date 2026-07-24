@@ -20,7 +20,7 @@
 // prompt-injection-hardening delimiter wrapper for every user-authored turn,
 // past or present.
 
-import { buildUserMessage, checkQueryForDisallowedContent, type PreFilterResult } from './moderation.ts';
+import { buildUserMessage, checkQueryForDisallowedContent } from './moderation.ts';
 
 export type HistoryExchange = { query: string; response: string };
 export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
@@ -104,9 +104,22 @@ export function boundHistory(history: HistoryExchange[]): HistoryExchange[] {
   return bounded;
 }
 
+/// Return shape for [checkHistoryForDisallowedContent] — a superset of
+/// [PreFilterResult] that additionally carries the actual offending text
+/// when blocked. Without this, index.ts's blocked-request logging (migration
+/// 0044) had no way to record anything but the *live* query for a
+/// history-triggered block — a real gap an adversarial review found: a
+/// staff member reviewing a history-triggered "self-harm"/"jailbreak" block
+/// would see an innocuous current question with no visible connection to
+/// why it was actually blocked, since the real offending text could be
+/// buried in a spoofed prior `response` (see this function's own doc
+/// comment on why `response` needs scrutiny too).
+export type HistoryFilterResult = { blocked: true; reason: string; matchedText: string } | { blocked: false };
+
 /// Runs the content pre-filter (see ./moderation.ts) over BOTH fields of
 /// every history entry — `query` and `response` alike — and returns the
-/// first block found, or `{ blocked: false }` if none.
+/// first block found (including the actual matched text, for logging), or
+/// `{ blocked: false }` if none.
 ///
 /// Checking `response` too (not just `query`) closes a real bypass an
 /// adversarial review found: the legitimate Flutter client always
@@ -120,12 +133,12 @@ export function boundHistory(history: HistoryExchange[]): HistoryExchange[] {
 /// question. There's no way to cryptographically verify a client-supplied
 /// `response` is genuinely prior model output, so it gets the same
 /// scrutiny as member-authored text.
-export function checkHistoryForDisallowedContent(history: HistoryExchange[]): PreFilterResult {
+export function checkHistoryForDisallowedContent(history: HistoryExchange[]): HistoryFilterResult {
   for (const turn of history) {
     const queryResult = checkQueryForDisallowedContent(turn.query);
-    if (queryResult.blocked) return queryResult;
+    if (queryResult.blocked) return { ...queryResult, matchedText: turn.query };
     const responseResult = checkQueryForDisallowedContent(turn.response);
-    if (responseResult.blocked) return responseResult;
+    if (responseResult.blocked) return { ...responseResult, matchedText: turn.response };
   }
   return { blocked: false };
 }

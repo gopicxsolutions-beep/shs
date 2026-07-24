@@ -603,21 +603,23 @@ exposed that action.
 
 FAQs are fully static content, not backed by any table. Voice Support follows
 the same "record → transcribe → answer" state machine as the AI Voice
-Assistant, backed by a mock speech service — see
-[AI_MODULES.md](AI_MODULES.md) §3 for the shared mocking pattern.
+Assistant, backed by real on-device speech-to-text/text-to-speech
+(`speech_to_text` + `flutter_tts`) in live mode, with a mock speech service
+retained for demo mode — see [AI_MODULES.md](AI_MODULES.md) §3 for the shared
+real/mock pattern.
 
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-SUP-1 | Any user browses static FAQ content | All |
 | FR-SUP-2 | Any user raises a ticket and follows a threaded (non-realtime) chat conversation | All |
-| FR-SUP-3 | Any user accesses voice-based support (mocked STT/TTS, real underlying data where applicable) | All |
+| FR-SUP-3 | Any user accesses voice-based support (real on-device STT/TTS in live mode, mocked in demo mode, real underlying data where applicable) | All |
 | FR-SUP-4 | A member sees only her own tickets; staff see all tickets platform-wide (capped at 500) — enforced independently at the RLS layer | Member vs. CRP/CLF/Admin |
 | FR-SUP-5 | Ticket status changes are staff-only, both client-side and at RLS | Staff |
 
 ### 3.14 AI Advisory (`ai/`)
 
 Full technical detail — architecture, exact system prompts, rate limiting,
-the Voice Assistant's mocked STT/TTS, and an honest safety/moderation
+the Voice Assistant's real on-device STT/TTS, and an honest safety/moderation
 accounting — is in the dedicated [AI_MODULES.md](AI_MODULES.md) document.
 Summary for SRS purposes:
 
@@ -626,7 +628,7 @@ Summary for SRS purposes:
 | FR-AI-1 | User chats with an AI Financial Advisor (Groq-backed, single-turn, no memory across questions) | All |
 | FR-AI-2 | User chats with an AI Scheme Recommender | All |
 | FR-AI-3 | User chats with an AI Market Advisor | All |
-| FR-AI-4 | User interacts with a Voice Assistant in English/Hindi/Telugu — **speech recognition and synthesis are fully mocked**; answer content for recognized intents is drawn from the user's real data | All |
+| FR-AI-4 | User interacts with a Voice Assistant in English/Hindi/Telugu — **real on-device speech recognition and synthesis in live mode** (`speech_to_text` + `flutter_tts`, no vendor key), falling back to a mock speech service in demo mode; answer content for recognized intents is drawn from the user's real data | All |
 | FR-AI-5 | Every chat-advisor exchange (not Voice Assistant) is logged for audit, retained indefinitely, staff-readable | System |
 | FR-AI-6 | Chat-advisor requests are rate-limited server-side to 10/minute per member, fail-closed | System |
 | FR-AI-7 | A persistent, localized disclaimer ("AI-generated guidance… not professional financial, legal, or medical advice") is shown on every AI-branded screen; **no content moderation or prompt-injection defense exists yet** — disclosed explicitly as a remaining pre-scale gap, not silently accepted | — |

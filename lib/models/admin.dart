@@ -40,15 +40,43 @@ class AdminActivityItem {
   const AdminActivityItem({required this.kind, required this.subjectName, required this.occurredAt});
 }
 
+/// Whether this app's own scheduled-job infrastructure (pg_cron) is still
+/// alive — computed from `public.system_heartbeats`, a row written every 10
+/// minutes by `record_system_heartbeat()` (migration 0044). Deliberately
+/// narrow in scope: this answers "is our own cron scheduler still running",
+/// not "what is the uptime/latency/error-rate of every service in the
+/// stack" — that broader claim would need real external APM this codebase
+/// doesn't have wired up, the same honest-scoping this app already applies
+/// to [SystemHealth]. Replaces the Admin dashboard's previous hardcoded
+/// `'N/A'` system-uptime placeholder with a real, if narrowly-scoped,
+/// signal.
+class SystemHeartbeatStatus {
+  final DateTime? lastHeartbeatAt;
+  final bool healthy;
+  const SystemHeartbeatStatus({required this.lastHeartbeatAt, required this.healthy});
+}
+
+/// Staff-visible abuse-review signal for the AI Advisor chat: how many
+/// requests content moderation (the regex pre-filter or the Llama Guard ML
+/// classifier — see `supabase/functions/ai-advisor-proxy`) rejected in the
+/// last 7 days, and how many distinct members those attempts came from.
+/// Closes docs/AI_MODULES.md §6's disclosed "no anomaly/abuse monitoring on
+/// the logs" gap — a rejected attempt used to leave no trace anywhere at
+/// all (see migration 0044).
+class AiAdvisorModerationStats {
+  final int blockedCount7d;
+  final int distinctMembersFlagged7d;
+  const AiAdvisorModerationStats({required this.blockedCount7d, required this.distinctMembersFlagged7d});
+}
+
 /// Real, computed figures for the Admin dashboard that used to be static
 /// constants in `admin_dashboard.dart` (`_trainingCompletion`,
 /// `_pendingVerificationCount`, `_recentActivity`) with no backing data at
 /// all — they never changed no matter what actually happened on the
-/// platform. System uptime is deliberately NOT part of this: a true
-/// uptime/error-rate/latency figure needs a real APM or infra-monitoring
-/// service this codebase doesn't have wired up (same documented gap as
-/// [SystemHealth]), so that one stat stays a clearly-labeled placeholder on
-/// the dashboard itself rather than being faked here.
+/// platform. System uptime is deliberately NOT part of this class — it's
+/// now backed by the separate [SystemHeartbeatStatus] (`fetchSystemHeartbeatStatus`)
+/// instead of being folded into this bulk stats fetch, since it comes from
+/// a different table with a different real-time freshness requirement.
 class AdminDashboardStats {
   /// Average `course_progress.progress` across every member/course pair
   /// platform-wide — including pairs with no `course_progress` row at all,

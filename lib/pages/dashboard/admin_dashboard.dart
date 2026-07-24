@@ -15,18 +15,18 @@ import '../../widgets/icon_tile.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stat_card.dart';
 
-/// A true uptime/error-rate/latency figure needs a real APM or
-/// infra-monitoring service this codebase doesn't have wired up — same
-/// documented gap as `SystemHealth` (see admin_monitoring_page.dart). Unlike
-/// the Training Completion / pending-review / recent-activity figures below
-/// (all real, computed — see [AdminRepository.fetchDashboardStats]), there is
-/// no real table this one could ever be derived from, so it stays a
-/// placeholder. Deliberately rendered as a neutral "N/A" — not a
-/// fabricated-looking precise percentage like "99.98%" — because a
-/// suspiciously precise number is exactly what a skimming user reads as
-/// genuine telemetry, no matter how honest the much smaller/dimmer
-/// "Not live-monitored" trend line underneath it is.
-const _systemUptime = 'N/A';
+/// Renders the System Uptime StatCard's value/trend from a real
+/// [SystemHeartbeatStatus] — replaces what used to be a hardcoded `'N/A'`
+/// constant with no backing data at all. Still deliberately narrow (see that
+/// class's own doc comment): this reports whether this project's own
+/// pg_cron scheduler is alive, not a fabricated-looking precise uptime
+/// percentage like "99.98%" — a suspiciously precise number is exactly what
+/// a skimming user reads as genuine full-stack telemetry, which this isn't.
+(String, String) _systemUptimeValueAndTrend(AppLocalizations l10n, SystemHeartbeatStatus heartbeat) {
+  final value = heartbeat.healthy ? l10n.adminDashboardHeartbeatHealthy : l10n.adminDashboardHeartbeatStale;
+  final trend = heartbeat.lastHeartbeatAt == null ? l10n.adminDashboardHeartbeatPending : l10n.adminDashboardHeartbeatTrend(_relativeTime(l10n, heartbeat.lastHeartbeatAt!));
+  return (value, trend);
+}
 
 const _activityTone = <AdminActivityKind, BadgeTone>{
   AdminActivityKind.newShg: BadgeTone.success,
@@ -60,25 +60,28 @@ String _activityMessage(AppLocalizations l10n, AdminActivityItem a) => switch (a
 class _AdminDashboardData {
   final PlatformKpis kpis;
   final AdminDashboardStats stats;
-  const _AdminDashboardData({required this.kpis, required this.stats});
+  final SystemHeartbeatStatus heartbeat;
+  const _AdminDashboardData({required this.kpis, required this.stats, required this.heartbeat});
 }
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
 
   Future<_AdminDashboardData> _load() async {
+    final repo = AdminRepository();
     final results = await Future.wait([
       AnalyticsRepository().fetchPlatformKpis(),
-      AdminRepository().fetchDashboardStats(),
+      repo.fetchDashboardStats(),
+      repo.fetchSystemHeartbeatStatus(),
     ]);
-    return _AdminDashboardData(kpis: results[0] as PlatformKpis, stats: results[1] as AdminDashboardStats);
+    return _AdminDashboardData(kpis: results[0] as PlatformKpis, stats: results[1] as AdminDashboardStats, heartbeat: results[2] as SystemHeartbeatStatus);
   }
 
   @override
   Widget build(BuildContext context) {
     return AppAsyncBuilder<_AdminDashboardData>(
       future: _load,
-      builder: (context, data) => _AdminDashboardBody(kpis: data.kpis, stats: data.stats),
+      builder: (context, data) => _AdminDashboardBody(kpis: data.kpis, stats: data.stats, heartbeat: data.heartbeat),
     );
   }
 }
@@ -86,11 +89,13 @@ class AdminDashboard extends StatelessWidget {
 class _AdminDashboardBody extends StatelessWidget {
   final PlatformKpis kpis;
   final AdminDashboardStats stats;
-  const _AdminDashboardBody({required this.kpis, required this.stats});
+  final SystemHeartbeatStatus heartbeat;
+  const _AdminDashboardBody({required this.kpis, required this.stats, required this.heartbeat});
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final (uptimeValue, uptimeTrend) = _systemUptimeValueAndTrend(l10n, heartbeat);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -101,7 +106,7 @@ class _AdminDashboardBody extends StatelessWidget {
             child: Row(children: [
               Expanded(child: StatCard(label: l10n.adminDashboardTotalShgsLabel, value: '${kpis.totalShgs}', tone: StatTone.brand, trend: l10n.adminDashboardActiveMembersTrend(kpis.activeMembers), icon: Icons.groups_rounded)),
               const SizedBox(width: 12),
-              Expanded(child: StatCard(label: l10n.adminDashboardSystemUptimeLabel, value: _systemUptime, tone: StatTone.ink, trend: l10n.adminDashboardNotLiveMonitored, icon: Icons.dns_rounded)),
+              Expanded(child: StatCard(label: l10n.adminDashboardSystemUptimeLabel, value: uptimeValue, tone: heartbeat.healthy ? StatTone.ink : StatTone.danger, trend: uptimeTrend, icon: Icons.dns_rounded)),
             ]),
           ),
         ),

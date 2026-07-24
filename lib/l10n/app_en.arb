@@ -210,7 +210,18 @@
 
   "adminDashboardSystemUptimeLabel": "System Uptime",
 
-  "adminDashboardNotLiveMonitored": "Not live-monitored",
+  "adminDashboardHeartbeatHealthy": "Healthy",
+
+  "adminDashboardHeartbeatStale": "Stale",
+
+  "adminDashboardHeartbeatTrend": "Heartbeat: {time}",
+  "@adminDashboardHeartbeatTrend": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+
+  "adminDashboardHeartbeatPending": "No heartbeat recorded yet",
 
   "adminDashboardUsersTile": "Users",
 
@@ -1707,6 +1718,10 @@
   "adminMonitoringSavingsEntries": "Savings Entries",
 
   "adminMonitoringLoansPending": "Loans (pending)",
+
+  "adminMonitoringAiModerationBlocksLabel": "AI Advisor Blocks (7d)",
+
+  "adminMonitoringAiModerationMembersFlaggedLabel": "Members Flagged (7d)",
 
   "adminMonitoringPlaceholderLabel": "Placeholder metrics",
 

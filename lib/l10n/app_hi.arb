@@ -162,7 +162,13 @@
 
   "adminDashboardSystemUptimeLabel": "सिस्टम अपटाइम",
 
-  "adminDashboardNotLiveMonitored": "लाइव मॉनिटर नहीं किया गया",
+  "adminDashboardHeartbeatHealthy": "स्वस्थ",
+
+  "adminDashboardHeartbeatStale": "पुराना",
+
+  "adminDashboardHeartbeatTrend": "हार्टबीट: {time}",
+
+  "adminDashboardHeartbeatPending": "अभी तक कोई हार्टबीट दर्ज नहीं हुई",
 
   "adminDashboardUsersTile": "उपयोगकर्ता",
 
@@ -1313,6 +1319,10 @@
   "adminMonitoringSavingsEntries": "बचत एंट्रियां",
 
   "adminMonitoringLoansPending": "ऋण (लंबित)",
+
+  "adminMonitoringAiModerationBlocksLabel": "AI सलाहकार अवरोध (7 दिन)",
+
+  "adminMonitoringAiModerationMembersFlaggedLabel": "फ़्लैग किए गए सदस्य (7 दिन)",
 
   "adminMonitoringPlaceholderLabel": "प्लेसहोल्डर मेट्रिक्स",
 

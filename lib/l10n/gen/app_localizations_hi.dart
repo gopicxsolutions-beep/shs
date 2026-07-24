@@ -453,7 +453,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminDashboardSystemUptimeLabel => 'सिस्टम अपटाइम';
 
   @override
-  String get adminDashboardNotLiveMonitored => 'लाइव मॉनिटर नहीं किया गया';
+  String get adminDashboardHeartbeatHealthy => 'स्वस्थ';
+
+  @override
+  String get adminDashboardHeartbeatStale => 'पुराना';
+
+  @override
+  String adminDashboardHeartbeatTrend(String time) {
+    return 'हार्टबीट: $time';
+  }
+
+  @override
+  String get adminDashboardHeartbeatPending =>
+      'अभी तक कोई हार्टबीट दर्ज नहीं हुई';
 
   @override
   String get adminDashboardUsersTile => 'उपयोगकर्ता';
@@ -2416,6 +2428,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get adminMonitoringLoansPending => 'ऋण (लंबित)';
+
+  @override
+  String get adminMonitoringAiModerationBlocksLabel =>
+      'AI सलाहकार अवरोध (7 दिन)';
+
+  @override
+  String get adminMonitoringAiModerationMembersFlaggedLabel =>
+      'फ़्लैग किए गए सदस्य (7 दिन)';
 
   @override
   String get adminMonitoringPlaceholderLabel => 'प्लेसहोल्डर मेट्रिक्स';

@@ -462,8 +462,18 @@ class AppLocalizationsTe extends AppLocalizations {
   String get adminDashboardSystemUptimeLabel => 'సిస్టమ్ అప్‌టైమ్';
 
   @override
-  String get adminDashboardNotLiveMonitored =>
-      'ప్రత్యక్షంగా పర్యవేక్షించబడలేదు';
+  String get adminDashboardHeartbeatHealthy => 'ఆరోగ్యంగా ఉంది';
+
+  @override
+  String get adminDashboardHeartbeatStale => 'పాతది';
+
+  @override
+  String adminDashboardHeartbeatTrend(String time) {
+    return 'హార్ట్‌బీట్: $time';
+  }
+
+  @override
+  String get adminDashboardHeartbeatPending => 'ఇంకా హార్ట్‌బీట్ నమోదు కాలేదు';
 
   @override
   String get adminDashboardUsersTile => 'వినియోగదారులు';
@@ -2478,6 +2488,14 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get adminMonitoringLoansPending => 'రుణాలు (పెండింగ్‌లో)';
+
+  @override
+  String get adminMonitoringAiModerationBlocksLabel =>
+      'AI సలహాదారు బ్లాక్‌లు (7 రోజులు)';
+
+  @override
+  String get adminMonitoringAiModerationMembersFlaggedLabel =>
+      'ఫ్లాగ్ చేయబడిన సభ్యులు (7 రోజులు)';
 
   @override
   String get adminMonitoringPlaceholderLabel => 'ప్లేస్‌హోల్డర్ మెట్రిక్స్';

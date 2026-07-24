@@ -197,8 +197,8 @@ this.
 | Area | Status |
 |---|---|
 | `flutter analyze` | Clean (0 issues) as of last recorded check |
-| `flutter test` | 848/848 passing as of last recorded check |
-| CI enforcing analyze/test automatically | **Wired** — `.github/workflows/ci.yml` runs `flutter analyze`/`flutter test` on every push and PR, demo-mode only (no secrets needed); not yet committed/merged |
+| `flutter test` | 931/931 passing as of last recorded check |
+| CI enforcing analyze/test automatically | **Wired** — `.github/workflows/ci.yml` runs `flutter analyze`/`flutter test` on every push and PR, demo-mode only (no secrets needed); committed on this working branch, not yet merged into main |
 | RLS CRUD sweep (SELECT/INSERT/UPDATE/DELETE) | Systematically completed once; new instances of known bug shapes still surfaced afterward — treat as an ongoing discipline, not a one-time certification |
 | Privilege-escalation closure | Closed (5 CRITICAL findings, all fixed, one via adversarial re-audit) |
 | Accessibility | Bounded audit complete for highest-traffic screens; not a full WCAG certification |
@@ -212,11 +212,11 @@ this.
 | Real voice STT/TTS | **Wired** — real on-device `speech_to_text`/`flutter_tts`, no vendor key; see [AI_MODULES.md](AI_MODULES.md) §3 for the same live-click-testing caveat |
 | Real local notifications | **Wired** — `flutter_local_notifications` for meeting/loan-due/announcement reminders, local-only (no push backend); cannot be click-tested outside a real device/emulator |
 | Admin list pagination | **Wired** — real keyset "Load more" pagination on Manage Users/Manage SHGs, replacing the old silent 500-row cap |
-| Admin dashboard real stats | **Wired** — training completion %, pending-review count, and recent activity are now genuinely computed; system uptime remains a placeholder, now honestly labeled "Not live-monitored" |
+| Admin dashboard real stats | **Wired** — training completion %, pending-review count, and recent activity are all genuinely computed; system uptime is now a real (if narrowly-scoped) `system_heartbeats`-derived signal (migration `0044`) replacing the old hardcoded `'N/A'` — see [AI_MODULES.md](AI_MODULES.md) §6 and `SystemHeartbeatStatus`'s doc comment for exactly what this does/doesn't claim to measure |
 | Government scheme eligibility engine | **Wired** — real structured rules (SHG membership/age/grade) replacing keyword matching; still not a government e-filing connection |
 | Training course quiz content | **Wired** — real per-course questions (new `quiz_questions` table, migration `0041`, not yet deployed) replacing the single generic 3-question set |
 | AI advisor disclaimer | **Shown on every AI-branded screen** (see [AI_MODULES.md](AI_MODULES.md) §6) |
-| AI advisor content moderation / prompt-injection defense | **Basic layer wired** — delimiter-based prompt-injection hardening, a keyword/pattern pre-filter for obvious self-harm/hate-speech/jailbreak attempts, and an output-side system-prompt-leak heuristic; explicitly a first line of defense, not enterprise-grade moderation — see [AI_MODULES.md](AI_MODULES.md) §6 |
+| AI advisor content moderation / prompt-injection defense | **Two-layer defense wired** — delimiter-based prompt-injection hardening, a regex pre-filter, and now a real ML classifier (Groq Llama Guard 3) checking both input and output, with rejected attempts logged (`ai_advisor_logs.blocked`, migration `0044`) and surfaced to staff via a real Admin Monitoring stat; still not a dedicated, vendor-operated trust & safety platform with proactive alerting — see [AI_MODULES.md](AI_MODULES.md) §6 |
 
 This table is a snapshot, not a live source — re-verify against
 [docs/DEVELOPMENT_PROGRESS.md](DEVELOPMENT_PROGRESS.md)'s latest entries and

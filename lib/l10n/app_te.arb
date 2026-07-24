@@ -162,7 +162,13 @@
 
   "adminDashboardSystemUptimeLabel": "సిస్టమ్ అప్‌టైమ్",
 
-  "adminDashboardNotLiveMonitored": "ప్రత్యక్షంగా పర్యవేక్షించబడలేదు",
+  "adminDashboardHeartbeatHealthy": "ఆరోగ్యంగా ఉంది",
+
+  "adminDashboardHeartbeatStale": "పాతది",
+
+  "adminDashboardHeartbeatTrend": "హార్ట్‌బీట్: {time}",
+
+  "adminDashboardHeartbeatPending": "ఇంకా హార్ట్‌బీట్ నమోదు కాలేదు",
 
   "adminDashboardUsersTile": "వినియోగదారులు",
 
@@ -1313,6 +1319,10 @@
   "adminMonitoringSavingsEntries": "పొదుపు ఎంట్రీలు",
 
   "adminMonitoringLoansPending": "రుణాలు (పెండింగ్‌లో)",
+
+  "adminMonitoringAiModerationBlocksLabel": "AI సలహాదారు బ్లాక్‌లు (7 రోజులు)",
+
+  "adminMonitoringAiModerationMembersFlaggedLabel": "ఫ్లాగ్ చేయబడిన సభ్యులు (7 రోజులు)",
 
   "adminMonitoringPlaceholderLabel": "ప్లేస్‌హోల్డర్ మెట్రిక్స్",
 

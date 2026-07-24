@@ -155,7 +155,7 @@ advisor answers from the conversation text alone, no live data lookup.
   chat session (§2.1), but nothing persists across reopening the page, app
   restart, or a different device.
 - No personalization from her actual savings/loan/SHG data.
-- A persistent disclaimer is shown, plus a basic keyword-based moderation/prompt-injection layer server-side (§6) — the specific rejection reason now *is* surfaced to her (§2.2 point 5), but it's still not enterprise-grade moderation.
+- A persistent disclaimer is shown, plus a two-layer moderation/prompt-injection defense server-side — regex pre-filter and a real Llama Guard ML classifier on both input and output (§6) — the specific rejection reason now *is* surfaced to her (§2.2 point 5), but it's still not a dedicated, vendor-operated trust & safety platform.
 
 ---
 
@@ -274,13 +274,31 @@ create table public.ai_advisor_logs (
   advisor_type text not null check (advisor_type in ('financial', 'scheme', 'market')),
   query text not null,
   response text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  -- migration 0044:
+  blocked boolean not null default false,
+  block_reason text
+  -- check (blocked = (block_reason is not null))
 );
 ```
 
 Note the CHECK constraint only permits `financial`/`scheme`/`market` —
 `'voice'` is not a valid value. **The Voice Assistant does not write to this
 table at all**; no audit/log table exists anywhere for voice interactions.
+
+**`blocked`/`block_reason` (migration `0044`)**: previously, a request
+rejected by content moderation left zero trace anywhere in this table — only
+successful Q&A ever got a row, inserted client-side by
+`AiAdvisorRepository.ask()` *after* a successful response came back. A
+rejected attempt now gets a row too, inserted **server-side** by
+`ai-advisor-proxy/index.ts` itself (using the service-role client it already
+holds for the rate-limit RPC — no new client-facing insert path opened) for
+every content-moderation rejection: the regex pre-filter, the history-content
+check, or the new Llama Guard ML classifier (§6). Deliberately *not* logged
+this way: ordinary shape-validation 400s (malformed JSON, missing fields —
+not an abuse signal) or 429 rate-limit rejections (already tracked in
+`ai_advisor_rate_limits`). See §6 for the staff-visible Admin Monitoring
+stat this now backs.
 
 **RLS**:
 - SELECT: the member herself, or any staff role (`is_staff()`).
@@ -334,7 +352,7 @@ before it spends a paid Groq call.
   unmetered.
 - **On exceeding the limit**: the Edge Function throws
   `HttpError(429, 'Too many requests. Please wait a minute before asking
-  again.')` — collapsed by the client into the generic error message per §2.2.
+  again.')` — shown to the member verbatim by the client (§2.2 point 5).
 - **This closed a real, long-standing gap**: the migration's own header
   comment states the no-rate-limiting issue was "re-confirmed, un-fixed,
   across at least 3 prior audit rounds" before this fix landed — i.e. the app
@@ -413,41 +431,110 @@ using only the already-provisioned Groq key — no new paid moderation vendor:
   disallowed history *response* — not just query — is blocked), independent
   of the Edge Function runtime.
 
+**A real ML-based classifier now exists on top of the regex layer above** —
+Groq's **Llama Guard 3** model (`llama-guard-3-8b`), served by the same
+already-provisioned Groq account (no new vendor/contract/secret):
+- Runs on the live query *after* the regex pre-filter passes (avoiding a
+  redundant call on requests the cheap filter already caught) and *before*
+  the main advisor completion call — a genuine second-pass safety classifier
+  against Llama Guard's fixed policy taxonomy (violent crime, self-harm,
+  hate, sexual content, weapons, privacy, election misinformation, etc.),
+  not another regex list.
+- **Also runs on the model's own completion output**, not just the input —
+  closing the "no content moderation on output beyond the system-prompt-leak
+  heuristic" gap a prior version of this document listed here. Gated behind
+  the existing leak-heuristic check (only runs if the completion wasn't
+  already replaced by the leak fallback) to avoid a redundant call.
+- A flagged self-harm category (`S11`) gets the same supportive,
+  resource-pointing message the regex self-harm filter already gives —
+  `reasonForLlamaGuardVerdict()` maps category → reason, not a cold generic
+  rejection for the one category where the wording genuinely matters for the
+  member's safety.
+- **Fails open only at the transport layer** — if the Llama Guard *call
+  itself* errors (network failure, non-200 status): this is a defense-in-
+  depth layer on top of an already-functioning regex filter + rate limit +
+  injection hardening, not the sole safety mechanism — an outage in this
+  supplementary classifier degrades to "no extra ML check this call" rather
+  than taking down the whole advisor feature, a deliberate availability/
+  safety trade-off worth being explicit about. Every fail-open path logs
+  server-side. **Does NOT fail open on a successful-but-unparseable reply**:
+  `parseLlamaGuardVerdict()` only treats an exact, trimmed `"safe"` first
+  line as safe — anything else (garbled/truncated text, unexpected
+  preamble, anything not matching Llama Guard's fixed reply format) is
+  treated as flagged. An earlier version of this parser treated any
+  non-"unsafe" first line as safe, silently failing open on genuinely
+  unrecognized replies — found by adversarial review and fixed to match
+  this file's own stated intent of never guessing "probably fine" on a
+  moderation-purpose model's output.
+- Covered by 10 Deno unit tests (verdict parsing — including the
+  fail-open-vs-fail-flagged distinction above — and category→reason
+  mapping) in `moderation.test.ts` — the live HTTP call to Groq itself is
+  not unit-testable offline and lives in `index.ts`.
+
+**Every content-moderation rejection is now logged, not just successful
+Q&A** — `ai_advisor_logs` gained `blocked`/`block_reason` columns (migration
+`0044`); the Edge Function inserts a row (via the service-role client it
+already holds for the rate-limit RPC — no new client-facing insert path)
+whenever the regex filter, the history-content check, or the new ML
+classifier rejects a request, before returning the 400. Deliberately scoped
+to *content*-moderation rejections only, not ordinary shape-validation 400s
+or 429 rate-limit rejections (already tracked in `ai_advisor_rate_limits`) —
+narrows the column's meaning to genuinely useful abuse-review signal rather
+than diluting it with routine client mistakes. For a history-triggered
+block, the logged `query` is the actual offending history entry text (which
+field/turn matched, via `checkHistoryForDisallowedContent`'s returned
+`matchedText`), not the live query — an earlier version logged the live
+query for this path, which is almost always entirely innocuous and gives a
+staff reviewer no visible connection to why the row was actually flagged;
+found by adversarial review and fixed.
+
+**A staff-visible abuse-review surface now exists**: the Admin Monitoring
+page (`admin_monitoring_page.dart`) shows a real "AI Advisor Blocks (7d)"
+stat — a live count of blocked rows and distinct flagged members from
+`ai_advisor_logs`, computed by `AdminRepository.fetchAiAdvisorModerationStats()`.
+This is intentionally a passive, staff-must-look dashboard figure, not
+proactive alerting/escalation/per-member lockout — see the still-absent list
+below for what that would still require.
+
 **What is still explicitly absent — confirmed not present in code, not
 merely unverified:**
-- **No ML-based classifier** — the pre-filter above is explicitly a basic
-  keyword/pattern first line of defense, not exhaustive slur/self-harm
-  coverage and not immune to creative rephrasing. Code comments and
-  `moderation.ts`'s own file header say this explicitly.
-- **No content moderation on output beyond the system-prompt-leak heuristic**
-  — there is still no general safety classifier pass, no check that the
-  answer actually stayed within the advisor's intended scope.
-- **No *gradual* cross-turn abuse detection** — real conversation memory now
-  exists (§2.1), and the pre-filter now scans every individual forwarded
-  history entry (both `query` and `response`), so a single disallowed turn
-  anywhere in history is caught. What's still absent is any mechanism to
-  notice a manipulation attempt that builds up gradually across several
-  individually-innocuous turns — pattern-matching per turn, not across the
-  conversation as a whole.
-- **No anomaly/abuse monitoring on the logs** — `ai_advisor_logs` is written
-  and retained, and staff can read it via RLS, but nothing in the codebase
-  queries it for abuse patterns or flags anything for review.
-- **The client still flattens the pre-filter's specific rejection reason**
-  (e.g. the supportive self-harm-resources message) into one of two generic
-  error messages via `isNetworkError`'s branching (§2.2) — a real, honest gap
-  between what the server now returns and what the member actually sees; not
-  closed by this round's server-side work.
+- **No *gradual* cross-turn abuse detection** — real conversation memory
+  exists (§2.1), and every individual forwarded history entry (both `query`
+  and `response`) is checked by both the regex filter and, for the live
+  query, the ML classifier, so a single disallowed turn anywhere is caught.
+  What's still absent is any mechanism to notice a manipulation attempt that
+  builds up gradually across several individually-innocuous turns —
+  per-turn classification, not whole-conversation pattern analysis.
+- **No proactive alerting or automated escalation on repeated blocks** — the
+  new Admin Monitoring stat is a real count, but it is passive: nothing
+  pages/notifies staff when one member racks up many blocked attempts, and
+  there is no automated response (temporary lockout, required review) tied
+  to a threshold. A staff member must actively look at the dashboard.
+- **Llama Guard is not applied to bounded chat history entries**, only the
+  live query and the live completion — applying it to all 6 possible
+  history exchanges × 2 fields per request would multiply Groq cost for
+  each call with limited marginal benefit over the regex history check
+  already in place (history entries were themselves live queries that
+  already passed through this same pipeline in an earlier request).
 
-This remains a deliberately lightweight LLM integration from a
-safety-engineering standpoint: a short, narrowly-scoped system prompt per
-advisor, the upstream provider's own model-level safety behavior, cost/abuse
-controls (length cap + rate limit), an in-UI disclaimer on every AI-branded
-screen, and now a basic keyword-based moderation/prompt-injection layer — but
-still **no enterprise-grade content moderation**. Any production launch that
-scales real usage of the advisors' financial/scheme guidance should still
-treat a real ML-based moderation service as a design decision worth making
-before scaling further, and should surface the pre-filter's specific
-rejection reason to the member instead of a generic error.
+(A prior version of this document listed the client flattening the
+pre-filter's specific rejection reason into a generic error message as a
+remaining gap here. That has since been closed —
+`mapFunctionExceptionToAdvisorException()` and `_errorMessageFor()` now
+surface the server's verbatim 400/429 reason text to the member; see §2.2
+point 5.)
+
+This is still a lightweight LLM integration relative to a dedicated,
+vendor-operated trust & safety platform: a short, narrowly-scoped system
+prompt per advisor, the upstream provider's own model-level safety behavior,
+cost/abuse controls (length cap + rate limit), an in-UI disclaimer on every
+AI-branded screen, and now a genuine two-layer defense (regex + Llama Guard
+ML classifier) on both input and output, with rejected attempts logged and
+staff-visible — but still not a dedicated, vendor-operated trust & safety
+platform with proactive alerting. Any production launch scaling real usage
+of the advisors' financial/scheme guidance should still consider proactive
+abuse alerting (not just a passive dashboard count) as the next design
+decision worth making.
 
 ---
 
@@ -474,8 +561,12 @@ rejection reason to the member instead of a generic error.
   `pg_cron` job purges rows older than 180 days via a `SECURITY DEFINER`
   function grantable only to `service_role` (§4, migration `0043`) — not yet
   deployed/executed against a live database this session.
-- **Only a basic keyword-based moderation/prompt-injection layer exists, not
-  enterprise-grade content moderation** (§6) — a real ML-based moderation
-  service is still the remaining highest-priority item in this list before
-  scaling real usage of the advisors' financial/scheme guidance. (The
-  disclaimer gap that used to be listed here is fixed — see §6.)
+- **A real ML-based classifier (Groq Llama Guard 3) now runs alongside the
+  regex pre-filter, on both input and output** (§6) — closes what used to be
+  this list's top item. Blocked attempts are now logged
+  (`ai_advisor_logs.blocked`, migration `0044`) and surfaced to staff via a
+  real Admin Monitoring stat, not just silently rejected with no trace. What
+  remains: no proactive alerting/escalation on repeated blocks (a passive
+  dashboard count only), and no gradual/whole-conversation abuse detection —
+  see §6's still-absent list for the precise remaining scope. This is still
+  not a dedicated, vendor-operated trust & safety platform.

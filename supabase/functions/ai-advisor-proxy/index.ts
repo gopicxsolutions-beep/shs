@@ -30,27 +30,37 @@
 // fallback already exists client-side in MockAiAdvisorService; this
 // function's only job is the real integration).
 //
-// Basic content moderation and prompt-injection hardening (see
-// ./moderation.ts for the full honest-scope writeup, and docs/AI_MODULES.md
-// §6 for how this changes that section's "explicitly absent" list): a cheap
-// keyword/pattern pre-filter rejects the most obvious self-harm/hate-speech/
-// jailbreak attempts with a 400 *before* the Groq call below is ever made;
-// the system+user messages are built through a delimiter + instruction-
-// reinforcement wrapper so the member's raw text is unambiguously framed as
-// "a question to answer", not "instructions to follow"; and the completion
-// gets one cheap check for looking like an echoed system-prompt-extraction
-// attempt before being returned. None of this is enterprise-grade
-// moderation — it's a deliberately lightweight, maintainable first line of
-// defense built on pattern matching alone, using only the already-
-// provisioned Groq key (no new moderation vendor).
+// Content moderation and prompt-injection hardening (see ./moderation.ts for
+// the full honest-scope writeup, and docs/AI_MODULES.md §6 for how this
+// changes that section's "explicitly absent" list): a cheap keyword/pattern
+// pre-filter rejects the most obvious self-harm/hate-speech/jailbreak
+// attempts with a 400 *before* the Groq call below is ever made; a second,
+// real ML classifier (Groq's Llama Guard 3 model) then checks both the live
+// query and the model's own completion against a broader safety taxonomy —
+// genuine defense-in-depth, not just more regex; the system+user messages
+// are built through a delimiter + instruction-reinforcement wrapper so the
+// member's raw text is unambiguously framed as "a question to answer", not
+// "instructions to follow"; and the completion also gets a cheap check for
+// looking like an echoed system-prompt-extraction attempt. Every
+// content-moderation rejection (regex or ML) is logged to
+// `ai_advisor_logs` (`blocked`/`block_reason` columns, migration 0044) for
+// staff abuse review — a rejected attempt used to leave no trace anywhere.
+// Still not enterprise-grade, vendor-operated moderation, but a real
+// two-layer defense using only the already-provisioned Groq key (no new
+// moderation vendor).
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
   buildSystemPrompt,
   checkQueryForDisallowedContent,
+  LLAMA_GUARD_MAX_TOKENS,
+  LLAMA_GUARD_MODEL,
   looksLikeSystemPromptLeak,
+  parseLlamaGuardVerdict,
+  reasonForLlamaGuardVerdict,
   SAFE_FALLBACK_ON_SUSPECTED_LEAK,
+  SAFE_FALLBACK_ON_UNSAFE_OUTPUT,
 } from './moderation.ts';
 import {
   boundHistory,
@@ -112,6 +122,37 @@ function memberIdFromAuthHeader(req: Request): string | null {
     return typeof payload.sub === 'string' ? payload.sub : null;
   } catch {
     return null;
+  }
+}
+
+// Real ML-based classification via Groq's Llama Guard 3 model — see
+// ./moderation.ts section 4 for the full design rationale. Deliberately
+// fails open (returns unflagged) on any transport/parse failure rather than
+// throwing: this is a defense-in-depth layer on top of the regex pre-filter
+// + rate limit + injection hardening already in place, not the sole
+// safety mechanism, so an outage here should degrade to "no extra ML
+// check this call" rather than take down the whole advisor feature.
+async function classifyContentSafety(apiKey: string, text: string): Promise<import('./moderation.ts').LlamaGuardVerdict> {
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: LLAMA_GUARD_MODEL,
+        messages: [{ role: 'user', content: text }],
+        max_tokens: LLAMA_GUARD_MAX_TOKENS,
+      }),
+    });
+    if (!res.ok) {
+      console.warn(`ai-advisor-proxy: Llama Guard classification call returned ${res.status}; failing open (treating as unflagged).`);
+      return { flagged: false, categories: [] };
+    }
+    const body = await res.json();
+    const raw: string = body.choices?.[0]?.message?.content ?? '';
+    return parseLlamaGuardVerdict(raw);
+  } catch (e) {
+    console.warn(`ai-advisor-proxy: Llama Guard classification call threw (${e}); failing open (treating as unflagged).`);
+    return { flagged: false, categories: [] };
   }
 }
 
@@ -193,15 +234,69 @@ serve(async (req) => {
       throw e;
     }
 
+    // Records a rejected attempt to public.ai_advisor_logs -- deliberately
+    // scoped to CONTENT-moderation rejections only (regex pre-filter,
+    // history-content bypass, ML classifier below), not shape-validation
+    // 400s or the 429 rate limit above (see migration 0044's header for why
+    // those are excluded). Uses the same service-role `supabase` client
+    // already created for the rate-limit RPC -- bypasses RLS the same way
+    // that call does, so no new client-facing insert path is opened.
+    // Best-effort: a logging failure must never block the 400 the caller is
+    // about to receive, so any insert error is only logged server-side, not
+    // thrown. `loggedText` defaults to the live query, but a history-
+    // triggered block passes the actual offending history entry text
+    // instead (see the historyFilter call site below) — without this
+    // override, a history-triggered block would log the current, entirely
+    // innocuous live query with no visible connection to why the request
+    // was actually rejected, defeating the point of logging it at all.
+    const logBlockedRequest = async (reason: string, loggedText: string = query): Promise<void> => {
+      const { error } = await supabase
+        .from('ai_advisor_logs')
+        .insert({ member_id: memberId, advisor_type, query: loggedText, blocked: true, block_reason: reason });
+      if (error) console.error(`ai-advisor-proxy: failed to log blocked request: ${error.message}`);
+    };
+
     // Basic content pre-filter — cheap keyword/pattern matching only (see
     // ./moderation.ts for the full honest-scope note). Applied to every
     // history entry (both `query` and `response` — see
     // checkHistoryForDisallowedContent's doc comment for why `response`
     // needs this too) as well as the live query.
     const historyFilter = checkHistoryForDisallowedContent(history);
-    if (historyFilter.blocked) throw new HttpError(400, historyFilter.reason);
+    if (historyFilter.blocked) {
+      await logBlockedRequest(historyFilter.reason, historyFilter.matchedText);
+      throw new HttpError(400, historyFilter.reason);
+    }
     const preFilter = checkQueryForDisallowedContent(query);
-    if (preFilter.blocked) throw new HttpError(400, preFilter.reason);
+    if (preFilter.blocked) {
+      await logBlockedRequest(preFilter.reason);
+      throw new HttpError(400, preFilter.reason);
+    }
+
+    // ML-based classification (Groq Llama Guard) — a real second-pass safety
+    // classifier layered on top of the regex pre-filter above, closing the
+    // "no ML-based classifier" gap docs/AI_MODULES.md §6/§7 named as the
+    // single highest-priority remaining item (see ./moderation.ts's own
+    // section-4 writeup for the full design rationale). Runs only on the
+    // live query, not every history entry — history was already filtered as
+    // a live query in an earlier request through this same pipeline, and
+    // classifying up to 12 history fields per request (6 exchanges × 2
+    // fields) on every call would multiply Groq cost for little marginal
+    // safety benefit over the regex history check already in place.
+    //
+    // Deliberately FAILS OPEN if the Llama Guard call itself errors
+    // (network failure, non-200, malformed reply): this is a defense-in-depth
+    // layer added on top of an already-functioning regex filter + rate limit
+    // + injection hardening, not the sole safety mechanism — letting an
+    // outage in this supplementary classifier take down the entire advisor
+    // feature would trade a moderation improvement for a new denial-of-
+    // service vector. Every fail-open path logs server-side for ops
+    // visibility.
+    const queryVerdict = await classifyContentSafety(apiKey, query);
+    if (queryVerdict.flagged) {
+      const reason = reasonForLlamaGuardVerdict(queryVerdict);
+      await logBlockedRequest(reason);
+      throw new HttpError(400, reason);
+    }
 
     // Prompt-injection hardening: the member's raw query (and every history
     // query) is wrapped in clear delimiters and framed as "a question to
@@ -238,6 +333,17 @@ serve(async (req) => {
     if (looksLikeSystemPromptLeak(answer, systemPrompt)) {
       console.warn(`ai-advisor-proxy: completion for advisor_type=${advisor_type} looked like a system-prompt echo; substituting safe fallback.`);
       answer = SAFE_FALLBACK_ON_SUSPECTED_LEAK;
+    } else {
+      // Real ML classification of the model's own OUTPUT too, not just the
+      // input — closes docs/AI_MODULES.md §6's other disclosed gap ("No
+      // content moderation on output beyond the system-prompt-leak
+      // heuristic"). `else`-gated on the leak check above only to avoid a
+      // redundant extra Groq call when the answer was already replaced.
+      const answerVerdict = await classifyContentSafety(apiKey, answer);
+      if (answerVerdict.flagged) {
+        console.warn(`ai-advisor-proxy: completion for advisor_type=${advisor_type} flagged unsafe by Llama Guard (${answerVerdict.categories.join(',')}); substituting safe fallback.`);
+        answer = SAFE_FALLBACK_ON_UNSAFE_OUTPUT;
+      }
     }
 
     return new Response(JSON.stringify({ ok: true, response: answer }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

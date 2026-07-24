@@ -101,4 +101,30 @@ void main() {
       expect(AdminRepository.trainingCompletionPctFrom(progressSum: 0, totalMembers: 500, totalCourses: 0), 0);
     });
   });
+
+  group('fetchSystemHeartbeatStatus — demo mode', () {
+    // Demo mode has no real pg_cron/system_heartbeats table to observe, so
+    // it reports a synthetic "just now, healthy" status rather than a real
+    // service's absence — see the repository method's own doc comment for
+    // why this differs from a genuine "unknown" state.
+    test('reports healthy with a recent lastHeartbeatAt', () async {
+      final status = await AdminRepository().fetchSystemHeartbeatStatus();
+      expect(status.healthy, isTrue);
+      expect(status.lastHeartbeatAt, isNotNull);
+      expect(DateTime.now().difference(status.lastHeartbeatAt!).inMinutes, lessThan(1));
+    });
+  });
+
+  group('fetchAiAdvisorModerationStats — demo mode', () {
+    // The mock AI advisor service never runs real content moderation, so
+    // there is nothing real to count — this must honestly report zero, not
+    // fabricate illustrative abuse activity the way some other demo-mode
+    // stats intentionally do (e.g. fetchSystemHealth's fixed savings/loan
+    // counts).
+    test('reports zero blocked requests and zero flagged members', () async {
+      final stats = await AdminRepository().fetchAiAdvisorModerationStats();
+      expect(stats.blockedCount7d, 0);
+      expect(stats.distinctMembersFlagged7d, 0);
+    });
+  });
 }
