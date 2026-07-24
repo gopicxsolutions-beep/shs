@@ -104,7 +104,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                   label: _updating ? l10n.courseDetailSaving : (pct == 0 ? l10n.courseDetailStartCourse : l10n.courseDetailContinue),
                   fullWidth: true,
                   size: ButtonSize.lg,
-                  onPressed: !SupabaseService.isConfigured || _updating ? null : () => _continueCourse(pct, memberId),
+                  onPressed: _updating ? null : () => _continueCourse(pct, memberId),
                 ),
                 const SizedBox(height: 12),
                 AppButton(

@@ -2037,6 +2037,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get supportTicketDetailSendTooltip => 'Send message';
 
   @override
+  String supportTicketDetailResolvedBy(String name, String date) {
+    return 'Resolved by $name on $date';
+  }
+
+  @override
   String get supportTicketFormTitle => 'Raise a Ticket';
 
   @override

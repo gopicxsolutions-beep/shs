@@ -1401,6 +1401,14 @@
 
   "supportTicketDetailSendTooltip": "Send message",
 
+  "supportTicketDetailResolvedBy": "Resolved by {name} on {date}",
+  "@supportTicketDetailResolvedBy": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+
   "supportTicketFormTitle": "Raise a Ticket",
 
   "supportTicketFormSubjectLabel": "Subject",

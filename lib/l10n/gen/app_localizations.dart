@@ -3568,6 +3568,12 @@ abstract class AppLocalizations {
   /// **'Send message'**
   String get supportTicketDetailSendTooltip;
 
+  /// No description provided for @supportTicketDetailResolvedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved by {name} on {date}'**
+  String supportTicketDetailResolvedBy(String name, String date);
+
   /// No description provided for @supportTicketFormTitle.
   ///
   /// In en, this message translates to:

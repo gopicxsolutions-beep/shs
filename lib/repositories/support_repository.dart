@@ -23,7 +23,13 @@ class SupportRepository {
           .map((t) => SupportTicket(id: t.id, memberId: memberId ?? 'me', subject: t.subject, description: t.description, status: t.status, createdAt: _parseMockDate(t.date)));
       return [..._locallyAdded.reversed, ...mockTickets];
     }
-    var query = _client.from('support_tickets').select('*, profiles(name)');
+    // Explicit FK hints — `support_tickets` now has two FKs into `profiles`
+    // (`member_id`, `resolved_by`, added by migration 0052), so the
+    // unqualified embed this used to be would be ambiguous to PostgREST
+    // (the exact bug already hit `shg_join_requests`/`scheme_applications`,
+    // rounds 90/97) — confirmed live: the pre-fix query genuinely returned
+    // a `PGRST201` "more than one relationship was found" error.
+    var query = _client.from('support_tickets').select('*, profiles!member_id(name), resolved_by_profile:profiles!resolved_by(name)');
     if (!isStaff) {
       if (memberId == null) return [];
       query = query.eq('member_id', memberId);
@@ -47,7 +53,7 @@ class SupportRepository {
       final t = matches.first;
       return SupportTicket(id: t.id, memberId: 'me', subject: t.subject, description: t.description, status: t.status, createdAt: _parseMockDate(t.date));
     }
-    final row = await _client.from('support_tickets').select('*, profiles(name)').eq('id', id).maybeSingle();
+    final row = await _client.from('support_tickets').select('*, profiles!member_id(name), resolved_by_profile:profiles!resolved_by(name)').eq('id', id).maybeSingle();
     if (row == null) return null;
     return SupportTicket.fromMap(row);
   }
@@ -95,9 +101,28 @@ class SupportRepository {
     });
   }
 
-  Future<void> updateStatus(String ticketId, String status) async {
+  /// [resolvedBy] should be the calling staff member's own profile id — RLS
+  /// doesn't pin this to `auth.uid()` (an earlier attempt did, in 0052, but
+  /// it broke reopening a ticket someone else had resolved — see 0053's
+  /// doc comment for why), so this trusts the caller to pass her own id,
+  /// consistent with every other client-attributed field on this table.
+  /// `resolved_at` is deliberately never sent from here at all — a `before
+  /// update` trigger (migration 0053) stamps it server-side from the
+  /// database's own clock the instant `resolved_by` is newly set, since a
+  /// client-supplied timestamp can't be verified via a plain RLS `with
+  /// check` on an UPDATE the way `created_at = now()` can be on INSERT
+  /// (there's no column-default equivalent for updates). Only pass
+  /// [resolvedBy] on a genuine resolution/closure — an intermediate
+  /// transition like `open` → `in_progress` omits it, leaving any existing
+  /// `resolved_by`/`resolved_at` untouched (a key omitted from the payload
+  /// isn't touched by Postgres's update semantics).
+  Future<void> updateStatus(String ticketId, String status, {String? resolvedBy}) async {
     if (!_live) return;
-    await _client.from('support_tickets').update({'status': status}).eq('id', ticketId);
+    final isResolution = status == 'resolved' || status == 'closed';
+    await _client.from('support_tickets').update({
+      'status': status,
+      if (isResolution) 'resolved_by': resolvedBy,
+    }).eq('id', ticketId);
   }
 
   DateTime _parseMockDate(String s) {

@@ -2035,6 +2035,11 @@ class AppLocalizationsTe extends AppLocalizations {
   String get supportTicketDetailSendTooltip => 'సందేశం పంపండి';
 
   @override
+  String supportTicketDetailResolvedBy(String name, String date) {
+    return '$name ద్వారా $dateన పరిష్కరించబడింది';
+  }
+
+  @override
   String get supportTicketFormTitle => 'టికెట్ నమోదు చేయండి';
 
   @override

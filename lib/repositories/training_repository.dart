@@ -51,7 +51,10 @@ class TrainingRepository {
           QuizQuestion(id: '$courseId-q$i', courseId: courseId, question: mockQs[i].question, options: mockQs[i].options, correctIndex: mockQs[i].correctIndex),
       ];
     }
-    final rows = await _client.from('quiz_questions').select().eq('course_id', courseId).order('order_index');
+    // Reads the masked `quiz_questions_public` view (migration 0051), not
+    // the base table — `correct_index` is never sent to the client. See
+    // `submitQuiz`'s doc comment for the full write-up of why.
+    final rows = await _client.from('quiz_questions_public').select().eq('course_id', courseId).order('order_index');
     return (rows as List).map((r) => QuizQuestion.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -78,19 +81,52 @@ class TrainingRepository {
     }, onConflict: 'course_id,member_id');
   }
 
-  /// Called after passing the quiz — marks the course complete + certified.
+  /// Demo-mode-only: marks a course certified directly (no live backend to
+  /// grade an attempt against there). Kept as its own method because
+  /// `test/repositories/admin_dashboard_stats_staleness_test.dart` exercises
+  /// it directly to simulate "a course was just passed" without going
+  /// through the quiz UI. Live mode's only path to certification is
+  /// `submitQuiz` below — a direct live-mode upsert setting `certified:
+  /// true` is no longer even possible (RLS now rejects it; migration 0051),
+  /// so this intentionally has no live-mode branch at all.
   Future<void> markCertified(String courseId, String? memberId) async {
+    if (_live) return;
+    _locallyCertified.add(courseId);
+  }
+
+  /// Grades a quiz attempt and, on passing, marks the course certified —
+  /// the sole entry point `CourseQuizPage` should call, replacing what used
+  /// to be client-side scoring (comparing answers against `correctIndex`,
+  /// which shipped to the client via `fetchQuizQuestions` before the member
+  /// even answered) followed by an unconditional `markCertified()` call
+  /// with no score or answers sent to the server at all — a member (or any
+  /// REST-savvy user) could self-certify without ever passing, an integrity
+  /// gap for `AdminRepository.trainingCompletionPctFrom`'s federation-level
+  /// completion metric, not just the individual's own record.
+  ///
+  /// In live mode this is entirely server-side via the `submit_quiz_attempt`
+  /// RPC (`security definer`, migration 0051): the client sends only its
+  /// answer indices, the RPC compares them against the base `quiz_questions`
+  /// table's real `correct_index` (never exposed to the client — see
+  /// `fetchQuizQuestions`'s doc comment) and atomically certifies on a pass.
+  /// In demo mode there's no live backend to grade against, so this mirrors
+  /// the old client-side comparison against the demo mock data's own
+  /// `correctIndex` (still populated there — see `QuizQuestion`'s doc
+  /// comment) and reuses `markCertified()` for the local-state update.
+  Future<({bool passed, int score, int total})> submitQuiz(String courseId, String? memberId, List<QuizQuestion> questions, List<int> answers) async {
     if (!_live) {
-      _locallyCertified.add(courseId);
-      return;
+      final total = questions.length;
+      final score = List.generate(total, (i) => answers[i] == questions[i].correctIndex ? 1 : 0).reduce((a, b) => a + b);
+      final passed = score >= requiredScoreToPass(total);
+      if (passed) await markCertified(courseId, memberId);
+      return (passed: passed, score: score, total: total);
     }
-    await _client.from('course_progress').upsert({
-      'course_id': courseId,
-      'member_id': memberId,
-      'progress': 100,
-      'certified': true,
-      'completed_on': DateTime.now().toIso8601String().split('T').first,
-    }, onConflict: 'course_id,member_id');
+    final rows = await _client.rpc('submit_quiz_attempt', params: {
+      'p_course_id': courseId,
+      'p_answers': answers,
+    }) as List;
+    final row = rows.first as Map<String, dynamic>;
+    return (passed: row['passed'] as bool, score: row['score'] as int, total: row['total'] as int);
   }
 
   Future<List<Course>> fetchCertificates(String? memberId) async {

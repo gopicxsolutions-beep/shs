@@ -1997,6 +1997,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get supportTicketDetailSendTooltip => 'संदेश भेजें';
 
   @override
+  String supportTicketDetailResolvedBy(String name, String date) {
+    return '$name द्वारा $date को हल किया गया';
+  }
+
+  @override
   String get supportTicketFormTitle => 'टिकट दर्ज करें';
 
   @override

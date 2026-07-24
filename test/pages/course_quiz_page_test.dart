@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:shg_saathi/l10n/gen/app_localizations.dart';
+import 'package:shg_saathi/models/training.dart';
 import 'package:shg_saathi/pages/training/course_quiz_page.dart';
 import 'package:shg_saathi/services/supabase_service.dart';
+import 'package:shg_saathi/state/app_state.dart';
 import 'package:shg_saathi/widgets/app_button.dart';
 
 /// Regression coverage for the real per-course quiz content
@@ -12,6 +15,17 @@ import 'package:shg_saathi/widgets/app_button.dart';
 /// shared by every course regardless of its actual subject matter.
 void main() {
   AppButton submitButton(WidgetTester tester) => tester.widget<AppButton>(find.byType(AppButton));
+
+  // Grading now happens inside TrainingRepository.submitQuiz (see that
+  // method's doc comment), which _submit calls after unconditionally reading
+  // context.read<AppState>() for the caller's profile id — unlike the old
+  // client-side-scoring code, that read is no longer skipped on a failing
+  // score, so every pumpWidget needs a real AppState ancestor now, not just
+  // the ones that reach a passing submit.
+  Widget harness(String courseId) => ChangeNotifierProvider<AppState>(
+        create: (_) => AppState(),
+        child: MaterialApp(home: CourseQuizPage(courseId: courseId), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales, ),
+      );
 
   setUp(() {
     SupabaseService.isConfigured = false;
@@ -30,7 +44,7 @@ void main() {
 
   testWidgets('renders co1\'s own real quiz questions, not the old generic hardcoded set', (tester) async {
     await growSurface(tester);
-    await tester.pumpWidget(MaterialApp(home: const CourseQuizPage(courseId: 'co1'), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales, ));
+    await tester.pumpWidget(harness('co1'));
     await tester.pumpAndSettle();
 
     // co1 ("Basics of Household Budgeting") — genuine, on-topic content from
@@ -47,7 +61,7 @@ void main() {
 
   testWidgets('renders co2\'s own real quiz questions (different content than co1)', (tester) async {
     await growSurface(tester);
-    await tester.pumpWidget(MaterialApp(home: const CourseQuizPage(courseId: 'co2'), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales, ));
+    await tester.pumpWidget(harness('co2'));
     await tester.pumpAndSettle();
 
     // co2 ("Understanding Interest & EMI") — genuinely different, on-topic
@@ -61,7 +75,7 @@ void main() {
 
   testWidgets('selecting an answer in each question is tracked independently, enabling Submit once every question is answered', (tester) async {
     await growSurface(tester);
-    await tester.pumpWidget(MaterialApp(home: const CourseQuizPage(courseId: 'co1'), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales, ));
+    await tester.pumpWidget(harness('co1'));
     await tester.pumpAndSettle();
 
     expect(submitButton(tester).onPressed, isNull, reason: 'Submit should be disabled until all 5 questions are answered');
@@ -87,7 +101,7 @@ void main() {
 
   testWidgets('a not-found courseId shows the empty state instead of a generic quiz', (tester) async {
     await growSurface(tester);
-    await tester.pumpWidget(MaterialApp(home: const CourseQuizPage(courseId: 'does-not-exist'), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales, ));
+    await tester.pumpWidget(harness('does-not-exist'));
     await tester.pumpAndSettle();
 
     expect(find.text('This course could not be found'), findsOneWidget);
@@ -108,7 +122,7 @@ void main() {
 
   testWidgets('scoring below the required threshold shows the retry message and does not navigate', (tester) async {
     await growSurface(tester);
-    await tester.pumpWidget(MaterialApp(home: const CourseQuizPage(courseId: 'co1'), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales, ));
+    await tester.pumpWidget(harness('co1'));
     await tester.pumpAndSettle();
 
     // Answer all 5 questions, deliberately getting only 3 right (below the

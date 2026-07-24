@@ -20,13 +20,6 @@ class _QuizData {
   const _QuizData(this.course, this.questions);
 }
 
-/// The number of correct answers required to pass a quiz of [total]
-/// questions. Proportional to the original fixed 3-question quiz's ≥2/3
-/// threshold (now that real per-course content means the question count
-/// varies course to course) — rounded UP so a longer quiz never becomes
-/// easier to pass than the original 2-out-of-3 bar.
-int requiredScoreToPass(int total) => (total * 2 / 3).ceil();
-
 /// Real, per-course quiz content fetched from `public.quiz_questions`
 /// (`TrainingRepository.fetchQuizQuestions`) in live mode, or
 /// `lib/data/training.dart`'s `quizQuestions` map in demo mode — no longer
@@ -45,17 +38,22 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
   bool _submitting = false;
 
   Future<void> _submit(List<QuizQuestion> questions) async {
-    final score = List.generate(questions.length, (i) => _answers[i] == questions[i].correctIndex ? 1 : 0).reduce((a, b) => a + b);
-    final required = requiredScoreToPass(questions.length);
-    final passed = score >= required;
-    if (!passed) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.courseQuizScoreResult(score, questions.length))));
-      return;
-    }
     setState(() => _submitting = true);
     final appState = context.read<AppState>();
     try {
-      await _repo.markCertified(widget.courseId, appState.profile?.id);
+      // Grading (and, on a pass, certification) now happens inside
+      // `submitQuiz` itself — server-side via the `submit_quiz_attempt` RPC
+      // in live mode, so the client never decides its own pass/fail and
+      // never needs to have seen the correct answers beforehand. See
+      // `TrainingRepository.submitQuiz`'s doc comment for the full write-up
+      // of the self-certification gap this replaces.
+      final result = await _repo.submitQuiz(widget.courseId, appState.profile?.id, questions, _answers.cast<int>());
+      if (!result.passed) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.courseQuizScoreResult(result.score, result.total))));
+        }
+        return;
+      }
       if (mounted) {
         // Navigate first, then show on the captured messenger — showing
         // before navigating drops the SnackBar, since context.go() replaces

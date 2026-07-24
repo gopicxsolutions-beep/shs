@@ -8,6 +8,8 @@ class SupportTicket {
   final String? description;
   final String status; // open | in_progress | resolved | closed
   final DateTime createdAt;
+  final String? resolvedByName;
+  final DateTime? resolvedAt;
 
   const SupportTicket({
     required this.id,
@@ -17,6 +19,8 @@ class SupportTicket {
     this.description,
     required this.status,
     required this.createdAt,
+    this.resolvedByName,
+    this.resolvedAt,
   });
 
   factory SupportTicket.fromMap(Map<String, dynamic> map) => SupportTicket(
@@ -32,6 +36,8 @@ class SupportTicket {
         // show the wrong calendar day for a ticket filed near local
         // midnight.
         createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
+        resolvedByName: (map['resolved_by_profile'] as Map<String, dynamic>?)?['name'] as String?,
+        resolvedAt: map['resolved_at'] != null ? DateTime.parse(map['resolved_at'] as String).toLocal() : null,
       );
 }
 

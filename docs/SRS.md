@@ -599,7 +599,13 @@ caller's read to her own tickets regardless of what query shape the client
 sends. Status changes (open/in_progress/resolved/closed) are staff-only, both
 in the UI and at the RLS layer — closing a gap where a member could otherwise
 self-close her own complaint via a direct API call even though no UI ever
-exposed that action.
+exposed that action. Moving a ticket to `resolved`/`closed` records which
+staff account did it and when (`resolved_by`/`resolved_at`, mirroring
+`shg_join_requests.decided_by` and `scheme_applications.decided_by`/
+`decided_at`) — the timestamp is stamped server-side by a trigger rather than
+trusted from the client, and reopening an already-resolved ticket (moving it
+back to `open`/`in_progress`) is an explicitly supported workflow even when
+done by a different staff member than the one who resolved it.
 
 FAQs are fully static content, not backed by any table. Voice Support follows
 the same "record → transcribe → answer" state machine as the AI Voice

@@ -1052,6 +1052,8 @@
 
   "supportTicketDetailSendTooltip": "संदेश भेजें",
 
+  "supportTicketDetailResolvedBy": "{name} द्वारा {date} को हल किया गया",
+
   "supportTicketFormTitle": "टिकट दर्ज करें",
 
   "supportTicketFormSubjectLabel": "विषय",

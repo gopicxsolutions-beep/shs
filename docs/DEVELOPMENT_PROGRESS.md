@@ -258,10 +258,10 @@ Meetings, etc.:
 | Livelihoods | ✅ done | Model, repository, 3 screens (home/entry/detail with Update Progress dialog). Live-tested DB/RLS + full UI golden path (see session log) — found and fixed a real Role-Select-skip bug in the process |
 | Marketplace (products/orders/reviews) | ✅ done | 6 screens (home, product detail, add product, orders, order detail, reviews). Live-tested DB/RLS (own-listing insert, deny-listing-as-another-seller, cross-shg browse, seller-only order status update) and UI (grid + product detail render correctly). Needs Supabase Storage for product images eventually (not wired) |
 | Government schemes | ✅ done | Model, repository, 4 screens (catalog, detail, eligibility checker, tracking). Eligibility checker is a client-side keyword-matching heuristic against each scheme's eligibility text, not a real rules engine — documented as a deliberate placeholder. Live-tested DB/RLS (own-application insert, deny-apply-for-another-member, deny-direct-catalog-edit) and UI (status badges render correctly, eligibility filter toggle verified to actually change results) |
-| Training | ✅ done | Model, repository, 4 screens (catalog, course detail, quiz, certificates). Quiz is a small generic 3-question set (not tied to specific course content — no quiz-content table in the schema), passing ≥2/3 marks the course certified; documented as a placeholder. Live-tested DB/RLS (own-progress insert, deny-progress-for-another-member, deny-direct-catalog-edit, shared shg visibility) and UI (progress bars, radio quiz, disabled-in-demo-mode submit) |
+| Training | ✅ done | Model, repository, 4 screens (catalog, course detail, quiz, certificates). Quiz content is now real and per-course (`public.quiz_questions`, migration 0041, read via the masked `quiz_questions_public` view added in migration 0051 that never exposes `correct_index` to the client), not the old single generic 3-question set. Grading is entirely server-side via the `submit_quiz_attempt` security-definer RPC — the client sends only its answer indices, never sees correct answers in advance, and can no longer self-certify by calling the old direct upsert shape (RLS-rejected). Proportional ≥2/3 pass threshold (`requiredScoreToPass`) scales with each course's actual question count. Live-tested DB/RLS end to end (masked view hides answers, base table correctly `permission denied` even before RLS evaluates, RPC grades and certifies atomically on a pass, old self-certify upsert shape now rejected, legitimate progress-only upsert still works, failing score leaves no `course_progress` row) and UI (progress bars, per-course radio quiz, disabled-in-demo-mode submit, pass/fail messaging) |
 | Digital payments | ✅ done | `PaymentProcessor` abstraction (`lib/services/payment_processor.dart`) with a `MockPaymentProcessor` that always succeeds and synthesizes a reference — swapping in a real gateway later is a one-file change. 3 screens (home, scan & pay, history). Live-tested DB/RLS: payments are **private to the owning member**, not shared shg-wide like savings/loans (deliberate — confirmed correct), deny-recording-for-another-member also confirmed. UI-tested: amount entry, mode chips, disabled-in-demo-mode Pay button |
 | Announcements | ✅ done | Model, repository, 2 screens (home list with unread-dot indicator + leader/staff-only post dialog, detail with read-receipt tracking via `announcement_reads`). Global (`shg_id is null`) + shg-scoped announcements merged via `.or()` query. Live-tested DB/RLS (member-post denied, leader-post allowed, shared shg read visibility, own read-receipt insert allowed, marking another member's receipt denied) and UI (list + detail render correctly in demo mode, member correctly sees no post button) |
-| Support (chat/voice/FAQ/tickets) | ✅ done | Model, dual-mode repository, 5 screens (hub, full ticket list, raise-ticket form, ticket detail/chat thread with staff status-change menu, FAQ accordion) + `VoiceSupportService` abstraction (`MockVoiceSupportService` cycles canned Q&A pairs) for the record→transcribe→answer flow, wired incl. `/app/support/ticket/:id`. Tickets are private per-member, visible to staff (crp/clf/admin) — staff see all tickets with the member's name shown; member sees only their own. Live-tested DB/RLS (own-ticket insert, deny-insert-for-another-member, own-ticket read, deny-read-for-non-owner-non-staff, staff-can-read-any, own-message insert, deny-message-for-non-owner-non-staff, staff-can-message-any, own-status-update, deny-status-update-for-non-owner-non-staff, staff-can-update-any — 10/10 passed) and UI (hub, ticket list, chat bubbles with correct mine/theirs alignment, raise-ticket form validation, FAQ accordion, voice support page all render correctly) |
+| Support (chat/voice/FAQ/tickets) | ✅ done | Model, dual-mode repository, 5 screens (hub, full ticket list, raise-ticket form, ticket detail/chat thread with staff status-change menu, FAQ accordion) + `VoiceSupportService` abstraction (`MockVoiceSupportService` cycles canned Q&A pairs) for the record→transcribe→answer flow, wired incl. `/app/support/ticket/:id`. Tickets are private per-member, visible to staff (crp/clf/admin) — staff see all tickets with the member's name shown; member sees only their own. A resolved/closed ticket now carries `resolved_by`/`resolved_at` attribution (migrations 0052/0053, mirroring the pattern already used by `shg_join_requests.decided_by` and `scheme_applications.decided_by`/`decided_at`) — `resolved_at` is stamped by a `before update` trigger from the server's own clock rather than trusted from the client, and reopening a previously-resolved ticket by a different staff member is a supported, unblocked workflow. Live-tested DB/RLS (own-ticket insert, deny-insert-for-another-member, own-ticket read, deny-read-for-non-owner-non-staff, staff-can-read-any, own-message insert, deny-message-for-non-owner-non-staff, staff-can-message-any, own-status-update, deny-status-update-for-non-owner-non-staff, staff-can-update-any, resolution-timestamp-server-stamped-not-client-trusted — 11/11 passed) and UI (hub, ticket list, chat bubbles with correct mine/theirs alignment, raise-ticket form validation, FAQ accordion, voice support page all render correctly) |
 | AI Advisors (financial/scheme/market/voice) | ✅ done | Model, dual-mode repository, hub + one shared `AiAdvisorChatPage(advisorType, title, hint)` reused across all 3 chat routes (identical shape, scoped by type) — chat bubbles + composer, wired incl. `/app/ai/financial-advisor` etc. `AiAdvisorService` abstraction (`MockAiAdvisorService` keyword-matches canned responses per advisor type, generic fallback otherwise) — unlike Payments/Support, the ask flow works in both demo and live mode (only the log persistence is live-only), so the chat is fully interactive without a Supabase connection. Live-tested DB/RLS (own-log insert, deny-insert-for-another-member, own-log read, deny-read-for-non-owner-non-staff, staff-can-read-any — 5/5 passed), fixtures cleaned up and verified zero remnants. UI-tested: hub renders all 3 advisor cards, Financial Advisor chat loads mock history correctly, composer input focuses and accepts real keystrokes (confirmed via `activeElement.value`) — the final send-button tap hit the same coordinate-calibration friction as the Voice Support mic button in the prior iteration and wasn't click-verified, but the ask()/setState logic is structurally identical to the already-proven Support ticket composer. **Spec gap closed**: added a 4th, distinct "AI Voice Assistant" (`ai_voice_assistant_page.dart`) — deliberately separate from Support's generic FAQ-style Voice Support (`support_voice_page.dart`). New `VoiceRecognitionService`/`MockVoiceRecognitionService` abstraction recognizes a small fixed set of intents (loan details, savings-this-month, read-announcements, add-savings) in Telugu/Hindi/English (the spec's exact example Telugu phrases are the Telugu command set), then the *page* resolves each intent against real repositories (`LoanRepository`/`SavingsRepository`/`AnnouncementRepository`) rather than returning a canned answer — this is what makes it genuinely different from Voice Support, not just a reskin. "Fill forms through voice" from the spec is honestly scoped to voice-triggered navigation into the target form (real dictation into fields isn't feasible without a live STT engine) — recognizing "add a savings entry" navigates to the Savings Entry page. No new RLS surface (reuses repositories already proven in the Loans/Savings/Announcements modules). UI-tested on flutter-web-demo: confirmed via the semantics tree that Telugu glyphs render as real script (not tofu boxes) in a screenshot, then cycled through all 4 intents by tapping the mic repeatedly — each produced a real, data-accurate response (a real loan's outstanding balance, "₹0 this month across 0 entries" because the mock savings dates genuinely aren't in the current month, two real announcement titles), and the 4th correctly navigated to `/app/savings/entry` |
 | Reports | ✅ done | Models, dual-mode repository, role-gated top hub (My Reports always; SHG Reports for leader/staff; Federation Reports for crp/clf/admin), wired incl. this also activates the pre-existing dashboard link at `Paths.reportsMember`. The repository always computes client-side from live tables (savings/loans/meetings/attendance) — a documented placeholder for the server-side Edge Function generation `report_snapshots` (staff-write-only) is meant for; the Flutter client never reads/writes that table directly yet. **Spec gap closed**: each of the 3 top-level pages is now itself a hub linking to the spec's named sub-reports rather than one combined stat page — Member: Savings Statement (reuses the existing `SavingsStatementPage`), Loan Statement (new), Attendance Report (new, backed by a new `MeetingRepository.fetchAttendanceHistory()`); SHG: Financial Summary (the original combined page, kept and renamed), Audit Report (reuses the existing Financial Records audit trail at `Paths.financialAudit`), Performance Report (new — attendance % + a monthly attendance trend chart); Federation: Village-wise SHGs (new, live-grouped by `shgs.village`), Loan Recovery (reuses `AnalyticsRepository.fetchPlatformKpis`), Savings Growth (new — monthly federation-wide savings trend chart). The trend-chart infrastructure (`lib/models/trend.dart`, `lib/repositories/trend_repository.dart`, `lib/widgets/trend_chart.dart`, an `fl_chart` `LineChart` wrapper) was built once here and is reused unchanged by the Analytics dashboard's 4 trend charts (next task) — not duplicated. Live-tested: no new RLS surface was introduced (all 9 sub-reports reuse tables/policies already proven in the Reports/Analytics iterations), so verification focused on confirming the new query shapes (`meetings`/`meeting_attendance` join for attendance history, `shgs`+`savings_entries` grouping for village-wise) execute correctly against a fixture with known data — matched expectations exactly; fixtures cleaned up and verified zero remnants. UI-tested all 9 screens on flutter-web-demo: hub role-gating still correct, Loan Statement/Attendance Report/Performance Report (with its attendance trend line chart)/Village-wise SHGs/Loan Recovery/Savings Growth (with its savings trend line chart) all render correctly with mock data — the `fl_chart` `LineChart` renders a real visible curve with data points, no console errors beyond the pre-existing unrelated `app_shell.dart` 2px overflow |
 | Analytics | ✅ done | Models (`PlatformKpis`/`ShgHealth`), dual-mode repository (composes `ReportRepository.fetchShgReport` for per-shg member/savings/attendance figures rather than duplicating that logic), 3 screens (platform dashboard, SHGs monitoring list, per-SHG detail), wired incl. `/app/analytics/shg/:id` — this also activates the pre-existing CRP/CLF/Admin dashboard links (`Paths.analytics`, `Paths.analyticsShgList`, `Paths.analyticsShgDetail`) that were pointing at `ComingSoon` stubs. Same placeholder story as Reports: `analytics_kpis` exists for a future Edge Function to populate (staff-write-only), the Flutter client always computes client-side for now. SHG "health score" is currently the SHG's average completed-meeting attendance rate — a real, defensible proxy metric documented as a placeholder for a richer future formula. Live-tested DB/RLS: `analytics_kpis` staff-write-only (staff insert allowed, member insert denied), member can read their own SHG's scoped rows but not global (`shg_id is null`) rows, staff can read global rows — 6/6 checks passed; fixtures cleaned up and verified zero remnants. UI-tested on flutter-web-demo: all 3 screens render correctly with mock data (platform KPIs, SHG list with health progress bars, per-SHG detail). **Spec gap closed**: the platform dashboard now also shows the spec's 4 trend charts (Savings/Loan/Revenue/Attendance Trends), all federation-wide, reusing the `TrendRepository`/`TrendChart` infrastructure built for the Reports module's Federation "Savings Growth" report rather than duplicating `fl_chart` setup a 5th time — `revenueTrend()` reads `marketplace_orders` (federation-wide only, since orders aren't scoped to a single SHG in the schema and the only caller is this staff-only view). Live-tested: no new RLS surface (`marketplace_orders_select_related`'s existing `is_staff()` bypass already covers the new revenue query, confirmed by reading the policy directly rather than re-testing); verified via the semantics accessibility tree that all 4 charts render with real data (`"Savings Trends Feb Feb Mar Mar Apr Apr May May Jun Jun Jul"` etc.) and a screenshot confirmed a real visible line-chart curve, no console errors beyond the pre-existing unrelated `app_shell.dart` overflow |
@@ -8096,3 +8096,232 @@ negative when the actual gap is a *missing* clause rather than a wrong one
 — the fix here wasn't finding a bug in existing logic, it was noticing an
 entire category of protection (self-decision blocking) that every sibling
 table had and this one simply never got.
+
+## Update (round 98) — Training: closed a real self-certification gap the audit judged acceptable, disagreeing with its own risk framing
+
+User asked for full end-to-end testing of the Training feature
+(`training_courses` catalog, `course_progress`, `quiz_questions`). An audit
+agent found the module's RLS/i18n/overflow/attribution surface already
+solid — no embed ambiguity, no Realtime usage, `AdminRepository.
+trainingCompletionPctFrom` still correctly keyed by id (not name) and its
+own regression tests still pass, `certificates_page.dart` already shows a
+completion date (fixed in an earlier round), and all 25+ `training*`/
+`course*`/`certificates*` i18n keys present and used in all three languages
+— and flagged the module's self-certification design (`course_progress_
+write_self_or_staff` has no column lock on `certified`/`progress`) as
+**intentional and already documented** across five migration comments and
+`docs/SRS.md` FR-TRN-2/FR-TRN-3, concluding "there's no decider role to
+begin with" so the round-92/97 self-escalation shape doesn't apply here.
+
+Reading the same code independently, this round reached a different
+conclusion and acted on it. The SRS honestly discloses the *progress bar*
+as a placeholder (flat +50%-per-tap, no real content tracking) and the
+*quiz content* as real (genuine per-course questions, proportional ≥2/3
+threshold) — but nowhere discloses that the pass/fail decision itself is
+entirely unenforceable: `quiz_questions_select_all` let any authenticated
+user read `correct_index` directly (confirmed live — the answer key
+shipped to the client before a single question was answered), and
+`course_progress_write_self_or_staff`'s `with check` placed zero
+restriction on what a member could write to her own row.
+`TrainingRepository.markCertified()`'s live-mode path was a bare
+`upsert({progress: 100, certified: true, completed_on: today})` with **no
+score or answers sent to the server at all** — a member, or anyone willing
+to skip the quiz UI and call the endpoint directly, could self-certify
+without ever answering a question. Unlike self-tracked data that's honestly
+self-reported by design (Livelihood's investment/revenue figures, the
+Training progress bar itself), a quiz that advertises "requires ≥2/3
+correct" is presenting itself as a real gate — and this one fed
+`AdminRepository.trainingCompletionPctFrom`, a federation-level SHG-health
+metric CRP/CLF/Admin see, not just the individual's own record. Treated the
+audit's "documented, so it's fine" verdict as a hypothesis to re-examine
+against what the SRS actually promises, not a conclusion to defer to.
+
+Fixed via migration `0051` with the same three-part pattern already
+established elsewhere in this schema:
+- **Masked view** (`quiz_questions_public`, mirrors `shg_own_masked`) —
+  same rows as the base table, `correct_index` excluded. Base-table
+  `SELECT` revoked from `authenticated` entirely, so the client can't just
+  ask a raw REST call for the column its own query omits — RLS alone
+  can't hide one column from an otherwise-visible row, only a `REVOKE` +
+  view can.
+- **Server-side grading RPC** (`submit_quiz_attempt`, `security definer`,
+  mirrors `add_financial_ledger_entry`/`decide_scheme_application`) — the
+  client sends only its answer indices; the RPC reads the real
+  `correct_index` from the base table (never exposed to the client) and
+  atomically certifies on a pass, using the exact same proportional ≥2/3
+  threshold already used client-side for the pass/fail message.
+- **Column-lock** (`course_progress_locked_fields`, mirrors
+  `loans_locked_fields`) — a member's own direct write can never change
+  `certified`/`completed_on` from whatever they already are; only the RPC
+  (bypasses RLS as `security definer`) or staff can actually set them. The
+  legitimate progress-only "Continue" button flow is untouched — it never
+  wrote to those two columns anyway.
+
+Flutter-side: `TrainingRepository.fetchQuizQuestions()` now reads the
+masked view; a new `submitQuiz()` replaces the page's own client-side
+scoring, returning `(passed, score, total)` from either the RPC (live) or
+an equivalent demo-mode-only computation (no live backend there to verify
+against, so demo mode keeps the old client-side comparison against its own
+mock `correctIndex` — `QuizQuestion.correctIndex` is now nullable and only
+ever populated in demo mode). `markCertified()` is now demo-mode-only
+(kept because `admin_dashboard_stats_staleness_test.dart` calls it
+directly); its live-mode branch is gone since RLS would reject it anyway.
+`course_quiz_page.dart`'s `_submit` no longer grades locally at all — it
+calls `submitQuiz` and branches on the result. `requiredScoreToPass` moved
+from the page to `lib/models/training.dart` so the repository's demo
+branch and the page's display logic share one formula instead of
+duplicating it (updated `test/pages/course_quiz_page_test.dart`'s import
+to match).
+
+One smaller gap the audit found and this round also fixed:
+**`course_detail_page.dart`'s Start/Continue button was disabled outright
+in demo mode** (`!SupabaseService.isConfigured || _updating ? null : ...`),
+inconsistent with every sibling self-progress action in the app (Livelihood,
+Loans, Savings, Meetings all leave the button enabled in demo mode and show
+a "not saved" toast afterward) — and made the button's own demo-mode
+snackbar branch unreachable dead code. One-line fix to match the
+established convention.
+
+Verified live against the real deployed migration end to end: inserted a
+real `__TEST__` course with 3 real questions; confirmed the masked view
+returns questions with no `correct_index` while a direct authenticated
+query against the base table now fails with a genuine `permission denied`
+error (not just an RLS 0-row filter — the `REVOKE` blocks it before RLS
+even evaluates); called `submit_quiz_attempt` with all-correct answers and
+confirmed it both returned `passed:true` and actually wrote
+`certified:true`/`completed_on` to `course_progress`; reset the row and
+confirmed a direct client upsert attempting the exact old
+`markCertified()` shape (`certified: true` set directly) is now rejected
+with a real RLS violation; confirmed a legitimate progress-only upsert
+(the "Continue" button's actual write shape) still succeeds unaffected;
+confirmed a failing-score RPC call correctly returns `passed:false` and
+leaves no `course_progress` row behind at all. All test fixtures deleted
+afterward and re-confirmed via SQL that zero rows remain across
+`training_courses`/`quiz_questions`/`course_progress`.
+
+`flutter analyze`: 0 issues. `flutter test`: found a real regression the
+first pass through this write-up assumed away. Moving grading into
+`submitQuiz` means `_submit` now calls `context.read<AppState>()`
+*unconditionally*, before it knows pass or fail — previously, a failing
+score returned early (client-side score check) and never touched
+`AppState` at all, so `course_quiz_page_test.dart`'s bare
+`MaterialApp(home: CourseQuizPage(...))` test harness (no `AppState`
+ancestor) had never exercised that line. The one test in the file that
+actually taps Submit — "scoring below the required threshold" — started
+throwing a `ProviderNotFoundError` genuinely, not a flaky timing issue:
+confirmed by running that single test file in isolation and reading the
+full stack trace, which pointed straight at the new unconditional
+`context.read<AppState>()` call. Fixed by adding a `harness()` helper
+wrapping every `pumpWidget` call in this file with
+`ChangeNotifierProvider<AppState>`, matching the established convention
+already used by `savings_entry_page_test.dart` and ~30 other page tests —
+not a workaround, since a bare `MaterialApp` with no `AppState` ancestor
+was never a realistic stand-in for how this page is actually mounted
+(`router.dart` always has the real `AppState` provider above every route).
+Full suite: 940/940 passing after the fix, confirmed with a second clean
+run. (Separately, this session also hit ~20 minutes of multiple `flutter
+test` invocations deadlocking each other — traced to the machine's C:
+drive having dropped to 133MB free because 147 stale `flutter_tools.*`
+temp directories, 42GB total, had accumulated in `%LOCALAPPDATA%\Temp`
+from crashed/killed runs going back a week; clearing them was unrelated to
+this round's code but is what let a clean test run complete at all.) This
+round is the inverse of round 93's "audit found a plausible-looking bug
+that turned out to be stale, verify before fixing" — here the audit's own
+conclusion ("already documented, so acceptable") was the thing worth
+pressure-testing against what was actually promised in the docs, and held
+up to closer reading as a real gap worth closing rather than an accepted
+design tradeoff. The test-harness gap this round's own fix introduced is
+itself an instance of the same lesson: a behavior change that only fires
+on one code path (the failing-score path) needs that path itself
+exercised, not just the passing one.
+
+## Update (round 99) — Support: added ticket-resolution attribution, caught and fixed a self-inflicted RLS design flaw before it ever shipped
+
+User asked for full end-to-end testing of the Support feature
+(`support_tickets`, `support_messages`). An audit agent found this module
+already extensively hardened across five prior migrations (`0002`, `0013`,
+`0024`, `0027`, `0029`, `0038`) — no PostgREST embed ambiguity (each table
+had exactly one FK into `profiles` before this round), no Realtime usage
+(the chat thread reloads manually after sending, honestly documented in
+`docs/SRS.md` as not live-updating), `support_tickets_update_staff` already
+correctly staff-only with no member self-close branch, no UPDATE/DELETE
+policy on `support_messages` at all (neither party can edit/delete a sent
+message after the fact), i18n complete across all 6 pages in all three
+languages, and the Voice Support feature confirmed genuinely non-generative
+(fixed keyword-matching against a canned FAQ bank, not an LLM — no
+AI-advisor-style moderation gap applies since there's no generative surface
+for it to apply to). The one real gap flagged: unlike `shg_join_requests`
+(`decided_by` since `0004`) or `scheme_applications` (`decided_by`/
+`decided_at`, round 97), a resolved ticket carried no record of which
+staff account actually resolved it or when — a genuine schema gap (the
+column never existed), not a model/UI oversight, matching the "Audit Trail
+should show who/when" bar from rounds 94/97.
+
+Fixed with `resolved_by`/`resolved_at` columns (migration `0052`) — but
+this round's real value was in catching two problems with the *first*
+attempt at the fix before either reached a live workflow, rather than
+shipping a subtly-broken column-lock the way earlier rounds occasionally
+had to correct after the fact:
+
+- **Adding `resolved_by` gave `support_tickets` a second FK into
+  `profiles`** (alongside `member_id`) — the exact embed-ambiguity class
+  from rounds 90/97. Live-verified via the real REST endpoint: the old
+  unqualified `.select('*, profiles(name))` embed now genuinely returns a
+  `PGRST201` "more than one relationship was found" error. Fixed both
+  `fetchTickets()`/`fetchTicket()` queries with explicit FK hints
+  (`profiles!member_id(name)`, aliased
+  `resolved_by_profile:profiles!resolved_by(name)`), then re-verified live
+  that the fixed queries resolve with zero ambiguity error.
+- **The first version of the fix (migration `0052`) had two design flaws,
+  both caught before any real ticket ever went through the broken path**:
+  (1) it left the client to supply `resolved_at` directly, but a `with
+  check` pin comparing a client-submitted UPDATE timestamp against the
+  server's own `now()` can never actually match (unlike `created_at =
+  now()` on INSERT, which works only because it's backed by a column
+  DEFAULT evaluated inside the same transaction — there's no update-time
+  equivalent), which would have silently rejected every real resolution
+  attempt; and (2) it pinned `resolved_by = auth.uid()` in the `with
+  check`, which applies to the row's *final* state on every update, not
+  just the ones that actually change it — since
+  `support_ticket_detail_page.dart` lets staff move a ticket to any of its
+  4 statuses at any time (including reopening an already-resolved one) and
+  `updateStatus()` only sends `resolved_by` on an actual resolution/
+  closure, reopening a ticket a *different* staff member had resolved
+  would leave the old `resolved_by` unchanged in the new row — no longer
+  equal to the reopening caller's own `auth.uid()`, incorrectly rejecting
+  a completely legitimate, common workflow. Fixed in migration `0053`: a
+  `before update` trigger (mirroring this schema's existing
+  `set_updated_at()` pattern from `0006`) stamps `resolved_at` from the
+  server's own clock the instant `resolved_by` is newly set, overriding
+  whatever the client sent; and the `resolved_by = auth.uid()` pin was
+  dropped entirely rather than reworked, since guarding against a staff
+  account misattributing a resolution to a colleague is real but narrow
+  for an internal ticketing tool, and not worth blocking a genuine
+  everyday workflow to prevent.
+
+Verified live against the real deployed migrations: inserted a real
+`__TEST__` ticket, directly attempted to set `resolved_at` to a deliberately
+wrong value (`2020-01-01`) alongside a real `resolved_by`/`status` update —
+confirmed the trigger overrode it with the actual current server timestamp
+regardless of what was sent. Re-confirmed via the deployed policy text that
+`support_tickets_update_staff`'s `with check` no longer references
+`resolved_by` at all, so the reopen-blocking scenario is fixed by
+construction rather than needing a second staff identity to round-trip
+test (this live project has exactly one real profile, role `leader` — the
+same disclosed limitation as round 97's scheme-decision fix). Confirmed the
+fixed `profiles!member_id`/`resolved_by_profile` embed resolves with zero
+ambiguity error via a real REST call. Test fixture deleted afterward and
+re-confirmed via SQL that zero `__TEST__`-prefixed rows remain.
+
+`flutter analyze`: 0 issues (whole project). `flutter test`: 940/940
+passing (full suite, confirmed clean after the disk-space issue described
+in round 98's write-up was resolved) — no regression from this round's own
+changes, which were additive: new nullable model fields, an
+explicit-FK-hint query rewrite, and one new repository parameter with a
+default. This round's actual finding wasn't in the module being audited —
+it was in this round's own first-draft fix, caught by tracing the exact
+UI call pattern (`_statuses` always includes all 4 transitions, `
+updateStatus()` only conditionally sends `resolved_by`) rather than
+assuming a `with check` pin that looks like every other one in this schema
+would behave the same way in an UPDATE context that most of them were
+actually written for INSERT.

@@ -1052,6 +1052,8 @@
 
   "supportTicketDetailSendTooltip": "సందేశం పంపండి",
 
+  "supportTicketDetailResolvedBy": "{name} ద్వారా {date}న పరిష్కరించబడింది",
+
   "supportTicketFormTitle": "టికెట్ నమోదు చేయండి",
 
   "supportTicketFormSubjectLabel": "విషయం",

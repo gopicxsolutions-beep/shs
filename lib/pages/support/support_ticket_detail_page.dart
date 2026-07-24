@@ -96,12 +96,12 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
     }
   }
 
-  Future<void> _changeStatus(String status) async {
+  Future<void> _changeStatus(String status, String? staffId) async {
     if (_changingStatus) return;
     final l10n = AppLocalizations.of(context)!;
     setState(() => _changingStatus = true);
     try {
-      await _repo.updateStatus(widget.ticketId, status);
+      await _repo.updateStatus(widget.ticketId, status, resolvedBy: (status == 'resolved' || status == 'closed') ? staffId : null);
       if (mounted) _key.currentState?.reload();
     } catch (_) {
       if (mounted) {
@@ -147,7 +147,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                     ),
                     if (isStaff && SupabaseService.isConfigured)
                       PopupMenuButton<String>(
-                        onSelected: _changeStatus,
+                        onSelected: (status) => _changeStatus(status, memberId),
                         itemBuilder: (context) => _statuses.map((s) => PopupMenuItem(value: s, child: Text(_statusLabel(l10n, s)))).toList(),
                         child: AppBadge(text: _statusLabel(l10n, ticket.status), tone: _statusTones[ticket.status] ?? BadgeTone.neutral),
                       )
@@ -160,6 +160,14 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: Text(ticket.description!, style: AppTheme.sans(13, color: Neutral.c600)),
+                ),
+              if (ticket.resolvedByName != null && ticket.resolvedAt != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Text(
+                    l10n.supportTicketDetailResolvedBy(ticket.resolvedByName!, DateFormat('dd MMM yyyy').format(ticket.resolvedAt!)),
+                    style: AppTheme.sans(11, color: Neutral.c500),
+                  ),
                 ),
               const Divider(height: 1),
               Expanded(
