@@ -1783,6 +1783,11 @@ class AppLocalizationsHi extends AppLocalizations {
       'आपने अभी तक किसी योजना के लिए आवेदन नहीं किया है';
 
   @override
+  String schemeTrackingDecidedBy(String name) {
+    return '$name द्वारा निर्णय लिया गया';
+  }
+
+  @override
   String get schemeApplicationsReviewApproved => 'आवेदन स्वीकृत किया गया';
 
   @override
@@ -1815,6 +1820,103 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get schemeApplicationsReviewApprove => 'स्वीकृत करें';
+
+  @override
+  String get adminSchemesTitle => 'योजनाएं प्रबंधित करें';
+
+  @override
+  String get adminSchemesAddSchemeTooltip => 'योजना जोड़ें';
+
+  @override
+  String get adminSchemesEmptyState => 'अभी तक सूची में कोई योजना नहीं है';
+
+  @override
+  String adminSchemesEditTooltip(String name) {
+    return '$name संपादित करें';
+  }
+
+  @override
+  String adminSchemesDeleteTooltip(String name) {
+    return '$name हटाएं';
+  }
+
+  @override
+  String get adminSchemesCriteriaSectionTitle => 'पात्रता मानदंड (वैकल्पिक)';
+
+  @override
+  String get adminSchemesCriteriaSectionSubtext =>
+      'सदस्य के SHG के विरुद्ध स्वचालित रूप से जांचा जाता है। ऐसी आवश्यकताओं के लिए खाली छोड़ दें जिन्हें यह ऐप स्वचालित रूप से सत्यापित नहीं कर सकता (आयु, आय, BPL स्थिति, ...) — उन्हें पात्रता टेक्स्ट में ही रखें।';
+
+  @override
+  String get adminSchemesRequiresShgMembershipLabel => 'SHG सदस्यता आवश्यक है';
+
+  @override
+  String get adminSchemesMinAgeHint => 'न्यूनतम SHG आयु महीनों में (वैकल्पिक)';
+
+  @override
+  String get adminSchemesMinGradeHint => 'न्यूनतम SHG ग्रेड (वैकल्पिक)';
+
+  @override
+  String get adminSchemesNoMinimum => 'कोई न्यूनतम नहीं';
+
+  @override
+  String get adminSchemesAddDialogTitle => 'योजना जोड़ें';
+
+  @override
+  String get adminSchemesNameHint => 'योजना का नाम';
+
+  @override
+  String get adminSchemesAgencyHint => 'एजेंसी';
+
+  @override
+  String get adminSchemesBenefitHint => 'लाभ';
+
+  @override
+  String get adminSchemesNameRequiredError => 'योजना का नाम आवश्यक है।';
+
+  @override
+  String get adminSchemesInvalidMinAgeError =>
+      'न्यूनतम SHG आयु महीनों की एक पूर्ण संख्या होनी चाहिए।';
+
+  @override
+  String get adminSchemesAddedMessage => 'योजना जोड़ी गई';
+
+  @override
+  String get adminSchemesDemoModeMessage =>
+      'डेमो मोड — योजना सेव नहीं हुई (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
+
+  @override
+  String get adminSchemesAddErrorMessage =>
+      'इस योजना को जोड़ा नहीं जा सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get adminSchemesEditDialogTitle => 'योजना संपादित करें';
+
+  @override
+  String get adminSchemesUpdatedMessage => 'योजना अपडेट हो गई';
+
+  @override
+  String get adminSchemesUpdateErrorMessage =>
+      'इस योजना को अपडेट नहीं किया जा सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get adminSchemesDeleteDialogTitle => 'योजना हटाएं?';
+
+  @override
+  String adminSchemesDeleteDialogContent(String name) {
+    return 'यह \"$name\" को सूची से हटा देगा।';
+  }
+
+  @override
+  String get adminSchemesDeletedMessage => 'योजना हटा दी गई';
+
+  @override
+  String get adminSchemesDeleteDemoModeMessage =>
+      'डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
+
+  @override
+  String get adminSchemesDeleteErrorMessage =>
+      'इस योजना को हटाया नहीं जा सका। कृपया फिर से कोशिश करें।';
 
   @override
   String get supportStatusOpen => 'खुला';

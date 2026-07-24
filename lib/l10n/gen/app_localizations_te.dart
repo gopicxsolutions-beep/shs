@@ -1819,6 +1819,11 @@ class AppLocalizationsTe extends AppLocalizations {
       'మీరు ఇంకా ఏ పథకానికి దరఖాస్తు చేయలేదు';
 
   @override
+  String schemeTrackingDecidedBy(String name) {
+    return '$name ద్వారా నిర్ణయించబడింది';
+  }
+
+  @override
   String get schemeApplicationsReviewApproved => 'దరఖాస్తు ఆమోదించబడింది';
 
   @override
@@ -1852,6 +1857,103 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get schemeApplicationsReviewApprove => 'ఆమోదించండి';
+
+  @override
+  String get adminSchemesTitle => 'పథకాలను నిర్వహించండి';
+
+  @override
+  String get adminSchemesAddSchemeTooltip => 'పథకం జోడించండి';
+
+  @override
+  String get adminSchemesEmptyState => 'ఇంకా జాబితాలో పథకాలు లేవు';
+
+  @override
+  String adminSchemesEditTooltip(String name) {
+    return '$nameని సవరించండి';
+  }
+
+  @override
+  String adminSchemesDeleteTooltip(String name) {
+    return '$nameని తొలగించండి';
+  }
+
+  @override
+  String get adminSchemesCriteriaSectionTitle => 'అర్హత ప్రమాణాలు (ఐచ్ఛికం)';
+
+  @override
+  String get adminSchemesCriteriaSectionSubtext =>
+      'సభ్యుని SHGకి వ్యతిరేకంగా స్వయంచాలకంగా తనిఖీ చేయబడుతుంది. ఈ యాప్ స్వయంచాలకంగా ధృవీకరించలేని అవసరాల కోసం (వయస్సు, ఆదాయం, BPL స్థితి, ...) ఖాళీగా వదిలేయండి — వాటిని అర్హత టెక్స్ట్‌లోనే ఉంచండి.';
+
+  @override
+  String get adminSchemesRequiresShgMembershipLabel => 'SHG సభ్యత్వం అవసరం';
+
+  @override
+  String get adminSchemesMinAgeHint => 'కనీస SHG వయస్సు నెలల్లో (ఐచ్ఛికం)';
+
+  @override
+  String get adminSchemesMinGradeHint => 'కనీస SHG గ్రేడ్ (ఐచ్ఛికం)';
+
+  @override
+  String get adminSchemesNoMinimum => 'కనీసం లేదు';
+
+  @override
+  String get adminSchemesAddDialogTitle => 'పథకం జోడించండి';
+
+  @override
+  String get adminSchemesNameHint => 'పథకం పేరు';
+
+  @override
+  String get adminSchemesAgencyHint => 'ఏజెన్సీ';
+
+  @override
+  String get adminSchemesBenefitHint => 'ప్రయోజనం';
+
+  @override
+  String get adminSchemesNameRequiredError => 'పథకం పేరు అవసరం.';
+
+  @override
+  String get adminSchemesInvalidMinAgeError =>
+      'కనీస SHG వయస్సు నెలల్లో పూర్ణ సంఖ్యగా ఉండాలి.';
+
+  @override
+  String get adminSchemesAddedMessage => 'పథకం జోడించబడింది';
+
+  @override
+  String get adminSchemesDemoModeMessage =>
+      'డెమో మోడ్ — పథకం సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
+
+  @override
+  String get adminSchemesAddErrorMessage =>
+      'ఈ పథకాన్ని జోడించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get adminSchemesEditDialogTitle => 'పథకాన్ని సవరించండి';
+
+  @override
+  String get adminSchemesUpdatedMessage => 'పథకం అప్‌డేట్ చేయబడింది';
+
+  @override
+  String get adminSchemesUpdateErrorMessage =>
+      'ఈ పథకాన్ని అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get adminSchemesDeleteDialogTitle => 'పథకాన్ని తొలగించాలా?';
+
+  @override
+  String adminSchemesDeleteDialogContent(String name) {
+    return 'ఇది \"$name\"ని జాబితా నుండి తొలగిస్తుంది.';
+  }
+
+  @override
+  String get adminSchemesDeletedMessage => 'పథకం తొలగించబడింది';
+
+  @override
+  String get adminSchemesDeleteDemoModeMessage =>
+      'డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
+
+  @override
+  String get adminSchemesDeleteErrorMessage =>
+      'ఈ పథకాన్ని తొలగించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
   String get supportStatusOpen => 'తెరిచి ఉంది';

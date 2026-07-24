@@ -58,7 +58,7 @@ class SchemeTrackingPage extends StatelessWidget {
                   padded: false,
                   child: AppListRow(
                     title: row.scheme.name,
-                    subtitle: row.scheme.agency ?? '',
+                    subtitle: row.application.decidedByName != null ? l10n.schemeTrackingDecidedBy(row.application.decidedByName!) : (row.scheme.agency ?? ''),
                     trailing: AppBadge(text: row.application.status, tone: _statusTones[row.application.status] ?? BadgeTone.neutral),
                     onTap: () => context.go(Paths.schemeDetail(row.scheme.id)),
                   ),

@@ -49,19 +49,19 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
 
   /// Shared by both Add and Edit dialogs — the criteria section is
   /// identical in each, just seeded from different starting values.
-  List<Widget> _criteriaFields(StateSetter setDialogState) => [
+  List<Widget> _criteriaFields(StateSetter setDialogState, AppLocalizations l10n) => [
         const Divider(height: 28),
-        Text('Eligibility criteria (optional)', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+        Text(l10n.adminSchemesCriteriaSectionTitle, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
         const SizedBox(height: 4),
         Text(
-          'Checked automatically against a member\'s SHG. Leave blank for requirements this app can\'t verify automatically (age, income, BPL status, ...) — keep those in the eligibility text instead.',
+          l10n.adminSchemesCriteriaSectionSubtext,
           style: AppTheme.sans(11, color: Neutral.c500),
         ),
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
           controlAffinity: ListTileControlAffinity.leading,
           value: _requiresShgMembership,
-          title: const Text('Requires SHG membership'),
+          title: Text(l10n.adminSchemesRequiresShgMembershipLabel),
           onChanged: (v) => setDialogState(() => _requiresShgMembership = v ?? false),
         ),
         const SizedBox(height: 8),
@@ -69,14 +69,14 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
           controller: _minShgAgeMonths,
           keyboardType: TextInputType.number,
           textInputAction: TextInputAction.next,
-          decoration: const InputDecoration(hintText: 'Minimum SHG age in months (optional)'),
+          decoration: InputDecoration(hintText: l10n.adminSchemesMinAgeHint),
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String?>(
           initialValue: _minShgGrade,
-          decoration: const InputDecoration(hintText: 'Minimum SHG grade (optional)'),
+          decoration: InputDecoration(hintText: l10n.adminSchemesMinGradeHint),
           items: [
-            const DropdownMenuItem<String?>(value: null, child: Text('No minimum')),
+            DropdownMenuItem<String?>(value: null, child: Text(l10n.adminSchemesNoMinimum)),
             ..._gradeOptions.map((g) => DropdownMenuItem<String?>(value: g, child: Text(g))),
           ],
           onChanged: (v) => setDialogState(() => _minShgGrade = v),
@@ -94,7 +94,7 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
     if (raw.isNotEmpty) {
       minAge = int.tryParse(raw);
       if (minAge == null || minAge <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Minimum SHG age must be a whole number of months.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.adminSchemesInvalidMinAgeError)));
         return false;
       }
     }
@@ -103,6 +103,7 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
   }
 
   Future<void> _addScheme() async {
+    final l10n = AppLocalizations.of(context)!;
     _name.clear();
     _agency.clear();
     _benefit.clear();
@@ -113,24 +114,24 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add scheme'),
+          title: Text(l10n.adminSchemesAddDialogTitle),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(controller: _name, maxLength: 100, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'Scheme name')),
+                TextField(controller: _name, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminSchemesNameHint)),
                 const SizedBox(height: 12),
-                TextField(controller: _agency, maxLength: 100, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'Agency')),
+                TextField(controller: _agency, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminSchemesAgencyHint)),
                 const SizedBox(height: 12),
-                TextField(controller: _benefit, maxLength: 300, textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'Benefit')),
-                ..._criteriaFields(setDialogState),
+                TextField(controller: _benefit, maxLength: 300, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.adminSchemesBenefitHint)),
+                ..._criteriaFields(setDialogState, l10n),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
-            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(AppLocalizations.of(context)?.actionAdd ?? 'Add')),
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.actionAdd)),
           ],
         ),
       ),
@@ -141,7 +142,7 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
       // "Add" on a blank name closed the dialog with zero feedback, looking
       // exactly like a dead button rather than a validation failure.
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Scheme name is required.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminSchemesNameRequiredError)));
       }
       return;
     }
@@ -152,13 +153,13 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
       await _repo.createScheme(name: _name.text.trim(), agency: _agency.text.trim(), benefit: _benefit.text.trim(), criteria: criteria!);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? 'Scheme added' : 'Demo mode — scheme not saved (connect Supabase to persist)'),
+          content: Text(SupabaseService.isConfigured ? l10n.adminSchemesAddedMessage : l10n.adminSchemesDemoModeMessage),
         ));
         _key.currentState?.reload();
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not add this scheme. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminSchemesAddErrorMessage)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -173,6 +174,7 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
   // already filed against it). Mirrors `_addScheme`'s own dialog shape,
   // just pre-filled and calling `updateScheme` instead of `createScheme`.
   Future<void> _editScheme(Scheme s) async {
+    final l10n = AppLocalizations.of(context)!;
     _name.text = s.name;
     _agency.text = s.agency ?? '';
     _benefit.text = s.benefit ?? '';
@@ -192,24 +194,24 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Edit scheme'),
+          title: Text(l10n.adminSchemesEditDialogTitle),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(controller: _name, maxLength: 100, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'Scheme name')),
+                TextField(controller: _name, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminSchemesNameHint)),
                 const SizedBox(height: 12),
-                TextField(controller: _agency, maxLength: 100, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'Agency')),
+                TextField(controller: _agency, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminSchemesAgencyHint)),
                 const SizedBox(height: 12),
-                TextField(controller: _benefit, maxLength: 300, textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'Benefit')),
-                ..._criteriaFields(setDialogState),
+                TextField(controller: _benefit, maxLength: 300, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.adminSchemesBenefitHint)),
+                ..._criteriaFields(setDialogState, l10n),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
-            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Save')),
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.actionSave)),
           ],
         ),
       ),
@@ -217,7 +219,7 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
     if (confirmed != true || !mounted) return;
     if (_name.text.trim().isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Scheme name is required.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminSchemesNameRequiredError)));
       }
       return;
     }
@@ -228,13 +230,13 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
       await _repo.updateScheme(s.id, name: _name.text.trim(), fullName: s.fullName, agency: _agency.text.trim(), benefit: _benefit.text.trim(), criteria: criteria!);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? 'Scheme updated' : 'Demo mode — scheme not saved (connect Supabase to persist)'),
+          content: Text(SupabaseService.isConfigured ? l10n.adminSchemesUpdatedMessage : l10n.adminSchemesDemoModeMessage),
         ));
         _key.currentState?.reload();
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update this scheme. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminSchemesUpdateErrorMessage)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -242,14 +244,15 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
   }
 
   Future<void> _deleteScheme(Scheme s) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete scheme?'),
-        content: Text('This removes "${s.name}" from the catalog.'),
+        title: Text(l10n.adminSchemesDeleteDialogTitle),
+        content: Text(l10n.adminSchemesDeleteDialogContent(s.name)),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(AppLocalizations.of(context)?.actionDelete ?? 'Delete')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.actionDelete)),
         ],
       ),
     );
@@ -260,12 +263,12 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
       if (mounted) {
         _key.currentState?.reload();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? 'Scheme deleted' : 'Demo mode — not saved (connect Supabase to persist)'),
+          content: Text(SupabaseService.isConfigured ? l10n.adminSchemesDeletedMessage : l10n.adminSchemesDeleteDemoModeMessage),
         ));
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not delete this scheme. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminSchemesDeleteErrorMessage)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -274,16 +277,17 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isAdmin = context.watch<AppState>().user.role == Role.admin;
 
     return Scaffold(
       appBar: PageHeader(
-        title: 'Manage Schemes',
+        title: l10n.adminSchemesTitle,
         right: isAdmin
             ? IconButton(
                 icon: Icon(Icons.add_circle_rounded, color: !_busy ? Brand.c600 : Neutral.c300),
                 onPressed: !_busy ? _addScheme : null,
-                tooltip: 'Add scheme',
+                tooltip: l10n.adminSchemesAddSchemeTooltip,
               )
             : null,
       ),
@@ -292,7 +296,7 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
         future: _repo.fetchSchemes,
         builder: (context, schemes) {
           if (schemes.isEmpty) {
-            return const AppEmptyState(icon: Icons.description_rounded, message: 'No schemes in the catalog yet');
+            return AppEmptyState(icon: Icons.description_rounded, message: l10n.adminSchemesEmptyState);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -317,12 +321,12 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
                         IconButton(
                           icon: Icon(Icons.edit_outlined, color: !_busy ? Brand.c600 : Neutral.c300),
                           onPressed: !_busy ? () => _editScheme(s) : null,
-                          tooltip: 'Edit ${s.name}',
+                          tooltip: l10n.adminSchemesEditTooltip(s.name),
                         ),
                         IconButton(
                           icon: Icon(Icons.delete_outline_rounded, color: !_busy ? Accent.red500 : Neutral.c300),
                           onPressed: !_busy ? () => _deleteScheme(s) : null,
-                          tooltip: 'Delete ${s.name}',
+                          tooltip: l10n.adminSchemesDeleteTooltip(s.name),
                         ),
                       ],
                     ],

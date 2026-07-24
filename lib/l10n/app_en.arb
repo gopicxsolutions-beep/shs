@@ -1248,6 +1248,13 @@
 
   "schemeTrackingEmptyState": "You haven't applied to any schemes yet",
 
+  "schemeTrackingDecidedBy": "Decided by {name}",
+  "@schemeTrackingDecidedBy": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
   "schemeApplicationsReviewApproved": "Application approved",
 
   "schemeApplicationsReviewRejected": "Application rejected",
@@ -1272,6 +1279,77 @@
   "schemeApplicationsReviewSaving": "Saving…",
 
   "schemeApplicationsReviewApprove": "Approve",
+
+  "adminSchemesTitle": "Manage Schemes",
+
+  "adminSchemesAddSchemeTooltip": "Add scheme",
+
+  "adminSchemesEmptyState": "No schemes in the catalog yet",
+
+  "adminSchemesEditTooltip": "Edit {name}",
+  "@adminSchemesEditTooltip": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "adminSchemesDeleteTooltip": "Delete {name}",
+  "@adminSchemesDeleteTooltip": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "adminSchemesCriteriaSectionTitle": "Eligibility criteria (optional)",
+
+  "adminSchemesCriteriaSectionSubtext": "Checked automatically against a member's SHG. Leave blank for requirements this app can't verify automatically (age, income, BPL status, ...) — keep those in the eligibility text instead.",
+
+  "adminSchemesRequiresShgMembershipLabel": "Requires SHG membership",
+
+  "adminSchemesMinAgeHint": "Minimum SHG age in months (optional)",
+
+  "adminSchemesMinGradeHint": "Minimum SHG grade (optional)",
+
+  "adminSchemesNoMinimum": "No minimum",
+
+  "adminSchemesAddDialogTitle": "Add scheme",
+
+  "adminSchemesNameHint": "Scheme name",
+
+  "adminSchemesAgencyHint": "Agency",
+
+  "adminSchemesBenefitHint": "Benefit",
+
+  "adminSchemesNameRequiredError": "Scheme name is required.",
+
+  "adminSchemesInvalidMinAgeError": "Minimum SHG age must be a whole number of months.",
+
+  "adminSchemesAddedMessage": "Scheme added",
+
+  "adminSchemesDemoModeMessage": "Demo mode — scheme not saved (connect Supabase to persist)",
+
+  "adminSchemesAddErrorMessage": "Could not add this scheme. Please try again.",
+
+  "adminSchemesEditDialogTitle": "Edit scheme",
+
+  "adminSchemesUpdatedMessage": "Scheme updated",
+
+  "adminSchemesUpdateErrorMessage": "Could not update this scheme. Please try again.",
+
+  "adminSchemesDeleteDialogTitle": "Delete scheme?",
+
+  "adminSchemesDeleteDialogContent": "This removes \"{name}\" from the catalog.",
+  "@adminSchemesDeleteDialogContent": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "adminSchemesDeletedMessage": "Scheme deleted",
+
+  "adminSchemesDeleteDemoModeMessage": "Demo mode — not saved (connect Supabase to persist)",
+
+  "adminSchemesDeleteErrorMessage": "Could not delete this scheme. Please try again.",
 
   "supportStatusOpen": "Open",
 

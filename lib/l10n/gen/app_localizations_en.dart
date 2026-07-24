@@ -1820,6 +1820,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'You haven\'t applied to any schemes yet';
 
   @override
+  String schemeTrackingDecidedBy(String name) {
+    return 'Decided by $name';
+  }
+
+  @override
   String get schemeApplicationsReviewApproved => 'Application approved';
 
   @override
@@ -1853,6 +1858,105 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get schemeApplicationsReviewApprove => 'Approve';
+
+  @override
+  String get adminSchemesTitle => 'Manage Schemes';
+
+  @override
+  String get adminSchemesAddSchemeTooltip => 'Add scheme';
+
+  @override
+  String get adminSchemesEmptyState => 'No schemes in the catalog yet';
+
+  @override
+  String adminSchemesEditTooltip(String name) {
+    return 'Edit $name';
+  }
+
+  @override
+  String adminSchemesDeleteTooltip(String name) {
+    return 'Delete $name';
+  }
+
+  @override
+  String get adminSchemesCriteriaSectionTitle =>
+      'Eligibility criteria (optional)';
+
+  @override
+  String get adminSchemesCriteriaSectionSubtext =>
+      'Checked automatically against a member\'s SHG. Leave blank for requirements this app can\'t verify automatically (age, income, BPL status, ...) — keep those in the eligibility text instead.';
+
+  @override
+  String get adminSchemesRequiresShgMembershipLabel =>
+      'Requires SHG membership';
+
+  @override
+  String get adminSchemesMinAgeHint => 'Minimum SHG age in months (optional)';
+
+  @override
+  String get adminSchemesMinGradeHint => 'Minimum SHG grade (optional)';
+
+  @override
+  String get adminSchemesNoMinimum => 'No minimum';
+
+  @override
+  String get adminSchemesAddDialogTitle => 'Add scheme';
+
+  @override
+  String get adminSchemesNameHint => 'Scheme name';
+
+  @override
+  String get adminSchemesAgencyHint => 'Agency';
+
+  @override
+  String get adminSchemesBenefitHint => 'Benefit';
+
+  @override
+  String get adminSchemesNameRequiredError => 'Scheme name is required.';
+
+  @override
+  String get adminSchemesInvalidMinAgeError =>
+      'Minimum SHG age must be a whole number of months.';
+
+  @override
+  String get adminSchemesAddedMessage => 'Scheme added';
+
+  @override
+  String get adminSchemesDemoModeMessage =>
+      'Demo mode — scheme not saved (connect Supabase to persist)';
+
+  @override
+  String get adminSchemesAddErrorMessage =>
+      'Could not add this scheme. Please try again.';
+
+  @override
+  String get adminSchemesEditDialogTitle => 'Edit scheme';
+
+  @override
+  String get adminSchemesUpdatedMessage => 'Scheme updated';
+
+  @override
+  String get adminSchemesUpdateErrorMessage =>
+      'Could not update this scheme. Please try again.';
+
+  @override
+  String get adminSchemesDeleteDialogTitle => 'Delete scheme?';
+
+  @override
+  String adminSchemesDeleteDialogContent(String name) {
+    return 'This removes \"$name\" from the catalog.';
+  }
+
+  @override
+  String get adminSchemesDeletedMessage => 'Scheme deleted';
+
+  @override
+  String get adminSchemesDeleteDemoModeMessage =>
+      'Demo mode — not saved (connect Supabase to persist)';
+
+  @override
+  String get adminSchemesDeleteErrorMessage =>
+      'Could not delete this scheme. Please try again.';
 
   @override
   String get supportStatusOpen => 'Open';

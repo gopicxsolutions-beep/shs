@@ -924,6 +924,8 @@
 
   "schemeTrackingEmptyState": "మీరు ఇంకా ఏ పథకానికి దరఖాస్తు చేయలేదు",
 
+  "schemeTrackingDecidedBy": "{name} ద్వారా నిర్ణయించబడింది",
+
   "schemeApplicationsReviewApproved": "దరఖాస్తు ఆమోదించబడింది",
 
   "schemeApplicationsReviewRejected": "దరఖాస్తు తిరస్కరించబడింది",
@@ -943,6 +945,62 @@
   "schemeApplicationsReviewSaving": "సేవ్ చేస్తోంది…",
 
   "schemeApplicationsReviewApprove": "ఆమోదించండి",
+
+  "adminSchemesTitle": "పథకాలను నిర్వహించండి",
+
+  "adminSchemesAddSchemeTooltip": "పథకం జోడించండి",
+
+  "adminSchemesEmptyState": "ఇంకా జాబితాలో పథకాలు లేవు",
+
+  "adminSchemesEditTooltip": "{name}ని సవరించండి",
+
+  "adminSchemesDeleteTooltip": "{name}ని తొలగించండి",
+
+  "adminSchemesCriteriaSectionTitle": "అర్హత ప్రమాణాలు (ఐచ్ఛికం)",
+
+  "adminSchemesCriteriaSectionSubtext": "సభ్యుని SHGకి వ్యతిరేకంగా స్వయంచాలకంగా తనిఖీ చేయబడుతుంది. ఈ యాప్ స్వయంచాలకంగా ధృవీకరించలేని అవసరాల కోసం (వయస్సు, ఆదాయం, BPL స్థితి, ...) ఖాళీగా వదిలేయండి — వాటిని అర్హత టెక్స్ట్‌లోనే ఉంచండి.",
+
+  "adminSchemesRequiresShgMembershipLabel": "SHG సభ్యత్వం అవసరం",
+
+  "adminSchemesMinAgeHint": "కనీస SHG వయస్సు నెలల్లో (ఐచ్ఛికం)",
+
+  "adminSchemesMinGradeHint": "కనీస SHG గ్రేడ్ (ఐచ్ఛికం)",
+
+  "adminSchemesNoMinimum": "కనీసం లేదు",
+
+  "adminSchemesAddDialogTitle": "పథకం జోడించండి",
+
+  "adminSchemesNameHint": "పథకం పేరు",
+
+  "adminSchemesAgencyHint": "ఏజెన్సీ",
+
+  "adminSchemesBenefitHint": "ప్రయోజనం",
+
+  "adminSchemesNameRequiredError": "పథకం పేరు అవసరం.",
+
+  "adminSchemesInvalidMinAgeError": "కనీస SHG వయస్సు నెలల్లో పూర్ణ సంఖ్యగా ఉండాలి.",
+
+  "adminSchemesAddedMessage": "పథకం జోడించబడింది",
+
+  "adminSchemesDemoModeMessage": "డెమో మోడ్ — పథకం సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
+
+  "adminSchemesAddErrorMessage": "ఈ పథకాన్ని జోడించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "adminSchemesEditDialogTitle": "పథకాన్ని సవరించండి",
+
+  "adminSchemesUpdatedMessage": "పథకం అప్‌డేట్ చేయబడింది",
+
+  "adminSchemesUpdateErrorMessage": "ఈ పథకాన్ని అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "adminSchemesDeleteDialogTitle": "పథకాన్ని తొలగించాలా?",
+
+  "adminSchemesDeleteDialogContent": "ఇది \"{name}\"ని జాబితా నుండి తొలగిస్తుంది.",
+
+  "adminSchemesDeletedMessage": "పథకం తొలగించబడింది",
+
+  "adminSchemesDeleteDemoModeMessage": "డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
+
+  "adminSchemesDeleteErrorMessage": "ఈ పథకాన్ని తొలగించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
 
   "supportStatusOpen": "తెరిచి ఉంది",
 

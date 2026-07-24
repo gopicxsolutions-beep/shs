@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/scheme.dart';
 import '../../repositories/scheme_repository.dart' show SchemeApplicationAlreadyDecidedException, SchemeRepository;
 import '../../services/supabase_service.dart';
+import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_card.dart';
@@ -58,12 +60,22 @@ class _SchemeApplicationsReviewPageState extends State<SchemeApplicationsReviewP
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final myId = context.watch<AppState>().profile?.id;
     return Scaffold(
       appBar: PageHeader(title: l10n.schemeApplicationsReviewTitle),
       body: AppAsyncBuilder<List<SchemeApplicationReview>>(
         key: _key,
         future: _repo.fetchPendingApplications,
-        builder: (context, apps) {
+        builder: (context, allApps) {
+          // `scheme_applications_update_staff` (RLS) requires the applicant
+          // to NOT be the caller — a staff account who also applied for a
+          // scheme herself can never decide her own application (no
+          // identity may escalate itself). Without this filter her own
+          // pending application sat in this queue looking actionable, and
+          // tapping Approve/Reject would have genuinely succeeded before
+          // this was fixed — unlike the analogous loans/meetings gaps, this
+          // table's decision policy had no self-exclusion at all.
+          final apps = allApps.where((a) => a.memberId != myId).toList();
           if (apps.isEmpty) {
             return AppEmptyState(icon: Icons.fact_check_rounded, message: l10n.schemeApplicationsReviewEmptyState);
           }

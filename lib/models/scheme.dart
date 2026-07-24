@@ -186,14 +186,18 @@ class SchemeApplication {
   final String schemeId;
   final String status; // applied | under_review | approved | rejected
   final DateTime appliedOn;
+  final String? decidedByName;
+  final DateTime? decidedAt;
 
-  const SchemeApplication({required this.id, required this.schemeId, required this.status, required this.appliedOn});
+  const SchemeApplication({required this.id, required this.schemeId, required this.status, required this.appliedOn, this.decidedByName, this.decidedAt});
 
   factory SchemeApplication.fromMap(Map<String, dynamic> map) => SchemeApplication(
         id: map['id'] as String,
         schemeId: map['scheme_id'] as String,
         status: map['status'] as String,
         appliedOn: DateTime.parse(map['applied_on'] as String),
+        decidedByName: (map['decided_by_profile'] as Map<String, dynamic>?)?['name'] as String?,
+        decidedAt: map['decided_at'] != null ? DateTime.parse(map['decided_at'] as String) : null,
       );
 }
 
@@ -203,6 +207,7 @@ class SchemeApplicationReview {
   final String applicationId;
   final String schemeId;
   final String schemeName;
+  final String memberId;
   final String memberName;
   final String status;
   final DateTime appliedOn;
@@ -211,6 +216,7 @@ class SchemeApplicationReview {
     required this.applicationId,
     required this.schemeId,
     required this.schemeName,
+    required this.memberId,
     required this.memberName,
     required this.status,
     required this.appliedOn,
@@ -220,6 +226,7 @@ class SchemeApplicationReview {
         applicationId: map['id'] as String,
         schemeId: map['scheme_id'] as String,
         schemeName: (map['schemes'] as Map<String, dynamic>?)?['name'] as String? ?? 'Scheme',
+        memberId: map['member_id'] as String,
         memberName: (map['profiles'] as Map<String, dynamic>?)?['name'] as String? ?? 'Member',
         status: map['status'] as String,
         appliedOn: DateTime.parse(map['applied_on'] as String),

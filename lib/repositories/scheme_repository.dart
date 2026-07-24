@@ -96,7 +96,14 @@ class SchemeRepository {
       return byStatus;
     }
     if (memberId == null) return {};
-    final rows = await _client.from('scheme_applications').select().eq('member_id', memberId);
+    // `scheme_applications` now has two FKs into `profiles` (`member_id`,
+    // `decided_by`) since migration 0050 added decision attribution — an
+    // unqualified `profiles(name)` embed would be ambiguous to PostgREST
+    // (the exact bug already hit `shg_join_requests`, round 90). The
+    // explicit FK hint plus an alias keeps this one unambiguous and keyed
+    // distinctly from a same-named `member_id` embed, if one is ever added
+    // here too.
+    final rows = await _client.from('scheme_applications').select('*, decided_by_profile:profiles!decided_by(name)').eq('member_id', memberId);
     final byScheme = <String, SchemeApplication>{};
     for (final r in rows as List) {
       final app = SchemeApplication.fromMap(r as Map<String, dynamic>);
@@ -147,13 +154,19 @@ class SchemeRepository {
           .map((schemeId) {
             final matches = schemes.where((s) => s.id == schemeId);
             final schemeName = matches.isEmpty ? schemeId : matches.first.name;
-            return SchemeApplicationReview(applicationId: schemeId, schemeId: schemeId, schemeName: schemeName, memberName: 'Lakshmi Devi', status: 'applied', appliedOn: DateTime.now());
+            return SchemeApplicationReview(applicationId: schemeId, schemeId: schemeId, schemeName: schemeName, memberId: 'demo-member', memberName: 'Lakshmi Devi', status: 'applied', appliedOn: DateTime.now());
           })
           .toList();
     }
+    // Explicit `profiles!member_id(name)` FK hint — `scheme_applications`
+    // now has two FKs into `profiles` (`member_id`, `decided_by`, added by
+    // migration 0050), so the unqualified embed this used to be would be
+    // ambiguous to PostgREST (the exact bug already hit `shg_join_requests`,
+    // round 90). This queue only ever shows applied/under_review rows, so
+    // `decided_by` is always null here and isn't embedded.
     final rows = await _client
         .from('scheme_applications')
-        .select('id, scheme_id, status, applied_on, schemes(name), profiles(name)')
+        .select('id, scheme_id, member_id, status, applied_on, schemes(name), profiles!member_id(name)')
         .inFilter('status', ['applied', 'under_review'])
         .order('applied_on');
     return (rows as List).map((r) => SchemeApplicationReview.fromMap(r as Map<String, dynamic>)).toList();

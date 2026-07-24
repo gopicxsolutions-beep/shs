@@ -3184,6 +3184,12 @@ abstract class AppLocalizations {
   /// **'You haven\'t applied to any schemes yet'**
   String get schemeTrackingEmptyState;
 
+  /// No description provided for @schemeTrackingDecidedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Decided by {name}'**
+  String schemeTrackingDecidedBy(String name);
+
   /// No description provided for @schemeApplicationsReviewApproved.
   ///
   /// In en, this message translates to:
@@ -3243,6 +3249,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Approve'**
   String get schemeApplicationsReviewApprove;
+
+  /// No description provided for @adminSchemesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Schemes'**
+  String get adminSchemesTitle;
+
+  /// No description provided for @adminSchemesAddSchemeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add scheme'**
+  String get adminSchemesAddSchemeTooltip;
+
+  /// No description provided for @adminSchemesEmptyState.
+  ///
+  /// In en, this message translates to:
+  /// **'No schemes in the catalog yet'**
+  String get adminSchemesEmptyState;
+
+  /// No description provided for @adminSchemesEditTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit {name}'**
+  String adminSchemesEditTooltip(String name);
+
+  /// No description provided for @adminSchemesDeleteTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}'**
+  String adminSchemesDeleteTooltip(String name);
+
+  /// No description provided for @adminSchemesCriteriaSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Eligibility criteria (optional)'**
+  String get adminSchemesCriteriaSectionTitle;
+
+  /// No description provided for @adminSchemesCriteriaSectionSubtext.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked automatically against a member\'s SHG. Leave blank for requirements this app can\'t verify automatically (age, income, BPL status, ...) — keep those in the eligibility text instead.'**
+  String get adminSchemesCriteriaSectionSubtext;
+
+  /// No description provided for @adminSchemesRequiresShgMembershipLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires SHG membership'**
+  String get adminSchemesRequiresShgMembershipLabel;
+
+  /// No description provided for @adminSchemesMinAgeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum SHG age in months (optional)'**
+  String get adminSchemesMinAgeHint;
+
+  /// No description provided for @adminSchemesMinGradeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum SHG grade (optional)'**
+  String get adminSchemesMinGradeHint;
+
+  /// No description provided for @adminSchemesNoMinimum.
+  ///
+  /// In en, this message translates to:
+  /// **'No minimum'**
+  String get adminSchemesNoMinimum;
+
+  /// No description provided for @adminSchemesAddDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add scheme'**
+  String get adminSchemesAddDialogTitle;
+
+  /// No description provided for @adminSchemesNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheme name'**
+  String get adminSchemesNameHint;
+
+  /// No description provided for @adminSchemesAgencyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Agency'**
+  String get adminSchemesAgencyHint;
+
+  /// No description provided for @adminSchemesBenefitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Benefit'**
+  String get adminSchemesBenefitHint;
+
+  /// No description provided for @adminSchemesNameRequiredError.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheme name is required.'**
+  String get adminSchemesNameRequiredError;
+
+  /// No description provided for @adminSchemesInvalidMinAgeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum SHG age must be a whole number of months.'**
+  String get adminSchemesInvalidMinAgeError;
+
+  /// No description provided for @adminSchemesAddedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheme added'**
+  String get adminSchemesAddedMessage;
+
+  /// No description provided for @adminSchemesDemoModeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — scheme not saved (connect Supabase to persist)'**
+  String get adminSchemesDemoModeMessage;
+
+  /// No description provided for @adminSchemesAddErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add this scheme. Please try again.'**
+  String get adminSchemesAddErrorMessage;
+
+  /// No description provided for @adminSchemesEditDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit scheme'**
+  String get adminSchemesEditDialogTitle;
+
+  /// No description provided for @adminSchemesUpdatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheme updated'**
+  String get adminSchemesUpdatedMessage;
+
+  /// No description provided for @adminSchemesUpdateErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update this scheme. Please try again.'**
+  String get adminSchemesUpdateErrorMessage;
+
+  /// No description provided for @adminSchemesDeleteDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete scheme?'**
+  String get adminSchemesDeleteDialogTitle;
+
+  /// No description provided for @adminSchemesDeleteDialogContent.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes \"{name}\" from the catalog.'**
+  String adminSchemesDeleteDialogContent(String name);
+
+  /// No description provided for @adminSchemesDeletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheme deleted'**
+  String get adminSchemesDeletedMessage;
+
+  /// No description provided for @adminSchemesDeleteDemoModeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — not saved (connect Supabase to persist)'**
+  String get adminSchemesDeleteDemoModeMessage;
+
+  /// No description provided for @adminSchemesDeleteErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete this scheme. Please try again.'**
+  String get adminSchemesDeleteErrorMessage;
 
   /// No description provided for @supportStatusOpen.
   ///

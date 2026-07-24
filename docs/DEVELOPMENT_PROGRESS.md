@@ -7982,3 +7982,117 @@ as a starting point rather than a conclusion — the gap only existed at the
 *intersection* of two policies that were each independently fine, and was
 only confirmed real by actually performing the exploit end-to-end against
 the live project rather than reasoning about it from policy text alone.
+
+## Update (round 97) — Government Schemes: found the most severe self-escalation gap of this entire testing series, missed by both the audit and the general "is this protected" assumption
+
+User asked for full end-to-end testing of the Government Schemes feature
+(`public.schemes` catalog, `public.scheme_applications`). An audit agent
+confirmed the module's route-vs-RLS role scoping is consistent
+(`/app/schemes/applications` is `_federationStaff`-only in `router.dart`,
+matching `is_staff()` exactly — a plain leader was never in the reviewer
+set to begin with, so the round-92 loans shape didn't seem to apply here),
+the eligibility engine (`evaluateSchemeEligibility` in `lib/models/scheme.dart`)
+fails closed correctly for every criterion and matches `docs/SRS.md` word
+for word, the deadline-enforcement and race-guard RPCs were re-verified
+against current code (not just trusted from migration comments), and SELECT
+scope was already correctly narrowed in an earlier round (`0037`).
+
+While independently reading `scheme_applications`'s RLS policies side by
+side with the review page, one line stood out against the pattern every
+other decision-workflow table in this schema follows:
+`scheme_applications_update_staff`'s check was just `is_staff()` — no
+`member_id <> auth.uid()` exclusion at all, unlike
+`loans_update_leader_or_staff`, the meeting policies, or (after round 96)
+`marketplace_reviews`. Confirmed the actual exposure by reading the rest of
+the schema rather than assuming it away: `scheme_applications_insert_self`
+has no role restriction (any authenticated profile, staff included, can
+submit `member_id = auth.uid()` for herself — the table has no `shg_id`
+column to scope it further), and `scheme_applications_review_page.dart` (the
+staff-only review queue) applied no client-side filter excluding the
+reviewer's own application either. Net effect: a staff account (crp/clf/
+admin) who is also a real SHG member could apply for a scheme, then approve
+or reject her own application from the same platform-wide queue she uses
+for every other member's — and unlike the analogous loans/meetings gaps
+(rounds 92-93), where RLS correctly blocked the unsafe write and only the
+UI was misleadingly permissive, **this write would have genuinely
+succeeded**. This is the most severe individual finding across all seven
+modules tested so far — it required no chained exploit, no combining two
+otherwise-fine policies (round 96's marketplace shape), just a single
+missing clause.
+
+Fixed via migration `0049`: added `member_id <> auth.uid()` to both `using`
+and `with check` on `scheme_applications_update_staff`. Verified
+deterministically by reading the actual deployed policy expression via
+`pg_get_expr(polwithcheck, polrelid)` both before and after — the boolean
+condition itself is unambiguous, so this didn't need a live round-trip to
+confirm. **Full behavioral verification (self rejected, other-party still
+allowed) was not performed** — the live project has exactly one real
+profile, role `leader`, and creating a crp/clf/admin test profile to
+actually exercise the `is_staff()` branch would cross into the same class
+of action already blocked earlier this session (assigning a profile a
+staff/admin role); this limitation is disclosed rather than papered over
+with a fabricated test. Also filtered the reviewer's own application out of
+`scheme_applications_review_page.dart`'s actionable queue (mirroring the
+identical loans/meetings client-side fix), which required adding a
+`memberId` field to `SchemeApplicationReview` and its underlying query.
+
+Two further gaps found and fixed in the same round:
+- **No attribution for who decided a scheme application** — `scheme_applications`
+  had no `decided_by`/`decided_at` at all, unlike `shg_join_requests` (which
+  has carried the equivalent since `0004`), a real audit-trail gap for a
+  government-scheme approval record. Added both columns plus a
+  `scheme_applications_locked_fields()` helper (migration `0050`) that locks
+  `scheme_id`/`member_id`/`applied_on` on every staff decision and requires
+  `decided_by = auth.uid()`/`decided_at = now()` — the same "column-lock
+  independent of row access" shape already used for loans/savings/livelihood.
+  `decide_scheme_application()` now sets both columns. Surfaced as "Decided
+  by {name}" on the member's own `scheme_tracking_page.dart`. Adding
+  `decided_by` gave `scheme_applications` a **second** FK into `profiles`
+  (alongside `member_id`) — the exact PostgREST embed-ambiguity class from
+  round 90 — so both existing `profiles(name)` embeds in
+  `scheme_repository.dart` needed explicit FK hints
+  (`profiles!member_id(name)`, and a new aliased
+  `decided_by_profile:profiles!decided_by(name)`). Verified this really
+  would have broken against the live PostgREST schema cache — not just
+  reasoned about — by hitting the real REST endpoint directly with the old
+  unqualified `profiles(name)` embed and getting back a genuine `PGRST201`
+  ("more than one relationship was found") error with the exact two
+  relationship names now in play, then confirming both fixed, explicitly-
+  hinted queries resolve cleanly with zero ambiguity error.
+- **`admin_schemes_page.dart` had almost no i18n coverage** — only 5
+  `l10n.` references in the whole file (all for generic Cancel/Add/Delete),
+  everything else hardcoded English: page title, both Add/Edit dialog
+  titles and every field hint within them, the criteria section's title and
+  explanatory subtext, every validation error, every snackbar (add/update/
+  delete success, demo-mode, and error messages for each), the empty state,
+  and both row-level Edit/Delete tooltips. Added 27 new keys across all
+  three `.arb` files and wired them in (reusing the existing generic
+  `l10n.actionSave` for the Edit dialog's Save button rather than adding a
+  redundant duplicate key).
+
+One gap found and explicitly **not** fixed this round: the audit also found
+that all three AI-advisor chat routes (`financial`, `scheme`, `market` in
+`router.dart`) pass their `title`/`hint` as hardcoded English literals
+straight into `AiAdvisorChatPage`'s constructor — the exact round-94
+hardcoded-title bug shape, but spanning three different modules at once.
+Fixing only the `scheme` instance while leaving the identical bug in
+`financial`/`market` untouched would be an arbitrarily-scoped partial fix,
+and fixing all three reaches outside this round's stated scope (Government
+Schemes) into a shared page two other modules also own. Flagged as a
+background task (`Localize AI advisor page titles/hints`) instead of fixed
+inline.
+
+`flutter analyze`: 0 issues. `flutter test`: 940/940 passing. Live-verified
+via the real deployed migrations: (1) `PGRST201` ambiguity error reproduced
+against the live REST endpoint with the pre-fix embed shape, then both
+fixed queries confirmed to resolve without error; (2) the
+`scheme_applications_update_staff` self-block confirmed via direct policy-
+expression inspection before/after (behavioral round-trip not possible —
+disclosed above, not glossed over). All test fixtures (`__TEST__`-prefixed
+scheme + application rows) deleted afterward and re-confirmed via SQL that
+zero rows remain in both tables. This round is a useful reminder that an
+audit's "policy X already handles this correctly" can itself be a false
+negative when the actual gap is a *missing* clause rather than a wrong one
+— the fix here wasn't finding a bug in existing logic, it was noticing an
+entire category of protection (self-decision blocking) that every sibling
+table had and this one simply never got.

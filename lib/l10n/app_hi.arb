@@ -924,6 +924,8 @@
 
   "schemeTrackingEmptyState": "आपने अभी तक किसी योजना के लिए आवेदन नहीं किया है",
 
+  "schemeTrackingDecidedBy": "{name} द्वारा निर्णय लिया गया",
+
   "schemeApplicationsReviewApproved": "आवेदन स्वीकृत किया गया",
 
   "schemeApplicationsReviewRejected": "आवेदन अस्वीकृत किया गया",
@@ -943,6 +945,62 @@
   "schemeApplicationsReviewSaving": "सेव हो रहा है…",
 
   "schemeApplicationsReviewApprove": "स्वीकृत करें",
+
+  "adminSchemesTitle": "योजनाएं प्रबंधित करें",
+
+  "adminSchemesAddSchemeTooltip": "योजना जोड़ें",
+
+  "adminSchemesEmptyState": "अभी तक सूची में कोई योजना नहीं है",
+
+  "adminSchemesEditTooltip": "{name} संपादित करें",
+
+  "adminSchemesDeleteTooltip": "{name} हटाएं",
+
+  "adminSchemesCriteriaSectionTitle": "पात्रता मानदंड (वैकल्पिक)",
+
+  "adminSchemesCriteriaSectionSubtext": "सदस्य के SHG के विरुद्ध स्वचालित रूप से जांचा जाता है। ऐसी आवश्यकताओं के लिए खाली छोड़ दें जिन्हें यह ऐप स्वचालित रूप से सत्यापित नहीं कर सकता (आयु, आय, BPL स्थिति, ...) — उन्हें पात्रता टेक्स्ट में ही रखें।",
+
+  "adminSchemesRequiresShgMembershipLabel": "SHG सदस्यता आवश्यक है",
+
+  "adminSchemesMinAgeHint": "न्यूनतम SHG आयु महीनों में (वैकल्पिक)",
+
+  "adminSchemesMinGradeHint": "न्यूनतम SHG ग्रेड (वैकल्पिक)",
+
+  "adminSchemesNoMinimum": "कोई न्यूनतम नहीं",
+
+  "adminSchemesAddDialogTitle": "योजना जोड़ें",
+
+  "adminSchemesNameHint": "योजना का नाम",
+
+  "adminSchemesAgencyHint": "एजेंसी",
+
+  "adminSchemesBenefitHint": "लाभ",
+
+  "adminSchemesNameRequiredError": "योजना का नाम आवश्यक है।",
+
+  "adminSchemesInvalidMinAgeError": "न्यूनतम SHG आयु महीनों की एक पूर्ण संख्या होनी चाहिए।",
+
+  "adminSchemesAddedMessage": "योजना जोड़ी गई",
+
+  "adminSchemesDemoModeMessage": "डेमो मोड — योजना सेव नहीं हुई (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "adminSchemesAddErrorMessage": "इस योजना को जोड़ा नहीं जा सका। कृपया फिर से कोशिश करें।",
+
+  "adminSchemesEditDialogTitle": "योजना संपादित करें",
+
+  "adminSchemesUpdatedMessage": "योजना अपडेट हो गई",
+
+  "adminSchemesUpdateErrorMessage": "इस योजना को अपडेट नहीं किया जा सका। कृपया फिर से कोशिश करें।",
+
+  "adminSchemesDeleteDialogTitle": "योजना हटाएं?",
+
+  "adminSchemesDeleteDialogContent": "यह \"{name}\" को सूची से हटा देगा।",
+
+  "adminSchemesDeletedMessage": "योजना हटा दी गई",
+
+  "adminSchemesDeleteDemoModeMessage": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "adminSchemesDeleteErrorMessage": "इस योजना को हटाया नहीं जा सका। कृपया फिर से कोशिश करें।",
 
   "supportStatusOpen": "खुला",
 
