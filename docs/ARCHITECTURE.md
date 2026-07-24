@@ -158,6 +158,18 @@ inline an equivalent subquery.
   of gap (column-lock completeness) was audited explicitly across every
   writable table in dedicated rounds — see
   [TESTING_STRATEGY.md](TESTING_STRATEGY.md) §3.
+- **Assignee columns scoped to the caller's own SHG**: whenever a leader
+  writes a *different* member's id into a row (savings/attendance/livelihood
+  member assignment, a meeting action item's `owner_id`), the `WITH CHECK`
+  must verify `profile_shg_id(<that id>) = <this row's shg_id>`, not just that
+  the caller herself is a leader of that SHG — otherwise she could point the
+  column at a profile in a completely different SHG. `meeting_action_items`
+  carried exactly this gap, explicitly disclosed and left open across three
+  rounds (0015/0024/0026) on the reasoning that the app never actually
+  populated `owner_id` — that premise silently went stale once
+  `meeting_mom_page.dart` grew a real "Assign to" picker, and was only
+  caught by re-checking a disclosed gap's justification against current code
+  rather than trusting it indefinitely. Fixed in migration `0047`.
 - **Lifecycle-column locks on INSERT**: a member applying for a loan must not
   be able to `POST` a row that's already `status:'active'` with an arbitrary
   disbursed amount — INSERT `WITH CHECK` clauses pin every lifecycle column

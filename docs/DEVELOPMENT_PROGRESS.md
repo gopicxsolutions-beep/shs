@@ -7666,3 +7666,97 @@ confusingly — could only have been found by testing with an account that is
 simultaneously the SHG's leader and (by applying for her own loan) one of
 its members, exactly the kind of identity collision demo mode can never
 produce and code review alone is unlikely to think to check.
+
+## Update (round 93) — Meetings module: closed a stale disclosed RLS gap, fixed a missed i18n page, and disproved a plausible-looking audit finding via direct SQL
+
+User asked for full end-to-end testing of the Meetings feature. An audit
+agent checked the same risk classes as the three previous rounds: neither
+`meeting_attendance` nor `meeting_action_items` has a second FK into
+`profiles` (so round 90's embed-ambiguity bug doesn't reproduce), and
+`MeetingRepository` has zero `.stream()` calls at all (round 91's realtime-
+publication bug doesn't apply — nothing here uses Realtime). The module's
+RLS/lifecycle hardening (cross-SHG impersonation, staff-only DELETE,
+attendance-row identity locked on UPDATE, cancelled-meeting write guards)
+was traced through five dedicated migrations (0015, 0026, 0035, 0038, 0042)
+and found already solid.
+
+The audit's headline finding — that `meeting_qr_page.dart`'s self-check-in
+gate (`Meeting.isScheduledToday`, compared against the device's local clock)
+could disagree with `meeting_attendance_insert_self_or_leader`'s RLS check
+(claimed to require `meeting_date = current_date` in the Postgres session's
+UTC timezone), causing every member's self-check-in to fail for ~5.5 hours
+every day during IST 00:00–05:30 — turned out to be **stale**, not a live
+bug. The audit had correctly read migration `0038`, which did add that date
+check, but missed that `0042` (which it also read, for a different fix)
+**replaced the same policy and dropped the date check entirely**, down to
+just `status <> 'cancelled'` with no date restriction at all. Verified this
+directly against the live database rather than trusting the audit's
+citation: `select pg_get_expr(polwithcheck, polrelid) from pg_policy where
+polname = 'meeting_attendance_insert_self_or_leader'` shows no `meeting_date`
+reference anywhere in the current policy, and `select current_setting
+('TIMEZONE')` confirms the session is UTC as claimed — but the RLS side of
+the claimed mismatch no longer exists, so the described failure cannot
+occur today. Good discipline paid off here: a plausible, well-argued, cited
+audit finding was caught as stale by checking live state before spending a
+fix cycle on a bug that isn't there anymore.
+
+Two real gaps the audit found were fixed:
+- **`meeting_qr_page.dart` had zero i18n coverage** — confirmed via `.arb`
+  grep (zero `meetingQr*` keys, while all four sibling Meetings pages were
+  already fully localized: 60/60 `meeting*` keys resolving in all three
+  languages). Added 11 keys across `app_en.arb`/`app_hi.arb`/`app_te.arb`
+  and wired them into the page (title, demo-mode/error messages, empty
+  state, checked-in/prompt text, default agenda fallback, and all four
+  button labels across their idle/in-progress states).
+- **`meeting_action_items_write_related`'s `owner_id` had no same-SHG
+  check** — a leader could set a task's `owner_id` to any profile in the
+  entire system, not just her own SHG's members. This was explicitly
+  disclosed and left open across three prior rounds (0015, 0024, 0026) on
+  the stated basis that `meeting_mom_page.dart`'s `_addActionItem()` never
+  actually passed an `ownerId`, so the exposure was nil in practice. That
+  premise is now false: the page has since grown a real "Assign to" picker
+  (`_roster = await _repo.fetchRoster(shgId)`, restricted to the meeting's
+  own SHG client-side) and passes a real `ownerId` straight into the
+  insert — exactly the "stale justification" pattern worth re-litigating
+  rather than silently trusting. Fixed via migration `0047`
+  (`meeting_action_item_owner_shg_scope.sql`): the leader-assign branch of
+  both `using` and `with check` now also requires `owner_id is null or
+  profile_shg_id(owner_id) = m.shg_id`, mirroring the same-SHG check
+  already used for savings/attendance/livelihood member assignment. DELETE
+  scope was deliberately left untouched — 0026 already explicitly reviewed
+  and kept it broad on its own disclosed low-stakes reasoning (nullable
+  to-do assignment, not financial/attendance/audit-trail data), and that
+  judgment isn't being second-guessed here.
+
+Verified live against the real deployed project, browser click-through
+having become unreliable this session (a persistent stuck-tab/no-input
+issue reproduced across multiple fresh tabs and full dev-server restarts,
+unrelated to any app code) — fell back to direct SQL exercising the actual
+RLS boundary with a simulated leader session
+(`set local role authenticated; set local request.jwt.claims = '{"sub":
+"<uuid>","role":"authenticated"}'`), checking real affected-row counts per
+this project's own testing standard, never HTTP status:
+- Scheduled a real `__TEST__` meeting for today, self-checked-in via a real
+  `meeting_attendance` insert (1 row) — confirms the self-check-in path
+  still genuinely works with the current (date-check-free) RLS.
+- Cancelled that meeting, then confirmed a further attendance write against
+  it is rejected (`42501`, 0 rows) — the cancelled-meeting guard holds.
+- Saved real MoM decisions and toggled a real action item's `done` flag —
+  both succeeded (1 row each).
+- Exercised all three `meeting_action_items` owner boundary cases against
+  the new migration: a non-member owner (a UUID with no matching profile,
+  standing in for a real cross-SHG member — the live project currently has
+  only one profile total, so no genuine second-SHG member exists to test
+  against) was rejected with a real RLS violation error; the same-SHG owner
+  (the leader's own id) succeeded (1 row); a `null` owner (unassigned)
+  succeeded (1 row) — all three match the intended new policy exactly.
+- All test fixtures (`__TEST__`-prefixed meeting, its cascaded attendance/
+  minutes/action-item rows) deleted afterward and re-confirmed via SQL that
+  zero rows remain across all four meeting-related tables.
+
+`flutter analyze`: 0 issues. `flutter test`: 940/940 passing. Migration
+`0047` deployed to the live project. This round's most valuable outcome
+wasn't a new bug fix but a caught false positive — treating a specific,
+well-cited audit claim as a hypothesis to verify against live state rather
+than a fact to act on immediately saved a wasted fix cycle, exactly the
+discipline this project's own verification standard calls for.

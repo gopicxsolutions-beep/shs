@@ -36,18 +36,19 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
     // markAttendance() no-ops regardless of the id passed — so only bail
     // out when live mode actually needs a real id to write.
     if (memberId == null && SupabaseService.isConfigured) return;
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _checkingIn = true);
     try {
       await _repo.markAttendance(meeting.id, memberId ?? 'demo-member', true);
       if (mounted) {
         setState(() => _checkedIn = true);
         if (!SupabaseService.isConfigured) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo mode — check-in not saved (connect Supabase to persist)')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.meetingQrDemoModeMessage)));
         }
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not check you in. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.meetingQrCheckInError)));
       }
     } finally {
       if (mounted) setState(() => _checkingIn = false);
@@ -63,12 +64,13 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final shgId = appState.profile?.shgId;
     final memberId = appState.profile?.id;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Meeting Check-In'),
+      appBar: PageHeader(title: l10n.meetingQrTitle),
       body: AppAsyncBuilder<List<Meeting>>(
         future: () => _repo.fetchForShg(shgId),
         builder: (context, meetings) {
@@ -98,7 +100,7 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
           // below instead of offering a future meeting to check into early.
           final upcoming = meetings.where((m) => m.status == 'upcoming' && m.isScheduledToday).toList()..sort((a, b) => a.date.compareTo(b.date));
           if (upcoming.isEmpty) {
-            return const AppEmptyState(icon: Icons.event_busy_rounded, message: 'No meeting scheduled to check in to right now');
+            return AppEmptyState(icon: Icons.event_busy_rounded, message: l10n.meetingQrNoMeetingMessage);
           }
           final meeting = upcoming.first;
           return Padding(
@@ -113,13 +115,13 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
                   child: Icon(_checkedIn ? Icons.check_circle_rounded : Icons.qr_code_scanner_rounded, size: 44, color: Brand.c600),
                 ),
                 const SizedBox(height: 20),
-                Text(_checkedIn ? "You're checked in!" : 'Check in to this meeting', style: AppTheme.display(18), textAlign: TextAlign.center),
+                Text(_checkedIn ? l10n.meetingQrCheckedInMessage : l10n.meetingQrCheckInPrompt, style: AppTheme.display(18), textAlign: TextAlign.center),
                 const SizedBox(height: 8),
                 AppCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(meeting.agenda ?? 'Meeting', style: AppTheme.sans(14, weight: FontWeight.w700)),
+                      Text(meeting.agenda ?? l10n.meetingQrDefaultAgenda, style: AppTheme.sans(14, weight: FontWeight.w700)),
                       const SizedBox(height: 4),
                       Text('${DateFormat('dd MMM yyyy').format(meeting.date)} · ${meeting.time ?? ''} · ${meeting.venue ?? ''}', style: AppTheme.sans(12, color: Neutral.c500)),
                     ],
@@ -128,7 +130,7 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
                 const SizedBox(height: 20),
                 if (!_checkedIn) ...[
                   AppButton(
-                    label: _checkingIn ? 'Scanning…' : 'Scan QR to Check In',
+                    label: _checkingIn ? l10n.meetingQrScanningButton : l10n.meetingQrScanButton,
                     icon: Icons.qr_code_scanner_rounded,
                     fullWidth: true,
                     size: ButtonSize.lg,
@@ -136,7 +138,7 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
                   ),
                   const SizedBox(height: 10),
                   AppButton(
-                    label: _checkingIn ? 'Checking in…' : 'Check In Without Scanning',
+                    label: _checkingIn ? l10n.meetingQrCheckingInButton : l10n.meetingQrCheckInWithoutScanningButton,
                     variant: ButtonVariant.outline,
                     fullWidth: true,
                     onPressed: _checkingIn ? null : () => _checkIn(meeting, memberId),

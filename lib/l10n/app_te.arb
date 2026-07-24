@@ -738,6 +738,28 @@
 
   "meetingScheduleAgendaHint": "ఉదా. నెలవారీ పొదుపు సమీక్ష మరియు రుణ దరఖాస్తులు",
 
+  "meetingQrTitle": "మీటింగ్ చెక్-ఇన్",
+
+  "meetingQrDemoModeMessage": "డెమో మోడ్ — చెక్-ఇన్ సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
+
+  "meetingQrCheckInError": "మిమ్మల్ని చెక్ ఇన్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "meetingQrNoMeetingMessage": "ప్రస్తుతం చెక్ ఇన్ చేయడానికి షెడ్యూల్ చేయబడిన మీటింగ్ లేదు",
+
+  "meetingQrCheckedInMessage": "మీరు చెక్ ఇన్ అయ్యారు!",
+
+  "meetingQrCheckInPrompt": "ఈ మీటింగ్‌కి చెక్ ఇన్ చేయండి",
+
+  "meetingQrDefaultAgenda": "మీటింగ్",
+
+  "meetingQrScanningButton": "స్కాన్ చేస్తోంది…",
+
+  "meetingQrScanButton": "చెక్ ఇన్ చేయడానికి QRని స్కాన్ చేయండి",
+
+  "meetingQrCheckingInButton": "చెక్ ఇన్ అవుతోంది…",
+
+  "meetingQrCheckInWithoutScanningButton": "స్కాన్ చేయకుండా చెక్ ఇన్ చేయండి",
+
   "savingsEntryTitle": "పొదుపు జోడించండి",
 
   "savingsEntryMemberLabel": "సభ్యురాలు",

@@ -738,6 +738,28 @@
 
   "meetingScheduleAgendaHint": "जैसे, मासिक बचत समीक्षा और ऋण आवेदन",
 
+  "meetingQrTitle": "मीटिंग चेक-इन",
+
+  "meetingQrDemoModeMessage": "डेमो मोड — चेक-इन सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "meetingQrCheckInError": "आपको चेक इन नहीं किया जा सका। कृपया फिर से कोशिश करें।",
+
+  "meetingQrNoMeetingMessage": "अभी चेक इन करने के लिए कोई मीटिंग निर्धारित नहीं है",
+
+  "meetingQrCheckedInMessage": "आप चेक इन हो गए हैं!",
+
+  "meetingQrCheckInPrompt": "इस मीटिंग में चेक इन करें",
+
+  "meetingQrDefaultAgenda": "मीटिंग",
+
+  "meetingQrScanningButton": "स्कैन हो रहा है…",
+
+  "meetingQrScanButton": "चेक इन करने के लिए QR स्कैन करें",
+
+  "meetingQrCheckingInButton": "चेक इन हो रहा है…",
+
+  "meetingQrCheckInWithoutScanningButton": "बिना स्कैन किए चेक इन करें",
+
   "savingsEntryTitle": "बचत जोड़ें",
 
   "savingsEntryMemberLabel": "सदस्य",

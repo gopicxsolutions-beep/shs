@@ -1467,6 +1467,43 @@ class AppLocalizationsHi extends AppLocalizations {
   String get meetingScheduleAgendaHint => 'जैसे, मासिक बचत समीक्षा और ऋण आवेदन';
 
   @override
+  String get meetingQrTitle => 'मीटिंग चेक-इन';
+
+  @override
+  String get meetingQrDemoModeMessage =>
+      'डेमो मोड — चेक-इन सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
+
+  @override
+  String get meetingQrCheckInError =>
+      'आपको चेक इन नहीं किया जा सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get meetingQrNoMeetingMessage =>
+      'अभी चेक इन करने के लिए कोई मीटिंग निर्धारित नहीं है';
+
+  @override
+  String get meetingQrCheckedInMessage => 'आप चेक इन हो गए हैं!';
+
+  @override
+  String get meetingQrCheckInPrompt => 'इस मीटिंग में चेक इन करें';
+
+  @override
+  String get meetingQrDefaultAgenda => 'मीटिंग';
+
+  @override
+  String get meetingQrScanningButton => 'स्कैन हो रहा है…';
+
+  @override
+  String get meetingQrScanButton => 'चेक इन करने के लिए QR स्कैन करें';
+
+  @override
+  String get meetingQrCheckingInButton => 'चेक इन हो रहा है…';
+
+  @override
+  String get meetingQrCheckInWithoutScanningButton =>
+      'बिना स्कैन किए चेक इन करें';
+
+  @override
   String get savingsEntryTitle => 'बचत जोड़ें';
 
   @override

@@ -1487,6 +1487,43 @@ class AppLocalizationsEn extends AppLocalizations {
       'e.g. Monthly savings review & loan applications';
 
   @override
+  String get meetingQrTitle => 'Meeting Check-In';
+
+  @override
+  String get meetingQrDemoModeMessage =>
+      'Demo mode — check-in not saved (connect Supabase to persist)';
+
+  @override
+  String get meetingQrCheckInError =>
+      'Could not check you in. Please try again.';
+
+  @override
+  String get meetingQrNoMeetingMessage =>
+      'No meeting scheduled to check in to right now';
+
+  @override
+  String get meetingQrCheckedInMessage => 'You\'re checked in!';
+
+  @override
+  String get meetingQrCheckInPrompt => 'Check in to this meeting';
+
+  @override
+  String get meetingQrDefaultAgenda => 'Meeting';
+
+  @override
+  String get meetingQrScanningButton => 'Scanning…';
+
+  @override
+  String get meetingQrScanButton => 'Scan QR to Check In';
+
+  @override
+  String get meetingQrCheckingInButton => 'Checking in…';
+
+  @override
+  String get meetingQrCheckInWithoutScanningButton =>
+      'Check In Without Scanning';
+
+  @override
   String get savingsEntryTitle => 'Add Savings';
 
   @override

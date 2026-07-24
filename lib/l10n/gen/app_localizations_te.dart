@@ -1492,6 +1492,43 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఉదా. నెలవారీ పొదుపు సమీక్ష మరియు రుణ దరఖాస్తులు';
 
   @override
+  String get meetingQrTitle => 'మీటింగ్ చెక్-ఇన్';
+
+  @override
+  String get meetingQrDemoModeMessage =>
+      'డెమో మోడ్ — చెక్-ఇన్ సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
+
+  @override
+  String get meetingQrCheckInError =>
+      'మిమ్మల్ని చెక్ ఇన్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get meetingQrNoMeetingMessage =>
+      'ప్రస్తుతం చెక్ ఇన్ చేయడానికి షెడ్యూల్ చేయబడిన మీటింగ్ లేదు';
+
+  @override
+  String get meetingQrCheckedInMessage => 'మీరు చెక్ ఇన్ అయ్యారు!';
+
+  @override
+  String get meetingQrCheckInPrompt => 'ఈ మీటింగ్‌కి చెక్ ఇన్ చేయండి';
+
+  @override
+  String get meetingQrDefaultAgenda => 'మీటింగ్';
+
+  @override
+  String get meetingQrScanningButton => 'స్కాన్ చేస్తోంది…';
+
+  @override
+  String get meetingQrScanButton => 'చెక్ ఇన్ చేయడానికి QRని స్కాన్ చేయండి';
+
+  @override
+  String get meetingQrCheckingInButton => 'చెక్ ఇన్ అవుతోంది…';
+
+  @override
+  String get meetingQrCheckInWithoutScanningButton =>
+      'స్కాన్ చేయకుండా చెక్ ఇన్ చేయండి';
+
+  @override
   String get savingsEntryTitle => 'పొదుపు జోడించండి';
 
   @override

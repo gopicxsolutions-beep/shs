@@ -1026,6 +1026,28 @@
 
   "meetingScheduleAgendaHint": "e.g. Monthly savings review & loan applications",
 
+  "meetingQrTitle": "Meeting Check-In",
+
+  "meetingQrDemoModeMessage": "Demo mode — check-in not saved (connect Supabase to persist)",
+
+  "meetingQrCheckInError": "Could not check you in. Please try again.",
+
+  "meetingQrNoMeetingMessage": "No meeting scheduled to check in to right now",
+
+  "meetingQrCheckedInMessage": "You're checked in!",
+
+  "meetingQrCheckInPrompt": "Check in to this meeting",
+
+  "meetingQrDefaultAgenda": "Meeting",
+
+  "meetingQrScanningButton": "Scanning…",
+
+  "meetingQrScanButton": "Scan QR to Check In",
+
+  "meetingQrCheckingInButton": "Checking in…",
+
+  "meetingQrCheckInWithoutScanningButton": "Check In Without Scanning",
+
   "savingsEntryTitle": "Add Savings",
 
   "savingsEntryMemberLabel": "Member",

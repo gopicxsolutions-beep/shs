@@ -2626,6 +2626,72 @@ abstract class AppLocalizations {
   /// **'e.g. Monthly savings review & loan applications'**
   String get meetingScheduleAgendaHint;
 
+  /// No description provided for @meetingQrTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting Check-In'**
+  String get meetingQrTitle;
+
+  /// No description provided for @meetingQrDemoModeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — check-in not saved (connect Supabase to persist)'**
+  String get meetingQrDemoModeMessage;
+
+  /// No description provided for @meetingQrCheckInError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check you in. Please try again.'**
+  String get meetingQrCheckInError;
+
+  /// No description provided for @meetingQrNoMeetingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No meeting scheduled to check in to right now'**
+  String get meetingQrNoMeetingMessage;
+
+  /// No description provided for @meetingQrCheckedInMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re checked in!'**
+  String get meetingQrCheckedInMessage;
+
+  /// No description provided for @meetingQrCheckInPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in to this meeting'**
+  String get meetingQrCheckInPrompt;
+
+  /// No description provided for @meetingQrDefaultAgenda.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting'**
+  String get meetingQrDefaultAgenda;
+
+  /// No description provided for @meetingQrScanningButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning…'**
+  String get meetingQrScanningButton;
+
+  /// No description provided for @meetingQrScanButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR to Check In'**
+  String get meetingQrScanButton;
+
+  /// No description provided for @meetingQrCheckingInButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking in…'**
+  String get meetingQrCheckingInButton;
+
+  /// No description provided for @meetingQrCheckInWithoutScanningButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Check In Without Scanning'**
+  String get meetingQrCheckInWithoutScanningButton;
+
   /// No description provided for @savingsEntryTitle.
   ///
   /// In en, this message translates to:
