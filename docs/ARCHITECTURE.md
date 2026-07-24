@@ -155,8 +155,15 @@ inline an equivalent subquery.
     confusing UI in front of an RLS block: the write would have genuinely
     succeeded. Fixed by adding `member_id <> auth.uid()` to both `using` and
     `with check` (migration `0049`), plus filtering the reviewer's own
-    application out of `scheme_applications_review_page.dart`'s queue and
-    its "Pending" count, mirroring the loans/meetings client-side fixes.
+    application out of `scheme_applications_review_page.dart`'s queue,
+    mirroring the loans/meetings client-side fixes. That round's fix did
+    **not** reach `AdminRepository.fetchDashboardStats()`'s separate
+    "N scheme applications pending review" banner count on the Admin
+    Dashboard — a distinct code path reading the same underlying pending
+    set with no self-exclusion of its own, so the banner could show one
+    more than the review queue it links to actually let that same staff
+    account act on. Closed in round 101 by passing the viewer's own id into
+    that method and applying the identical `!= viewerId` filter there too.
     Full live behavioral verification (self rejected, other-party allowed)
     wasn't possible this round — the live project has exactly one real
     profile, role `leader`, and creating a crp/clf/admin test profile to
@@ -367,3 +374,4 @@ module":
 | Crash/error telemetry | Wired (`sentry_flutter`), opt-in via `Env.sentryDsn`/`SENTRY_DSN` — disabled by default until a real DSN is supplied; see [QUALITY_MANAGEMENT.md](QUALITY_MANAGEMENT.md) §6 |
 | Government scheme eligibility | Real structured rules engine (`EligibilityCriteria`/`evaluateSchemeEligibility()` in `lib/models/scheme.dart`) over SHG membership/age/grade — the only structured facts this app's data model actually carries; still not a connection to any government eligibility API (none exists), and criteria needing income/gender/caste/occupation data remain manual-verification-only via each scheme's free-text list |
 | Training course quiz | Real per-course questions (`quiz_questions` table, migration `0041`) replacing the old single generic 3-question set; seeded with a genuine starting question set per demo course, not a transcription of any real curriculum — a subject-matter expert should review/extend it. Grading is now genuinely enforced server-side (migration `0051`, round 98) — previously the pass threshold was real in name only: `correct_index` shipped to the client before the quiz was answered, and certification trusted an unverified client claim with no score ever sent to the server. `submit_quiz_attempt` (`security definer`) now grades from the base table's real answer key, which the client never sees (`quiz_questions_public` view), and `course_progress`'s `certified`/`completed_on` columns are locked so only that RPC (or staff) can set them. |
+| Reports/Analytics server-side precomputation | `report_snapshots` and `analytics_kpis` both exist with staff-write RLS specifically so an Edge Function could eventually precompute and cache this data, but `ReportRepository`/`TrendRepository`/`AnalyticsRepository` all compute every report/chart/KPI client-side from live tables at read time instead — the client never reads either table. The two tables aren't in the same state as each other: `report_snapshots` has a real, deployed, nightly `pg_cron`-triggered writer (`generate-report-snapshots`, §4), just one the client doesn't consume yet; `analytics_kpis` has no writer at all anywhere in `supabase/functions/` — its RLS policy (staff-write, self-or-staff-read) is provisioned for a function that was never built, making it an orphaned table rather than a populated-but-unused one. |

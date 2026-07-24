@@ -138,7 +138,17 @@ class AdminRepository {
   /// [AdminDashboardStats]'s doc comment). System uptime is deliberately
   /// not computed here — see the same doc comment for why that one figure
   /// stays a labeled placeholder on the dashboard itself.
-  Future<AdminDashboardStats> fetchDashboardStats() async {
+  ///
+  /// [viewerId] excludes the caller's own scheme application from
+  /// [AdminDashboardStats.pendingReviewCount] — mirroring
+  /// `SchemeApplicationsReviewPage`'s own identical `a.memberId != myId`
+  /// filter on the queue this banner links to. Before this parameter
+  /// existed, a staff account who is also a real SHG member with her own
+  /// pending application saw this banner overcount by exactly one: RLS
+  /// (`scheme_applications_update_staff`'s `member_id <> auth.uid()`)
+  /// already blocked her from deciding it, so tapping through to the queue
+  /// showed one fewer actionable row than this count claimed.
+  Future<AdminDashboardStats> fetchDashboardStats(String? viewerId) async {
     if (!_live) {
       // Routed through TrainingRepository/SchemeRepository themselves —
       // not the static mock catalogs directly — so this reflects whatever
@@ -151,7 +161,8 @@ class AdminRepository {
       // dashboard kept showing the session's starting numbers forever.
       final progress = await TrainingRepository().fetchMyProgress(null);
       final trainingCompletionPct = progress.isEmpty ? 0 : (progress.values.map((c) => c.progress).reduce((a, b) => a + b) / progress.length).round();
-      final pendingReviewCount = (await SchemeRepository().fetchPendingApplications()).length;
+      final pendingApps = await SchemeRepository().fetchPendingApplications();
+      final pendingReviewCount = pendingApps.where((a) => a.memberId != viewerId).length;
 
       // "Recent activity" assembled the same way the live branch below
       // does — real (if fixed/demo) rows from a couple of different mock
@@ -184,9 +195,11 @@ class AdminRepository {
     final trainingCompletionPct = trainingCompletionPctFrom(progressSum: progressSum, totalMembers: totalMembers, totalCourses: totalCourses);
 
     // Same staff-only queue SchemeApplicationsReviewPage already surfaces —
-    // just the count, not the full joined row set that page needs.
-    final pendingRows = await _client.from('scheme_applications').select('id').inFilter('status', ['applied', 'under_review']);
-    final pendingReviewCount = (pendingRows as List).length;
+    // just the count, not the full joined row set that page needs. Also
+    // applies that page's own member_id != viewerId filter (see this
+    // method's doc comment) so the two never visibly disagree.
+    final pendingRows = await _client.from('scheme_applications').select('id, member_id').inFilter('status', ['applied', 'under_review']);
+    final pendingReviewCount = (pendingRows as List).where((r) => (r as Map<String, dynamic>)['member_id'] != viewerId).length;
 
     // Real recent rows across a few core tables, merged and sorted by their
     // own `created_at` — replaces the previous static 3-row placeholder

@@ -154,24 +154,22 @@ class ReportRepository {
       }
     }
 
-    // Same never-advances-past-'upcoming' issue as fetchMemberReport above —
-    // use the meeting's own date instead of the unreachable `status =
-    // 'completed'`. Without this, the leader dashboard's "SHG Health" ->
-    // Attendance tile was permanently stuck at 0%.
-    final todayStr = DateTime.now().toIso8601String().split('T').first;
-    final completedMeetings = await _client.from('meetings').select('id').eq('shg_id', shgId).neq('status', 'cancelled').lt('meeting_date', todayStr);
-    final meetingsTotal = (completedMeetings as List).length;
-    double avgAttendancePct = 0;
-    if (meetingsTotal > 0 && memberCount > 0) {
-      final attendance = await _client
-          .from('meeting_attendance')
-          .select('present, meetings!inner(shg_id, status, meeting_date)')
-          .eq('meetings.shg_id', shgId)
-          .neq('meetings.status', 'cancelled')
-          .lt('meetings.meeting_date', todayStr);
-      final presentCount = (attendance as List).where((r) => (r as Map<String, dynamic>)['present'] == true).length;
-      avgAttendancePct = (presentCount / (meetingsTotal * memberCount)) * 100;
-    }
+    // Derived from the same monthly points the Performance Report's own
+    // trend chart plots (TrendRepository.attendanceTrend), rather than
+    // recomputed independently from the raw meeting/attendance rows —
+    // mirrors the demo-mode branch's identical fix above. The two used to
+    // drift apart in live mode: this used an all-time window with a
+    // `meetingsTotal * memberCount` assumed denominator (silently assuming
+    // every member has an attendance row at every meeting), while the
+    // trend chart uses a last-6-months window with the actual recorded
+    // row count as its denominator — two structurally different formulas
+    // over two different time windows, so ShgPerformanceReportPage's own
+    // headline stat and the chart directly beneath it (and
+    // ShgFinancialSummaryPage's "Avg. Attendance" tile, and the CRP "SHG
+    // Health" drill-down that reuses this same value) could each show a
+    // different percentage for the same SHG.
+    final attendancePoints = await TrendRepository().attendanceTrend(shgId: shgId);
+    final avgAttendancePct = attendancePoints.isEmpty ? 0.0 : attendancePoints.fold<num>(0, (s, p) => s + p.value) / attendancePoints.length;
 
     return ShgReportData(
       memberCount: memberCount,

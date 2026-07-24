@@ -32,7 +32,7 @@ void main() {
   test('pendingReviewCount reflects SchemeRepository.decideApplication(), not the frozen mock catalog', () async {
     // Starting point: lib/data/schemes.dart's sc2 (under_review) and sc3
     // (applied) are the only two schemes still awaiting a decision.
-    final before = await AdminRepository().fetchDashboardStats();
+    final before = await AdminRepository().fetchDashboardStats(null);
     expect(before.pendingReviewCount, 2);
 
     final schemeRepo = SchemeRepository();
@@ -50,14 +50,14 @@ void main() {
 
     // ...and the dashboard stat must agree, not keep reporting the stale
     // starting count of 2 (the exact bug: it used to).
-    final after = await AdminRepository().fetchDashboardStats();
+    final after = await AdminRepository().fetchDashboardStats(null);
     expect(after.pendingReviewCount, 0);
   });
 
   test('trainingCompletionPct reflects TrainingRepository.markCertified(), not the frozen mock catalog', () async {
     // Starting point: lib/data/training.dart's progress values [100, 60, 30,
     // 0, 0, 100] average 48.33 -> rounds to 48.
-    final before = await AdminRepository().fetchDashboardStats();
+    final before = await AdminRepository().fetchDashboardStats(null);
     expect(before.trainingCompletionPct, 48);
 
     final trainingRepo = TrainingRepository();
@@ -73,7 +73,7 @@ void main() {
 
     // ...and the dashboard stat must agree, not keep reporting the stale
     // starting 48% (the exact bug: it used to).
-    final after = await AdminRepository().fetchDashboardStats();
+    final after = await AdminRepository().fetchDashboardStats(null);
     expect(after.trainingCompletionPct, 100);
   });
 }

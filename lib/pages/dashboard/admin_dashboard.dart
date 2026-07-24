@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/admin.dart';
 import '../../models/analytics.dart';
 import '../../repositories/admin_repository.dart';
 import '../../repositories/analytics_repository.dart';
 import '../../routes/paths.dart';
+import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
@@ -67,11 +69,11 @@ class _AdminDashboardData {
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
 
-  Future<_AdminDashboardData> _load() async {
+  Future<_AdminDashboardData> _load(String? viewerId) async {
     final repo = AdminRepository();
     final results = await Future.wait([
       AnalyticsRepository().fetchPlatformKpis(),
-      repo.fetchDashboardStats(),
+      repo.fetchDashboardStats(viewerId),
       repo.fetchSystemHeartbeatStatus(),
     ]);
     return _AdminDashboardData(kpis: results[0] as PlatformKpis, stats: results[1] as AdminDashboardStats, heartbeat: results[2] as SystemHeartbeatStatus);
@@ -79,8 +81,9 @@ class AdminDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewerId = context.read<AppState>().profile?.id;
     return AppAsyncBuilder<_AdminDashboardData>(
-      future: _load,
+      future: () => _load(viewerId),
       builder: (context, data) => _AdminDashboardBody(kpis: data.kpis, stats: data.stats, heartbeat: data.heartbeat),
     );
   }

@@ -18,21 +18,31 @@ void main() {
   });
 
   test('trainingCompletionPct is the real average of mock course progress (48%), not a fixed number', () async {
-    final stats = await AdminRepository().fetchDashboardStats();
+    final stats = await AdminRepository().fetchDashboardStats(null);
     // lib/data/training.dart: progress values 100, 60, 30, 0, 0, 100 ->
     // average 48.33 -> rounds to 48.
     expect(stats.trainingCompletionPct, 48);
   });
 
   test('pendingReviewCount is the real count of applied/under_review mock schemes (2), not a fixed number', () async {
-    final stats = await AdminRepository().fetchDashboardStats();
+    final stats = await AdminRepository().fetchDashboardStats(null);
     // lib/data/schemes.dart: sc2 (under_review) and sc3 (applied) are the
     // only two still awaiting a staff decision.
     expect(stats.pendingReviewCount, 2);
   });
 
+  test('pendingReviewCount excludes the viewer\'s own pending application, mirroring SchemeApplicationsReviewPage\'s identical filter', () async {
+    // Demo-mode pending applications are always attributed to memberId
+    // 'demo-member' (SchemeRepository.fetchPendingApplications) — passing
+    // that as the viewer must drop both from the count, the same way
+    // scheme_applications_update_staff's RLS (member_id <> auth.uid())
+    // already blocks a staff account from deciding her own application.
+    final stats = await AdminRepository().fetchDashboardStats('demo-member');
+    expect(stats.pendingReviewCount, 0);
+  });
+
   test('recentActivity is derived from real mock records, ordered newest-first, capped at 5', () async {
-    final stats = await AdminRepository().fetchDashboardStats();
+    final stats = await AdminRepository().fetchDashboardStats(null);
     expect(stats.recentActivity, isNotEmpty);
     expect(stats.recentActivity.length, lessThanOrEqualTo(5));
     for (var i = 0; i < stats.recentActivity.length - 1; i++) {
@@ -57,7 +67,7 @@ void main() {
     ];
     addTearDown(() => AdminRepository.debugMembersOverride = null);
 
-    final stats = await AdminRepository().fetchDashboardStats();
+    final stats = await AdminRepository().fetchDashboardStats(null);
     expect(stats.recentActivity.first.kind, AdminActivityKind.newUser);
     expect(stats.recentActivity.first.subjectName, '__TEST__ Newest Member');
   });

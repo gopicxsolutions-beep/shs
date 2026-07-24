@@ -257,7 +257,7 @@ Meetings, etc.:
 | Financial records (cashbook/ledger/bank/audit) | ✅ done | One shared `FinancialLedgerPage(entryType, title)` screen reused across all 4 routes (they're identical shape, just filtered by `entry_type`) + add-entry dialog with running-balance calc. Live-tested: leader-only write denied for member, shared read works |
 | Livelihoods | ✅ done | Model, repository, 3 screens (home/entry/detail with Update Progress dialog). Live-tested DB/RLS + full UI golden path (see session log) — found and fixed a real Role-Select-skip bug in the process |
 | Marketplace (products/orders/reviews) | ✅ done | 6 screens (home, product detail, add product, orders, order detail, reviews). Live-tested DB/RLS (own-listing insert, deny-listing-as-another-seller, cross-shg browse, seller-only order status update) and UI (grid + product detail render correctly). Needs Supabase Storage for product images eventually (not wired) |
-| Government schemes | ✅ done | Model, repository, 4 screens (catalog, detail, eligibility checker, tracking). Eligibility checker is a client-side keyword-matching heuristic against each scheme's eligibility text, not a real rules engine — documented as a deliberate placeholder. Live-tested DB/RLS (own-application insert, deny-apply-for-another-member, deny-direct-catalog-edit) and UI (status badges render correctly, eligibility filter toggle verified to actually change results) |
+| Government schemes | ✅ done | Model, repository, 5 screens (catalog, detail, eligibility checker, tracking, staff-only applications review queue). Eligibility checker is a real structured rules engine (`EligibilityCriteria`/`evaluateSchemeEligibility()`, migration `0040`) over SHG membership/age/grade — the only structured facts this app's data model carries — not the client-side keyword-matching heuristic this row described before that migration landed. Live-tested DB/RLS (own-application insert, deny-apply-for-another-member, deny-direct-catalog-edit, deadline enforced in the INSERT `with check` itself not just the UI, no self-decision per round 97/round 101's `member_id <> auth.uid()` on both `using`/`with check`) and UI (status badges render correctly, eligibility filter toggle verified to actually change results) |
 | Training | ✅ done | Model, repository, 4 screens (catalog, course detail, quiz, certificates). Quiz content is now real and per-course (`public.quiz_questions`, migration 0041, read via the masked `quiz_questions_public` view added in migration 0051 that never exposes `correct_index` to the client), not the old single generic 3-question set. Grading is entirely server-side via the `submit_quiz_attempt` security-definer RPC — the client sends only its answer indices, never sees correct answers in advance, and can no longer self-certify by calling the old direct upsert shape (RLS-rejected). Proportional ≥2/3 pass threshold (`requiredScoreToPass`) scales with each course's actual question count. Live-tested DB/RLS end to end (masked view hides answers, base table correctly `permission denied` even before RLS evaluates, RPC grades and certifies atomically on a pass, old self-certify upsert shape now rejected, legitimate progress-only upsert still works, failing score leaves no `course_progress` row) and UI (progress bars, per-course radio quiz, disabled-in-demo-mode submit, pass/fail messaging) |
 | Digital payments | ✅ done | `PaymentProcessor` abstraction (`lib/services/payment_processor.dart`) with a `MockPaymentProcessor` that always succeeds and synthesizes a reference — swapping in a real gateway later is a one-file change. 3 screens (home, scan & pay, history). Live-tested DB/RLS: payments are **private to the owning member**, not shared shg-wide like savings/loans (deliberate — confirmed correct), deny-recording-for-another-member also confirmed. UI-tested: amount entry, mode chips, disabled-in-demo-mode Pay button |
 | Announcements | ✅ done | Model, repository, 2 screens (home list with unread-dot indicator + leader/staff-only post dialog, detail with read-receipt tracking via `announcement_reads`). Global (`shg_id is null`) + shg-scoped announcements merged via `.or()` query. Staff can now actually reach the platform-wide post path (`shg_id: null`) that RLS's `is_staff()` bypass already permitted — previously `AnnouncementRepository.post()` hard-rejected any null `shgId`, so despite SRS.md always having claimed "staff may post platform-wide", no code path in the app ever sent one; a staff account with no SHG of its own hit the exact same dead-end message a leader without an approved SHG would. Fixed with a `platformWide` parameter (always `true` for `crp`/`clf`/`admin` callers), plus a small scope-hint caption in the compose dialog ("posted to your SHG only" vs. "visible to every SHG platform-wide") so the silent scope difference isn't invisible to the poster. Fully localized `announcements_home_page.dart` (title, empty state, compose dialog, all 3 snackbars, the "Unread" semantic label reusing the existing `memberDashboardUnreadLabel` key) across all 3 locales — previously only `announcement_detail_page.dart` was localized, an inconsistency within the same module the audit that started this round caught. Live-tested DB/RLS (member-post denied, leader-post allowed, shared shg read visibility, own read-receipt insert allowed, marking another member's receipt denied) and UI (list + detail render correctly in demo mode, member correctly sees no post button); the platform-wide staff path itself is verified by direct reading of the deployed `announcements_insert_leader_or_staff` policy text rather than a live insert (no RLS/migration changed this round — the policy's `is_staff()` OR-branch already unconditionally permits any `shg_id` value including null, a boolean-logic claim with no execution ambiguity, unlike the Training/Support rounds' new triggers/columns which did warrant a live round-trip) |
@@ -8421,3 +8421,160 @@ needed to resolve. `flutter analyze`: 0 issues. `flutter test`: 940 → 947
 (7 new: 3 role-visibility, 2 repository guard-clause, 2 read-receipt
 isolation-pattern; the accessibility test was fixed in place, not added),
 full suite passing.
+
+## Update (round 101) — Government Schemes: closed a doc-vs-code gap round 97 believed it had fully fixed, plus a stale module-status row
+
+An audit agent re-read this module in full — model, repository, all 5
+pages, the router, every migration touching `schemes`/`scheme_applications`
+(0001, 0002, 0012, 0027, 0029, 0030, 0037, 0040, 0049, 0050 — the final
+reconstructed policy set, not just the latest patch), the docs, l10n
+parity, and existing tests — specifically checking whether round 97's
+self-decision fix (documented as closing "the most severe self-escalation
+gap of this entire testing series") actually reached everywhere its own
+write-up claimed. Almost everything held up: the eligibility engine, the
+deadline enforcement (genuinely in the INSERT `with check` itself, not
+just a UI gate — a direct REST POST to an expired scheme is independently
+rejected server-side), the self-decision block (`member_id <> auth.uid()`
+survives intact and is only *strengthened* by migration 0050's later
+`decided_by`/`decided_at` column locks, not undone by it), full l10n
+parity across all 5 pages, and correct `context.go()`-only navigation all
+checked out clean.
+
+One real gap surfaced, and it's exactly the kind round 97's own
+methodology was built to catch: **`docs/ARCHITECTURE.md`'s "No
+self-escalation, anywhere" bullet claims round 97 filtered the reviewer's
+own application out of both `scheme_applications_review_page.dart`'s queue
+*and* its "Pending" count** — but the only "Pending" count that exists for
+scheme applications is a separate code path,
+`AdminRepository.fetchDashboardStats()`'s `pendingReviewCount` (the "N
+scheme applications pending review" banner on the Admin Dashboard), which
+round 97 never actually touched. A staff account who is also a real SHG
+member with her own pending application would see this banner overcount
+by exactly one relative to the review queue it links to — not a security
+hole (RLS still blocks her from deciding it, same as before), but a real,
+previously-unreported product-consistency bug of the identical shape
+round 97 explicitly fixed for `loans_home_page.dart`'s "Pending Approval"
+badge (`loan.memberId != <viewer's own id>`, applied to both the list
+*and* the count in that instance — the scheme applications version of
+that same discipline only ever reached the list). Fixed by threading the
+viewer's own profile id from `AdminDashboard.build()`'s `AppState` through
+`_load()` into `fetchDashboardStats(viewerId)`, applying the identical
+`!= viewerId` filter in both the demo-mode (`SchemeApplicationReview.
+memberId`) and live-mode (`scheme_applications.member_id`) branches.
+
+Also fixed a stale `docs/DEVELOPMENT_PROGRESS.md` module-status row (line
+~260): it still said "4 screens" (missing the staff review queue, which
+has existed since well before round 97) and described the eligibility
+checker as "a client-side keyword-matching heuristic... documented as a
+deliberate placeholder" — true before migration `0040`, false since; every
+later round's own entries (97, 98, 100) already correctly treat the real
+rules engine as established fact, so this one summary row simply never
+got refreshed when 0040 shipped. This is the same *class* of gap as round
+100's Announcements finding — not a new discovery method, but confirmation
+the same discipline (re-reading a module's own historical claims against
+current code, not just the code in isolation) keeps finding real drift.
+
+Added test coverage for two things that had none: a repository-level
+regression test proving `fetchDashboardStats('demo-member')` (the fixed
+demo-mode memberId) now correctly returns `pendingReviewCount: 0`; and,
+since `SchemeApplicationsReviewPage`/the staff-only review route had zero
+test coverage of any kind before this round, both the router-level
+role-gate (member and leader denied, crp reaches it — mirroring
+`deep_link_redirect_test.dart`'s harness) and an isolated pure-logic test
+of the self-exclusion filter expression itself. The filter can't be
+exercised through the real page in a widget test: `AppState.profile` only
+ever becomes non-null via a live-mode profile upsert/fetch, so a demo-mode
+widget test can never make the review page's `myId` equal a specific
+pending application's `memberId` to prove the exclusion actually fires —
+same disclosed architecture conflict as `loan_detail_page.dart`'s Record
+Payment dialog. `flutter analyze`: 0 issues. `flutter test`: 947 → 954 (7
+new: 3 router role-gate, 3 self-exclusion pattern, 1 dashboard-count
+regression), full suite passing.
+
+## Update (round 102) — Reports: fixed a live-mode-only metric drift the demo-mode version of the same bug had already been fixed once, plus two stale SRS role/report rows
+
+An audit agent read both report/trend/analytics repositories, all 10
+pages under `lib/pages/reports/`, the router's role-gating for every one
+of them, the full migration history for `report_snapshots`/
+`analytics_kpis`, the underlying tables' RLS this module aggregates
+across, the docs, l10n parity, and existing tests. The module's
+authorization story held up clean — this audit specifically went looking
+for a "hub hides the link but the route doesn't re-check role" bug (the
+prompt flagged Reports as having the most role tiers of any module:
+member/leader/CRP/CLF/admin) and found none: every SHG-tier and
+Federation-tier sub-report's path shares its tier's `/app/reports/shg` or
+`/app/reports/federation` prefix, so `router.dart`'s
+`_roleRestrictedPrefixes` (matched via `startsWith`) already covered all
+10 pages correctly, not just the two hub routes. Full l10n parity across
+all 10 pages, no N+1 patterns, and no case of a report page reading data
+its own RLS-scoped query wouldn't already permit.
+
+One real, previously-undiscovered logic bug surfaced, and it's a genuine
+"the same bug, fixed once, recurring in the branch that wasn't touched"
+case: **`ReportRepository.fetchShgReport()`'s live-mode `avgAttendancePct`
+disagreed with its own SHG's attendance trend chart, on the same screen**.
+`ShgPerformanceReportPage` loads both `fetchShgReport()` (the headline
+"Avg. Attendance" stat card) and `TrendRepository.attendanceTrend()` (the
+chart directly below it) in one `_load()` call. A commit earlier this
+session (`531a08c`) had already diagnosed and fixed this exact drift in
+**demo mode** — the two were computed from different mock fields and
+disagreed (88% headline vs. a true ~83% trend average) — by making the
+demo branch derive `avgAttendancePct` from the identical points the trend
+chart itself plots, so they can no longer disagree by construction. That
+fix was never mirrored into the live-mode branch, which kept its original,
+structurally different formula: an all-time window with a `meetingsTotal
+× memberCount` assumed denominator (silently assuming every member has an
+attendance row at every meeting), against the trend chart's last-6-months
+window with the actual recorded row count as its denominator. In live
+mode, this SHG report screen's own headline number and its own chart could
+show two different attendance percentages for the same SHG — and since
+`ShgFinancialSummaryPage`'s "Avg. Attendance" tile and
+`AnalyticsRepository.fetchShgDetail()`'s CRP "SHG Health" drill-down both
+reuse this same `fetchShgReport()` value, the drift reached three separate
+screens, not just one. Fixed by applying the exact same derivation the
+demo branch already uses — `avgAttendancePct` now comes from
+`TrendRepository().attendanceTrend(shgId: shgId)`'s own points in both
+branches, so live and demo mode share one formula instead of two that can
+silently diverge. No existing test caught this: both
+`meeting_report_consistency_test.dart` and
+`trend_repository_attendance_test.dart` are explicitly demo-mode-only
+regression coverage for the original bug, and neither touches the live
+branch; no live-mode test exists for this repository anywhere (matches
+this codebase's established constraint — no live Supabase project is
+reachable from this dev environment), so this fix rests on mirroring
+already-proven-correct demo-mode logic rather than a new passing test.
+
+Two stale `docs/SRS.md` rows corrected: **FR-RPT-4** listed only "CLF,
+Admin" for federation-wide reports, contradicting both the actual code
+(`_federationStaff = {crp, clf, admin}` gates these identically at the
+router and the hub) and the SRS's own prose one paragraph above the table,
+which already said "CRP/CLF/Admin". **FR-RPT-2** described SHG-level
+reports as "financial summary, performance, attendance, loan statement"
+restricted to "Leader, CRP, CLF, Admin" — but Attendance Report and Loan
+Statement are actually member-tier tiles on the ungated `MemberReportPage`
+(open to every role, including a plain member), and the real SHG-tier hub
+offers Financial Summary/Audit Report/Performance Report instead — this
+row was never refreshed when the Reports hub-ification round split the 3
+original combined pages into their current 3×3 tier/report structure
+(that round's own `DEVELOPMENT_PROGRESS.md` entry describes the current
+structure correctly; only this one SRS requirement row lagged). Also added
+the `report_snapshots`/`analytics_kpis` client-computes-instead-of-reads-
+the-cache pattern to `docs/ARCHITECTURE.md` §7's "Known architectural
+placeholders" table — it was already extensively documented in code
+comments and in SRS.md prose, but missing from the one doc section whose
+entire purpose is to list exactly this class of disclosure; noted in the
+same entry that `analytics_kpis` is more precisely an orphaned table (RLS
+provisioned, no writer anywhere in `supabase/functions/`) than "populated
+but unused" the way `report_snapshots` is (which has a real, deployed,
+nightly `pg_cron` writer the client just doesn't consume yet).
+
+Added the role-gating test coverage this module never had at any role
+combination: `test/routes/reports_role_gate_test.dart` confirms every
+`Role` reaches the member-tier hub, a member is redirected from both the
+SHG-tier hub *and* a specific SHG sub-report reached by direct URL (not
+just the hub — closing exactly the risk class this audit went looking
+for), a leader is correctly still redirected from the Federation tier
+(staff-only, not leader-or-staff), and a crp specifically reaches the
+Federation hub (locking in the FR-RPT-4 fix above against a future
+regression). `flutter analyze`: 0 issues. `flutter test`: 954 → 966 (12
+new, all role-gating), full suite passing.

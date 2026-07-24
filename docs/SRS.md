@@ -655,10 +655,10 @@ signal, not a certified metric.
 
 | ID | Requirement | Roles |
 |---|---|---|
-| FR-RPT-1 | Member views her own personal report | Member |
-| FR-RPT-2 | Leader/staff view SHG-level reports (financial summary, performance, attendance, loan statement) | Leader, CRP, CLF, Admin |
+| FR-RPT-1 | Any user views her own personal report hub: Savings Statement, Loan Statement, Attendance Report | All |
+| FR-RPT-2 | Leader/staff view SHG-level reports: Financial Summary, Audit Report, Performance Report (with attendance trend chart) | Leader, CRP, CLF, Admin |
 | FR-RPT-3 | CRP/CLF/Admin view platform-wide analytics: KPIs, SHG list with health/grade (an attendance-based proxy, not a certified metric), SHG detail drill-down | CRP, CLF, Admin |
-| FR-RPT-4 | CLF/Admin view federation-wide reports: growth, recovery rate, villages | CLF, Admin |
+| FR-RPT-4 | CRP/CLF/Admin view federation-wide reports: growth, recovery rate, villages | CRP, CLF, Admin |
 
 ### 3.16 SHG (Group) Management (`shg/`)
 
