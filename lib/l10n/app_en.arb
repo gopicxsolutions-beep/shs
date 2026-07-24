@@ -1129,6 +1129,27 @@
 
   "savingsHomeEmpty": "No savings entries yet",
 
+  "savingsLedgerTitle": "Savings Ledger",
+
+  "savingsLedgerLiveLabel": "Live",
+
+  "savingsLedgerAddTooltip": "Add savings",
+
+  "savingsLedgerEmpty": "No savings entries recorded yet",
+
+  "savingsLedgerVerifyError": "Could not verify this entry. Please try again.",
+
+  "savingsLedgerVerifying": "Verifying…",
+
+  "savingsLedgerVerifyAction": "{amount} · Verify",
+  "@savingsLedgerVerifyAction": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "savingsLedgerVerifiedBadge": "verified",
+
   "savingsStatementTitle": "Savings Statement",
 
   "savingsStatementEmpty": "No entries to statement yet",

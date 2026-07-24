@@ -820,6 +820,22 @@
 
   "savingsHomeEmpty": "अभी तक कोई बचत एंट्री नहीं है",
 
+  "savingsLedgerTitle": "बचत लेजर",
+
+  "savingsLedgerLiveLabel": "लाइव",
+
+  "savingsLedgerAddTooltip": "बचत जोड़ें",
+
+  "savingsLedgerEmpty": "अभी तक कोई बचत एंट्री दर्ज नहीं की गई",
+
+  "savingsLedgerVerifyError": "इस एंट्री को सत्यापित नहीं किया जा सका। कृपया पुनः प्रयास करें।",
+
+  "savingsLedgerVerifying": "सत्यापित हो रहा है…",
+
+  "savingsLedgerVerifyAction": "{amount} · सत्यापित करें",
+
+  "savingsLedgerVerifiedBadge": "सत्यापित",
+
   "savingsStatementTitle": "बचत स्टेटमेंट",
 
   "savingsStatementEmpty": "अभी तक कोई एंट्री नहीं है",

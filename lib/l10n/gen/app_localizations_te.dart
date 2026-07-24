@@ -1641,6 +1641,33 @@ class AppLocalizationsTe extends AppLocalizations {
   String get savingsHomeEmpty => 'ఇంకా పొదుపు ఎంట్రీలు లేవు';
 
   @override
+  String get savingsLedgerTitle => 'పొదుపు లెడ్జర్';
+
+  @override
+  String get savingsLedgerLiveLabel => 'ప్రత్యక్షం';
+
+  @override
+  String get savingsLedgerAddTooltip => 'పొదుపు జోడించండి';
+
+  @override
+  String get savingsLedgerEmpty => 'ఇంకా ఏ పొదుపు ఎంట్రీలు నమోదు కాలేదు';
+
+  @override
+  String get savingsLedgerVerifyError =>
+      'ఈ ఎంట్రీని ధృవీకరించడం సాధ్యం కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get savingsLedgerVerifying => 'ధృవీకరిస్తోంది…';
+
+  @override
+  String savingsLedgerVerifyAction(String amount) {
+    return '$amount · ధృవీకరించండి';
+  }
+
+  @override
+  String get savingsLedgerVerifiedBadge => 'ధృవీకరించబడింది';
+
+  @override
   String get savingsStatementTitle => 'పొదుపు స్టేట్‌మెంట్';
 
   @override

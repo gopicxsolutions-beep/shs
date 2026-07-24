@@ -1642,6 +1642,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savingsHomeEmpty => 'No savings entries yet';
 
   @override
+  String get savingsLedgerTitle => 'Savings Ledger';
+
+  @override
+  String get savingsLedgerLiveLabel => 'Live';
+
+  @override
+  String get savingsLedgerAddTooltip => 'Add savings';
+
+  @override
+  String get savingsLedgerEmpty => 'No savings entries recorded yet';
+
+  @override
+  String get savingsLedgerVerifyError =>
+      'Could not verify this entry. Please try again.';
+
+  @override
+  String get savingsLedgerVerifying => 'Verifying…';
+
+  @override
+  String savingsLedgerVerifyAction(String amount) {
+    return '$amount · Verify';
+  }
+
+  @override
+  String get savingsLedgerVerifiedBadge => 'verified';
+
+  @override
   String get savingsStatementTitle => 'Savings Statement';
 
   @override

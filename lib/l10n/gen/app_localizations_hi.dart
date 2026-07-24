@@ -1610,6 +1610,33 @@ class AppLocalizationsHi extends AppLocalizations {
   String get savingsHomeEmpty => 'अभी तक कोई बचत एंट्री नहीं है';
 
   @override
+  String get savingsLedgerTitle => 'बचत लेजर';
+
+  @override
+  String get savingsLedgerLiveLabel => 'लाइव';
+
+  @override
+  String get savingsLedgerAddTooltip => 'बचत जोड़ें';
+
+  @override
+  String get savingsLedgerEmpty => 'अभी तक कोई बचत एंट्री दर्ज नहीं की गई';
+
+  @override
+  String get savingsLedgerVerifyError =>
+      'इस एंट्री को सत्यापित नहीं किया जा सका। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get savingsLedgerVerifying => 'सत्यापित हो रहा है…';
+
+  @override
+  String savingsLedgerVerifyAction(String amount) {
+    return '$amount · सत्यापित करें';
+  }
+
+  @override
+  String get savingsLedgerVerifiedBadge => 'सत्यापित';
+
+  @override
   String get savingsStatementTitle => 'बचत स्टेटमेंट';
 
   @override

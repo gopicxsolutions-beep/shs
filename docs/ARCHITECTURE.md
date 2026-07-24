@@ -233,9 +233,29 @@ insert with no corresponding balance change.
   `signInWithOtp`/`verifyOTP`.
 - **Supabase Realtime** — used narrowly, only where collaborative live updates
   genuinely matter (the savings ledger, so a second leader's verification
-  appears without a manual refresh). Every other list is a one-shot
-  `AppAsyncBuilder<T>` load — an open realtime channel has an ongoing cost and
-  isn't justified for screens nobody else is editing concurrently.
+  appears without a manual refresh; `loans` is wired the same way in the
+  repository layer, not yet consumed by any page). Every other list is a
+  one-shot `AppAsyncBuilder<T>` load — an open realtime channel has an
+  ongoing cost and isn't justified for screens nobody else is editing
+  concurrently.
+  - **A table must be explicitly added to the `supabase_realtime` Postgres
+    publication before `.stream()` can work at all** — independent of RLS,
+    independent of the client code being correct. This is a genuine,
+    previously-undiscovered production gap found during live end-to-end
+    testing of the Savings module: `savings_entries` was never added to
+    that publication by any migration, so `SavingsLedgerPage` (the leader's
+    verification screen) hit a generic error on every single live-mode
+    visit, for as long as the feature existed — invisible to demo mode
+    (which never opens a real channel) and to `flutter analyze`/
+    `flutter test` (no automated test exercises a real Realtime
+    connection). Fixed in migration `0046` (`alter publication
+    supabase_realtime add table ...`) for both `savings_entries` and
+    `loans`. Adding a table to the publication does **not** bypass RLS —
+    Supabase Realtime evaluates every change event against the subscribing
+    client's own role and that table's existing policies before delivering
+    it, the same boundary the REST API already enforces. Any future
+    `.stream()` call on a new table needs the identical migration step, or
+    it will fail exactly the same way.
 - **Edge Functions** (Deno/TypeScript, `supabase/functions/`):
   - `ai-advisor-proxy` — see [AI_MODULES.md](AI_MODULES.md).
   - `generate-report-snapshots` — pg_cron-triggered nightly report

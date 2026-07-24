@@ -41,10 +41,12 @@ class SavingsGroupReportPage extends StatelessWidget {
           // pending entry is an unconfirmed self-report not yet reconciled
           // by the SHG leader.
           final verifiedEntries = entries.where((e) => e.status == 'verified').toList();
-          final totals = <String, num>{};
-          for (final e in verifiedEntries) {
-            totals[e.memberName] = (totals[e.memberName] ?? 0) + e.amount;
-          }
+          // See SavingsRepository.aggregateVerifiedTotals's own doc comment
+          // for why this is keyed by memberId, not memberName. `names`
+          // tracks the display name for each id separately, purely for
+          // rendering — built from the same entry list.
+          final totals = SavingsRepository.aggregateVerifiedTotals(verifiedEntries);
+          final names = <String, String>{for (final e in verifiedEntries) e.memberId: e.memberName};
           final sorted = totals.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
           final groupTotal = totals.values.fold<num>(0, (a, b) => a + b);
           final trend = repo.monthlyTrend(verifiedEntries);
@@ -71,8 +73,8 @@ class SavingsGroupReportPage extends StatelessWidget {
                   children: [
                     for (var i = 0; i < sorted.length; i++)
                       AppListRow(
-                        leading: AppAvatar(name: sorted[i].key, size: 36),
-                        title: sorted[i].key,
+                        leading: AppAvatar(name: names[sorted[i].key]!, size: 36),
+                        title: names[sorted[i].key]!,
                         subtitle: l10n.savingsGroupReportRank(i + 1),
                         trailing: Text('₹${NumberFormat('#,##,##0', 'en_IN').format(sorted[i].value)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                         chevron: false,

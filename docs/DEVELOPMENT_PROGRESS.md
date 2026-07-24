@@ -7477,3 +7477,90 @@ Docs updated in the same change: [ARCHITECTURE.md](ARCHITECTURE.md) §2
 "sensitive columns never in a broadly-readable view" bullet, which had
 been describing the pre-fix, actually-broken state as if it were already
 correct).
+
+## Update (round 91) — Savings module end-to-end testing found and fixed another severe, previously-undiscovered live-mode bug: the Savings Ledger (leader verification screen) could never load, for anyone, ever
+
+User asked for full end-to-end testing of the Savings feature. An audit
+agent read all 6 pages, the repository, the model, the router, and the
+relevant RLS migrations — checking first, given round 90's finding, whether
+the same PostgREST embedded-relation-ambiguity bug shape existed here.
+`savings_entries` has only one foreign key into `profiles` (`member_id`),
+so that specific bug does not reproduce — confirmed by grepping every
+later migration for `alter table ... savings_entries` and finding only a
+harmless `updated_at` column ever added. RLS/lifecycle-column-lock
+correctness (self-verify, rewrite-after-verify, cross-SHG insert) was also
+confirmed already solid from earlier hardening rounds (`0014`, `0015`,
+`0027`, `0034`, `0038`).
+
+Live testing then surfaced a different, equally severe bug the audit
+couldn't have found by reading code alone: opening `SavingsLedgerPage` (the
+leader/staff screen used to verify member deposits) immediately hit a
+generic "Something went wrong" error, for the account that had just
+successfully added a real entry moments earlier through the normal Add
+Savings flow. Root cause: `SavingsRepository.watchForShg()` uses
+supabase_flutter's `.stream()` realtime builder, which requires a table to
+be explicitly added to the `supabase_realtime` Postgres publication before
+any client can subscribe to its changes — independent of RLS, independent
+of whether the query itself is correct. A direct check against the live
+project (`select tablename from pg_publication_tables where pubname =
+'supabase_realtime'`) returned **zero rows** — no table in the entire
+schema had ever been added to that publication by any migration. This
+means `SavingsLedgerPage` — the leader's actual verification workflow —
+could never have worked live, for any project, since the feature was
+written; demo mode never reaches this code path (no realtime channel to
+subscribe to without a live project) and no automated test exercises a
+real Realtime connection, so nothing in this repo's normal verification
+loop (`flutter analyze`/`flutter test`) could have caught it. Fixed with
+migration `0046` (`alter publication supabase_realtime add table
+savings_entries, loans` — `loans` fixed on the same principle since
+`LoanRepository.watchForShg()` has the identical latent bug, even though no
+page currently calls it). Adding a table to the publication does not bypass
+RLS — Supabase Realtime authorizes every change event against the
+subscribing client's own role and the table's existing policies first, the
+same boundary the REST API already enforces.
+
+Verified live, end-to-end, with the real deployed migration: added a real
+savings entry through the normal flow (₹250, Cash, Weekly), confirmed it
+appeared correctly in both the Savings home page and (after the fix) the
+Ledger; tapped "Verify" on the Ledger and watched the entry update to
+"verified" **instantly, with no manual refresh** — proof the realtime
+subscribe → change → push → UI-update pipeline now genuinely works, not
+just that the initial snapshot loads. Confirmed the underlying row's
+`status` was really `'verified'` in the database, then deleted the test
+entry and re-confirmed zero rows remain for that SHG.
+
+Two further real (if less severe) gaps the audit found, both fixed:
+- **`savings_ledger_page.dart` had skipped the earlier i18n completion
+  pass entirely** — confirmed via `.arb` grep (zero `savingsLedger*` keys
+  existed, unlike all 5 sibling Savings screens). Added 9 keys across all
+  three `.arb` files (title, live-label, add tooltip, empty state,
+  verify-error/verifying/verify-action/verified-badge strings) and wired
+  them in.
+- **`savings_group_report_page.dart`'s per-member leaderboard was keyed by
+  `memberName`, not `memberId`.** `profiles.name` has no uniqueness
+  constraint, so two members sharing a display name (realistic in a
+  village context) would have had their verified savings silently folded
+  into one combined leaderboard row, with a wrong rank for every other
+  member too — a real correctness bug for the exact leader/staff financial-
+  oversight use case this screen exists for, not cosmetic. Fixed by
+  factoring the aggregation into a new `SavingsRepository.
+  aggregateVerifiedTotals()` (keyed by `memberId`, mirroring
+  `AdminRepository.trainingCompletionPctFrom`'s own precedent for pulling
+  pure arithmetic out of a page's `build()` for testability), with a
+  separate `memberId -> memberName` map built alongside it purely for
+  display. New unit tests lock in the exact regression: two different
+  members sharing the name "Priya" now produce two separate totals/ranks,
+  not one merged row.
+
+`flutter analyze`: 0 issues. `flutter test`: **940/940 passing** (up from
+937). Migration `0046` deployed to the live project and re-verified via
+direct SQL (`pg_publication_tables` now lists both `savings_entries` and
+`loans`). This round's critical fix could only have been found by
+exercising the real live-mode app end-to-end, exactly as this project's own
+verification standard requires — it is invisible to every other check this
+repo runs.
+
+Docs updated in the same change: [ARCHITECTURE.md](ARCHITECTURE.md) §4
+(new bullet on the `supabase_realtime` publication requirement for
+`.stream()`, so this exact gap isn't silently reintroduced by a future
+module reaching for realtime).

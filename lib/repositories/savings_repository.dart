@@ -18,6 +18,25 @@ class SavingsRepository {
   // for the rest of the session, mirroring AnnouncementRepository._locallyRead.
   static final List<SavingsEntry> _locallyAdded = [];
 
+  /// Pure per-member totals for `SavingsGroupReportPage`'s leaderboard,
+  /// factored out so it's directly unit-testable without a live DB (mirrors
+  /// `AdminRepository.trainingCompletionPctFrom`'s own precedent for pulling
+  /// pure arithmetic out of a page's `build()`). Keyed by **memberId**, not
+  /// memberName — `profiles.name` has no uniqueness constraint, so two
+  /// members sharing a display name (realistic in a village context, no
+  /// dedup enforced anywhere at signup) would otherwise have their verified
+  /// savings silently folded into a single combined leaderboard row, with a
+  /// wrong rank for every other member too. Callers wanting a display name
+  /// should build their own `memberId -> memberName` map alongside this from
+  /// the same entry list (see `SavingsGroupReportPage`).
+  static Map<String, num> aggregateVerifiedTotals(List<SavingsEntry> verifiedEntries) {
+    final totals = <String, num>{};
+    for (final e in verifiedEntries) {
+      totals[e.memberId] = (totals[e.memberId] ?? 0) + e.amount;
+    }
+    return totals;
+  }
+
   Future<List<SavingsEntry>> fetchForShg(String? shgId) async {
     if (!_live) return [..._locallyAdded.reversed, ..._mockEntries()];
     if (shgId == null) return [];

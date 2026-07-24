@@ -820,6 +820,22 @@
 
   "savingsHomeEmpty": "ఇంకా పొదుపు ఎంట్రీలు లేవు",
 
+  "savingsLedgerTitle": "పొదుపు లెడ్జర్",
+
+  "savingsLedgerLiveLabel": "ప్రత్యక్షం",
+
+  "savingsLedgerAddTooltip": "పొదుపు జోడించండి",
+
+  "savingsLedgerEmpty": "ఇంకా ఏ పొదుపు ఎంట్రీలు నమోదు కాలేదు",
+
+  "savingsLedgerVerifyError": "ఈ ఎంట్రీని ధృవీకరించడం సాధ్యం కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.",
+
+  "savingsLedgerVerifying": "ధృవీకరిస్తోంది…",
+
+  "savingsLedgerVerifyAction": "{amount} · ధృవీకరించండి",
+
+  "savingsLedgerVerifiedBadge": "ధృవీకరించబడింది",
+
   "savingsStatementTitle": "పొదుపు స్టేట్‌మెంట్",
 
   "savingsStatementEmpty": "ఇంకా ఎంట్రీలు లేవు",

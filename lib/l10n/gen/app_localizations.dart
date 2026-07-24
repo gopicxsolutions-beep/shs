@@ -2872,6 +2872,54 @@ abstract class AppLocalizations {
   /// **'No savings entries yet'**
   String get savingsHomeEmpty;
 
+  /// No description provided for @savingsLedgerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Savings Ledger'**
+  String get savingsLedgerTitle;
+
+  /// No description provided for @savingsLedgerLiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get savingsLedgerLiveLabel;
+
+  /// No description provided for @savingsLedgerAddTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add savings'**
+  String get savingsLedgerAddTooltip;
+
+  /// No description provided for @savingsLedgerEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No savings entries recorded yet'**
+  String get savingsLedgerEmpty;
+
+  /// No description provided for @savingsLedgerVerifyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not verify this entry. Please try again.'**
+  String get savingsLedgerVerifyError;
+
+  /// No description provided for @savingsLedgerVerifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying…'**
+  String get savingsLedgerVerifying;
+
+  /// No description provided for @savingsLedgerVerifyAction.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} · Verify'**
+  String savingsLedgerVerifyAction(String amount);
+
+  /// No description provided for @savingsLedgerVerifiedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'verified'**
+  String get savingsLedgerVerifiedBadge;
+
   /// No description provided for @savingsStatementTitle.
   ///
   /// In en, this message translates to:

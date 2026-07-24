@@ -75,4 +75,49 @@ void main() {
       expect(trend.single.total, 400);
     });
   });
+
+  group('SavingsRepository.aggregateVerifiedTotals', () {
+    SavingsEntry named(String memberId, String memberName, num amount) {
+      return SavingsEntry(
+        id: 'e-$memberId-$amount',
+        memberId: memberId,
+        memberName: memberName,
+        date: DateTime(2026, 5, 1),
+        amount: amount,
+        mode: 'Cash',
+        frequency: 'Monthly',
+        status: 'verified',
+      );
+    }
+
+    test('sums multiple entries for the same member into one total', () {
+      final totals = SavingsRepository.aggregateVerifiedTotals([
+        named('mem1', 'Priya', 300),
+        named('mem1', 'Priya', 200),
+      ]);
+      expect(totals, {'mem1': 500});
+    });
+
+    // Regression: `savings_group_report_page.dart`'s leaderboard used to key
+    // its totals map by `e.memberName` instead of `e.memberId`.
+    // `profiles.name` has no uniqueness constraint, so two distinct members
+    // sharing a display name (realistic in a village context) had their
+    // verified savings silently folded into a single combined leaderboard
+    // row instead of two separate ranked rows — a real correctness bug for
+    // the leader/staff financial-oversight screen this feeds, not a
+    // cosmetic one. Keying by memberId keeps them separate regardless of
+    // whether their names collide.
+    test('keeps two different members with the SAME display name as two separate totals, not one merged row', () {
+      final totals = SavingsRepository.aggregateVerifiedTotals([
+        named('mem1', 'Priya', 300),
+        named('mem2', 'Priya', 700),
+      ]);
+      expect(totals, {'mem1': 300, 'mem2': 700});
+      expect(totals.length, 2, reason: 'two distinct members must produce two distinct leaderboard rows even when their names are identical');
+    });
+
+    test('an empty entry list produces an empty totals map (no crash)', () {
+      expect(SavingsRepository.aggregateVerifiedTotals(const []), isEmpty);
+    });
+  });
 }

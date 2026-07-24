@@ -40,12 +40,13 @@ class SavingsLedgerPage extends StatelessWidget {
     final shgId = context.select<AppState, String?>((s) => s.profile?.shgId);
     final repo = SavingsRepository();
     final live = SupabaseService.isConfigured && shgId != null;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: PageHeader(
-        title: 'Savings Ledger',
-        subtitle: live ? 'Live' : null,
-        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.savingsEntry), tooltip: 'Add savings'),
+        title: l10n.savingsLedgerTitle,
+        subtitle: live ? l10n.savingsLedgerLiveLabel : null,
+        right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.savingsEntry), tooltip: l10n.savingsLedgerAddTooltip),
       ),
       body: live
           ? StreamBuilder<List<SavingsEntry>>(
@@ -86,8 +87,9 @@ class _LedgerListState extends State<_LedgerList> {
   Widget build(BuildContext context) {
     final entries = widget.entries;
     final repo = widget.repo;
+    final l10n = AppLocalizations.of(context)!;
     if (entries.isEmpty) {
-      return const AppEmptyState(icon: Icons.fact_check_rounded, message: 'No savings entries recorded yet');
+      return AppEmptyState(icon: Icons.fact_check_rounded, message: l10n.savingsLedgerEmpty);
     }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -116,7 +118,7 @@ class _LedgerListState extends State<_LedgerList> {
                                 } catch (_) {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Could not verify this entry. Please try again.')),
+                                      SnackBar(content: Text(l10n.savingsLedgerVerifyError)),
                                     );
                                   }
                                 } finally {
@@ -128,7 +130,10 @@ class _LedgerListState extends State<_LedgerList> {
                           side: BorderSide(color: Brand.c500),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: Text(verifying ? 'Verifying…' : '₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)} · Verify', style: AppTheme.sans(11, weight: FontWeight.w700, color: Brand.c600)),
+                        child: Text(
+                          verifying ? l10n.savingsLedgerVerifying : l10n.savingsLedgerVerifyAction('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}'),
+                          style: AppTheme.sans(11, weight: FontWeight.w700, color: Brand.c600),
+                        ),
                       ),
                     )
                   : Column(
@@ -137,7 +142,7 @@ class _LedgerListState extends State<_LedgerList> {
                       children: [
                         Text('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                         const SizedBox(height: 4),
-                        const AppBadge(text: 'verified', tone: BadgeTone.success),
+                        AppBadge(text: l10n.savingsLedgerVerifiedBadge, tone: BadgeTone.success),
                       ],
                     ),
               chevron: false,
