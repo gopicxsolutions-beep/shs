@@ -7,6 +7,7 @@ class FinancialEntry {
   final num credit;
   final num balance;
   final DateTime date;
+  final String? createdByName;
 
   const FinancialEntry({
     required this.id,
@@ -16,6 +17,7 @@ class FinancialEntry {
     required this.credit,
     required this.balance,
     required this.date,
+    this.createdByName,
   });
 
   factory FinancialEntry.fromMap(Map<String, dynamic> map) => FinancialEntry(
@@ -26,5 +28,6 @@ class FinancialEntry {
         credit: map['credit'] as num? ?? 0,
         balance: map['balance'] as num? ?? 0,
         date: DateTime.parse(map['entry_date'] as String),
+        createdByName: (map['profiles'] as Map<String, dynamic>?)?['name'] as String?,
       );
 }

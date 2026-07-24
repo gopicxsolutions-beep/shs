@@ -2787,6 +2787,55 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get financialLedgerCashbookTitle => 'कैशबुक';
+
+  @override
+  String get financialLedgerLedgerTitle => 'जनरल लेजर';
+
+  @override
+  String get financialLedgerBankTitle => 'बैंक समाधान';
+
+  @override
+  String get financialLedgerAuditTitle => 'ऑडिट ट्रेल';
+
+  @override
+  String get financialEntryDialogTitle => 'एंट्री जोड़ें';
+
+  @override
+  String get financialEntryDialogDescriptionHint => 'विवरण';
+
+  @override
+  String get financialEntryDialogAmountHint => 'राशि';
+
+  @override
+  String get financialEntryDialogCreditLabel => 'क्रेडिट (आवक)';
+
+  @override
+  String get financialEntryDialogDebitLabel => 'डेबिट (जावक)';
+
+  @override
+  String get financialEntryDialogDescriptionRequiredError =>
+      'एक विवरण दर्ज करें';
+
+  @override
+  String get financialEntryDialogInvalidAmountError =>
+      'एक मान्य राशि दर्ज करें';
+
+  @override
+  String get financialEntryDialogNoShgError =>
+      'आप किसी SHG से जुड़े नहीं हैं, इसलिए इसके विरुद्ध दर्ज करने के लिए कुछ नहीं है।';
+
+  @override
+  String get financialEntryDialogSaveError =>
+      'यह एंट्री सेव नहीं हो सकी। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get financialEntryDialogAddingButton => 'जोड़ा जा रहा है…';
+
+  @override
+  String get financialEntryDialogAddButton => 'जोड़ें';
+
+  @override
   String get servicesSavingsLabel => 'बचत';
 
   @override

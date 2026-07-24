@@ -1969,6 +1969,36 @@
     }
   },
 
+  "financialLedgerCashbookTitle": "Cashbook",
+
+  "financialLedgerLedgerTitle": "General Ledger",
+
+  "financialLedgerBankTitle": "Bank Reconciliation",
+
+  "financialLedgerAuditTitle": "Audit Trail",
+
+  "financialEntryDialogTitle": "Add entry",
+
+  "financialEntryDialogDescriptionHint": "Description",
+
+  "financialEntryDialogAmountHint": "Amount",
+
+  "financialEntryDialogCreditLabel": "Credit (in)",
+
+  "financialEntryDialogDebitLabel": "Debit (out)",
+
+  "financialEntryDialogDescriptionRequiredError": "Enter a description",
+
+  "financialEntryDialogInvalidAmountError": "Enter a valid amount",
+
+  "financialEntryDialogNoShgError": "You're not linked to an SHG, so there's nothing to record this entry against.",
+
+  "financialEntryDialogSaveError": "Could not save this entry. Please try again.",
+
+  "financialEntryDialogAddingButton": "Adding…",
+
+  "financialEntryDialogAddButton": "Add",
+
   "servicesSavingsLabel": "Savings",
 
   "servicesLoansLabel": "Loans",

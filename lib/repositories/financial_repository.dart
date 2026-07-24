@@ -35,9 +35,13 @@ class FinancialRepository {
     // produce a wrong total. Capped at a generous 500; newest-first
     // ordering means only very old entries (year+ history for a
     // long-running SHG) would ever fall past the cap.
+    // `created_by` is the only FK financial_ledger has into `profiles` (no
+    // second FK on this table), so this embed is unambiguous to PostgREST —
+    // unlike shg_join_requests' member_id/decided_by collision (round 90),
+    // this doesn't need an explicit `profiles!created_by(name)` hint.
     final rows = await _client
         .from('financial_ledger')
-        .select()
+        .select('*, profiles(name)')
         .eq('shg_id', shgId)
         .eq('entry_type', entryType)
         .order('entry_date', ascending: false)

@@ -5002,6 +5002,96 @@ abstract class AppLocalizations {
   /// **'No {title} entries yet'**
   String financialLedgerEmpty(String title);
 
+  /// No description provided for @financialLedgerCashbookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cashbook'**
+  String get financialLedgerCashbookTitle;
+
+  /// No description provided for @financialLedgerLedgerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'General Ledger'**
+  String get financialLedgerLedgerTitle;
+
+  /// No description provided for @financialLedgerBankTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Reconciliation'**
+  String get financialLedgerBankTitle;
+
+  /// No description provided for @financialLedgerAuditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit Trail'**
+  String get financialLedgerAuditTitle;
+
+  /// No description provided for @financialEntryDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add entry'**
+  String get financialEntryDialogTitle;
+
+  /// No description provided for @financialEntryDialogDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get financialEntryDialogDescriptionHint;
+
+  /// No description provided for @financialEntryDialogAmountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get financialEntryDialogAmountHint;
+
+  /// No description provided for @financialEntryDialogCreditLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit (in)'**
+  String get financialEntryDialogCreditLabel;
+
+  /// No description provided for @financialEntryDialogDebitLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Debit (out)'**
+  String get financialEntryDialogDebitLabel;
+
+  /// No description provided for @financialEntryDialogDescriptionRequiredError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a description'**
+  String get financialEntryDialogDescriptionRequiredError;
+
+  /// No description provided for @financialEntryDialogInvalidAmountError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid amount'**
+  String get financialEntryDialogInvalidAmountError;
+
+  /// No description provided for @financialEntryDialogNoShgError.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re not linked to an SHG, so there\'s nothing to record this entry against.'**
+  String get financialEntryDialogNoShgError;
+
+  /// No description provided for @financialEntryDialogSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save this entry. Please try again.'**
+  String get financialEntryDialogSaveError;
+
+  /// No description provided for @financialEntryDialogAddingButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding…'**
+  String get financialEntryDialogAddingButton;
+
+  /// No description provided for @financialEntryDialogAddButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get financialEntryDialogAddButton;
+
   /// No description provided for @servicesSavingsLabel.
   ///
   /// In en, this message translates to:

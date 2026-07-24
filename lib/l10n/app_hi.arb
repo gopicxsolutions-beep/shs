@@ -1530,6 +1530,36 @@
 
   "financialLedgerEmpty": "अभी तक कोई {title} एंट्री नहीं",
 
+  "financialLedgerCashbookTitle": "कैशबुक",
+
+  "financialLedgerLedgerTitle": "जनरल लेजर",
+
+  "financialLedgerBankTitle": "बैंक समाधान",
+
+  "financialLedgerAuditTitle": "ऑडिट ट्रेल",
+
+  "financialEntryDialogTitle": "एंट्री जोड़ें",
+
+  "financialEntryDialogDescriptionHint": "विवरण",
+
+  "financialEntryDialogAmountHint": "राशि",
+
+  "financialEntryDialogCreditLabel": "क्रेडिट (आवक)",
+
+  "financialEntryDialogDebitLabel": "डेबिट (जावक)",
+
+  "financialEntryDialogDescriptionRequiredError": "एक विवरण दर्ज करें",
+
+  "financialEntryDialogInvalidAmountError": "एक मान्य राशि दर्ज करें",
+
+  "financialEntryDialogNoShgError": "आप किसी SHG से जुड़े नहीं हैं, इसलिए इसके विरुद्ध दर्ज करने के लिए कुछ नहीं है।",
+
+  "financialEntryDialogSaveError": "यह एंट्री सेव नहीं हो सकी। कृपया फिर से कोशिश करें।",
+
+  "financialEntryDialogAddingButton": "जोड़ा जा रहा है…",
+
+  "financialEntryDialogAddButton": "जोड़ें",
+
   "servicesSavingsLabel": "बचत",
 
   "servicesLoansLabel": "ऋण",

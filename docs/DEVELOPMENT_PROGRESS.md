@@ -7760,3 +7760,87 @@ wasn't a new bug fix but a caught false positive — treating a specific,
 well-cited audit claim as a hypothesis to verify against live state rather
 than a fact to act on immediately saved a wasted fix cycle, exactly the
 discipline this project's own verification standard calls for.
+
+## Update (round 94) — Financial Records: fixed a real hardcoded-title i18n bug, wired up an entirely-unused-but-already-translated dialog, and added Audit Trail attribution
+
+User asked for full end-to-end testing of the Financial Records feature
+(cashbook/ledger/bank/audit, `public.financial_ledger`). An audit agent
+checked the same risk classes as the four previous rounds and reported this
+module as the most hardened one found yet: `financial_ledger` has only one
+FK into `profiles` (`created_by`, no embed-ambiguity risk), zero `.stream()`
+calls anywhere in `FinancialRepository` (no realtime-publication risk), and
+its RLS is airtight — `financial_ledger_insert_leader_or_staff` requires
+leader-of-shg-or-staff **and** `created_by = auth.uid()` **and** `entry_date
+= current_date` **and** `created_at = now()` **and** `balance` to equal a
+`security definer` helper's server-computed previous-balance-plus-this-entry
+formula, closing off actor spoofing, backdating, and balance forgery all at
+once; UPDATE/DELETE are staff-only (append-only-by-design for a plain
+member); and the race condition class already fixed for savings/loans was
+pre-empted here from the start via `add_financial_ledger_entry`'s
+`pg_advisory_xact_lock` on `(shg_id, entry_type)`. No disclosed-but-stale
+gap was found on this table at all — checked explicitly given round 93's
+finding that kind of gap can silently rot.
+
+Two real i18n bugs found, one already caught mid-fix by the audit itself:
+
+- **The financial-records page title was hardcoded English and bypassed
+  `AppLocalizations` entirely** — `router.dart` passed a raw English string
+  (`title: 'Cashbook'`/`'General Ledger'`/`'Bank Reconciliation'`/`'Audit
+  Trail'`) straight into `FinancialLedgerPage`, which rendered it verbatim,
+  even though the in-page switcher tiles pointing to the *other* three
+  record types were already correctly localized. Worse, the hardcoded
+  English title was then lower-cased and fed into the empty-state message
+  (`l10n.financialLedgerEmpty(widget.title.toLowerCase())`), so even the
+  *translated* empty-state sentence had a stray English word embedded in a
+  Hindi/Telugu session. Fixed by adding four new title keys
+  (`financialLedgerCashbookTitle`/`LedgerTitle`/`BankTitle`/`AuditTitle`) and
+  a `financialLedgerTitleFor(entryType, l10n)` helper that derives the title
+  from `entryType` instead of a constructor parameter — removed the `title`
+  field from `FinancialLedgerPage` entirely so a future route can't
+  reintroduce the same hardcoded-string bypass.
+- **`financial_entry_dialog.dart` was 100% hardcoded English despite
+  already having fully correct, unused translations sitting in all three
+  `.arb` files** — this one was caught by the audit while a first pass at
+  it was already underway in this same round: the dialog's title, both
+  field hints, both segmented-button labels, all three error messages, and
+  both button states were literals, and `AppLocalizations.of(context)` was
+  never even imported for anything but the Cancel button's fallback. Wired
+  all 11 strings to their (now-added) `financialEntryDialog*` getters.
+  This broke `test/pages/financial_entry_dialog_test.dart`, which predated
+  the i18n work and built a bare `MaterialApp` with no
+  `localizationsDelegates` — `AppLocalizations.of(context)!` correctly
+  throws in a widget tree that never registered the delegate. Fixed the
+  test itself (added the same `localizationsDelegates`/`supportedLocales`
+  setup every other localized page's test already uses, e.g.
+  `loans_home_page_test.dart`), not the production code — a bare
+  `MaterialApp` with no delegates was never representative of the real app,
+  which always configures them at the router root.
+
+One completeness gap the audit flagged, fixed in the same pass: **the Audit
+Trail screen — the one view whose entire purpose is accountability — never
+showed who posted an entry**, even though `created_by` has been on the
+table since `0001_init_schema.sql` and carries zero embed-ambiguity risk.
+Added `FinancialEntry.createdByName` (parsed from a `profiles(name)` embed,
+confirmed unambiguous — only one FK into `profiles` on this table), embedded
+it in `FinancialRepository.fetchForShg`'s query, and now render it inline
+after the date (`"24 Jul 2026 · QA Leader Test"`) on every entry across all
+four record types, not just Audit Trail, since knowing who posted a cashbook
+or bank entry is equally useful.
+
+Verified live against the real deployed project: posted a real `__TEST__`
+audit entry via the `add_financial_ledger_entry` RPC as the real leader
+account, confirmed via a direct join query that `created_by` resolves to
+the correct name with no ambiguity error, then deleted the test row and
+re-confirmed via SQL that zero `financial_ledger` rows remain for the test
+SHG.
+
+`flutter analyze`: 0 issues. `flutter test`: 940/940 passing (one test file
+updated to add localization delegates, as described above — no test
+coverage was removed). This round's finding shape was different from the
+previous four: no severe live-mode-only RLS/realtime bug this time — the
+module's backend was already this project's most hardened — but a real,
+user-visible i18n regression (a hardcoded title silently defeating an
+otherwise-complete translation pass) and a striking case of translation
+work already done and simply never wired up, both exactly the kind of gap
+that passes `flutter analyze`/`flutter test` cleanly and is only caught by
+actually reading what a non-English session would see.

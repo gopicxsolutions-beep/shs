@@ -2859,6 +2859,55 @@ class AppLocalizationsTe extends AppLocalizations {
   }
 
   @override
+  String get financialLedgerCashbookTitle => 'క్యాష్‌బుక్';
+
+  @override
+  String get financialLedgerLedgerTitle => 'జనరల్ లెడ్జర్';
+
+  @override
+  String get financialLedgerBankTitle => 'బ్యాంక్ సయోధ్య';
+
+  @override
+  String get financialLedgerAuditTitle => 'ఆడిట్ ట్రయల్';
+
+  @override
+  String get financialEntryDialogTitle => 'ఎంట్రీ జోడించండి';
+
+  @override
+  String get financialEntryDialogDescriptionHint => 'వివరణ';
+
+  @override
+  String get financialEntryDialogAmountHint => 'మొత్తం';
+
+  @override
+  String get financialEntryDialogCreditLabel => 'క్రెడిట్ (ఇన్)';
+
+  @override
+  String get financialEntryDialogDebitLabel => 'డెబిట్ (అవుట్)';
+
+  @override
+  String get financialEntryDialogDescriptionRequiredError =>
+      'వివరణ నమోదు చేయండి';
+
+  @override
+  String get financialEntryDialogInvalidAmountError =>
+      'సరైన మొత్తాన్ని నమోదు చేయండి';
+
+  @override
+  String get financialEntryDialogNoShgError =>
+      'మీరు ఏ SHGకి లింక్ చేయబడలేదు, కాబట్టి దీనికి వ్యతిరేకంగా నమోదు చేయడానికి ఏమీ లేదు.';
+
+  @override
+  String get financialEntryDialogSaveError =>
+      'ఈ ఎంట్రీని సేవ్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get financialEntryDialogAddingButton => 'జోడిస్తోంది…';
+
+  @override
+  String get financialEntryDialogAddButton => 'జోడించండి';
+
+  @override
   String get servicesSavingsLabel => 'పొదుపు';
 
   @override

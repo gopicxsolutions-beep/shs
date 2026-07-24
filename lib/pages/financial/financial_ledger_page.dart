@@ -30,10 +30,24 @@ List<(String entryType, String label, String path, IconData icon, TileTone tone)
   ('audit', l10n.financialLedgerAuditLabel, Paths.financialAudit, Icons.fact_check_rounded, TileTone.violet),
 ];
 
+String financialLedgerTitleFor(String entryType, AppLocalizations l10n) {
+  switch (entryType) {
+    case 'cashbook':
+      return l10n.financialLedgerCashbookTitle;
+    case 'ledger':
+      return l10n.financialLedgerLedgerTitle;
+    case 'bank':
+      return l10n.financialLedgerBankTitle;
+    case 'audit':
+      return l10n.financialLedgerAuditTitle;
+    default:
+      return l10n.financialLedgerCashbookTitle;
+  }
+}
+
 class FinancialLedgerPage extends StatefulWidget {
   final String entryType;
-  final String title;
-  const FinancialLedgerPage({super.key, required this.entryType, required this.title});
+  const FinancialLedgerPage({super.key, required this.entryType});
 
   @override
   State<FinancialLedgerPage> createState() => _FinancialLedgerPageState();
@@ -50,10 +64,11 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
     final shgId = appState.profile?.shgId;
     final l10n = AppLocalizations.of(context)!;
     final recordTypes = _recordTypes(l10n);
+    final title = financialLedgerTitleFor(widget.entryType, l10n);
 
     return Scaffold(
       appBar: PageHeader(
-        title: widget.title,
+        title: title,
         right: isLeaderOrStaff
             ? IconButton(
                 icon: Icon(Icons.add_circle_rounded, color: Brand.c600),
@@ -85,7 +100,7 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
               future: () => _repo.fetchForShg(shgId, widget.entryType),
               builder: (context, entries) {
                 if (entries.isEmpty) {
-                  return AppEmptyState(icon: Icons.receipt_long_rounded, message: l10n.financialLedgerEmpty(widget.title.toLowerCase()));
+                  return AppEmptyState(icon: Icons.receipt_long_rounded, message: l10n.financialLedgerEmpty(title.toLowerCase()));
                 }
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -116,7 +131,12 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
                                     overflow: TextOverflow.ellipsis,
                                     style: AppTheme.sans(13, weight: FontWeight.w700),
                                   ),
-                                  Text(DateFormat('dd MMM yyyy').format(e.date), style: AppTheme.sans(11, color: Neutral.c500)),
+                                  Text(
+                                    e.createdByName != null ? '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.createdByName}' : DateFormat('dd MMM yyyy').format(e.date),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTheme.sans(11, color: Neutral.c500),
+                                  ),
                                 ],
                               ),
                             ),

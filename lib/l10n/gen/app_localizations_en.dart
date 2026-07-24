@@ -2855,6 +2855,54 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get financialLedgerCashbookTitle => 'Cashbook';
+
+  @override
+  String get financialLedgerLedgerTitle => 'General Ledger';
+
+  @override
+  String get financialLedgerBankTitle => 'Bank Reconciliation';
+
+  @override
+  String get financialLedgerAuditTitle => 'Audit Trail';
+
+  @override
+  String get financialEntryDialogTitle => 'Add entry';
+
+  @override
+  String get financialEntryDialogDescriptionHint => 'Description';
+
+  @override
+  String get financialEntryDialogAmountHint => 'Amount';
+
+  @override
+  String get financialEntryDialogCreditLabel => 'Credit (in)';
+
+  @override
+  String get financialEntryDialogDebitLabel => 'Debit (out)';
+
+  @override
+  String get financialEntryDialogDescriptionRequiredError =>
+      'Enter a description';
+
+  @override
+  String get financialEntryDialogInvalidAmountError => 'Enter a valid amount';
+
+  @override
+  String get financialEntryDialogNoShgError =>
+      'You\'re not linked to an SHG, so there\'s nothing to record this entry against.';
+
+  @override
+  String get financialEntryDialogSaveError =>
+      'Could not save this entry. Please try again.';
+
+  @override
+  String get financialEntryDialogAddingButton => 'Adding…';
+
+  @override
+  String get financialEntryDialogAddButton => 'Add';
+
+  @override
   String get servicesSavingsLabel => 'Savings';
 
   @override

@@ -1530,6 +1530,36 @@
 
   "financialLedgerEmpty": "ఇంకా {title} ఎంట్రీలు లేవు",
 
+  "financialLedgerCashbookTitle": "క్యాష్‌బుక్",
+
+  "financialLedgerLedgerTitle": "జనరల్ లెడ్జర్",
+
+  "financialLedgerBankTitle": "బ్యాంక్ సయోధ్య",
+
+  "financialLedgerAuditTitle": "ఆడిట్ ట్రయల్",
+
+  "financialEntryDialogTitle": "ఎంట్రీ జోడించండి",
+
+  "financialEntryDialogDescriptionHint": "వివరణ",
+
+  "financialEntryDialogAmountHint": "మొత్తం",
+
+  "financialEntryDialogCreditLabel": "క్రెడిట్ (ఇన్)",
+
+  "financialEntryDialogDebitLabel": "డెబిట్ (అవుట్)",
+
+  "financialEntryDialogDescriptionRequiredError": "వివరణ నమోదు చేయండి",
+
+  "financialEntryDialogInvalidAmountError": "సరైన మొత్తాన్ని నమోదు చేయండి",
+
+  "financialEntryDialogNoShgError": "మీరు ఏ SHGకి లింక్ చేయబడలేదు, కాబట్టి దీనికి వ్యతిరేకంగా నమోదు చేయడానికి ఏమీ లేదు.",
+
+  "financialEntryDialogSaveError": "ఈ ఎంట్రీని సేవ్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "financialEntryDialogAddingButton": "జోడిస్తోంది…",
+
+  "financialEntryDialogAddButton": "జోడించండి",
+
   "servicesSavingsLabel": "పొదుపు",
 
   "servicesLoansLabel": "రుణాలు",

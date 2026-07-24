@@ -20,81 +20,84 @@ Future<bool?> showFinancialEntryDialog(
   return showDialog<bool>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: const Text('Add entry'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(controller: descController, maxLength: 200, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'Description')),
-            const SizedBox(height: 12),
-            TextField(controller: amountController, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, textInputAction: TextInputAction.done, maxLength: 9, decoration: const InputDecoration(prefixText: '₹', hintText: 'Amount', counterText: '')),
-            const SizedBox(height: 12),
-            SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: true, label: Text('Credit (in)')),
-                ButtonSegment(value: false, label: Text('Debit (out)')),
-              ],
-              selected: {isCredit},
-              onSelectionChanged: (v) => setState(() => isCredit = v.first),
-            ),
-            if (error != null) ...[
+      builder: (context, setState) {
+        final l10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          title: Text(l10n.financialEntryDialogTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(controller: descController, maxLength: 200, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.financialEntryDialogDescriptionHint)),
               const SizedBox(height: 12),
-              Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+              TextField(controller: amountController, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, textInputAction: TextInputAction.done, maxLength: 9, decoration: InputDecoration(prefixText: '₹', hintText: l10n.financialEntryDialogAmountHint, counterText: '')),
+              const SizedBox(height: 12),
+              SegmentedButton<bool>(
+                segments: [
+                  ButtonSegment(value: true, label: Text(l10n.financialEntryDialogCreditLabel)),
+                  ButtonSegment(value: false, label: Text(l10n.financialEntryDialogDebitLabel)),
+                ],
+                selected: {isCredit},
+                onSelectionChanged: (v) => setState(() => isCredit = v.first),
+              ),
+              if (error != null) ...[
+                const SizedBox(height: 12),
+                Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+              ],
             ],
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
-          FilledButton(
-            onPressed: submitting
-                ? null
-                : () async {
-                    final amount = num.tryParse(amountController.text);
-                    if (descController.text.trim().isEmpty) {
-                      setState(() => error = 'Enter a description');
-                      return;
-                    }
-                    if (amount == null || amount <= 0) {
-                      setState(() => error = 'Enter a valid amount');
-                      return;
-                    }
-                    setState(() {
-                      error = null;
-                      submitting = true;
-                    });
-                    try {
-                      final saved = await repo.addEntry(
-                        shgId: shgId,
-                        createdBy: createdBy,
-                        entryType: entryType,
-                        description: descController.text.trim(),
-                        debit: isCredit ? 0 : amount,
-                        credit: isCredit ? amount : 0,
-                      );
-                      if (!saved) {
+          ),
+          actions: [
+            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+            FilledButton(
+              onPressed: submitting
+                  ? null
+                  : () async {
+                      final amount = num.tryParse(amountController.text);
+                      if (descController.text.trim().isEmpty) {
+                        setState(() => error = l10n.financialEntryDialogDescriptionRequiredError);
+                        return;
+                      }
+                      if (amount == null || amount <= 0) {
+                        setState(() => error = l10n.financialEntryDialogInvalidAmountError);
+                        return;
+                      }
+                      setState(() {
+                        error = null;
+                        submitting = true;
+                      });
+                      try {
+                        final saved = await repo.addEntry(
+                          shgId: shgId,
+                          createdBy: createdBy,
+                          entryType: entryType,
+                          description: descController.text.trim(),
+                          debit: isCredit ? 0 : amount,
+                          credit: isCredit ? amount : 0,
+                        );
+                        if (!saved) {
+                          if (context.mounted) {
+                            setState(() {
+                              submitting = false;
+                              error = l10n.financialEntryDialogNoShgError;
+                            });
+                          }
+                          return;
+                        }
+                        if (context.mounted) Navigator.of(context).pop(true);
+                      } catch (_) {
                         if (context.mounted) {
                           setState(() {
                             submitting = false;
-                            error = "You're not linked to an SHG, so there's nothing to record this entry against.";
+                            error = l10n.financialEntryDialogSaveError;
                           });
                         }
-                        return;
                       }
-                      if (context.mounted) Navigator.of(context).pop(true);
-                    } catch (_) {
-                      if (context.mounted) {
-                        setState(() {
-                          submitting = false;
-                          error = 'Could not save this entry. Please try again.';
-                        });
-                      }
-                    }
-                  },
-            child: Text(submitting ? 'Adding…' : 'Add'),
-          ),
-        ],
-      ),
+                    },
+              child: Text(submitting ? l10n.financialEntryDialogAddingButton : l10n.financialEntryDialogAddButton),
+            ),
+          ],
+        );
+      },
     ),
   );
 }
