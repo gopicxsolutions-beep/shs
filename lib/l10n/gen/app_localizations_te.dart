@@ -2699,6 +2699,61 @@ class AppLocalizationsTe extends AppLocalizations {
   }
 
   @override
+  String get livelihoodDetailTitle => 'కార్యకలాప వివరాలు';
+
+  @override
+  String get livelihoodDetailNotFoundMessage => 'ఈ కార్యకలాపం కనుగొనబడలేదు';
+
+  @override
+  String get livelihoodDetailInvestmentLabel => 'పెట్టుబడి';
+
+  @override
+  String get livelihoodDetailRevenueLabel => 'ఆదాయం';
+
+  @override
+  String livelihoodDetailNetAmount(String amount) {
+    return 'నికర $amount';
+  }
+
+  @override
+  String get livelihoodDetailProfitSoFar => 'ఇప్పటివరకు లాభం';
+
+  @override
+  String get livelihoodDetailLossSoFar => 'ఇప్పటివరకు నష్టం';
+
+  @override
+  String get livelihoodDetailUpdateProgressButton =>
+      'పురోగతిని అప్‌డేట్ చేయండి';
+
+  @override
+  String get livelihoodDetailDialogTitle => 'పురోగతిని అప్‌డేట్ చేయండి';
+
+  @override
+  String get livelihoodDetailRevenueToDateLabel => 'ఇప్పటివరకు ఆదాయం';
+
+  @override
+  String get livelihoodDetailInvalidRevenueError =>
+      'సరైన ఆదాయ మొత్తాన్ని నమోదు చేయండి';
+
+  @override
+  String get livelihoodDetailSaveError =>
+      'ఈ అప్‌డేట్‌ను సేవ్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get livelihoodDetailSavingButton => 'సేవ్ అవుతోంది…';
+
+  @override
+  String get livelihoodDetailSaveButton => 'సేవ్ చేయండి';
+
+  @override
+  String get livelihoodDetailProgressUpdatedMessage =>
+      'పురోగతి అప్‌డేట్ అయింది';
+
+  @override
+  String get livelihoodDetailDemoModeMessage =>
+      'డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
+
+  @override
   String get paymentsHistoryTitle => 'చెల్లింపు చరిత్ర';
 
   @override

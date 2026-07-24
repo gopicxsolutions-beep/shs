@@ -4714,6 +4714,102 @@ abstract class AppLocalizations {
   /// **'{amount} net'**
   String livelihoodHomeNetAmount(String amount);
 
+  /// No description provided for @livelihoodDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity Detail'**
+  String get livelihoodDetailTitle;
+
+  /// No description provided for @livelihoodDetailNotFoundMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This activity could not be found'**
+  String get livelihoodDetailNotFoundMessage;
+
+  /// No description provided for @livelihoodDetailInvestmentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Investment'**
+  String get livelihoodDetailInvestmentLabel;
+
+  /// No description provided for @livelihoodDetailRevenueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue'**
+  String get livelihoodDetailRevenueLabel;
+
+  /// No description provided for @livelihoodDetailNetAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} net'**
+  String livelihoodDetailNetAmount(String amount);
+
+  /// No description provided for @livelihoodDetailProfitSoFar.
+  ///
+  /// In en, this message translates to:
+  /// **'Profit so far'**
+  String get livelihoodDetailProfitSoFar;
+
+  /// No description provided for @livelihoodDetailLossSoFar.
+  ///
+  /// In en, this message translates to:
+  /// **'Loss so far'**
+  String get livelihoodDetailLossSoFar;
+
+  /// No description provided for @livelihoodDetailUpdateProgressButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Progress'**
+  String get livelihoodDetailUpdateProgressButton;
+
+  /// No description provided for @livelihoodDetailDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update progress'**
+  String get livelihoodDetailDialogTitle;
+
+  /// No description provided for @livelihoodDetailRevenueToDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue to date'**
+  String get livelihoodDetailRevenueToDateLabel;
+
+  /// No description provided for @livelihoodDetailInvalidRevenueError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid revenue amount'**
+  String get livelihoodDetailInvalidRevenueError;
+
+  /// No description provided for @livelihoodDetailSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save this update. Please try again.'**
+  String get livelihoodDetailSaveError;
+
+  /// No description provided for @livelihoodDetailSavingButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get livelihoodDetailSavingButton;
+
+  /// No description provided for @livelihoodDetailSaveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get livelihoodDetailSaveButton;
+
+  /// No description provided for @livelihoodDetailProgressUpdatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress updated'**
+  String get livelihoodDetailProgressUpdatedMessage;
+
+  /// No description provided for @livelihoodDetailDemoModeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — not saved (connect Supabase to persist)'**
+  String get livelihoodDetailDemoModeMessage;
+
   /// No description provided for @paymentsHistoryTitle.
   ///
   /// In en, this message translates to:

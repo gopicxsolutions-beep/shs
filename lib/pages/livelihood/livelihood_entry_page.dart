@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
+import '../../models/livelihood.dart';
 import '../../repositories/livelihood_repository.dart';
 import '../../routes/paths.dart';
 import '../../services/supabase_service.dart';
@@ -26,18 +27,6 @@ class _LivelihoodEntryPageState extends State<LivelihoodEntryPage> {
   String _activityType = 'Dairy';
   bool _saving = false;
   String? _error;
-
-  static const _types = ['Dairy', 'Tailoring', 'Retail', 'Poultry', 'Agriculture', 'Handicrafts', 'Other'];
-
-  Map<String, String> _typeLabels(AppLocalizations l10n) => {
-        'Dairy': l10n.livelihoodEntryTypeDairy,
-        'Tailoring': l10n.livelihoodEntryTypeTailoring,
-        'Retail': l10n.livelihoodEntryTypeRetail,
-        'Poultry': l10n.livelihoodEntryTypePoultry,
-        'Agriculture': l10n.livelihoodEntryTypeAgriculture,
-        'Handicrafts': l10n.livelihoodEntryTypeHandicrafts,
-        'Other': l10n.livelihoodEntryTypeOther,
-      };
 
   @override
   void dispose() {
@@ -94,7 +83,6 @@ class _LivelihoodEntryPageState extends State<LivelihoodEntryPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final typeLabels = _typeLabels(l10n);
     return Scaffold(
       appBar: PageHeader(title: l10n.livelihoodEntryTitle),
       body: SingleChildScrollView(
@@ -111,10 +99,10 @@ class _LivelihoodEntryPageState extends State<LivelihoodEntryPage> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: _types.map((t) {
+                    children: livelihoodActivityTypes.map((t) {
                       final selected = t == _activityType;
                       return ChoiceChip(
-                        label: Text(typeLabels[t] ?? t),
+                        label: Text(livelihoodActivityTypeLabel(t, l10n)),
                         selected: selected,
                         onSelected: (_) => setState(() => _activityType = t),
                         selectedColor: Brand.c50,

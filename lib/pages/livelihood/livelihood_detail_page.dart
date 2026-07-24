@@ -31,15 +31,16 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     return Scaffold(
-      appBar: const PageHeader(title: 'Activity Detail'),
+      appBar: PageHeader(title: l10n.livelihoodDetailTitle),
       body: AppAsyncBuilder<LivelihoodActivity?>(
         key: _key,
         future: () => _repo.fetchById(widget.activityId),
         builder: (context, activity) {
           if (activity == null) {
-            return const AppEmptyState(icon: Icons.error_outline_rounded, message: 'This activity could not be found');
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.livelihoodDetailNotFoundMessage);
           }
           // `livelihood_write_self_leader_or_staff` (RLS) only lets the
           // activity's own member, the SHG's leader, or staff update it —
@@ -59,27 +60,28 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text(activity.activityType, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
-                      AppBadge(text: activity.status, tone: BadgeTone.neutral),
+                      Flexible(child: Text(livelihoodActivityTypeLabel(activity.activityType, l10n), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white))),
+                      const SizedBox(width: 8),
+                      AppBadge(text: activity.status, tone: livelihoodStatusTones[activity.status] ?? BadgeTone.neutral),
                     ]),
                     const SizedBox(height: 6),
                     Text(activity.description ?? '', style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.9))),
                     const SizedBox(height: 12),
-                    Text('${activity.profit < 0 ? '-' : ''}₹${NumberFormat('#,##,##0', 'en_IN').format(activity.profit.abs())} net', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white)),
-                    Text('${activity.profit >= 0 ? "Profit" : "Loss"} so far', style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.75))),
+                    Text(l10n.livelihoodDetailNetAmount('${activity.profit < 0 ? '-' : ''}₹${NumberFormat('#,##,##0', 'en_IN').format(activity.profit.abs())}'), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white)),
+                    Text(activity.profit >= 0 ? l10n.livelihoodDetailProfitSoFar : l10n.livelihoodDetailLossSoFar, style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.75))),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               Row(children: [
-                Expanded(child: _infoTile('Investment', '₹${NumberFormat('#,##,##0', 'en_IN').format(activity.investment)}')),
+                Expanded(child: _infoTile(l10n.livelihoodDetailInvestmentLabel, '₹${NumberFormat('#,##,##0', 'en_IN').format(activity.investment)}')),
                 const SizedBox(width: 12),
-                Expanded(child: _infoTile('Revenue', '₹${NumberFormat('#,##,##0', 'en_IN').format(activity.revenue)}')),
+                Expanded(child: _infoTile(l10n.livelihoodDetailRevenueLabel, '₹${NumberFormat('#,##,##0', 'en_IN').format(activity.revenue)}')),
               ]),
               if (canUpdate) ...[
                 const SizedBox(height: 20),
                 AppButton(
-                  label: 'Update Progress',
+                  label: l10n.livelihoodDetailUpdateProgressButton,
                   fullWidth: true,
                   onPressed: () => _updateProgress(context, activity),
                 ),
@@ -103,6 +105,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
       );
 
   Future<void> _updateProgress(BuildContext context, LivelihoodActivity activity) async {
+    final l10n = AppLocalizations.of(context)!;
     final revenueController = TextEditingController(text: '${activity.revenue}');
     var status = activity.status;
     String? error;
@@ -111,7 +114,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Update progress'),
+          title: Text(l10n.livelihoodDetailDialogTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,7 +125,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
                 inputFormatters: decimalAmountInputFormatters,
                 textInputAction: TextInputAction.done,
                 maxLength: 9,
-                decoration: const InputDecoration(prefixText: '₹', labelText: 'Revenue to date', counterText: ''),
+                decoration: InputDecoration(prefixText: '₹', labelText: l10n.livelihoodDetailRevenueToDateLabel, counterText: ''),
               ),
               const SizedBox(height: 12),
               DropdownButton<String>(
@@ -138,14 +141,14 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
+            TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
             FilledButton(
               onPressed: submitting
                   ? null
                   : () async {
                       final revenue = num.tryParse(revenueController.text);
                       if (revenue == null || revenue < 0) {
-                        setState(() => error = 'Enter a valid revenue amount');
+                        setState(() => error = l10n.livelihoodDetailInvalidRevenueError);
                         return;
                       }
                       setState(() {
@@ -159,12 +162,12 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
                         if (context.mounted) {
                           setState(() {
                             submitting = false;
-                            error = 'Could not save this update. Please try again.';
+                            error = l10n.livelihoodDetailSaveError;
                           });
                         }
                       }
                     },
-              child: Text(submitting ? 'Saving…' : 'Save'),
+              child: Text(submitting ? l10n.livelihoodDetailSavingButton : l10n.livelihoodDetailSaveButton),
             ),
           ],
         ),
@@ -174,7 +177,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
       _key.currentState?.reload();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(SupabaseService.isConfigured ? 'Progress updated' : 'Demo mode — not saved (connect Supabase to persist)')),
+          SnackBar(content: Text(SupabaseService.isConfigured ? l10n.livelihoodDetailProgressUpdatedMessage : l10n.livelihoodDetailDemoModeMessage)),
         );
       }
     }

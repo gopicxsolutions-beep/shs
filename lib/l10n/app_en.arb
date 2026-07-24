@@ -1858,6 +1858,43 @@
     }
   },
 
+  "livelihoodDetailTitle": "Activity Detail",
+
+  "livelihoodDetailNotFoundMessage": "This activity could not be found",
+
+  "livelihoodDetailInvestmentLabel": "Investment",
+
+  "livelihoodDetailRevenueLabel": "Revenue",
+
+  "livelihoodDetailNetAmount": "{amount} net",
+  "@livelihoodDetailNetAmount": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "livelihoodDetailProfitSoFar": "Profit so far",
+
+  "livelihoodDetailLossSoFar": "Loss so far",
+
+  "livelihoodDetailUpdateProgressButton": "Update Progress",
+
+  "livelihoodDetailDialogTitle": "Update progress",
+
+  "livelihoodDetailRevenueToDateLabel": "Revenue to date",
+
+  "livelihoodDetailInvalidRevenueError": "Enter a valid revenue amount",
+
+  "livelihoodDetailSaveError": "Could not save this update. Please try again.",
+
+  "livelihoodDetailSavingButton": "Saving…",
+
+  "livelihoodDetailSaveButton": "Save",
+
+  "livelihoodDetailProgressUpdatedMessage": "Progress updated",
+
+  "livelihoodDetailDemoModeMessage": "Demo mode — not saved (connect Supabase to persist)",
+
   "paymentsHistoryTitle": "Payment History",
 
   "paymentsHistoryEmpty": "No payments yet",

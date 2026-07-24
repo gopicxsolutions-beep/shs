@@ -7844,3 +7844,68 @@ otherwise-complete translation pass) and a striking case of translation
 work already done and simply never wired up, both exactly the kind of gap
 that passes `flutter analyze`/`flutter test` cleanly and is only caught by
 actually reading what a non-English session would see.
+
+## Update (round 95) — Livelihood: another entirely-unused-but-already-translated page, plus untranslated activity-type labels leaking through two sibling pages
+
+User asked for full end-to-end testing of the Livelihood feature
+(`public.livelihood_activities`). An audit agent found this module's RLS to
+be the most mature seen yet — traced the full hardening lineage (`0002` →
+`0015` → `0016` → `0024` → `0027` → `0036` → `0037` → `0038` → `0039`) and
+confirmed the *current* policy set: SELECT is deliberately SHG-wide
+(transparency, same family as savings/loans/meetings/ledger); INSERT closes
+both a self cross-SHG gap and a leader-assigns-to-outsider gap
+(`profile_shg_id(member_id) = shg_id`, the same shape round 93 had to add
+for `meeting_action_items`, already present here since `0038`); UPDATE locks
+every column except `revenue`/`status` via a `security definer`
+`livelihood_activities_locked_fields()` helper (avoiding the documented
+`42P17` self-recursion trap); DELETE is staff-only. The one deliberately-left
+open judgment call (`status` not locked to `'planned'` on INSERT, `0027`)
+was explicitly re-checked against every live call site of `status` in the
+app today (badge display + a non-branching fold) and confirmed still
+low-stakes, not stale. `livelihood_detail_page.dart` had already
+independently reasoned through the "UI offers an action RLS will silently
+reject" trap (round 92's Loans bug) — its own `canUpdate` gate already
+matches the UPDATE policy exactly (self member OR non-member role), so no
+new fix was needed there. Verified live against the real project: a real
+self-insert, self-update, and — critically — a locked-field tamper attempt
+(`revenue` + `investment` in the same UPDATE) that was correctly rejected
+(`42501`), then cleaned up and re-confirmed zero rows remain.
+
+Two real, cheap-to-fix bugs found:
+
+- **`livelihood_detail_page.dart` was essentially 100% hardcoded
+  English**, with the exact matching translations already sitting unused
+  in all three `.arb` files (added mid-session before the audit even
+  finished, in anticipation of exactly this pattern from rounds 92-94) —
+  title, empty state, investment/revenue labels, profit/loss line, the
+  "Update Progress" button, and the entire update dialog (title, field
+  label, validation error, save error, button states, success/demo-mode
+  snackbar). Wired all 16 strings to their `livelihoodDetail*` getters.
+- **`activity_type` is stored as a canonical English key
+  (`'Dairy'`/`'Poultry'`/etc.) and was only ever translated back to a label
+  in one place** — `LivelihoodEntryPage`'s own private `_typeLabels()` map,
+  used solely for its own type-picker chips. Both `livelihood_home_page.dart`
+  and `livelihood_detail_page.dart` rendered `activity.activityType` raw,
+  so a Hindi/Telugu user who logged an activity in her own language would
+  see it played back in English everywhere else in the app. Fixed by
+  hoisting the type list and label lookup out of the entry page into new
+  shared `livelihoodActivityTypes`/`livelihoodActivityTypeLabel()` in
+  `lib/models/livelihood.dart` (mirroring the existing precedent of
+  `lib/models/scheme.dart` taking an `AppLocalizations` parameter for the
+  same reason), and using it from all three pages. Same fix also closed a
+  smaller, related bug the audit flagged: `livelihood_detail_page.dart`
+  hardcoded its status badge to `BadgeTone.neutral` regardless of actual
+  status, while the home page correctly varied the tone — hoisted that
+  mapping to a shared `livelihoodStatusTones` constant too, so the two
+  views can't silently diverge again. The activity-type `Text` on the
+  detail page's header row was also wrapped in `Flexible` (previously safe
+  only because the raw English keys were all short; a translated Telugu/
+  Hindi label could plausibly run longer).
+
+`flutter analyze`: 0 issues. `flutter test`: 940/940 passing, no test
+changes needed this round. Two rounds in a row now (Financial Records,
+Livelihood) have turned up complete, already-translated-but-never-wired-up
+pages — worth treating as a standing pattern to check for directly in
+future module audits (grep every page for zero `AppLocalizations` usage
+against a non-empty matching `.arb` key set) rather than waiting to
+rediscover it module by module.

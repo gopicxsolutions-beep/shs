@@ -2628,6 +2628,59 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get livelihoodDetailTitle => 'गतिविधि विवरण';
+
+  @override
+  String get livelihoodDetailNotFoundMessage => 'यह गतिविधि नहीं मिल सकी';
+
+  @override
+  String get livelihoodDetailInvestmentLabel => 'निवेश';
+
+  @override
+  String get livelihoodDetailRevenueLabel => 'राजस्व';
+
+  @override
+  String livelihoodDetailNetAmount(String amount) {
+    return 'नेट $amount';
+  }
+
+  @override
+  String get livelihoodDetailProfitSoFar => 'अब तक का लाभ';
+
+  @override
+  String get livelihoodDetailLossSoFar => 'अब तक का नुकसान';
+
+  @override
+  String get livelihoodDetailUpdateProgressButton => 'प्रगति अपडेट करें';
+
+  @override
+  String get livelihoodDetailDialogTitle => 'प्रगति अपडेट करें';
+
+  @override
+  String get livelihoodDetailRevenueToDateLabel => 'अब तक का राजस्व';
+
+  @override
+  String get livelihoodDetailInvalidRevenueError =>
+      'एक मान्य राजस्व राशि दर्ज करें';
+
+  @override
+  String get livelihoodDetailSaveError =>
+      'यह अपडेट सेव नहीं हो सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get livelihoodDetailSavingButton => 'सेव हो रहा है…';
+
+  @override
+  String get livelihoodDetailSaveButton => 'सेव करें';
+
+  @override
+  String get livelihoodDetailProgressUpdatedMessage => 'प्रगति अपडेट हो गई';
+
+  @override
+  String get livelihoodDetailDemoModeMessage =>
+      'डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
+
+  @override
   String get paymentsHistoryTitle => 'भुगतान इतिहास';
 
   @override

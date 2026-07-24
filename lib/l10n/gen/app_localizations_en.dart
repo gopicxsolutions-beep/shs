@@ -2695,6 +2695,60 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get livelihoodDetailTitle => 'Activity Detail';
+
+  @override
+  String get livelihoodDetailNotFoundMessage =>
+      'This activity could not be found';
+
+  @override
+  String get livelihoodDetailInvestmentLabel => 'Investment';
+
+  @override
+  String get livelihoodDetailRevenueLabel => 'Revenue';
+
+  @override
+  String livelihoodDetailNetAmount(String amount) {
+    return '$amount net';
+  }
+
+  @override
+  String get livelihoodDetailProfitSoFar => 'Profit so far';
+
+  @override
+  String get livelihoodDetailLossSoFar => 'Loss so far';
+
+  @override
+  String get livelihoodDetailUpdateProgressButton => 'Update Progress';
+
+  @override
+  String get livelihoodDetailDialogTitle => 'Update progress';
+
+  @override
+  String get livelihoodDetailRevenueToDateLabel => 'Revenue to date';
+
+  @override
+  String get livelihoodDetailInvalidRevenueError =>
+      'Enter a valid revenue amount';
+
+  @override
+  String get livelihoodDetailSaveError =>
+      'Could not save this update. Please try again.';
+
+  @override
+  String get livelihoodDetailSavingButton => 'Saving…';
+
+  @override
+  String get livelihoodDetailSaveButton => 'Save';
+
+  @override
+  String get livelihoodDetailProgressUpdatedMessage => 'Progress updated';
+
+  @override
+  String get livelihoodDetailDemoModeMessage =>
+      'Demo mode — not saved (connect Supabase to persist)';
+
+  @override
   String get paymentsHistoryTitle => 'Payment History';
 
   @override

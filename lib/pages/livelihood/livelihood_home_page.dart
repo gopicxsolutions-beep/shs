@@ -17,12 +17,6 @@ import '../../widgets/async_state.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/stat_card.dart';
 
-const _statusTones = <String, BadgeTone>{
-  'planned': BadgeTone.neutral,
-  'active': BadgeTone.brand,
-  'completed': BadgeTone.success,
-};
-
 class LivelihoodHomePage extends StatelessWidget {
   const LivelihoodHomePage({super.key});
 
@@ -67,7 +61,7 @@ class LivelihoodHomePage extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(a.activityType, style: AppTheme.sans(14, weight: FontWeight.w700)),
+                                Text(livelihoodActivityTypeLabel(a.activityType, l10n), style: AppTheme.sans(14, weight: FontWeight.w700)),
                                 Text(isLeaderOrStaff ? a.memberName : (a.description ?? ''), maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500)),
                               ],
                             ),
@@ -77,7 +71,7 @@ class LivelihoodHomePage extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                AppBadge(text: a.status, tone: _statusTones[a.status] ?? BadgeTone.neutral),
+                                AppBadge(text: a.status, tone: livelihoodStatusTones[a.status] ?? BadgeTone.neutral),
                                 const SizedBox(height: 4),
                                 Text(
                                   l10n.livelihoodHomeNetAmount('${a.profit < 0 ? '-' : ''}₹${NumberFormat('#,##,##0', 'en_IN').format(a.profit.abs())}'),

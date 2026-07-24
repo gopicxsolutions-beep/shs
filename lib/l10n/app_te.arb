@@ -1434,6 +1434,38 @@
 
   "livelihoodHomeNetAmount": "నికర {amount}",
 
+  "livelihoodDetailTitle": "కార్యకలాప వివరాలు",
+
+  "livelihoodDetailNotFoundMessage": "ఈ కార్యకలాపం కనుగొనబడలేదు",
+
+  "livelihoodDetailInvestmentLabel": "పెట్టుబడి",
+
+  "livelihoodDetailRevenueLabel": "ఆదాయం",
+
+  "livelihoodDetailNetAmount": "నికర {amount}",
+
+  "livelihoodDetailProfitSoFar": "ఇప్పటివరకు లాభం",
+
+  "livelihoodDetailLossSoFar": "ఇప్పటివరకు నష్టం",
+
+  "livelihoodDetailUpdateProgressButton": "పురోగతిని అప్‌డేట్ చేయండి",
+
+  "livelihoodDetailDialogTitle": "పురోగతిని అప్‌డేట్ చేయండి",
+
+  "livelihoodDetailRevenueToDateLabel": "ఇప్పటివరకు ఆదాయం",
+
+  "livelihoodDetailInvalidRevenueError": "సరైన ఆదాయ మొత్తాన్ని నమోదు చేయండి",
+
+  "livelihoodDetailSaveError": "ఈ అప్‌డేట్‌ను సేవ్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "livelihoodDetailSavingButton": "సేవ్ అవుతోంది…",
+
+  "livelihoodDetailSaveButton": "సేవ్ చేయండి",
+
+  "livelihoodDetailProgressUpdatedMessage": "పురోగతి అప్‌డేట్ అయింది",
+
+  "livelihoodDetailDemoModeMessage": "డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
+
   "paymentsHistoryTitle": "చెల్లింపు చరిత్ర",
 
   "paymentsHistoryEmpty": "ఇంకా చెల్లింపులు లేవు",

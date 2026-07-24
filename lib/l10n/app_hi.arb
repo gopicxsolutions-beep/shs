@@ -1434,6 +1434,38 @@
 
   "livelihoodHomeNetAmount": "नेट {amount}",
 
+  "livelihoodDetailTitle": "गतिविधि विवरण",
+
+  "livelihoodDetailNotFoundMessage": "यह गतिविधि नहीं मिल सकी",
+
+  "livelihoodDetailInvestmentLabel": "निवेश",
+
+  "livelihoodDetailRevenueLabel": "राजस्व",
+
+  "livelihoodDetailNetAmount": "नेट {amount}",
+
+  "livelihoodDetailProfitSoFar": "अब तक का लाभ",
+
+  "livelihoodDetailLossSoFar": "अब तक का नुकसान",
+
+  "livelihoodDetailUpdateProgressButton": "प्रगति अपडेट करें",
+
+  "livelihoodDetailDialogTitle": "प्रगति अपडेट करें",
+
+  "livelihoodDetailRevenueToDateLabel": "अब तक का राजस्व",
+
+  "livelihoodDetailInvalidRevenueError": "एक मान्य राजस्व राशि दर्ज करें",
+
+  "livelihoodDetailSaveError": "यह अपडेट सेव नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "livelihoodDetailSavingButton": "सेव हो रहा है…",
+
+  "livelihoodDetailSaveButton": "सेव करें",
+
+  "livelihoodDetailProgressUpdatedMessage": "प्रगति अपडेट हो गई",
+
+  "livelihoodDetailDemoModeMessage": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
   "paymentsHistoryTitle": "भुगतान इतिहास",
 
   "paymentsHistoryEmpty": "अभी तक कोई भुगतान नहीं",
