@@ -1957,6 +1957,53 @@ class AppLocalizationsHi extends AppLocalizations {
   String get shgHomeIfscLabel => 'IFSC';
 
   @override
+  String get shgDocumentsTitle => 'दस्तावेज़';
+
+  @override
+  String get shgDocumentsAddTooltip => 'दस्तावेज़ जोड़ें';
+
+  @override
+  String get shgDocumentsEmpty => 'अभी तक कोई दस्तावेज़ अपलोड नहीं किया गया';
+
+  @override
+  String get shgDocumentsAddDialogTitle => 'दस्तावेज़ जोड़ें';
+
+  @override
+  String get shgDocumentsNameHint => 'दस्तावेज़ का नाम';
+
+  @override
+  String get shgDocumentsChooseFile => 'फ़ाइल चुनें (PDF, JPG, PNG, WEBP)';
+
+  @override
+  String get shgDocumentsFileTooLarge =>
+      'फ़ाइल बहुत बड़ी है — कृपया 10 MB से छोटी फ़ाइल चुनें';
+
+  @override
+  String get shgDocumentsNameRequired => 'दस्तावेज़ का नाम आवश्यक है।';
+
+  @override
+  String get shgDocumentsFileRequired =>
+      'कृपया अपलोड करने के लिए एक फ़ाइल चुनें।';
+
+  @override
+  String get shgDocumentsNotLinked =>
+      'आप किसी SHG से जुड़े नहीं हैं, इसलिए इस दस्तावेज़ को जोड़ने के लिए कुछ नहीं है।';
+
+  @override
+  String get shgDocumentsAdded => 'दस्तावेज़ जोड़ा गया';
+
+  @override
+  String get shgDocumentsAddError =>
+      'यह दस्तावेज़ जोड़ा नहीं जा सका। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get shgDocumentsNoFileAttached =>
+      'इस रिकॉर्ड से कोई फ़ाइल जुड़ी नहीं है।';
+
+  @override
+  String get shgDocumentsOpenError => 'यह दस्तावेज़ खोला नहीं जा सका।';
+
+  @override
   String get shgJoinRequestsApproved => 'अनुरोध स्वीकृत हो गया';
 
   @override

@@ -65,8 +65,9 @@ migrations:
 
 | Table | Domain |
 |---|---|
-| `shgs` | SHG (group) master record — includes sensitive `bank_account`/`ifsc` |
-| `shg_directory` (view) | Safe public subset of `shgs` for onboarding search — excludes bank fields |
+| `shgs` | SHG (group) master record — includes sensitive `bank_account`/`ifsc`; base table read directly only by admin/staff (`fetchAllShgs()`) |
+| `shg_directory` (view) | Safe public subset of `shgs` for onboarding search — excludes bank fields entirely |
+| `shg_own_masked` (view, migration `0045`) | What an ordinary member's/leader's own-SHG lookup (`fetchShg()`) actually reads — same row scope as the base table's own RLS, but `bank_account`/`ifsc` are nulled server-side unless the caller is leader/staff for that SHG |
 | `profiles` | One row per user; `role`, `shg_id`, identity |
 | `shg_join_requests` | Member → SHG join workflow, one-pending-per-member |
 | `shg_documents` | Document metadata + real Storage `storage_path` (real `file_picker` upload UI, private `shg-documents` bucket) |
@@ -153,8 +154,20 @@ inline an equivalent subquery.
   `scheme_applications` have no DELETE policy at all — they are permanent
   audit-trail records by design, not editable/removable history.
 - **Sensitive columns never in a broadly-readable view**: `shgs.bank_account`/
-  `ifsc` stay in the members-only base table; `shg_directory` exposes only the
-  safe subset for onboarding search.
+  `ifsc` were, for a while, reachable by *any* member of the SHG via the base
+  table's row-level policy (`shgs_select_own_or_staff` has no column
+  distinction — a plain `select *` from any member's client returned them),
+  even though `shg_home_page.dart` only ever *rendered* the "Bank Details"
+  section for leader/staff — a client-side check, not the real boundary. An
+  adversarial audit of the "My SHG" module found this contradicted this
+  exact bullet's own stated principle. Migration `0045` closed it with
+  `shg_own_masked` (above): the same row-visibility rule as the base table,
+  but `bank_account`/`ifsc` are nulled server-side via a `CASE
+  is_leader_or_staff()` unless the caller actually is leader/staff for that
+  SHG. `ShgRepository.fetchShg()` now reads from this view, not the base
+  table; `shg_directory` (the older, narrower "public search" view) remains
+  unchanged and still excludes the bank fields entirely rather than masking
+  them.
 
 ### 3.3 Role-escalation prevention (the single most re-audited security property)
 

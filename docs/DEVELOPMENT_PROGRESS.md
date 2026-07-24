@@ -7391,3 +7391,89 @@ logging update), §6 (the full ML-classifier writeup, blocked-logging
 writeup, staff-visible stat, and all 3 review-found fixes), §7 (moderation
 summary bullet); [QUALITY_MANAGEMENT.md](QUALITY_MANAGEMENT.md) §7
 (admin-dashboard-stats and AI-moderation checklist rows).
+
+## Update (round 90) — "My SHG" module audit found a severe, previously-undiscovered live-mode bug (join-requests could never render), plus a real RLS over-exposure and a missed i18n page; all fixed and verified live against the real project
+
+User reported the "My SHG" module (home, members, documents, join-requests,
+member-detail) "looks incomplete" with "many UI/UX issues." An audit agent
+read all 5 pages, the repository, the models, the router, and the relevant
+RLS migrations. RenderFlex overflow and dead-button/stub-navigation checks
+came back clean — that part of the module was already solid — but three
+real, concrete gaps surfaced:
+
+**Critical, previously-undiscovered bug: `shg_join_requests_page.dart` could
+never successfully load, for any leader, ever.** `shg_join_requests` has
+*two* foreign keys into `profiles` (`member_id` and `decided_by`), so the
+repository's unqualified `select('*, profiles(name)')` embed was genuinely
+ambiguous to PostgREST — not a rare edge case, a query that could never
+succeed at all, live-mode-only, regardless of whether any request existed.
+Confirmed by deploying the round's other fix and exercising the page
+live: it immediately hit `AppAsyncBuilder`'s generic "Something went wrong"
+error state. Fixed with an explicit `profiles!member_id(name, mobile)` FK
+hint. Separately, and compounding the same failure mode: a pending
+requester's `profiles.shg_id` stays null until approval (membership only
+takes effect on approval, not on request — see
+`AppState.completeProfileSetup`'s own doc comment), so
+`profiles_select_self_shg_or_staff` (`shg_id = current_shg_id()`) could
+never resolve that embed for a leader even once the query stopped
+erroring — every request would have kept silently showing the generic
+"Member" fallback forever. Migration `0045` adds
+`profiles_select_pending_join_requester`, an additional policy granting a
+leader visibility into a pending requester's own profile row. `mobile` was
+also added to the embed so a leader can distinguish two same-named
+requesters or sanity-check identity before approving, closing the
+"functionality looks incomplete" gap the audit separately flagged. Verified
+live end-to-end: inserted a real `__TEST__`-equivalent pending request
+row, confirmed the page rendered the real name, real mobile number, and
+real request date with working Approve/Reject buttons, then deleted the
+row and re-confirmed zero rows remain.
+
+**Real RLS over-exposure, contradicting this project's own stated security
+model**: `shgs_select_own_or_staff` is a row-level policy with no column
+distinction, so `ShgRepository.fetchShg()`'s plain `select()` returned
+`bank_account`/`ifsc` to *any* member of the SHG, not just its leader —
+`shg_home_page.dart` only ever *rendered* the "Bank Details" section
+`if (isLeaderOrStaff)`, a client-side check that, per this project's own
+standing rule ("RLS is authorization, client checks are UX only"), never
+actually closed the gap. This directly contradicted
+[ARCHITECTURE.md](ARCHITECTURE.md) §3.2's own bullet ("sensitive columns
+never in a broadly-readable view"). Fixed with `shg_own_masked` (migration
+`0045`), a view matching the base table's own row-visibility rule but
+nulling `bank_account`/`ifsc` server-side via `CASE is_leader_or_staff()`;
+`fetchShg()` now reads from it instead of the base table.
+`fetchAllShgs()` (admin-only Manage SHGs listing) deliberately keeps
+reading the base table directly — an admin legitimately needs the
+unmasked values, and `is_leader_or_staff()` would return true for them
+anyway. Verified live: the SHG home page correctly renders the (currently
+empty) Bank Details section for the leader test account with no errors.
+
+**`shg_documents_page.dart` was the one page that missed the earlier i18n
+completion pass** — confirmed via `.arb` grep (zero `shgDocuments*` keys
+existed, unlike all 4 sibling pages in this module). Added 14 keys across
+all three `.arb` files and wired them in: title, add-document tooltip,
+empty state, dialog title/hint, file-picker label, file-too-large/
+name-required/file-required validation messages, not-linked/added/demo-mode/
+add-error/no-file-attached/open-error snackbars. Verified live: title and
+empty-state text render correctly.
+
+Also added: `ShgJoinRequest.memberMobile`, a new
+`test/models/shg_join_request_test.dart` covering both the populated and
+RLS-denied-embed (`profiles: null`) parsing cases, and extended
+`ShgJoinRequestRepository`'s doc comments to record the exact FK-ambiguity
+and RLS-timing root causes for future readers.
+
+`flutter analyze`: 0 issues. `flutter test`: **937/937 passing** (up from
+935). Migration `0045` deployed to the live project and re-verified via
+direct SQL: the `shg_own_masked` view and `profiles_select_pending_join_requester`
+policy both exist with the expected definitions. This round's fixes were
+exercised against the real live-mode app (not demo mode) per this
+project's own verification standard — the join-requests bug in particular
+could never have been caught by demo-mode testing, since demo mode's
+`ShgJoinRequestRepository` short-circuits to empty/no-op and never issues
+the real (malformed) PostgREST query at all.
+
+Docs updated in the same change: [ARCHITECTURE.md](ARCHITECTURE.md) §2
+(added `shg_own_masked` to the table list) and §3.2 (corrected the
+"sensitive columns never in a broadly-readable view" bullet, which had
+been describing the pre-fix, actually-broken state as if it were already
+correct).

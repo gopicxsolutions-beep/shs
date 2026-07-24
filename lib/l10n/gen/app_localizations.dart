@@ -3520,6 +3520,90 @@ abstract class AppLocalizations {
   /// **'IFSC'**
   String get shgHomeIfscLabel;
 
+  /// No description provided for @shgDocumentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get shgDocumentsTitle;
+
+  /// No description provided for @shgDocumentsAddTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add document'**
+  String get shgDocumentsAddTooltip;
+
+  /// No description provided for @shgDocumentsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No documents uploaded yet'**
+  String get shgDocumentsEmpty;
+
+  /// No description provided for @shgDocumentsAddDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add document'**
+  String get shgDocumentsAddDialogTitle;
+
+  /// No description provided for @shgDocumentsNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Document name'**
+  String get shgDocumentsNameHint;
+
+  /// No description provided for @shgDocumentsChooseFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose file (PDF, JPG, PNG, WEBP)'**
+  String get shgDocumentsChooseFile;
+
+  /// No description provided for @shgDocumentsFileTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'File is too large — please choose one under 10 MB'**
+  String get shgDocumentsFileTooLarge;
+
+  /// No description provided for @shgDocumentsNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Document name is required.'**
+  String get shgDocumentsNameRequired;
+
+  /// No description provided for @shgDocumentsFileRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please choose a file to upload.'**
+  String get shgDocumentsFileRequired;
+
+  /// No description provided for @shgDocumentsNotLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re not linked to an SHG, so there\'s nothing to attach this document to.'**
+  String get shgDocumentsNotLinked;
+
+  /// No description provided for @shgDocumentsAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Document added'**
+  String get shgDocumentsAdded;
+
+  /// No description provided for @shgDocumentsAddError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add this document. Please try again.'**
+  String get shgDocumentsAddError;
+
+  /// No description provided for @shgDocumentsNoFileAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'No file is attached to this record.'**
+  String get shgDocumentsNoFileAttached;
+
+  /// No description provided for @shgDocumentsOpenError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open this document.'**
+  String get shgDocumentsOpenError;
+
   /// No description provided for @shgJoinRequestsApproved.
   ///
   /// In en, this message translates to:

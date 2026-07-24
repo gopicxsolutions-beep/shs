@@ -5,6 +5,7 @@ class ShgJoinRequest {
   final String id;
   final String memberId;
   final String? memberName;
+  final String? memberMobile;
   final String shgId;
   final String? shgName;
   final String status; // pending | approved | rejected
@@ -14,6 +15,7 @@ class ShgJoinRequest {
     required this.id,
     required this.memberId,
     this.memberName,
+    this.memberMobile,
     required this.shgId,
     this.shgName,
     required this.status,
@@ -24,6 +26,7 @@ class ShgJoinRequest {
         id: map['id'] as String,
         memberId: map['member_id'] as String,
         memberName: (map['profiles'] as Map<String, dynamic>?)?['name'] as String?,
+        memberMobile: (map['profiles'] as Map<String, dynamic>?)?['mobile'] as String?,
         shgId: map['shg_id'] as String,
         shgName: (map['shgs'] as Map<String, dynamic>?)?['name'] as String?,
         status: map['status'] as String,

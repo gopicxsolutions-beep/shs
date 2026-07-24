@@ -60,17 +60,18 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
   }
 
   Future<void> _addDocument(String? shgId) async {
+    final l10n = AppLocalizations.of(context)!;
     PlatformFile? picked;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add document'),
+          title: Text(l10n.shgDocumentsAddDialogTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(controller: _nameController, maxLength: 100, textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'Document name')),
+              TextField(controller: _nameController, maxLength: 100, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.shgDocumentsNameHint)),
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: () async {
@@ -79,20 +80,20 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
                   if (file == null || file.bytes == null) return;
                   if (file.size > _maxDocumentBytes) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('File is too large — please choose one under 10 MB')));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.shgDocumentsFileTooLarge)));
                     }
                     return;
                   }
                   setDialogState(() => picked = file);
                 },
                 icon: const Icon(Icons.attach_file_rounded, size: 18),
-                label: Text(picked == null ? 'Choose file (PDF, JPG, PNG, WEBP)' : picked!.name, overflow: TextOverflow.ellipsis),
+                label: Text(picked == null ? l10n.shgDocumentsChooseFile : picked!.name, overflow: TextOverflow.ellipsis),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
-            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(AppLocalizations.of(context)?.actionAdd ?? 'Add')),
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.actionAdd)),
           ],
         ),
       ),
@@ -106,11 +107,11 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
       // closed the dialog and added nothing — indistinguishable from a
       // broken button, same silent-no-op gap already fixed for "Add SHG"/
       // "Add scheme" in admin_shgs_page.dart / admin_schemes_page.dart.
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Document name is required.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.shgDocumentsNameRequired)));
       return;
     }
     if (picked == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please choose a file to upload.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.shgDocumentsFileRequired)));
       return;
     }
     setState(() => _busy = true);
@@ -133,19 +134,17 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
       );
       if (mounted) {
         if (!saved) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("You're not linked to an SHG, so there's nothing to attach this document to.")),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.shgDocumentsNotLinked)));
         } else {
           _key.currentState?.reload();
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(SupabaseService.isConfigured ? 'Document added' : 'Demo mode — not saved (connect Supabase to persist)'),
+            content: Text(SupabaseService.isConfigured ? l10n.shgDocumentsAdded : l10n.shgJoinRequestsDemoMode),
           ));
         }
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not add this document. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.shgDocumentsAddError)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -154,8 +153,9 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
 
   Future<void> _openDocument(ShgDocument d) async {
     if (_opening) return;
+    final l10n = AppLocalizations.of(context)!;
     if (d.storagePath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No file is attached to this record.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.shgDocumentsNoFileAttached)));
       return;
     }
     setState(() => _opening = true);
@@ -164,11 +164,11 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
       if (!mounted) return;
       final opened = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       if (!opened && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open this document.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.shgDocumentsOpenError)));
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open this document.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.shgDocumentsOpenError)));
       }
     } finally {
       if (mounted) setState(() => _opening = false);
@@ -178,17 +178,18 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
+    final l10n = AppLocalizations.of(context)!;
     final isLeaderOrStaff = appState.user.role != Role.member;
     final shgId = appState.profile?.shgId;
 
     return Scaffold(
       appBar: PageHeader(
-        title: 'Documents',
+        title: l10n.shgDocumentsTitle,
         right: isLeaderOrStaff
             ? IconButton(
                 icon: Icon(Icons.add_circle_rounded, color: !_busy ? Brand.c600 : Neutral.c300),
                 onPressed: !_busy ? () => _addDocument(shgId) : null,
-                tooltip: 'Add document',
+                tooltip: l10n.shgDocumentsAddTooltip,
               )
             : null,
       ),
@@ -197,7 +198,7 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
         future: () => _repo.fetchDocuments(shgId),
         builder: (context, docs) {
           if (docs.isEmpty) {
-            return const AppEmptyState(icon: Icons.folder_off_rounded, message: 'No documents uploaded yet');
+            return AppEmptyState(icon: Icons.folder_off_rounded, message: l10n.shgDocumentsEmpty);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),

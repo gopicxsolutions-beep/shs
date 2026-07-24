@@ -1036,6 +1036,34 @@
 
   "shgHomeIfscLabel": "IFSC",
 
+  "shgDocumentsTitle": "दस्तावेज़",
+
+  "shgDocumentsAddTooltip": "दस्तावेज़ जोड़ें",
+
+  "shgDocumentsEmpty": "अभी तक कोई दस्तावेज़ अपलोड नहीं किया गया",
+
+  "shgDocumentsAddDialogTitle": "दस्तावेज़ जोड़ें",
+
+  "shgDocumentsNameHint": "दस्तावेज़ का नाम",
+
+  "shgDocumentsChooseFile": "फ़ाइल चुनें (PDF, JPG, PNG, WEBP)",
+
+  "shgDocumentsFileTooLarge": "फ़ाइल बहुत बड़ी है — कृपया 10 MB से छोटी फ़ाइल चुनें",
+
+  "shgDocumentsNameRequired": "दस्तावेज़ का नाम आवश्यक है।",
+
+  "shgDocumentsFileRequired": "कृपया अपलोड करने के लिए एक फ़ाइल चुनें।",
+
+  "shgDocumentsNotLinked": "आप किसी SHG से जुड़े नहीं हैं, इसलिए इस दस्तावेज़ को जोड़ने के लिए कुछ नहीं है।",
+
+  "shgDocumentsAdded": "दस्तावेज़ जोड़ा गया",
+
+  "shgDocumentsAddError": "यह दस्तावेज़ जोड़ा नहीं जा सका। कृपया पुनः प्रयास करें।",
+
+  "shgDocumentsNoFileAttached": "इस रिकॉर्ड से कोई फ़ाइल जुड़ी नहीं है।",
+
+  "shgDocumentsOpenError": "यह दस्तावेज़ खोला नहीं जा सका।",
+
   "shgJoinRequestsApproved": "अनुरोध स्वीकृत हो गया",
 
   "shgJoinRequestsRejected": "अनुरोध अस्वीकृत हो गया",

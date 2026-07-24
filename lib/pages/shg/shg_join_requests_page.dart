@@ -74,6 +74,15 @@ class _ShgJoinRequestsPageState extends State<ShgJoinRequestsPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(r.memberName ?? l10n.shgJoinRequestsMemberFallback, style: AppTheme.sans(14, weight: FontWeight.w700)),
+                      if (r.memberMobile != null) ...[
+                        const SizedBox(height: 2),
+                        // Lets a leader distinguish two same-named requesters
+                        // or sanity-check identity before approving — the
+                        // name alone (migration 0045's fix for this being
+                        // silently unavailable at all) still isn't enough on
+                        // its own for that kind of decision.
+                        Text(r.memberMobile!, style: AppTheme.sans(12, color: Neutral.c600)),
+                      ],
                       const SizedBox(height: 2),
                       Text(l10n.shgJoinRequestsRequestedOn(DateFormat('dd MMM yyyy').format(r.requestedAt)), style: AppTheme.sans(11, color: Neutral.c500)),
                       const SizedBox(height: 12),

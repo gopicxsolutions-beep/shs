@@ -1996,6 +1996,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shgHomeIfscLabel => 'IFSC';
 
   @override
+  String get shgDocumentsTitle => 'Documents';
+
+  @override
+  String get shgDocumentsAddTooltip => 'Add document';
+
+  @override
+  String get shgDocumentsEmpty => 'No documents uploaded yet';
+
+  @override
+  String get shgDocumentsAddDialogTitle => 'Add document';
+
+  @override
+  String get shgDocumentsNameHint => 'Document name';
+
+  @override
+  String get shgDocumentsChooseFile => 'Choose file (PDF, JPG, PNG, WEBP)';
+
+  @override
+  String get shgDocumentsFileTooLarge =>
+      'File is too large — please choose one under 10 MB';
+
+  @override
+  String get shgDocumentsNameRequired => 'Document name is required.';
+
+  @override
+  String get shgDocumentsFileRequired => 'Please choose a file to upload.';
+
+  @override
+  String get shgDocumentsNotLinked =>
+      'You\'re not linked to an SHG, so there\'s nothing to attach this document to.';
+
+  @override
+  String get shgDocumentsAdded => 'Document added';
+
+  @override
+  String get shgDocumentsAddError =>
+      'Could not add this document. Please try again.';
+
+  @override
+  String get shgDocumentsNoFileAttached =>
+      'No file is attached to this record.';
+
+  @override
+  String get shgDocumentsOpenError => 'Could not open this document.';
+
+  @override
   String get shgJoinRequestsApproved => 'Request approved';
 
   @override

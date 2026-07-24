@@ -1036,6 +1036,34 @@
 
   "shgHomeIfscLabel": "IFSC",
 
+  "shgDocumentsTitle": "పత్రాలు",
+
+  "shgDocumentsAddTooltip": "పత్రం జోడించండి",
+
+  "shgDocumentsEmpty": "ఇంకా ఏ పత్రాలు అప్‌లోడ్ చేయలేదు",
+
+  "shgDocumentsAddDialogTitle": "పత్రం జోడించండి",
+
+  "shgDocumentsNameHint": "పత్రం పేరు",
+
+  "shgDocumentsChooseFile": "ఫైల్ ఎంచుకోండి (PDF, JPG, PNG, WEBP)",
+
+  "shgDocumentsFileTooLarge": "ఫైల్ చాలా పెద్దదిగా ఉంది — దయచేసి 10 MB కంటే చిన్నదాన్ని ఎంచుకోండి",
+
+  "shgDocumentsNameRequired": "పత్రం పేరు అవసరం.",
+
+  "shgDocumentsFileRequired": "దయచేసి అప్‌లోడ్ చేయడానికి ఒక ఫైల్‌ను ఎంచుకోండి.",
+
+  "shgDocumentsNotLinked": "మీరు ఏ SHGకి లింక్ చేయబడలేదు, కాబట్టి ఈ పత్రాన్ని జోడించడానికి ఏమీ లేదు.",
+
+  "shgDocumentsAdded": "పత్రం జోడించబడింది",
+
+  "shgDocumentsAddError": "ఈ పత్రాన్ని జోడించడం సాధ్యం కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.",
+
+  "shgDocumentsNoFileAttached": "ఈ రికార్డుకు ఏ ఫైల్ జోడించబడలేదు.",
+
+  "shgDocumentsOpenError": "ఈ పత్రాన్ని తెరవడం సాధ్యం కాలేదు.",
+
   "shgJoinRequestsApproved": "అభ్యర్థన ఆమోదించబడింది",
 
   "shgJoinRequestsRejected": "అభ్యర్థన తిరస్కరించబడింది",

@@ -1365,6 +1365,34 @@
 
   "shgHomeIfscLabel": "IFSC",
 
+  "shgDocumentsTitle": "Documents",
+
+  "shgDocumentsAddTooltip": "Add document",
+
+  "shgDocumentsEmpty": "No documents uploaded yet",
+
+  "shgDocumentsAddDialogTitle": "Add document",
+
+  "shgDocumentsNameHint": "Document name",
+
+  "shgDocumentsChooseFile": "Choose file (PDF, JPG, PNG, WEBP)",
+
+  "shgDocumentsFileTooLarge": "File is too large — please choose one under 10 MB",
+
+  "shgDocumentsNameRequired": "Document name is required.",
+
+  "shgDocumentsFileRequired": "Please choose a file to upload.",
+
+  "shgDocumentsNotLinked": "You're not linked to an SHG, so there's nothing to attach this document to.",
+
+  "shgDocumentsAdded": "Document added",
+
+  "shgDocumentsAddError": "Could not add this document. Please try again.",
+
+  "shgDocumentsNoFileAttached": "No file is attached to this record.",
+
+  "shgDocumentsOpenError": "Could not open this document.",
+
   "shgJoinRequestsApproved": "Request approved",
 
   "shgJoinRequestsRejected": "Request rejected",

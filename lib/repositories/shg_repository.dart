@@ -214,7 +214,16 @@ class ShgRepository {
     // profile_setup_page.dart. Callers (e.g. ProfilePage's "Not yet
     // approved" fallback) rely on null here, not on demo data standing in.
     if (shgId == null) return null;
-    final row = await _client.from('shgs').select().eq('id', shgId).maybeSingle();
+    // `shg_own_masked` (migration 0045), not the base `shgs` table: a plain
+    // `select()` on `shgs` returns `bank_account`/`ifsc` to *any* member of
+    // the SHG, since `shgs_select_own_or_staff` is a row-level policy with
+    // no column distinction — shg_home_page.dart only ever *rendered* the
+    // bank details section for leader/staff, which per this project's own
+    // "RLS is authorization, client checks are UX only" rule never actually
+    // closed that gap. The view nulls both columns out server-side unless
+    // the caller is leader/staff for this SHG, so a plain member's client
+    // genuinely never receives them, not just doesn't display them.
+    final row = await _client.from('shg_own_masked').select().eq('id', shgId).maybeSingle();
     return row == null ? null : ShgProfile.fromMap(row);
   }
 

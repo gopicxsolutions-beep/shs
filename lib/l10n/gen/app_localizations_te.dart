@@ -1996,6 +1996,52 @@ class AppLocalizationsTe extends AppLocalizations {
   String get shgHomeIfscLabel => 'IFSC';
 
   @override
+  String get shgDocumentsTitle => 'పత్రాలు';
+
+  @override
+  String get shgDocumentsAddTooltip => 'పత్రం జోడించండి';
+
+  @override
+  String get shgDocumentsEmpty => 'ఇంకా ఏ పత్రాలు అప్‌లోడ్ చేయలేదు';
+
+  @override
+  String get shgDocumentsAddDialogTitle => 'పత్రం జోడించండి';
+
+  @override
+  String get shgDocumentsNameHint => 'పత్రం పేరు';
+
+  @override
+  String get shgDocumentsChooseFile => 'ఫైల్ ఎంచుకోండి (PDF, JPG, PNG, WEBP)';
+
+  @override
+  String get shgDocumentsFileTooLarge =>
+      'ఫైల్ చాలా పెద్దదిగా ఉంది — దయచేసి 10 MB కంటే చిన్నదాన్ని ఎంచుకోండి';
+
+  @override
+  String get shgDocumentsNameRequired => 'పత్రం పేరు అవసరం.';
+
+  @override
+  String get shgDocumentsFileRequired =>
+      'దయచేసి అప్‌లోడ్ చేయడానికి ఒక ఫైల్‌ను ఎంచుకోండి.';
+
+  @override
+  String get shgDocumentsNotLinked =>
+      'మీరు ఏ SHGకి లింక్ చేయబడలేదు, కాబట్టి ఈ పత్రాన్ని జోడించడానికి ఏమీ లేదు.';
+
+  @override
+  String get shgDocumentsAdded => 'పత్రం జోడించబడింది';
+
+  @override
+  String get shgDocumentsAddError =>
+      'ఈ పత్రాన్ని జోడించడం సాధ్యం కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get shgDocumentsNoFileAttached => 'ఈ రికార్డుకు ఏ ఫైల్ జోడించబడలేదు.';
+
+  @override
+  String get shgDocumentsOpenError => 'ఈ పత్రాన్ని తెరవడం సాధ్యం కాలేదు.';
+
+  @override
   String get shgJoinRequestsApproved => 'అభ్యర్థన ఆమోదించబడింది';
 
   @override
