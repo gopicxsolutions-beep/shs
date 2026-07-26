@@ -18,11 +18,37 @@ import 'voice_recognition_service.dart';
 class DeviceVoiceRecognitionService implements VoiceRecognitionService {
   final stt.SpeechToText _stt = stt.SpeechToText();
   bool _available = false;
+  // The current listen() call's completer, if any — set just before
+  // _stt.listen() and cleared in its `finally`. `onError` below is
+  // registered once (at first initialize()) but fires for every recognition
+  // session afterward, so it needs a way to reach whichever attempt is
+  // currently in flight; see the onError doc comment for why this matters.
+  Completer<String>? _pendingCompleter;
 
   @override
   Future<RecognizedCommand> listen(Language language) async {
     if (!_available) {
-      _available = await _stt.initialize();
+      _available = await _stt.initialize(
+        // Without this, a real recognizer-side failure mid-attempt (no
+        // speech detected, the recognizer briefly busy right after
+        // initialize()'s permission/service-bind, a device-level timeout —
+        // all legitimate, non-rare outcomes on a real phone) fires only
+        // through this callback, which previously went nowhere: `listen()`
+        // below only ever completes `completer` from `onResult`, so a
+        // dropped error left the completer untouched until the blind 15s
+        // timeout finally gave up — with the mic button disabled that whole
+        // time (`busy` in ai_voice_assistant_page.dart). That silent 15s
+        // dead-air-per-failed-attempt is what read as "the app needs 2-3
+        // tries before it hears me": each failed attempt quietly burned 15
+        // seconds before the member could even try again. Completing with
+        // '' (not throwing here) reuses the exact same "couldn't hear
+        // anything, please try again" path the timeout branch already
+        // takes below, just reached immediately instead of after 15s.
+        onError: (error) {
+          final completer = _pendingCompleter;
+          if (completer != null && !completer.isCompleted) completer.complete('');
+        },
+      );
     }
     if (!_available) {
       throw StateError('Speech recognition is not available on this device.');
@@ -30,6 +56,7 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
 
     final localeId = await _resolveLocaleId(language);
     final completer = Completer<String>();
+    _pendingCompleter = completer;
 
     await _stt.listen(
       onResult: (result) {
@@ -49,6 +76,7 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
     } on TimeoutException {
       transcript = '';
     } finally {
+      _pendingCompleter = null;
       if (_stt.isListening) await _stt.stop();
     }
 

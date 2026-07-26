@@ -126,6 +126,8 @@ class _AdminDashboardBody extends StatelessWidget {
                 const SizedBox(width: 12),
                 IconTile(onTap: () => context.go(Paths.adminSchemes), icon: Icons.settings_suggest_rounded, label: l10n.adminDashboardSchemesTile, tone: TileTone.gold),
                 const SizedBox(width: 12),
+                IconTile(onTap: () => context.go(Paths.adminTrainingCourses), icon: Icons.school_rounded, label: l10n.adminDashboardTrainingTile, tone: TileTone.violet),
+                const SizedBox(width: 12),
                 IconTile(onTap: () => context.go(Paths.adminMonitoring), icon: Icons.dns_rounded, label: l10n.adminDashboardMonitoringTile, tone: TileTone.sky),
                 const SizedBox(width: 12),
                 IconTile(onTap: () => context.go(Paths.reportsFederation), icon: Icons.bar_chart_rounded, label: l10n.adminDashboardReportsTile, tone: TileTone.violet),

@@ -66,6 +66,20 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
     final recordTypes = _recordTypes(l10n);
     final title = financialLedgerTitleFor(widget.entryType, l10n);
 
+    // crp/clf/admin have no `profile.shgId` of their own — all four record
+    // types this shared widget renders (cashbook/ledger/bank/audit) resolve
+    // "which SHG" from that field, so without this guard a staff account
+    // saw an indistinguishable-from-genuinely-empty ledger (plus a
+    // nonfunctional Add-entry button) instead of an honest explanation.
+    // `isConfigured` excludes demo mode, whose simulated identity leaves
+    // `shgId` null for every previewed role, including Leader/Member.
+    if (SupabaseService.isConfigured && isLeaderOrStaff && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: title),
+        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
+      );
+    }
+
     return Scaffold(
       appBar: PageHeader(
         title: title,

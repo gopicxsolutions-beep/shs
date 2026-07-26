@@ -18,7 +18,6 @@ class ReportsHubPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final role = context.watch<AppState>().user.role;
-    final isLeaderOrStaff = role != Role.member;
     final isFederationStaff = const {Role.crp, Role.clf, Role.admin}.contains(role);
 
     return Scaffold(
@@ -33,7 +32,22 @@ class ReportsHubPage extends StatelessWidget {
             subtitle: l10n.reportsHubMyReportsSubtitle,
             onTap: () => context.go(Paths.reportsMember),
           ),
-          if (isLeaderOrStaff) ...[
+          // Leader-only, not `isLeaderOrStaff`: `ShgFinancialSummaryPage`/
+          // `ShgPerformanceReportPage`/the Audit report (`FinancialLedgerPage`
+          // via `Paths.financialAudit`) all resolve "which SHG" purely from
+          // `appState.profile?.shgId` — the *viewer's own* SHG, with no
+          // parameter to view a different one. A leader has a real SHG there;
+          // crp/clf/admin never do (staff roles are platform-wide, not
+          // SHG-scoped — see `profile_setup_page.dart`), so this tile was
+          // previously shown to them and led to three report pages that
+          // always rendered empty/zero with no explanation and no way to
+          // ever pick a real SHG through this flow — an always-reproducible
+          // dead end for exactly the roles FR-RPT-2 (docs/SRS.md) claims this
+          // capability serves. Staff's genuinely-working per-SHG drill-down
+          // is Analytics (`AnalyticsShgDetailPage`, reached via the
+          // `isFederationStaff` tile below), which does take an explicit
+          // `shgId` and was already live-verified this session (round 133).
+          if (role == Role.leader) ...[
             const SizedBox(height: 12),
             _ReportCard(
               icon: Icons.groups_rounded,

@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/analytics.dart' as mock;
 import '../models/analytics.dart';
@@ -77,9 +78,22 @@ class AnalyticsRepository {
   /// needs memberCount/totalSavings/healthScore (no loan figures), so this
   /// batches those 3 metrics across every SHG in one query each — a
   /// constant ~4 queries total regardless of SHG count — and groups the
-  /// results client-side by `shg_id`, computing the same
-  /// present/(meetings×members) attendance formula ReportRepository.fetchShgReport
-  /// uses for a single SHG.
+  /// results client-side by `shg_id`, computing the same present/total
+  /// attendance-row ratio, over the same last-6-months window,
+  /// `TrendRepository.attendanceRate()` uses for a single SHG (see that
+  /// method's doc comment). **Live-confirmed drift, not just theoretical**:
+  /// this previously used `present / (meetingsTotal × memberCount)` with no
+  /// date lower bound — an all-time window with a denominator that assumes
+  /// every member has an attendance row at every meeting — while
+  /// `fetchShgDetail()` below calls `ReportRepository.fetchShgReport()`,
+  /// which by the time of this fix already used the real last-6-months
+  /// ratio. For a real SHG with one meeting in the window at 2 of 3
+  /// members present, this list produced `2 / (1 × 4) = 50%` while the
+  /// detail drill-down for the exact same SHG showed `2 / 3 = 66.7%` — the
+  /// CRP dashboard's own "SHG list" and "SHG detail" screens disagreeing
+  /// about one SHG's health score, the same class of bug the detail path's
+  /// own fix was originally meant to close everywhere, but hadn't reached
+  /// this batch path.
   Future<List<ShgHealth>> fetchShgList() async {
     if (!_live) {
       return mock.shgsForMonitoring.map((g) => ShgHealth(id: g.id, name: g.name, village: g.village, grade: g.grade, memberCount: g.members, totalSavings: g.savings, healthScore: g.health.toDouble())).toList();
@@ -115,22 +129,23 @@ class AnalyticsRepository {
     // stuck at 0%. `.neq('status', 'cancelled')` still excludes a meeting
     // cancelled after its date passed, so it doesn't count toward
     // `meetingsTotal` as a completed-with-0%-attendance meeting.
-    final todayStr = DateTime.now().toIso8601String().split('T').first;
-    final completedMeetings = await _client.from('meetings').select('id, shg_id').inFilter('shg_id', shgIds).neq('status', 'cancelled').lt('meeting_date', todayStr);
+    final now = DateTime.now();
+    final windowStartStr = DateFormat('yyyy-MM-dd').format(DateTime(now.year, now.month - 5));
+    final todayStr = now.toIso8601String().split('T').first;
+    final completedMeetings =
+        await _client.from('meetings').select('id, shg_id').inFilter('shg_id', shgIds).neq('status', 'cancelled').gte('meeting_date', windowStartStr).lt('meeting_date', todayStr);
     final meetingRows = (completedMeetings as List).cast<Map<String, dynamic>>();
-    final meetingsTotalByShg = <String, int>{};
-    final shgByMeetingId = <String, String>{};
-    for (final m in meetingRows) {
-      final shgId = m['shg_id'] as String;
-      meetingsTotalByShg[shgId] = (meetingsTotalByShg[shgId] ?? 0) + 1;
-      shgByMeetingId[m['id'] as String] = shgId;
-    }
+    final shgByMeetingId = <String, String>{for (final m in meetingRows) m['id'] as String: m['shg_id'] as String};
     final presentByShg = <String, int>{};
+    final totalByShg = <String, int>{};
     if (meetingRows.isNotEmpty) {
-      final attendance = await _client.from('meeting_attendance').select('present, meeting_id').inFilter('meeting_id', shgByMeetingId.keys.toList()).eq('present', true);
+      final attendance = await _client.from('meeting_attendance').select('present, meeting_id').inFilter('meeting_id', shgByMeetingId.keys.toList());
       for (final r in attendance as List) {
-        final shgId = shgByMeetingId[(r as Map<String, dynamic>)['meeting_id'] as String];
-        if (shgId != null) presentByShg[shgId] = (presentByShg[shgId] ?? 0) + 1;
+        final map = r as Map<String, dynamic>;
+        final shgId = shgByMeetingId[map['meeting_id'] as String];
+        if (shgId == null) continue;
+        totalByShg[shgId] = (totalByShg[shgId] ?? 0) + 1;
+        if (map['present'] == true) presentByShg[shgId] = (presentByShg[shgId] ?? 0) + 1;
       }
     }
 
@@ -139,8 +154,8 @@ class AnalyticsRepository {
         () {
           final id = row['id'] as String;
           final memberCount = memberCountByShg[id] ?? 0;
-          final meetingsTotal = meetingsTotalByShg[id] ?? 0;
-          final healthScore = (meetingsTotal > 0 && memberCount > 0) ? ((presentByShg[id] ?? 0) / (meetingsTotal * memberCount)) * 100 : 0.0;
+          final total = totalByShg[id] ?? 0;
+          final healthScore = total == 0 ? 0.0 : ((presentByShg[id] ?? 0) / total) * 100;
           return ShgHealth(
             id: id,
             name: row['name'] as String,

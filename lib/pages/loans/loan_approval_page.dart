@@ -33,6 +33,19 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
     final shgId = appState.profile?.shgId;
     final myId = appState.profile?.id;
 
+    // Router-restricted to leader/staff already, but crp/clf/admin have no
+    // `profile.shgId` of their own — `fetchForShg(null)` resolves to an
+    // empty pending queue, indistinguishable from a genuinely caught-up SHG,
+    // instead of explaining that this per-SHG view doesn't apply to a
+    // platform-wide role. `isConfigured` excludes demo mode, whose
+    // simulated identity leaves `shgId` null for every previewed role too.
+    if (SupabaseService.isConfigured && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: l10n.loanApprovalTitle),
+        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
+      );
+    }
+
     return Scaffold(
       appBar: PageHeader(title: l10n.loanApprovalTitle),
       body: AppAsyncBuilder<List<Loan>>(

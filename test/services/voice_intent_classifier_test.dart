@@ -56,6 +56,19 @@ void main() {
         VoiceIntent.loanDetails,
       );
     });
+
+    test('unrelated speech that happens to contain "save" and "new" does not trigger addSavings', () {
+      // Regression: addAction used to include the generic word "new",
+      // which combined with the equally generic savings word "save" to
+      // misclassify ordinary sentences as addSavings — the one intent with
+      // a side effect (force-navigates to the Savings Entry form). It must
+      // degrade to the safer savingsThisMonth reading instead, not silently
+      // yank the member into a form she never asked for.
+      expect(
+        VoiceIntentClassifier.classify('I need to save the new file', Language.en),
+        VoiceIntent.savingsThisMonth,
+      );
+    });
   });
 
   group('VoiceIntentClassifier.classify (Hindi)', () {

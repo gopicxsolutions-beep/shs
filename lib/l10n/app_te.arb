@@ -23,6 +23,7 @@
   "commonLoading": "లోడ్ అవుతోంది…",
   "commonError": "ఏదో తప్పు జరిగింది",
   "commonBack": "వెనుకకు",
+  "commonStaffNoShgMessage": "మీ పాత్ర ఏ ఒక్క SHGకి లింక్ కాలేదు — ఈ వీక్షణ వర్తించదు",
 
   "asyncErrorGeneric": "ఏదో తప్పు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి.",
   "asyncErrorNetwork": "మీ ఇంటర్నెట్ కనెక్షన్‌ని తనిఖీ చేసి మళ్ళీ ప్రయత్నించండి.",
@@ -143,6 +144,14 @@
   "voiceNoAnnouncements": "మీకు ఎలాంటి ప్రకటనలు లేవు.",
   "voiceOpeningSavingsForm": "మీ కోసం పొదుపు ఎంట్రీ ఫారమ్ తెరవబడుతోంది.",
   "voiceUnknownCommand": "క్షమించండి, అది నాకు అర్థం కాలేదు.",
+  "voiceAssistantTitle": "వాయిస్ అసిస్టెంట్",
+  "voiceAssistantTapToSpeak": "కమాండ్ చెప్పడానికి నొక్కండి",
+  "voiceAssistantListening": "వింటోంది…",
+  "voiceAssistantThinking": "సమాధానం వెతుకుతోంది…",
+  "voiceAssistantTapToAskAgain": "మళ్ళీ అడగడానికి నొక్కండి",
+  "voiceAssistantYouSaid": "మీరు చెప్పింది",
+  "voiceAssistantLabel": "అసిస్టెంట్",
+  "voiceAssistantTrySaying": "ఇలా చెప్పి చూడండి",
 
   "aiDisclaimer": "ఈ సలహా AI ద్వారా రూపొందించబడింది మరియు తప్పుగా ఉండవచ్చు. ఇది వృత్తిపరమైన ఆర్థిక, న్యాయ లేదా వైద్య సలహా కాదు; ముఖ్యమైన నిర్ణయాలు తీసుకునే ముందు మీ SHG నాయకుడిని లేదా అర్హతగల సలహాదారుని సంప్రదించండి.",
 
@@ -1001,6 +1010,140 @@
   "adminSchemesDeleteDemoModeMessage": "డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
 
   "adminSchemesDeleteErrorMessage": "ఈ పథకాన్ని తొలగించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "adminTrainingCoursesTitle": "శిక్షణ కోర్సులను నిర్వహించండి",
+
+  "adminTrainingCoursesAddCourseTooltip": "కోర్సు జోడించండి",
+
+  "adminTrainingCoursesEmptyState": "ఇంకా జాబితాలో కోర్సులు లేవు",
+
+  "adminTrainingCoursesEditTooltip": "{title}ని సవరించండి",
+  "@adminTrainingCoursesEditTooltip": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "adminTrainingCoursesDeleteTooltip": "{title}ని తొలగించండి",
+  "@adminTrainingCoursesDeleteTooltip": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "adminTrainingCoursesManageQuizTooltip": "{title} కోసం క్విజ్‌ను నిర్వహించండి",
+  "@adminTrainingCoursesManageQuizTooltip": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "adminTrainingCoursesAddDialogTitle": "కోర్సు జోడించండి",
+
+  "adminTrainingCoursesTitleHint": "కోర్సు శీర్షిక",
+
+  "adminTrainingCoursesTopicHint": "అంశం",
+
+  "adminTrainingCoursesFormatLabel": "ఫార్మాట్",
+
+  "adminTrainingCoursesDurationHint": "వ్యవధి (ఐచ్ఛికం)",
+
+  "adminTrainingCoursesTitleRequiredError": "కోర్సు శీర్షిక అవసరం.",
+
+  "adminTrainingCoursesAddedMessage": "కోర్సు జోడించబడింది",
+
+  "adminTrainingCoursesDemoModeMessage": "డెమో మోడ్ — కోర్సు సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
+
+  "adminTrainingCoursesAddErrorMessage": "ఈ కోర్సును జోడించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "adminTrainingCoursesEditDialogTitle": "కోర్సును సవరించండి",
+
+  "adminTrainingCoursesUpdatedMessage": "కోర్సు అప్‌డేట్ చేయబడింది",
+
+  "adminTrainingCoursesUpdateErrorMessage": "ఈ కోర్సును అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "adminTrainingCoursesDeleteDialogTitle": "కోర్సును తొలగించాలా?",
+
+  "adminTrainingCoursesDeleteDialogContent": "ఇది \"{title}\" మరియు దాని క్విజ్‌ను జాబితా నుండి తొలగిస్తుంది.",
+  "@adminTrainingCoursesDeleteDialogContent": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "adminTrainingCoursesDeletedMessage": "కోర్సు తొలగించబడింది",
+
+  "adminTrainingCoursesDeleteDemoModeMessage": "డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
+
+  "adminTrainingCoursesDeleteErrorMessage": "ఈ కోర్సును తొలగించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "adminDashboardTrainingTile": "శిక్షణ",
+
+  "servicesManageTrainingLabel": "శిక్షణను నిర్వహించండి",
+
+  "adminTrainingQuizTitle": "క్విజ్ — {courseTitle}",
+  "@adminTrainingQuizTitle": {
+    "placeholders": {
+      "courseTitle": {"type": "String"}
+    }
+  },
+
+  "adminTrainingQuizAddQuestionTooltip": "ప్రశ్న జోడించండి",
+
+  "adminTrainingQuizEmptyState": "ఇంకా క్విజ్ ప్రశ్నలు లేవు — మీరు కొన్ని జోడించే వరకు సభ్యులు ఈ కోర్సు క్విజ్ రాయలేరు",
+
+  "adminTrainingQuizAddDialogTitle": "ప్రశ్న జోడించండి",
+
+  "adminTrainingQuizEditDialogTitle": "ప్రశ్నను సవరించండి",
+
+  "adminTrainingQuizQuestionHint": "ప్రశ్న",
+
+  "adminTrainingQuizOptionHint": "ఎంపిక {number}",
+  "@adminTrainingQuizOptionHint": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+
+  "adminTrainingQuizAddOptionTooltip": "మరో ఎంపిక జోడించండి",
+
+  "adminTrainingQuizRemoveOptionTooltip": "ఈ ఎంపికను తొలగించండి",
+
+  "adminTrainingQuizCorrectAnswerLabel": "సరైన సమాధానం",
+
+  "adminTrainingQuizCorrectAnswerNotReadableNotice": "ఈ ప్రశ్న యొక్క సేవ్ చేసిన సరైన సమాధానం ఇక్కడ ఇంకా చూపించలేము — సేవ్ చేయడానికి ముందు దాన్ని మళ్ళీ ఎంచుకోండి.",
+
+  "adminTrainingQuizQuestionRequiredError": "ప్రశ్న టెక్స్ట్ అవసరం.",
+
+  "adminTrainingQuizMinOptionsError": "కనీసం 2 ఎంపికలు అవసరం.",
+
+  "adminTrainingQuizBlankOptionError": "ఎంపికలు ఖాళీగా ఉండకూడదు.",
+
+  "adminTrainingQuizCorrectAnswerRequiredError": "సరైన సమాధానాన్ని ఎంచుకోండి.",
+
+  "adminTrainingQuizAddedMessage": "ప్రశ్న జోడించబడింది",
+
+  "adminTrainingQuizUpdatedMessage": "ప్రశ్న అప్‌డేట్ చేయబడింది",
+
+  "adminTrainingQuizDemoModeMessage": "డెమో మోడ్ — ప్రశ్న సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
+
+  "adminTrainingQuizAddErrorMessage": "ఈ ప్రశ్నను జోడించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "adminTrainingQuizUpdateErrorMessage": "ఈ ప్రశ్నను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "adminTrainingQuizDeleteDialogTitle": "ప్రశ్నను తొలగించాలా?",
+
+  "adminTrainingQuizDeleteDialogContent": "ఇది ఈ ప్రశ్నను కోర్సు క్విజ్ నుండి తొలగిస్తుంది.",
+
+  "adminTrainingQuizDeletedMessage": "ప్రశ్న తొలగించబడింది",
+
+  "adminTrainingQuizDeleteDemoModeMessage": "డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
+
+  "adminTrainingQuizDeleteErrorMessage": "ఈ ప్రశ్నను తొలగించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "adminTrainingQuizEditTooltip": "ప్రశ్నను సవరించండి",
+
+  "adminTrainingQuizDeleteTooltip": "ప్రశ్నను తొలగించండి",
 
   "supportStatusOpen": "తెరిచి ఉంది",
 

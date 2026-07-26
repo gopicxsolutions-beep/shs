@@ -121,10 +121,11 @@ class MarketplaceRepository {
     return _client.storage.from('product-images').getPublicUrl(path);
   }
 
-  // [amount] is only used in demo mode (no backing table to verify a price
-  // against). In live mode the order's real amount is always the price
-  // read server-side by `decrement_product_stock` at the moment of
-  // purchase — see the comment below — never this caller-supplied value.
+  // [buyerName]/[amount] are only used in demo mode (no backing table to
+  // verify anything against). In live mode both the order's buyer identity
+  // and its amount are always resolved server-side by
+  // `place_marketplace_order` at the moment of purchase — see the comment
+  // below — never these caller-supplied values.
   Future<void> placeOrder({required String productId, required String buyerName, required String? buyerId, required num amount}) async {
     if (!_live) {
       final matches = _mockProducts().where((p) => p.id == productId);
@@ -139,73 +140,29 @@ class MarketplaceRepository {
       ));
       return;
     }
-    // Atomic, RLS-safe stock decrement + server-verified price via
-    // `decrement_product_stock` (see
-    // supabase/migrations/0008_marketplace_stock_decrement_rpc.sql). This
-    // used to be a direct client-side `select stock` → `update stock - 1`
-    // followed by inserting the ORDER using whatever `amount` the caller
-    // passed in (`product.price`, read earlier into the widget tree — a
-    // real trust-boundary gap: a stale page, or a modified client, could
-    // record any amount at all for a real order). That had three real
-    // bugs: (1) not atomic, so two buyers racing for the last unit could
-    // both read stock > 0 and both decrement, overselling; (2)
-    // `marketplace_products_write_seller_or_staff` restricts UPDATE to the
-    // seller/staff, so a buyer's own update was always silently a 0-row
-    // no-op under RLS — stock has never actually decremented for a real
-    // purchase; (3) the order amount was never verified server-side. The
-    // RPC is `security definer` specifically to cross the RLS boundary
-    // safely for exactly one operation (decrement stock by 1 iff > 0), and
-    // returns the product's real current price read in the same atomic
-    // statement — the order below is inserted using THAT price, not the
-    // caller-supplied `amount`, so it can never diverge from what the
-    // product actually costs at the moment of purchase.
-    num verifiedPrice;
-    try {
-      final rows = await _client.rpc('decrement_product_stock', params: {'p_product_id': productId}) as List;
-      final row = rows.first as Map<String, dynamic>;
-      final ok = row['success'] as bool;
-      verifiedPrice = row['price'] as num;
-      if (!ok) throw StateError('This item is out of stock.');
-    } on PostgrestException catch (e) {
-      // 'PGRST202' = PostgREST's OWN "function not found in schema cache"
-      // code — NOT the underlying Postgres 42883 (undefined_function).
-      // First shipped this fix checking for '42883', which is what a raw
-      // `psql`/direct-Postgres call would report, but every call made
-      // through this Dart client actually goes through PostgREST's REST
-      // API, which catches that error and re-wraps it in its own
-      // PGRST-prefixed code before it ever reaches `PostgrestException`
-      // here — so the '42883' check could NEVER match in this codebase,
-      // meaning the fallback below never actually ran and every purchase
-      // attempt against an undeployed migration was silently rethrown
-      // and failed outright instead of degrading gracefully. Caught live
-      // this session: placed a real order against the real (pre-migration)
-      // project, watched it silently fail with zero stock/order change,
-      // and confirmed the exact code via a direct REST call to the RPC
-      // endpoint (`{"code":"PGRST202", "message":"Could not find the
-      // function public.decrement_product_stock(p_product_id) in the
-      // schema cache"}`) rather than guessing. Once the migration above
-      // IS deployed, this fallback still won't fire (the RPC call
-      // succeeds), so this is safe to leave in place rather than needing
-      // another coordinated removal later — remove it whenever confident
-      // every environment running this code has the migration applied.
-      // Still re-fetches the price fresh here rather than trusting the
-      // caller's `amount` — narrows (doesn't fully close, since this path
-      // has no security-definer boundary) the staleness window versus
-      // using a value read whenever the product page originally loaded.
-      if (e.code != 'PGRST202') rethrow;
-      final product = await _client.from('marketplace_products').select('stock, price').eq('id', productId).maybeSingle();
-      final stock = product?['stock'] as int?;
-      if (stock == null || stock <= 0) throw StateError('This item is out of stock.');
-      verifiedPrice = product!['price'] as num;
-      await _client.from('marketplace_products').update({'stock': stock - 1}).eq('id', productId);
-    }
-    await _client.from('marketplace_orders').insert({
-      'product_id': productId,
-      'buyer_name': buyerName,
-      'buyer_id': ?buyerId,
-      'amount': verifiedPrice,
-      'status': 'new',
-    });
+    // Atomic, RLS-safe stock decrement + order creation via
+    // `place_marketplace_order` (see
+    // supabase/migrations/0057_marketplace_order_atomic_placement.sql).
+    // This used to be two separate steps — an RPC that verified/decremented
+    // stock and handed back a verified price, then a plain client-side
+    // `insert into marketplace_orders` using that price — which sounds
+    // safe but wasn't: nothing forced a caller to actually use the RPC's
+    // result, or to have called the RPC at all. A direct REST call straight
+    // to the insert endpoint could set `amount` to anything (a real ₹5,000
+    // test product was ordered for ₹1 this way, live-confirmed) while never
+    // touching stock — and the old RPC was independently callable on its
+    // own with no accompanying order at all, letting any authenticated
+    // user silently drain any seller's stock to zero as a pure
+    // denial-of-service, no purchase required. `place_marketplace_order`
+    // closes both: it performs the stock check-and-decrement AND the order
+    // INSERT itself, inside one `security definer` transaction, deriving
+    // buyer identity from `auth.uid()`/`profiles.name` rather than trusting
+    // any client-supplied value — there is no longer a window between
+    // "stock verified" and "order recorded" for a client to skip or forge.
+    final rows = await _client.rpc('place_marketplace_order', params: {'p_product_id': productId}) as List;
+    final row = rows.first as Map<String, dynamic>;
+    final ok = row['success'] as bool;
+    if (!ok) throw StateError('This item is out of stock.');
   }
 
   /// Orders for products this seller listed.

@@ -66,6 +66,10 @@ class AppLocalizationsTe extends AppLocalizations {
   String get commonBack => 'వెనుకకు';
 
   @override
+  String get commonStaffNoShgMessage =>
+      'మీ పాత్ర ఏ ఒక్క SHGకి లింక్ కాలేదు — ఈ వీక్షణ వర్తించదు';
+
+  @override
   String get asyncErrorGeneric =>
       'ఏదో తప్పు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
@@ -422,6 +426,30 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get voiceUnknownCommand => 'క్షమించండి, అది నాకు అర్థం కాలేదు.';
+
+  @override
+  String get voiceAssistantTitle => 'వాయిస్ అసిస్టెంట్';
+
+  @override
+  String get voiceAssistantTapToSpeak => 'కమాండ్ చెప్పడానికి నొక్కండి';
+
+  @override
+  String get voiceAssistantListening => 'వింటోంది…';
+
+  @override
+  String get voiceAssistantThinking => 'సమాధానం వెతుకుతోంది…';
+
+  @override
+  String get voiceAssistantTapToAskAgain => 'మళ్ళీ అడగడానికి నొక్కండి';
+
+  @override
+  String get voiceAssistantYouSaid => 'మీరు చెప్పింది';
+
+  @override
+  String get voiceAssistantLabel => 'అసిస్టెంట్';
+
+  @override
+  String get voiceAssistantTrySaying => 'ఇలా చెప్పి చూడండి';
 
   @override
   String get aiDisclaimer =>
@@ -1954,6 +1982,188 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get adminSchemesDeleteErrorMessage =>
       'ఈ పథకాన్ని తొలగించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get adminTrainingCoursesTitle => 'శిక్షణ కోర్సులను నిర్వహించండి';
+
+  @override
+  String get adminTrainingCoursesAddCourseTooltip => 'కోర్సు జోడించండి';
+
+  @override
+  String get adminTrainingCoursesEmptyState => 'ఇంకా జాబితాలో కోర్సులు లేవు';
+
+  @override
+  String adminTrainingCoursesEditTooltip(String title) {
+    return '$titleని సవరించండి';
+  }
+
+  @override
+  String adminTrainingCoursesDeleteTooltip(String title) {
+    return '$titleని తొలగించండి';
+  }
+
+  @override
+  String adminTrainingCoursesManageQuizTooltip(String title) {
+    return '$title కోసం క్విజ్‌ను నిర్వహించండి';
+  }
+
+  @override
+  String get adminTrainingCoursesAddDialogTitle => 'కోర్సు జోడించండి';
+
+  @override
+  String get adminTrainingCoursesTitleHint => 'కోర్సు శీర్షిక';
+
+  @override
+  String get adminTrainingCoursesTopicHint => 'అంశం';
+
+  @override
+  String get adminTrainingCoursesFormatLabel => 'ఫార్మాట్';
+
+  @override
+  String get adminTrainingCoursesDurationHint => 'వ్యవధి (ఐచ్ఛికం)';
+
+  @override
+  String get adminTrainingCoursesTitleRequiredError => 'కోర్సు శీర్షిక అవసరం.';
+
+  @override
+  String get adminTrainingCoursesAddedMessage => 'కోర్సు జోడించబడింది';
+
+  @override
+  String get adminTrainingCoursesDemoModeMessage =>
+      'డెమో మోడ్ — కోర్సు సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
+
+  @override
+  String get adminTrainingCoursesAddErrorMessage =>
+      'ఈ కోర్సును జోడించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get adminTrainingCoursesEditDialogTitle => 'కోర్సును సవరించండి';
+
+  @override
+  String get adminTrainingCoursesUpdatedMessage => 'కోర్సు అప్‌డేట్ చేయబడింది';
+
+  @override
+  String get adminTrainingCoursesUpdateErrorMessage =>
+      'ఈ కోర్సును అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get adminTrainingCoursesDeleteDialogTitle => 'కోర్సును తొలగించాలా?';
+
+  @override
+  String adminTrainingCoursesDeleteDialogContent(String title) {
+    return 'ఇది \"$title\" మరియు దాని క్విజ్‌ను జాబితా నుండి తొలగిస్తుంది.';
+  }
+
+  @override
+  String get adminTrainingCoursesDeletedMessage => 'కోర్సు తొలగించబడింది';
+
+  @override
+  String get adminTrainingCoursesDeleteDemoModeMessage =>
+      'డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
+
+  @override
+  String get adminTrainingCoursesDeleteErrorMessage =>
+      'ఈ కోర్సును తొలగించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get adminDashboardTrainingTile => 'శిక్షణ';
+
+  @override
+  String get servicesManageTrainingLabel => 'శిక్షణను నిర్వహించండి';
+
+  @override
+  String adminTrainingQuizTitle(String courseTitle) {
+    return 'క్విజ్ — $courseTitle';
+  }
+
+  @override
+  String get adminTrainingQuizAddQuestionTooltip => 'ప్రశ్న జోడించండి';
+
+  @override
+  String get adminTrainingQuizEmptyState =>
+      'ఇంకా క్విజ్ ప్రశ్నలు లేవు — మీరు కొన్ని జోడించే వరకు సభ్యులు ఈ కోర్సు క్విజ్ రాయలేరు';
+
+  @override
+  String get adminTrainingQuizAddDialogTitle => 'ప్రశ్న జోడించండి';
+
+  @override
+  String get adminTrainingQuizEditDialogTitle => 'ప్రశ్నను సవరించండి';
+
+  @override
+  String get adminTrainingQuizQuestionHint => 'ప్రశ్న';
+
+  @override
+  String adminTrainingQuizOptionHint(int number) {
+    return 'ఎంపిక $number';
+  }
+
+  @override
+  String get adminTrainingQuizAddOptionTooltip => 'మరో ఎంపిక జోడించండి';
+
+  @override
+  String get adminTrainingQuizRemoveOptionTooltip => 'ఈ ఎంపికను తొలగించండి';
+
+  @override
+  String get adminTrainingQuizCorrectAnswerLabel => 'సరైన సమాధానం';
+
+  @override
+  String get adminTrainingQuizCorrectAnswerNotReadableNotice =>
+      'ఈ ప్రశ్న యొక్క సేవ్ చేసిన సరైన సమాధానం ఇక్కడ ఇంకా చూపించలేము — సేవ్ చేయడానికి ముందు దాన్ని మళ్ళీ ఎంచుకోండి.';
+
+  @override
+  String get adminTrainingQuizQuestionRequiredError => 'ప్రశ్న టెక్స్ట్ అవసరం.';
+
+  @override
+  String get adminTrainingQuizMinOptionsError => 'కనీసం 2 ఎంపికలు అవసరం.';
+
+  @override
+  String get adminTrainingQuizBlankOptionError => 'ఎంపికలు ఖాళీగా ఉండకూడదు.';
+
+  @override
+  String get adminTrainingQuizCorrectAnswerRequiredError =>
+      'సరైన సమాధానాన్ని ఎంచుకోండి.';
+
+  @override
+  String get adminTrainingQuizAddedMessage => 'ప్రశ్న జోడించబడింది';
+
+  @override
+  String get adminTrainingQuizUpdatedMessage => 'ప్రశ్న అప్‌డేట్ చేయబడింది';
+
+  @override
+  String get adminTrainingQuizDemoModeMessage =>
+      'డెమో మోడ్ — ప్రశ్న సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
+
+  @override
+  String get adminTrainingQuizAddErrorMessage =>
+      'ఈ ప్రశ్నను జోడించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get adminTrainingQuizUpdateErrorMessage =>
+      'ఈ ప్రశ్నను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get adminTrainingQuizDeleteDialogTitle => 'ప్రశ్నను తొలగించాలా?';
+
+  @override
+  String get adminTrainingQuizDeleteDialogContent =>
+      'ఇది ఈ ప్రశ్నను కోర్సు క్విజ్ నుండి తొలగిస్తుంది.';
+
+  @override
+  String get adminTrainingQuizDeletedMessage => 'ప్రశ్న తొలగించబడింది';
+
+  @override
+  String get adminTrainingQuizDeleteDemoModeMessage =>
+      'డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
+
+  @override
+  String get adminTrainingQuizDeleteErrorMessage =>
+      'ఈ ప్రశ్నను తొలగించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get adminTrainingQuizEditTooltip => 'ప్రశ్నను సవరించండి';
+
+  @override
+  String get adminTrainingQuizDeleteTooltip => 'ప్రశ్నను తొలగించండి';
 
   @override
   String get supportStatusOpen => 'తెరిచి ఉంది';

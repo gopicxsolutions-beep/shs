@@ -36,22 +36,34 @@ class _LanguageKeywords {
   const _LanguageKeywords({required this.savings, required this.addAction, required this.loan, required this.announcement});
 }
 
+// `addAction` deliberately excludes generic, high-frequency words like
+// English "new" (or Hindi "नया"/"नई", Telugu "కొత్త") even though real
+// commands could plausibly include them ("record a new deposit"). Unlike
+// the other three intents, addSavings is the one with a side effect —
+// resolving it force-navigates to the Savings Entry form 900ms later (see
+// ai_voice_assistant_page.dart's _listen()) — so a false positive here is
+// materially worse than a wrong spoken answer: unrelated speech that
+// happens to combine a `savings` word with a generic `addAction` word (e.g.
+// English "save the new file") would yank the member into a form she never
+// asked for. Keeping addAction to specific action verbs (add/record/enter/
+// log and their Hindi/Telugu equivalents) means a false match still degrades
+// safely to savingsThisMonth — a wrong answer, not a wrong navigation.
 const _keywords = <Language, _LanguageKeywords>{
   Language.en: _LanguageKeywords(
     savings: ['saving', 'savings', 'deposit', 'save'],
-    addAction: ['add', 'record', 'enter', 'new', 'log'],
+    addAction: ['add', 'record', 'enter', 'log'],
     loan: ['loan', 'emi', 'borrow', 'credit', 'due', 'installment'],
     announcement: ['announcement', 'announcements', 'notice', 'circular', 'update'],
   ),
   Language.hi: _LanguageKeywords(
     savings: ['बचत', 'जमा'],
-    addAction: ['जोड़', 'दर्ज', 'नई', 'नया'],
+    addAction: ['जोड़', 'दर्ज'],
     loan: ['ऋण', 'लोन', 'किस्त', 'उधार'],
     announcement: ['घोषणा', 'सूचना', 'नोटिस'],
   ),
   Language.te: _LanguageKeywords(
     savings: ['పొదుపు', 'పొదుపులు', 'జమ'],
-    addAction: ['నమోదు', 'జోడించు', 'కొత్త'],
+    addAction: ['నమోదు', 'జోడించు'],
     loan: ['రుణ', 'లోన్', 'బాకీ'],
     announcement: ['ప్రకటన', 'ప్రకటనలు', 'నోటీసు'],
   ),

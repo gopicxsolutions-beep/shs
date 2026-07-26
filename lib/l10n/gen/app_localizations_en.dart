@@ -66,6 +66,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonBack => 'Back';
 
   @override
+  String get commonStaffNoShgMessage =>
+      'Your role isn\'t linked to a specific SHG — this view doesn\'t apply';
+
+  @override
   String get asyncErrorGeneric => 'Something went wrong. Please try again.';
 
   @override
@@ -417,6 +421,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voiceUnknownCommand => 'Sorry, I didn\'t understand that.';
+
+  @override
+  String get voiceAssistantTitle => 'Voice Assistant';
+
+  @override
+  String get voiceAssistantTapToSpeak => 'Tap to speak a command';
+
+  @override
+  String get voiceAssistantListening => 'Listening…';
+
+  @override
+  String get voiceAssistantThinking => 'Finding an answer…';
+
+  @override
+  String get voiceAssistantTapToAskAgain => 'Tap to ask again';
+
+  @override
+  String get voiceAssistantYouSaid => 'You said';
+
+  @override
+  String get voiceAssistantLabel => 'Assistant';
+
+  @override
+  String get voiceAssistantTrySaying => 'Try saying';
 
   @override
   String get aiDisclaimer =>
@@ -1957,6 +1985,191 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get adminSchemesDeleteErrorMessage =>
       'Could not delete this scheme. Please try again.';
+
+  @override
+  String get adminTrainingCoursesTitle => 'Manage Training Courses';
+
+  @override
+  String get adminTrainingCoursesAddCourseTooltip => 'Add course';
+
+  @override
+  String get adminTrainingCoursesEmptyState => 'No courses in the catalog yet';
+
+  @override
+  String adminTrainingCoursesEditTooltip(String title) {
+    return 'Edit $title';
+  }
+
+  @override
+  String adminTrainingCoursesDeleteTooltip(String title) {
+    return 'Delete $title';
+  }
+
+  @override
+  String adminTrainingCoursesManageQuizTooltip(String title) {
+    return 'Manage quiz for $title';
+  }
+
+  @override
+  String get adminTrainingCoursesAddDialogTitle => 'Add course';
+
+  @override
+  String get adminTrainingCoursesTitleHint => 'Course title';
+
+  @override
+  String get adminTrainingCoursesTopicHint => 'Topic';
+
+  @override
+  String get adminTrainingCoursesFormatLabel => 'Format';
+
+  @override
+  String get adminTrainingCoursesDurationHint => 'Duration (optional)';
+
+  @override
+  String get adminTrainingCoursesTitleRequiredError =>
+      'Course title is required.';
+
+  @override
+  String get adminTrainingCoursesAddedMessage => 'Course added';
+
+  @override
+  String get adminTrainingCoursesDemoModeMessage =>
+      'Demo mode — course not saved (connect Supabase to persist)';
+
+  @override
+  String get adminTrainingCoursesAddErrorMessage =>
+      'Could not add this course. Please try again.';
+
+  @override
+  String get adminTrainingCoursesEditDialogTitle => 'Edit course';
+
+  @override
+  String get adminTrainingCoursesUpdatedMessage => 'Course updated';
+
+  @override
+  String get adminTrainingCoursesUpdateErrorMessage =>
+      'Could not update this course. Please try again.';
+
+  @override
+  String get adminTrainingCoursesDeleteDialogTitle => 'Delete course?';
+
+  @override
+  String adminTrainingCoursesDeleteDialogContent(String title) {
+    return 'This removes \"$title\" and its quiz from the catalog.';
+  }
+
+  @override
+  String get adminTrainingCoursesDeletedMessage => 'Course deleted';
+
+  @override
+  String get adminTrainingCoursesDeleteDemoModeMessage =>
+      'Demo mode — not saved (connect Supabase to persist)';
+
+  @override
+  String get adminTrainingCoursesDeleteErrorMessage =>
+      'Could not delete this course. Please try again.';
+
+  @override
+  String get adminDashboardTrainingTile => 'Training';
+
+  @override
+  String get servicesManageTrainingLabel => 'Manage Training';
+
+  @override
+  String adminTrainingQuizTitle(String courseTitle) {
+    return 'Quiz — $courseTitle';
+  }
+
+  @override
+  String get adminTrainingQuizAddQuestionTooltip => 'Add question';
+
+  @override
+  String get adminTrainingQuizEmptyState =>
+      'No quiz questions yet — members can\'t take this course\'s quiz until you add some';
+
+  @override
+  String get adminTrainingQuizAddDialogTitle => 'Add question';
+
+  @override
+  String get adminTrainingQuizEditDialogTitle => 'Edit question';
+
+  @override
+  String get adminTrainingQuizQuestionHint => 'Question';
+
+  @override
+  String adminTrainingQuizOptionHint(int number) {
+    return 'Option $number';
+  }
+
+  @override
+  String get adminTrainingQuizAddOptionTooltip => 'Add another option';
+
+  @override
+  String get adminTrainingQuizRemoveOptionTooltip => 'Remove this option';
+
+  @override
+  String get adminTrainingQuizCorrectAnswerLabel => 'Correct answer';
+
+  @override
+  String get adminTrainingQuizCorrectAnswerNotReadableNotice =>
+      'This question\'s saved correct answer can\'t be shown here yet — pick it again before saving.';
+
+  @override
+  String get adminTrainingQuizQuestionRequiredError =>
+      'Question text is required.';
+
+  @override
+  String get adminTrainingQuizMinOptionsError =>
+      'At least 2 options are required.';
+
+  @override
+  String get adminTrainingQuizBlankOptionError => 'Options can\'t be blank.';
+
+  @override
+  String get adminTrainingQuizCorrectAnswerRequiredError =>
+      'Select the correct answer.';
+
+  @override
+  String get adminTrainingQuizAddedMessage => 'Question added';
+
+  @override
+  String get adminTrainingQuizUpdatedMessage => 'Question updated';
+
+  @override
+  String get adminTrainingQuizDemoModeMessage =>
+      'Demo mode — question not saved (connect Supabase to persist)';
+
+  @override
+  String get adminTrainingQuizAddErrorMessage =>
+      'Could not add this question. Please try again.';
+
+  @override
+  String get adminTrainingQuizUpdateErrorMessage =>
+      'Could not update this question. Please try again.';
+
+  @override
+  String get adminTrainingQuizDeleteDialogTitle => 'Delete question?';
+
+  @override
+  String get adminTrainingQuizDeleteDialogContent =>
+      'This removes this question from the course\'s quiz.';
+
+  @override
+  String get adminTrainingQuizDeletedMessage => 'Question deleted';
+
+  @override
+  String get adminTrainingQuizDeleteDemoModeMessage =>
+      'Demo mode — not saved (connect Supabase to persist)';
+
+  @override
+  String get adminTrainingQuizDeleteErrorMessage =>
+      'Could not delete this question. Please try again.';
+
+  @override
+  String get adminTrainingQuizEditTooltip => 'Edit question';
+
+  @override
+  String get adminTrainingQuizDeleteTooltip => 'Delete question';
 
   @override
   String get supportStatusOpen => 'Open';

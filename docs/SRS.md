@@ -261,13 +261,70 @@ staff-only. A leader verifying her *own* submitted deposit is deliberately
 still permitted (judged lower-stakes than loan self-approval, since it moves
 no money out of the SHG).
 
+**Known gap, confirmed live (2026-07-25, round 147): FR-SAV-4/5 below had two
+separate problems, and the same root cause turned out to be systemic across
+five other modules.** First, FR-SAV-4 shared the exact "Leader/staff"
+overclaim shape as FR-LOAN-2/5/6 and FR-RPT-2 (see their gap notes):
+`savings_home_page.dart` and `savings_ledger_page.dart` both resolved "which
+SHG" from `appState.profile?.shgId`, the *viewer's own* SHG — real for a
+leader, always null for crp/clf/admin (platform-wide roles, never
+SHG-scoped) — so a staff account saw a silently-empty/zero ledger (₹0 group
+savings, 0 pending, "no entries yet") indistinguishable from a genuinely
+quiet SHG. Second, FR-SAV-5 was simply mis-attributed, not just
+overclaiming: the "per-member leaderboard and monthly trend" it describes is
+`savings_group_report_page.dart`, which `savings_home_page.dart`'s own tile
+routing (`isLeaderOrStaff ? Paths.savingsLedger : Paths.savingsGroupReport`)
+sends to **members**, not leader/staff — leader/staff are routed to the flat
+transaction ledger instead (FR-SAV-4's page, not a leaderboard). FR-SAV-5's
+role list was never accurate for this screen.
+
+Grepping the same `profile?.shgId` pattern surfaced five more pages sharing
+Savings' first problem: `meetings_home_page.dart`, `meeting_attendance_page.dart`,
+`meeting_qr_page.dart`, `financial_ledger_page.dart` (all four cashbook/
+ledger/bank/audit views), `livelihood_home_page.dart` — plus `loans_home_page.dart`
+and `loan_approval_page.dart`, already known from FR-LOAN's gap note.
+`meeting_schedule_page.dart` had a milder version: a correct but *late*
+`meetingScheduleNoShgError`, shown only after a staff account filled in the
+whole form.
+
+Unlike FR-LOAN's gap note, which concluded "not fixable by simply hiding a
+tile... the real fix is a genuine new capability" and left the misleading
+zero-state in place, this round found a third option that note didn't
+consider: keep the page reachable, but replace the misleading empty/zero
+rendering with an honest, explicit "this per-SHG view doesn't apply to your
+role" message — the same design `shg_home_page.dart` already used correctly
+for its own `shg == null` case, just not yet applied to these other files.
+**Fixed this round** across all nine pages above (new shared string
+`commonStaffNoShgMessage`, added to all three `.arb` files), gated on
+`SupabaseService.isConfigured` and not just `shgId == null` — demo mode's
+simulated identity leaves `profile` (and so `shgId`) null for *every*
+previewed role, not just staff, so the guard had to exclude demo mode
+explicitly or it would have wrongly swallowed that intentional mock-data
+walkthrough for Leader/Member too. `meeting_schedule_page.dart` got the same
+upfront guard as a strict improvement over its pre-existing late error
+(which stays in place as a harmless fallback).
+
+This closes the *misleading-UI* half of FR-LOAN's gap note too — crp/clf/
+admin now see an honest explanation there as well. It does **not** close the
+underlying *capability* gap: crp/clf/admin still cannot verify a savings
+entry, approve a loan, or view any group ledger through this UI — the
+genuine platform-wide "portfolio"/multi-SHG capability FR-LOAN's note
+describes is still unbuilt. Role columns below reflect actual working
+capability, not raw RLS permission. Not fixed (out of this pattern's scope —
+no staff exposure): `savings_group_report_page.dart` has the identical
+`shgId`-driven fetch but is only ever linked from the Member-facing tile;
+the sole residual exposure is an *unlinked member* (pending SHG assignment,
+not a staff/platform-wide role) reaching it directly, a narrower and much
+rarer edge case left as a noted-but-unfixed observation rather than
+expanded scope.
+
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-SAV-1 | Member (or leader/staff for a roster member) records a savings entry, always starting `pending` | Member, Leader, staff |
 | FR-SAV-2 | Member views own savings history and a running-balance statement (verified entries only) | Member |
 | FR-SAV-3 | SHG members share realtime read access to the group's savings ledger | Member, Leader |
-| FR-SAV-4 | Leader/staff verify a pending entry (flat status flip; self-verification permitted) | Leader, staff |
-| FR-SAV-5 | Leader/staff view a group savings report: per-member leaderboard and monthly trend, verified entries only | Leader, CRP, CLF, Admin |
+| FR-SAV-4 | Leader verifies a pending entry (flat status flip; self-verification permitted) — crp/clf/admin have RLS permission but no working UI path today; shown an honest explanation, not a broken page (see gap note above) | Leader (CRP/CLF/Admin planned) |
+| FR-SAV-5 | Member views a group savings report: per-member leaderboard and monthly trend, verified entries only (SHG transparency) — reached from Savings home's "Group" tile; leader/staff are routed to the ledger (FR-SAV-4) instead, not this report | Member |
 
 ### 3.4 Loans (`loans/`)
 
@@ -310,14 +367,58 @@ the loan atomically with the balance decrement if it reaches zero — see
 [ARCHITECTURE.md](ARCHITECTURE.md) §3.4 for the concurrency guarantee this
 provides and why a plain client-side read-then-write would be unsafe.
 
+**Known gap, confirmed live (2026-07-25, round 140): the "Leader/staff" and
+"portfolio" language in FR-LOAN-2/5/6 below significantly overstates what
+crp/clf/admin can actually do on this page today.** `loans_home_page.dart`'s
+own data-fetching is `isLeaderOrStaff ? repo.fetchForShg(shgId) :
+repo.fetchForMember(memberId)` — `shgId` is
+`appState.profile?.shgId`, the *viewer's own* SHG. A leader has a real one;
+federation staff (crp/clf/admin) never do (platform-wide roles, not
+SHG-scoped — same fact behind round 138's Reports finding and round 139's
+CLF-dashboard check). The result: every crp/clf/admin account sees the main
+Loans page's "Group Outstanding" stat, "Pending Approval" count, and "All
+Loans" list all render as zero/empty, while still being shown a real,
+tappable "Pending Approvals" tile (`loans_home_page.dart` gates it on the
+same `isLeaderOrStaff`) that leads to `loan_approval_page.dart` — which has
+the identical `appState.profile?.shgId` bug and is *also* reachable via a
+router-level `_leaderOrStaff` guard (`router.dart`) that lets staff straight
+through. Unlike round 138's SHG Reports finding, this isn't fixable by
+simply hiding a tile: `loans_home_page.dart` has no third rendering mode —
+falling back to the member-shaped view (an "Apply for a Loan" button, "my
+overdue" framing) would be equally wrong for a platform-wide oversight
+role. The real fix is a genuine new capability: `LoanRepository` has no
+platform-wide fetch method at all today (only `fetchForShg`/
+`fetchForMember`) — RLS is already ready for one (`loans_select_shg_or_staff`'s
+`is_staff()` branch already grants crp/clf/admin unrestricted read across
+every SHG's loans, live-confirmed via `pg_policies`), so building a
+`fetchAllPending()`/portfolio-style method and a staff-specific rendering
+branch is a Dart/UI-only addition, no migration needed. Left undone here —
+a genuine feature build (new repository method + a third UI branch,
+possibly with a different approval-permission question for staff:
+should any crp/clf/admin be able to approve any SHG's loan platform-wide,
+or does that need narrowing?) rather than a one-line fix, matching this
+project's established distinction (rounds 111, 135) between closing a
+confirmed gap immediately and documenting one that needs a real design
+decision for a dedicated development pass.
+
+**Follow-up (2026-07-25, round 147): the *misleading-UI* half of the gap
+above is now fixed** — see the Savings gap note (§3.2) for the full
+nine-page fix. `loans_home_page.dart` and `loan_approval_page.dart` now show
+an honest "this per-SHG view doesn't apply to your role" message instead of
+the silently-empty zero/portfolio state, gated on `SupabaseService.isConfigured`
+so demo mode is unaffected. This does **not** close the gap described above
+— crp/clf/admin still cannot approve a loan or see a real portfolio through
+this UI; that still needs the genuine new capability (`fetchAllPending()`/
+portfolio method + a third UI branch) described here, which remains unbuilt.
+
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-LOAN-1 | Member applies for a loan (purpose, amount, tenure); starts `pending`, fully undisbursed | Member |
-| FR-LOAN-2 | Leader/staff approve (setting EMI, disbursement date) or reject a pending application | Leader, staff |
+| FR-LOAN-2 | Leader approves (setting EMI, disbursement date) or rejects a pending application from her own SHG's queue — crp/clf/admin have RLS permission but no working UI path to a meaningful queue today (see gap note above) | Leader (CRP/CLF/Admin planned) |
 | FR-LOAN-3 | A leader cannot approve/reject her own loan application — enforced at the database layer, not just hidden in the UI | System |
 | FR-LOAN-4 | Member tracks her own loan(s): outstanding balance, EMI, status, payment history | Member |
-| FR-LOAN-5 | Non-member roles record a payment against a loan; balance decrement, overpayment rejection, and auto-close-on-zero happen atomically | Leader, staff |
-| FR-LOAN-6 | Leader/staff view the group/portfolio loan list with status badges | Leader, CRP, CLF, Admin |
+| FR-LOAN-5 | Non-member roles record a payment against a loan; balance decrement, overpayment rejection, and auto-close-on-zero happen atomically | Leader (staff RLS-ready, no UI path yet — see gap note above) |
+| FR-LOAN-6 | Leader views the group loan list with status badges; a platform-wide "portfolio" view for CRP/CLF/Admin is RLS-ready but not built (see gap note above) | Leader (CRP/CLF/Admin planned) |
 | FR-LOAN-7 | `overdue` status is modeled in schema and UI but has no automated trigger in the current codebase — documented as not-yet-implemented, not broken | — |
 
 ### 3.5 Financial Ledger (`financial/`)
@@ -431,15 +532,27 @@ picked via `file_picker` (5 MB cap, JPEG/PNG/WEBP) and uploaded to the public
 public URL is stored on the product row and shown on both the catalog grid
 and the product detail page, falling back to the original storefront-icon
 placeholder for products with no photo (including every product listed
-before this feature shipped). Placing an order calls an
-atomic RPC (`decrement_product_stock`) that decrements stock in a single
-guarded statement (`stock - 1 where stock > 0`) — this closes a real,
-previously-live bug where a buyer's own client-side stock decrement was
-always a silent 0-row RLS no-op (only the seller/staff may write to the
-product row), meaning stock had genuinely never decremented for a real
-purchase before this RPC existed. The order is recorded using the **RPC's
-returned price**, never a client-supplied value, closing a trust-boundary gap
-where a stale page could otherwise record any amount for a real order.
+before this feature shipped). Placing an order calls an atomic RPC (`place_marketplace_order`, migration
+`0057`) that, in one `security definer` transaction, decrements stock in a
+single guarded statement (`stock - 1 where stock > 0`), reads the product's
+real current price, and inserts the order itself — buyer identity
+(`buyer_id`/`buyer_name`) is derived server-side from the session, never
+accepted from the client. This closes two real, previously-live bugs, both
+live-confirmed rather than just reasoned about: a buyer's own client-side
+stock decrement was always a silent 0-row RLS no-op (only the seller/staff
+may write to the product row) until an earlier RPC (`decrement_product_stock`,
+migration `0008`) fixed the decrement itself — but that RPC only verified a
+price and handed it back for the client to insert the order with
+*separately*, a non-atomic two-step sequence nothing forced a client to
+actually follow honestly. A direct API call could skip straight to
+inserting the order with an arbitrary `amount` and stock never touched (a
+real ₹5,000 test product was ordered at `amount: 1` this way), and the old
+RPC was independently callable on its own with no order at all, letting any
+authenticated user silently zero out any seller's stock as a pure
+denial-of-service. `place_marketplace_order` closes both by performing the
+entire purchase — not just the price-sensitive part — inside one function,
+so there is no longer a gap between "stock/price verified" and "order
+recorded" for a client to skip or forge.
 
 **Order status** (`new → packed → shipped → delivered`) is a free-form chip
 row the seller (or staff) can set to *any* value at *any* time, including
@@ -539,13 +652,68 @@ a transcription of any real curriculum — a subject-matter expert should
 review/extend it before this is treated as the app owner's final course
 material.
 
+**Closed (2026-07-26, round 167): "Manage Training Courses" admin UI now
+exists** — `admin_training_courses_page.dart` (course catalog: add/edit/
+delete) plus `admin_training_quiz_page.dart` (per-course quiz question
+authoring: question text, 2+ options, correct answer), mirroring
+`admin_schemes_page.dart`'s pattern. Reachable from Admin's dashboard tile
+and every staff role's Services tab. **Gated on `is_staff()` (crp/clf/admin),
+not narrowed to `Role.admin`-only like `admin_schemes_page.dart`** — CRPs
+are this app's actual day-to-day training content owners per this
+document's own role glossary, and RLS (`training_courses_write_staff`/
+`quiz_questions_write_staff`) already scoped writes to `is_staff()`, so an
+admin-only gate would have left that already-granted capability just as
+unreachable for crp/clf as before this page existed; a dedicated router
+prefix (`/app/training/manage`, deliberately not nested under `/app/admin`)
+carries this narrower rule. The prior round's live-verified emptiness is
+now directly closable: a staff account can create a course and its quiz
+content without touching SQL, and every write was live-RLS-boundary-tested
+(a real crp-role session's insert into `training_courses` genuinely
+succeeded; a real member-role session's identical insert genuinely raised
+`42501` — both against the live linked project, not assumed).
+
+One remaining rough edge, honestly disclosed rather than hidden: editing an
+*existing* quiz question's correct answer requires re-selecting it (not
+pre-filled) unless migration `0060_quiz_questions_staff_base_table_read.sql`
+has been deployed — that migration re-grants staff read access to the base
+`quiz_questions` table (needed only to show a saved correct answer back to
+an editor; ordinary quiz-taking was never affected) and was written but not
+yet pushed to the live project (`supabase db push` requires the project
+owner's own action — see [DEVELOPMENT_PROGRESS.md](DEVELOPMENT_PROGRESS.md)
+round 167). Creating new questions and deleting existing ones already work
+fully today regardless.
+
+**Second known gap, found the same way (2026-07-25, round 135): the
+aggregate training-completion view this section's own FR-TRN-5 row
+promises CRP/CLF is Admin-only in practice.** `AdminRepository.
+fetchDashboardStats()` computes `trainingCompletionPct`
+(`course_progress.progress` averaged across every member×course pair
+platform-wide, via the same `is_staff()` RLS bypass every other
+platform-wide aggregate in this app uses) — but it's called from exactly
+one place, `admin_dashboard.dart`. Grepped the whole `lib/pages/` tree for
+any other call site and for `trainingCompletionPct` itself: neither
+`crp_dashboard.dart` nor `analytics_dashboard_page.dart` (the two
+CRP/CLF-reachable dashboards) reference it at all. The underlying RLS is
+already correctly staff-wide, not admin-scoped, so nothing here is a
+security gap — this is purely a UI capability the original spec described
+that was only ever wired to one of the three roles it names. Left as a
+documented gap rather than built on the spot: `AdminDashboardStats` also
+bundles `pendingReviewCount` and an admin-flavored `recentActivity` feed
+(new users/new SHGs platform-wide) in the same call, so cleanly extending
+just the training-completion figure to CRP/CLF is a real product/design
+decision (what subset of that bundle actually belongs on their dashboard,
+not just a mechanical wiring fix) — a good candidate for this project's
+CRP/CLF-role development pass, alongside the courses/quiz-authoring gap
+above.
+
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-TRN-1 | Any user browses the course catalog and course detail | All |
 | FR-TRN-2 | Progress advances via a flat increment per "Continue" tap — not real content-consumption tracking | All |
 | FR-TRN-3 | A real per-course quiz (`quiz_questions` table) is the sole path to certification, proportional ≥2/3 pass threshold, unlimited retries | All |
 | FR-TRN-4 | A certificate/completion date is issued on quiz pass | All |
-| FR-TRN-5 | Staff/CRP view training completion at an aggregate level | CRP, CLF, Admin |
+| FR-TRN-5 | Aggregate training-completion view — RLS is staff-wide but the only actual UI is on the Admin dashboard (see gap note above) | Admin (CRP/CLF planned) |
+| FR-TRN-6 | Staff/admin author courses and quiz questions — RLS-ready but **no UI exists yet** (see gap note above) | Admin (planned) |
 
 ### 3.11 Digital Payments (`payments/`)
 
@@ -606,6 +774,12 @@ staff account did it and when (`resolved_by`/`resolved_at`, mirroring
 trusted from the client, and reopening an already-resolved ticket (moving it
 back to `open`/`in_progress`) is an explicitly supported workflow even when
 done by a different staff member than the one who resolved it.
+`resolved_by` can only ever be set to the calling staff account's own id (or
+left at whatever it already was, covering reopen/other-status-change
+updates) — a staff account cannot attribute a resolution to a colleague who
+never touched the ticket (migration `0058`; live-confirmed round 128, after
+an earlier, simpler pin shipped and was reverted in migration `0053` for
+incorrectly also blocking the reopen workflow above).
 
 FAQs are fully static content, not backed by any table. Voice Support follows
 the same "record → transcribe → answer" state machine as the AI Voice
@@ -631,13 +805,13 @@ Summary for SRS purposes:
 
 | ID | Requirement | Roles |
 |---|---|---|
-| FR-AI-1 | User chats with an AI Financial Advisor (Groq-backed, single-turn, no memory across questions) | All |
+| FR-AI-1 | User chats with an AI Financial Advisor (Groq-backed), with real cross-turn memory within the current chat session (resets on leaving/reopening the page) | All |
 | FR-AI-2 | User chats with an AI Scheme Recommender | All |
 | FR-AI-3 | User chats with an AI Market Advisor | All |
 | FR-AI-4 | User interacts with a Voice Assistant in English/Hindi/Telugu — **real on-device speech recognition and synthesis in live mode** (`speech_to_text` + `flutter_tts`, no vendor key), falling back to a mock speech service in demo mode; answer content for recognized intents is drawn from the user's real data | All |
 | FR-AI-5 | Every chat-advisor exchange (not Voice Assistant) is logged for audit, retained indefinitely, staff-readable | System |
 | FR-AI-6 | Chat-advisor requests are rate-limited server-side to 10/minute per member, fail-closed | System |
-| FR-AI-7 | A persistent, localized disclaimer ("AI-generated guidance… not professional financial, legal, or medical advice") is shown on every AI-branded screen; **no content moderation or prompt-injection defense exists yet** — disclosed explicitly as a remaining pre-scale gap, not silently accepted | — |
+| FR-AI-7 | A persistent, localized disclaimer ("AI-generated guidance… not professional financial, legal, or medical advice") is shown on every AI-branded screen; a real two-layer server-side content-moderation/prompt-injection defense exists (regex pre-filter + a Groq Llama Guard 3 ML classifier, both on input and output), every rejection is logged and staff-visible on Admin Monitoring — **still missing gradual cross-turn abuse detection and proactive alerting/escalation on repeated blocks**, disclosed explicitly as the remaining pre-scale gap (see [AI_MODULES.md](AI_MODULES.md) §6 for the full accounting) | — |
 
 ### 3.15 Analytics & Reports (`analytics/`, `reports/`)
 
@@ -653,24 +827,50 @@ analytics SHG list are attendance-based proxies computed client-side, not a
 validated composite health methodology — treat them as a heuristic ranking
 signal, not a certified metric.
 
+**Fixed live, round 138 (2026-07-25): the "SHG Reports" tile (Financial
+Summary/Audit Report/Performance Report) is leader-only, not
+"leader-or-staff" as this section previously claimed.** All three pages
+resolve which SHG to show purely from `appState.profile?.shgId` — the
+*viewer's own* SHG — with no parameter for viewing a different one. A
+leader has a real SHG there; crp/clf/admin never do (staff roles are
+platform-wide, not SHG-scoped). Before this fix, `reports_hub_page.dart`
+showed this tile to staff too (gated on `isLeaderOrStaff`, i.e. "not a
+member"), so every crp/clf/admin account saw a tappable "SHG Reports" tile
+that led to three report pages rendering permanently empty/zero with no
+explanation and no way to ever reach a real SHG's data through that flow —
+an always-reproducible dead end, not a rare edge case, for exactly the
+roles this section's own FR-RPT-2 claimed the capability served. Closed by
+scoping the tile to `role == Role.leader` only; staff's genuinely-working
+per-SHG oversight is the Analytics drill-down below (FR-RPT-3), which does
+take an explicit `shgId` and was live-verified against a real second SHG.
+Extending the report *pages* themselves to accept an explicit `shgId` (so
+staff could reach a specific SHG's Financial Summary/Audit/Performance via
+an "Analytics → view full report" link) remains open — a reasonable future
+enhancement, not implemented here since it's a multi-page feature addition
+rather than a one-line fix.
+
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-RPT-1 | Any user views her own personal report hub: Savings Statement, Loan Statement, Attendance Report | All |
-| FR-RPT-2 | Leader/staff view SHG-level reports: Financial Summary, Audit Report, Performance Report (with attendance trend chart) | Leader, CRP, CLF, Admin |
+| FR-RPT-2 | Leader views SHG-level reports: Financial Summary, Audit Report, Performance Report (with attendance trend chart) — CRP/CLF/Admin have no path to another SHG's version of these three specific reports (see gap note above); their own SHG oversight is FR-RPT-3's Analytics drill-down instead | Leader |
 | FR-RPT-3 | CRP/CLF/Admin view platform-wide analytics: KPIs, SHG list with health/grade (an attendance-based proxy, not a certified metric), SHG detail drill-down | CRP, CLF, Admin |
 | FR-RPT-4 | CRP/CLF/Admin view federation-wide reports: growth, recovery rate, villages | CRP, CLF, Admin |
 
 ### 3.16 SHG (Group) Management (`shg/`)
 
 **How it works.** "My SHG" shows the group's profile, a federation-info card,
-and — client-gated to non-member roles only — a Bank Details card. Note this
-specific gate is **UI-only**: the underlying RLS policy for reading `shgs`
-permits any member of the SHG (not just leader/staff) to read the full row
-including `bank_account`/`ifsc`, so this is a case where the client hides a
-sensitive field from members but the database does not independently
-restrict it from them — worth a deliberate decision (tighten the RLS, or
-accept the current in-person-SHG-transparency norm extends to bank details
-too) rather than assuming the UI gate is sufficient.
+and — client-gated to non-member roles only — a Bank Details card. That
+client gate is backed server-side, not just cosmetic: `bank_account`/`ifsc`
+live in their own `shg_bank_details` table (migration `0056`), with RLS
+restricted to that SHG's leader or staff — no policy grants an ordinary
+member's role any path to those two columns at all, direct-table or
+otherwise. `ShgRepository.fetchShg()` reads `shg_own_masked` (migration
+`0045`), a view over `shgs` left-joined to `shg_bank_details` that additionally
+nulls both columns server-side unless the caller is leader/staff, so even a
+leader/staff row's own fields are masked correctly for any other caller
+querying the same view. See [ARCHITECTURE.md](ARCHITECTURE.md) §"Sensitive
+columns never in a broadly-readable view" for the full RLS design and the
+direct-base-table-bypass this table split closed.
 
 Join-request approval is a leader-only screen; the underlying RPC
 (`approve_shg_join_request`) also accepts staff, even though the router
@@ -837,6 +1037,18 @@ monitoring, and scheme-eligibility/course-quiz content (both intentional
 generic heuristics). The AI advisor disclaimer and app crash-reporting gaps
 flagged in the first version of this doc suite were closed the same round
 they were identified (round 83 in
-[DEVELOPMENT_PROGRESS.md](DEVELOPMENT_PROGRESS.md)) — the remaining
-AI-related gap worth prioritizing before scaling real usage is content
-moderation/prompt-injection defense (see [AI_MODULES.md](AI_MODULES.md) §6).
+[DEVELOPMENT_PROGRESS.md](DEVELOPMENT_PROGRESS.md)). **Corrected here
+(2026-07-25, round 145): this appendix and FR-AI-7 above previously
+claimed "no content moderation or prompt-injection defense exists yet" —
+stale, and had been for a while. A real two-layer defense (regex
+pre-filter + a Groq Llama Guard 3 ML classifier, both on input and output,
+with prompt-injection "sandwich" hardening) shipped with migration `0044`
+and is thoroughly documented in [AI_MODULES.md](AI_MODULES.md) §6, which
+was itself kept current — only this document's own summary table and
+appendix had drifted out of sync with it.** The AI-related gap actually
+worth prioritizing before scaling real usage is narrower than "no
+moderation at all": gradual cross-turn abuse detection (today's checks are
+per-turn, not whole-conversation pattern analysis) and proactive
+alerting/escalation on repeated blocks (today's Admin Monitoring stat is a
+passive, staff-must-look count, not automated) — see
+[AI_MODULES.md](AI_MODULES.md) §6 for the full, current accounting.

@@ -69,6 +69,20 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
     final shgId = appState.profile?.shgId;
     final memberId = appState.profile?.id;
 
+    // Unlike this file's sibling meeting pages, this route has no role
+    // branch at all — every role funnels through the same `fetchForShg`.
+    // crp/clf/admin never have a `shgId` (platform-wide roles); without
+    // this guard they'd see the same "No meeting scheduled to check in to
+    // right now" message a genuinely quiet SHG would show, with no hint
+    // that the real reason is having no SHG at all. `isConfigured` excludes
+    // demo mode, whose simulated identity leaves `shgId` null for every role.
+    if (SupabaseService.isConfigured && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: l10n.meetingQrTitle),
+        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
+      );
+    }
+
     return Scaffold(
       appBar: PageHeader(title: l10n.meetingQrTitle),
       body: AppAsyncBuilder<List<Meeting>>(

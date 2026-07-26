@@ -5,6 +5,8 @@ import '../layout/app_shell.dart';
 import '../models/types.dart';
 import '../pages/admin/admin_monitoring_page.dart';
 import '../pages/admin/admin_schemes_page.dart';
+import '../pages/admin/admin_training_courses_page.dart';
+import '../pages/admin/admin_training_quiz_page.dart';
 import '../pages/admin/admin_shgs_page.dart';
 import '../pages/admin/admin_users_page.dart';
 import '../pages/ai/ai_advisor_chat_page.dart';
@@ -108,10 +110,27 @@ const _roleRestrictedPrefixes = <(String, Set<Role>)>[
   ('/app/meetings/schedule', _leaderOrStaff),
   ('/app/meetings/attendance', _leaderOrStaff),
   ('/app/shg/join-requests', {Role.leader}),
-  ('/app/reports/shg', _leaderOrStaff),
+  // Leader-only, not `_leaderOrStaff` — round 138 found `ShgFinancialSummaryPage`/
+  // `ShgPerformanceReportPage`/the Audit report all resolve "which SHG" from
+  // `appState.profile?.shgId`, the viewer's own SHG only, with no parameter
+  // to view a different one. Staff never have a `shg_id` of their own, so
+  // this prefix letting them through led to three report pages rendering
+  // permanently empty/zero with no explanation — closed the discoverable
+  // path (the Reports Hub tile, `reports_hub_page.dart`) that same round,
+  // but missed that this table independently allowed the same broken pages
+  // via direct URL. Staff's genuinely-working per-SHG oversight is
+  // `/app/analytics` below.
+  ('/app/reports/shg', {Role.leader}),
   ('/app/reports/federation', _federationStaff),
   ('/app/analytics', _federationStaff),
   ('/app/admin', {Role.admin}),
+  // Staff (crp/clf/admin), not leader — RLS (`training_courses_write_staff`/
+  // `quiz_questions_write_staff`) already grants writes to `is_staff()`
+  // specifically, matching `_federationStaff` here rather than
+  // `_leaderOrStaff`. Deliberately not nested under `/app/admin` (see
+  // `Paths.adminTrainingCourses`'s own doc comment) precisely so this
+  // narrower rule — not the blanket admin-only one above — is what applies.
+  ('/app/training/manage', _federationStaff),
 ];
 
 GoRouter buildRouter(AppState appState) {
@@ -283,6 +302,7 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.adminSchemes, builder: (context, state) => const AdminSchemesPage()),
           GoRoute(path: Paths.adminMonitoring, builder: (context, state) => const AdminMonitoringPage()),
           GoRoute(path: Paths.adminShgs, builder: (context, state) => const AdminShgsPage()),
+          GoRoute(path: Paths.adminTrainingCourses, builder: (context, state) => const AdminTrainingCoursesPage()),
           // Each of the routes below is keyed on its :id path parameter.
           // Without a ValueKey, go_router reuses the same Element when
           // navigating between two matches of the same route pattern (e.g.
@@ -328,6 +348,10 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(
             path: '/app/training/:id/quiz',
             builder: (context, state) => CourseQuizPage(key: ValueKey(state.pathParameters['id']), courseId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/training/manage/:id/quiz',
+            builder: (context, state) => AdminTrainingQuizPage(key: ValueKey(state.pathParameters['id']), courseId: state.pathParameters['id']!, courseTitle: state.extra as String?),
           ),
           GoRoute(
             path: '/app/announcements/:id',

@@ -8,6 +8,7 @@ import '../../models/savings.dart';
 import '../../models/types.dart';
 import '../../repositories/savings_repository.dart';
 import '../../routes/paths.dart';
+import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -30,6 +31,24 @@ class SavingsHomePage extends StatelessWidget {
     final repo = SavingsRepository();
     final shgId = appState.profile?.shgId;
     final memberId = appState.profile?.id;
+
+    // crp/clf/admin are platform-wide roles with no `profile.shgId` of their
+    // own — this whole page (stat cards, tile row, recent-entries list)
+    // resolves "which SHG" from that field, so without this guard a staff
+    // account fell through to a page that looked like a genuinely-empty SHG
+    // (₹0 group savings, 0 pending, "no entries yet") instead of an honest
+    // explanation that this per-SHG view simply doesn't apply to their role.
+    // Gated on `isConfigured` too: demo mode's simulated identity never
+    // populates `profile` for ANY previewed role (see LoansHomePage's own
+    // note on this), so `shgId` is null there for Leader/Member as well —
+    // without this check the guard would wrongly swallow demo mode's own
+    // intentional mock-data walkthrough for every role, not just live staff.
+    if (SupabaseService.isConfigured && isLeaderOrStaff && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: l10n.savingsHomeTitle),
+        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
+      );
+    }
 
     return Scaffold(
       appBar: PageHeader(

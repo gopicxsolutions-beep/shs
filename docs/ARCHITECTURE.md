@@ -59,15 +59,17 @@ complete, testable UI/UX today with a documented mock STT/TTS underneath (see
 
 ## 2. Data model
 
-28 base Postgres tables + 1 view (`shg_directory`), defined starting in
-`supabase/migrations/0001_init_schema.sql` and hardened across 41 further
+33 base Postgres tables + 3 views (`shg_directory`, `shg_own_masked`,
+`quiz_questions_public`), defined starting in
+`supabase/migrations/0001_init_schema.sql` and hardened across 55 further
 migrations:
 
 | Table | Domain |
 |---|---|
-| `shgs` | SHG (group) master record — includes sensitive `bank_account`/`ifsc`; base table read directly only by admin/staff (`fetchAllShgs()`) |
+| `shgs` | SHG (group) master record — general profile fields only; base table read directly only by admin/staff (`fetchAllShgs()`) |
+| `shg_bank_details` (migration `0056`) | `bank_account`/`ifsc`, split out of `shgs` into their own 1:1 table so RLS can restrict them to that SHG's leader/staff — a plain member's role has no policy granting it access to this table at all, direct or otherwise |
 | `shg_directory` (view) | Safe public subset of `shgs` for onboarding search — excludes bank fields entirely |
-| `shg_own_masked` (view, migration `0045`) | What an ordinary member's/leader's own-SHG lookup (`fetchShg()`) actually reads — same row scope as the base table's own RLS, but `bank_account`/`ifsc` are nulled server-side unless the caller is leader/staff for that SHG |
+| `shg_own_masked` (view, migrations `0045`/`0056`) | What an ordinary member's/leader's own-SHG lookup (`fetchShg()`) actually reads — same row scope as `shgs`' own RLS, left-joined to `shg_bank_details`, with `bank_account`/`ifsc` additionally nulled server-side unless the caller is leader/staff for that SHG |
 | `profiles` | One row per user; `role`, `shg_id`, identity |
 | `shg_join_requests` | Member → SHG join workflow, one-pending-per-member |
 | `shg_documents` | Document metadata + real Storage `storage_path` (real `file_picker` upload UI, private `shg-documents` bucket) |
@@ -219,14 +221,29 @@ inline an equivalent subquery.
   even though `shg_home_page.dart` only ever *rendered* the "Bank Details"
   section for leader/staff — a client-side check, not the real boundary. An
   adversarial audit of the "My SHG" module found this contradicted this
-  exact bullet's own stated principle. Migration `0045` closed it with
-  `shg_own_masked` (above): the same row-visibility rule as the base table,
-  but `bank_account`/`ifsc` are nulled server-side via a `CASE
-  is_leader_or_staff()` unless the caller actually is leader/staff for that
-  SHG. `ShgRepository.fetchShg()` now reads from this view, not the base
-  table; `shg_directory` (the older, narrower "public search" view) remains
-  unchanged and still excludes the bank fields entirely rather than masking
-  them.
+  exact bullet's own stated principle. Migration `0045` first closed the
+  app's own read path with `shg_own_masked` (above): the same row-visibility
+  rule as the base table, but `bank_account`/`ifsc` were nulled server-side
+  via a `CASE is_leader_or_staff()` unless the caller actually is
+  leader/staff for that SHG, and `ShgRepository.fetchShg()` switched to read
+  from this view instead of the base table.
+  That masking view only protects callers who choose to query it, though —
+  RLS on the base `shgs` table itself was untouched, so a plain member's own
+  already-valid session could still reach the real values by querying
+  `/rest/v1/shgs?select=bank_account,ifsc` directly instead of the masked
+  view, no special access needed. Live-confirmed this gap directly (round
+  122, genuine plain-member RLS simulation, not just code review) and closed
+  it completely with migration `0056`: `bank_account`/`ifsc` moved out of
+  `shgs` entirely into their own `shg_bank_details` table (1:1 on `shg_id`),
+  whose *only* SELECT policy is leader-or-staff-of-that-SHG — a plain
+  member's role has no path to those columns from any query shape now,
+  direct-table or otherwise, since they simply don't exist anywhere a wider
+  policy could reach them. `shg_own_masked` was updated in the same
+  migration to left-join `shg_bank_details` and keep the same `CASE`-masked
+  shape its callers already depend on, so `ShgRepository.fetchShg()` needed
+  no Dart-side change. `shg_directory` (the older, narrower "public search"
+  view) remains unchanged and still excludes the bank fields entirely rather
+  than masking them.
 
 ### 3.3 Role-escalation prevention (the single most re-audited security property)
 
@@ -264,24 +281,39 @@ the full incident list.
 
 Five operations mutate money, stock, or a decision outcome in a way that a
 naive client-side read-then-write race could corrupt. Each is a Postgres
-function the repository calls via `supabase.rpc(...)`, with a documented,
-explicitly-labeled-as-a-compatibility-shim non-atomic fallback for the case
-where the migration defining it hasn't been deployed (`PGRST202`).
+function the repository calls via `supabase.rpc(...)`. Four of the five have
+a documented, explicitly-labeled-as-a-compatibility-shim non-atomic fallback
+for the case where the migration defining them hasn't been deployed
+(`PGRST202`) — `place_marketplace_order` (below) deliberately does not, see
+its own row.
 
 | RPC | Locking | Guarantees | Errors raised |
 |---|---|---|---|
 | `record_loan_payment(loan_id, amount)` | `SELECT ... FOR UPDATE` row lock on `loans` | Payment + balance decrement + close-on-zero happen atomically; rejects overpayment; rolls back the whole transaction (including the `loan_payments` insert) if the underlying `UPDATE` is silently filtered to 0 rows by RLS | `payment amount must be positive`; `loan not found`; `payment amount (%) exceeds outstanding balance (%)`; `not authorized to update this loan, or loan not found` |
 | `add_financial_ledger_entry(shg_id, entry_type, ...)` | Transaction-scoped `pg_advisory_xact_lock` keyed on `(shg_id, entry_type)` | Running-balance read + insert happen atomically per ledger key, even for the very first entry of a key (no row yet to lock) | Table CHECK constraints catch invalid inputs |
-| `decrement_product_stock(product_id)` | Single atomic `UPDATE ... WHERE stock > 0` | Prevents overselling under concurrent buyers; returns the server's real current price so the order is always recorded at the true price, never a possibly-stale client value | Returns `success:false` rather than raising, for the ordinary "already sold out" case |
+| `place_marketplace_order(product_id)` (migration `0057`, replaced `decrement_product_stock`) | Single atomic `UPDATE ... WHERE stock > 0` | Stock check-and-decrement AND the `marketplace_orders` INSERT happen in one `security definer` transaction — not just the stock/price part. `decrement_product_stock` (0008) only verified price and handed it back for the client to insert with in a *separate* round trip; nothing forced a client to actually do that honestly. A direct REST insert could set `amount` to anything with stock never touched (live-confirmed round 125: a real ₹5,000 test product ordered at `amount: 1`), and the old RPC was independently callable with no order at all — any authenticated user could silently zero out any seller's stock as a pure DoS, live-confirmed the same round. `buyer_id`/`buyer_name` are derived from `auth.uid()`/`profiles.name` inside the function, never accepted as parameters | Returns `success:false` rather than raising, for the ordinary "already sold out" case |
 | `approve_loan` / `reject_loan` | Implicit via status re-check | Rejects a second decision on an already-decided loan | `LoanAlreadyDecidedException` surfaced to the UI as "already decided by someone else" |
 | `decide_scheme_application(id, approve)` | `SELECT ... FOR UPDATE` row lock on `scheme_applications` | Same already-decided race guard, for a shared, non-SHG-scoped staff review queue | `application not found`; `application already decided (current status: %)`; `not authorized to decide this application, or application not found` |
 
-All are `security invoker`, not `definer` — the RPC's own internal write is
-still subject to the underlying table's RLS, so the function provides
-atomicity, not a privilege bypass. `record_loan_payment` explicitly checks
-Postgres's `FOUND` after its `UPDATE` and rolls back the transaction if RLS
-silently filtered it to zero rows, rather than leaving an orphaned payment
-insert with no corresponding balance change.
+Four of the five (`record_loan_payment`, `add_financial_ledger_entry`,
+`approve_loan`/`reject_loan`, `decide_scheme_application`) are `security
+invoker`, not `definer` — each RPC's own internal write is still subject to
+the underlying table's RLS, so the function provides atomicity, not a
+privilege bypass. `record_loan_payment` explicitly checks Postgres's `FOUND`
+after its `UPDATE` and rolls back the transaction if RLS silently filtered
+it to zero rows, rather than leaving an orphaned payment insert with no
+corresponding balance change.
+
+`place_marketplace_order` is the one deliberate exception — it must be
+`security definer`, because an ordinary buyer has no RLS grant to update a
+product she doesn't sell (`marketplace_products_update_seller_or_staff` is
+seller-or-staff-only) and the whole point of the function is to cross that
+boundary safely for exactly one narrow, self-contained operation. Precisely
+*because* it's a privilege bypass, it derives every identity-bearing value
+(`buyer_id`, `buyer_name`) from the session itself rather than trusting a
+parameter, and performs the entire purchase — not just the part that needed
+elevated privilege — inside the one function, so there's no gap afterward
+for an uncooperative client to exploit.
 
 ---
 

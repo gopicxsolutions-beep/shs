@@ -5,6 +5,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/meeting.dart';
 import '../../repositories/meeting_repository.dart';
+import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -31,6 +32,19 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
     final appState = context.watch<AppState>();
     final shgId = appState.profile?.shgId;
     final l10n = AppLocalizations.of(context)!;
+
+    // Router-restricted to leader/staff already, but crp/clf/admin have no
+    // `profile.shgId` of their own — `fetchForShg(null)` resolves to `[]`,
+    // which this page would otherwise show as "No meetings scheduled"
+    // instead of the real reason (this per-SHG view doesn't apply to a
+    // platform-wide role). `isConfigured` excludes demo mode, whose
+    // simulated identity leaves `shgId` null for every previewed role too.
+    if (SupabaseService.isConfigured && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: l10n.meetingAttendanceTitle),
+        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
+      );
+    }
 
     return Scaffold(
       appBar: PageHeader(title: l10n.meetingAttendanceTitle),

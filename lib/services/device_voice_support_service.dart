@@ -15,17 +15,27 @@ class DeviceVoiceSupportService implements VoiceSupportService {
   final stt.SpeechToText _stt = stt.SpeechToText();
   final FlutterTts _tts = FlutterTts();
   bool _sttAvailable = false;
+  // Mirrors DeviceVoiceRecognitionService's _pendingCompleter — see that
+  // class's onError doc comment for the full "why" (same package, same
+  // silent-error-until-15s-timeout bug, same fix).
+  Completer<String>? _pendingCompleter;
 
   @override
   Future<String> transcribe() async {
     if (!_sttAvailable) {
-      _sttAvailable = await _stt.initialize();
+      _sttAvailable = await _stt.initialize(
+        onError: (error) {
+          final completer = _pendingCompleter;
+          if (completer != null && !completer.isCompleted) completer.complete('');
+        },
+      );
     }
     if (!_sttAvailable) {
       throw StateError('Speech recognition is not available on this device.');
     }
 
     final completer = Completer<String>();
+    _pendingCompleter = completer;
     await _stt.listen(
       onResult: (result) {
         if (result.finalResult && !completer.isCompleted) completer.complete(result.recognizedWords);
@@ -43,6 +53,7 @@ class DeviceVoiceSupportService implements VoiceSupportService {
     } on TimeoutException {
       question = '';
     } finally {
+      _pendingCompleter = null;
       if (_stt.isListening) await _stt.stop();
     }
 

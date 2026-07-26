@@ -1,0 +1,33 @@
+-- Closes a gap left by 0051_quiz_server_side_scoring.sql: that migration
+-- correctly revoked `authenticated`'s direct SELECT grant on the base
+-- `quiz_questions` table (so `correct_index`, the quiz's answer key, can no
+-- longer be read by any authenticated user, including via a direct REST
+-- call) -- but left the now-vestigial `quiz_questions_select_all` policy
+-- (`using (auth.role() = 'authenticated')`, unconditional) still defined on
+-- the table. That policy currently does nothing (RLS restricts an
+-- already-granted SELECT; it cannot grant one the table-level GRANT
+-- doesn't have) -- but it's a live landmine: the moment SELECT is ever
+-- re-granted to `authenticated` for any reason, that dormant policy would
+-- immediately let every authenticated user read `correct_index` again,
+-- silently undoing 0051's fix without anyone touching a policy at all.
+--
+-- This migration needs to re-grant SELECT on the base table because the new
+-- "Manage Training Courses" admin page (`admin_training_courses_page.dart`)
+-- needs to read an existing quiz question's `correct_index` back in order to
+-- pre-fill its edit form -- the masked `quiz_questions_public` view (0051)
+-- deliberately never exposes that column, to any caller, by design, and
+-- must keep not doing so. `quiz_questions_write_staff` (0041) is already
+-- `for all using (public.is_staff()) with check (public.is_staff())` --
+-- `for all` already covers SELECT, so staff already have RLS permission to
+-- read the base table today; only the table-level GRANT was ever missing.
+--
+-- Fix: drop the vestigial unconditional select policy first (so the GRANT
+-- below can never be covered by it), then re-grant SELECT to authenticated.
+-- `quiz_questions_write_staff`'s existing `is_staff()` policy becomes the
+-- ONLY permissive SELECT policy left on this table, so an ordinary member's
+-- direct base-table query now returns zero rows (not an error -- ordinary
+-- RLS row-filtering), exactly as it silently did before this migration;
+-- only crp/clf/admin can see any rows at all, and only they need to.
+drop policy if exists "quiz_questions_select_all" on public.quiz_questions;
+
+grant select on public.quiz_questions to authenticated;

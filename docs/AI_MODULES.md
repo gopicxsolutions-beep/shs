@@ -306,21 +306,26 @@ stat this now backs.
 - **No UPDATE policy and no DELETE policy exist for clients** — logged Q&A
   pairs remain immutable and permanent from the client's perspective; this is
   unchanged.
-- **Retention is now real, but server-side/privileged only**:
-  `public.purge_old_ai_advisor_logs()` (migration `0043`, `SECURITY DEFINER`)
-  deletes rows older than 180 days, scheduled nightly via `pg_cron` (mirrors
-  `ai_advisor_rate_limits`' own self-pruning pattern, and
-  `generate-report-snapshots`' pg_cron scheduling pattern — the simpler of
-  the two, since no HTTP hop to an Edge Function is needed for a plain
-  in-database delete). `EXECUTE` is revoked from `PUBLIC` and granted only to
-  `service_role`, so it is not reachable as a client-callable PostgREST RPC —
-  no new client-facing DELETE path was opened to achieve this. 180 days is a
-  stated operational default (this table is a staff-readable audit trail,
-  not a transient cache), not a compliance-mandated figure, and is
-  explicitly revisitable. **Not yet deployed or executed against a live
-  database this session** — written correctly per this repo's established
-  migration conventions, needs live deployment and the verification steps
-  documented in the migration's own header before being considered done.
+- **Retention is now real, server-side/privileged only, and confirmed live
+  (verified 2026-07-24)**: `public.purge_old_ai_advisor_logs()` (migration
+  `0043`, `SECURITY DEFINER`) deletes rows older than 180 days, scheduled
+  nightly via `pg_cron` (mirrors `ai_advisor_rate_limits`' own self-pruning
+  pattern, and `generate-report-snapshots`' pg_cron scheduling pattern — the
+  simpler of the two, since no HTTP hop to an Edge Function is needed for a
+  plain in-database delete). `EXECUTE` is revoked from `PUBLIC` and granted
+  only to `service_role`, so it is not reachable as a client-callable
+  PostgREST RPC — no new client-facing DELETE path was opened to achieve
+  this. 180 days is a stated operational default (this table is a
+  staff-readable audit trail, not a transient cache), not a
+  compliance-mandated figure, and is explicitly revisitable. Confirmed
+  against the live database directly, not assumed: the function exists
+  (`pg_proc`), the `purge-ai-advisor-logs-nightly` job is active in
+  `cron.job` (`0 3 * * *`), and manually invoking the function once
+  succeeded cleanly (0 rows deleted — correct, since the live table's oldest
+  row is only days old, nowhere near the 180-day threshold). The cron
+  schedule itself had not yet fired naturally as of this check
+  (`cron.job_run_details` empty for this job) — expected given how recently
+  it was deployed relative to its own nightly cadence, not a defect.
 
 ---
 
@@ -343,9 +348,34 @@ before it spends a paid Groq call.
   concurrent requests landing on different isolates.
 - **Self-cleaning**: every call opportunistically deletes rows older than an
   hour — no separate cron needed.
-- **Locked down**: `EXECUTE` on the check-and-increment function is revoked
-  from `PUBLIC`, granted only to `service_role` — a client cannot call it
-  directly to inspect or reset its own counter.
+- **Locked down — real gap found and fixed live (2026-07-24)**: the
+  function's own migration (0031) correctly wrote `revoke all ... from
+  public; grant execute ... to service_role`, but this project's Postgres
+  setup grants `anon`/`authenticated` roles `EXECUTE` on newly created
+  functions directly (independent of the `PUBLIC` pseudo-role), so
+  `revoke ... from public` alone never actually removed it — confirmed via
+  `has_function_privilege('authenticated', ..., 'execute')` returning
+  `true` against the live database, not assumed from the migration text.
+  This was concretely exploitable: with no ownership check on the
+  caller-supplied `p_member_id` inside the function itself, any
+  authenticated (or, per the same gap, anonymous) caller could invoke
+  `check_and_increment_ai_advisor_rate_limit` directly via PostgREST with
+  an arbitrary victim's member id and the real limit/window values,
+  pre-inflating that member's counter and causing their next genuine
+  request through the real Edge Function to be wrongly rejected with 429
+  — a targeted denial-of-service reachable by any signed-in user. Live-
+  confirmed the exploit succeeding (a real row written for an arbitrary
+  test id) before the fix. The same gap affected two other service-role-
+  only functions in this schema (`purge_old_ai_advisor_logs`,
+  `record_system_heartbeat` — lower severity, no targeted-DoS shape, but
+  same violated intent). Fixed together in
+  `supabase/migrations/0055_service_role_only_functions_anon_authenticated_revoke.sql`
+  — an explicit `revoke execute ... from anon, authenticated` for all
+  three, re-verified live (now correctly denied for `authenticated`,
+  still permitted for `service_role`; every intentionally client-callable
+  RPC in the schema — `approve_loan`, `record_loan_payment`,
+  `place_marketplace_order`, `approve_shg_join_request`,
+  `submit_quiz_attempt` — independently re-confirmed unaffected).
 - **Fails closed**: if the caller's identity can't be resolved → HTTP 401. If
   the rate-limit check itself errors (e.g. the migration isn't deployed) →
   HTTP 500, rejecting the request rather than silently letting it through
@@ -559,8 +589,10 @@ decision worth making.
   question was flagged" (with the pre-filter's own supportive message).
 - **`ai_advisor_logs` now has a real retention policy** — a nightly
   `pg_cron` job purges rows older than 180 days via a `SECURITY DEFINER`
-  function grantable only to `service_role` (§4, migration `0043`) — not yet
-  deployed/executed against a live database this session.
+  function grantable only to `service_role` (§4, migration `0043`) —
+  confirmed deployed and functioning against the live database (function,
+  active cron job, and a successful manual invocation all directly verified;
+  see §4 for details).
 - **A real ML-based classifier (Groq Llama Guard 3) now runs alongside the
   regex pre-filter, on both input and output** (§6) — closes what used to be
   this list's top item. Blocked attempts are now logged

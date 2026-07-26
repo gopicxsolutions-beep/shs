@@ -8,6 +8,7 @@ import '../../models/livelihood.dart';
 import '../../models/types.dart';
 import '../../repositories/livelihood_repository.dart';
 import '../../routes/paths.dart';
+import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -28,6 +29,18 @@ class LivelihoodHomePage extends StatelessWidget {
     final shgId = appState.profile?.shgId;
     final memberId = appState.profile?.id;
     final l10n = AppLocalizations.of(context)!;
+
+    // crp/clf/admin have no `profile.shgId` of their own — without this
+    // guard a staff account saw ₹0 investment/revenue and an
+    // indistinguishable-from-genuinely-empty activity list instead of an
+    // honest explanation. `isConfigured` excludes demo mode, whose
+    // simulated identity leaves `shgId` null for every previewed role.
+    if (SupabaseService.isConfigured && isLeaderOrStaff && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: l10n.livelihoodHomeTitle),
+        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
+      );
+    }
 
     return Scaffold(
       appBar: PageHeader(

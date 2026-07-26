@@ -13,6 +13,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/async_state.dart';
 import '../../widgets/discard_changes_dialog.dart';
 
 class MeetingSchedulePage extends StatefulWidget {
@@ -141,6 +142,21 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final shgId = context.select<AppState, String?>((s) => s.profile?.shgId);
+
+    // Router-restricted to leader/staff already, but crp/clf/admin have no
+    // `profile.shgId` of their own — without this guard they could fill out
+    // the whole form before discovering `meetingScheduleNoShgError` only at
+    // submit time (that check stays in `_submit` as a harmless fallback for
+    // the rare case shgId changes mid-session). `isConfigured` excludes demo
+    // mode, whose simulated identity leaves `shgId` null for every role.
+    if (SupabaseService.isConfigured && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: l10n.meetingScheduleTitle),
+        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
+      );
+    }
+
     return PopScope(
       canPop: !_dirty,
       onPopInvokedWithResult: _handlePop,

@@ -214,6 +214,12 @@ abstract class AppLocalizations {
   /// **'Back'**
   String get commonBack;
 
+  /// No description provided for @commonStaffNoShgMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your role isn\'t linked to a specific SHG — this view doesn\'t apply'**
+  String get commonStaffNoShgMessage;
+
   /// No description provided for @asyncErrorGeneric.
   ///
   /// In en, this message translates to:
@@ -843,6 +849,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sorry, I didn\'t understand that.'**
   String get voiceUnknownCommand;
+
+  /// No description provided for @voiceAssistantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Assistant'**
+  String get voiceAssistantTitle;
+
+  /// No description provided for @voiceAssistantTapToSpeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to speak a command'**
+  String get voiceAssistantTapToSpeak;
+
+  /// No description provided for @voiceAssistantListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening…'**
+  String get voiceAssistantListening;
+
+  /// No description provided for @voiceAssistantThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding an answer…'**
+  String get voiceAssistantThinking;
+
+  /// No description provided for @voiceAssistantTapToAskAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to ask again'**
+  String get voiceAssistantTapToAskAgain;
+
+  /// No description provided for @voiceAssistantYouSaid.
+  ///
+  /// In en, this message translates to:
+  /// **'You said'**
+  String get voiceAssistantYouSaid;
+
+  /// No description provided for @voiceAssistantLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get voiceAssistantLabel;
+
+  /// No description provided for @voiceAssistantTrySaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Try saying'**
+  String get voiceAssistantTrySaying;
 
   /// No description provided for @aiDisclaimer.
   ///
@@ -3417,6 +3471,318 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not delete this scheme. Please try again.'**
   String get adminSchemesDeleteErrorMessage;
+
+  /// No description provided for @adminTrainingCoursesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Training Courses'**
+  String get adminTrainingCoursesTitle;
+
+  /// No description provided for @adminTrainingCoursesAddCourseTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add course'**
+  String get adminTrainingCoursesAddCourseTooltip;
+
+  /// No description provided for @adminTrainingCoursesEmptyState.
+  ///
+  /// In en, this message translates to:
+  /// **'No courses in the catalog yet'**
+  String get adminTrainingCoursesEmptyState;
+
+  /// No description provided for @adminTrainingCoursesEditTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit {title}'**
+  String adminTrainingCoursesEditTooltip(String title);
+
+  /// No description provided for @adminTrainingCoursesDeleteTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {title}'**
+  String adminTrainingCoursesDeleteTooltip(String title);
+
+  /// No description provided for @adminTrainingCoursesManageQuizTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage quiz for {title}'**
+  String adminTrainingCoursesManageQuizTooltip(String title);
+
+  /// No description provided for @adminTrainingCoursesAddDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add course'**
+  String get adminTrainingCoursesAddDialogTitle;
+
+  /// No description provided for @adminTrainingCoursesTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Course title'**
+  String get adminTrainingCoursesTitleHint;
+
+  /// No description provided for @adminTrainingCoursesTopicHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic'**
+  String get adminTrainingCoursesTopicHint;
+
+  /// No description provided for @adminTrainingCoursesFormatLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Format'**
+  String get adminTrainingCoursesFormatLabel;
+
+  /// No description provided for @adminTrainingCoursesDurationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration (optional)'**
+  String get adminTrainingCoursesDurationHint;
+
+  /// No description provided for @adminTrainingCoursesTitleRequiredError.
+  ///
+  /// In en, this message translates to:
+  /// **'Course title is required.'**
+  String get adminTrainingCoursesTitleRequiredError;
+
+  /// No description provided for @adminTrainingCoursesAddedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Course added'**
+  String get adminTrainingCoursesAddedMessage;
+
+  /// No description provided for @adminTrainingCoursesDemoModeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — course not saved (connect Supabase to persist)'**
+  String get adminTrainingCoursesDemoModeMessage;
+
+  /// No description provided for @adminTrainingCoursesAddErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add this course. Please try again.'**
+  String get adminTrainingCoursesAddErrorMessage;
+
+  /// No description provided for @adminTrainingCoursesEditDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit course'**
+  String get adminTrainingCoursesEditDialogTitle;
+
+  /// No description provided for @adminTrainingCoursesUpdatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Course updated'**
+  String get adminTrainingCoursesUpdatedMessage;
+
+  /// No description provided for @adminTrainingCoursesUpdateErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update this course. Please try again.'**
+  String get adminTrainingCoursesUpdateErrorMessage;
+
+  /// No description provided for @adminTrainingCoursesDeleteDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete course?'**
+  String get adminTrainingCoursesDeleteDialogTitle;
+
+  /// No description provided for @adminTrainingCoursesDeleteDialogContent.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes \"{title}\" and its quiz from the catalog.'**
+  String adminTrainingCoursesDeleteDialogContent(String title);
+
+  /// No description provided for @adminTrainingCoursesDeletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Course deleted'**
+  String get adminTrainingCoursesDeletedMessage;
+
+  /// No description provided for @adminTrainingCoursesDeleteDemoModeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — not saved (connect Supabase to persist)'**
+  String get adminTrainingCoursesDeleteDemoModeMessage;
+
+  /// No description provided for @adminTrainingCoursesDeleteErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete this course. Please try again.'**
+  String get adminTrainingCoursesDeleteErrorMessage;
+
+  /// No description provided for @adminDashboardTrainingTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get adminDashboardTrainingTile;
+
+  /// No description provided for @servicesManageTrainingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Training'**
+  String get servicesManageTrainingLabel;
+
+  /// No description provided for @adminTrainingQuizTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz — {courseTitle}'**
+  String adminTrainingQuizTitle(String courseTitle);
+
+  /// No description provided for @adminTrainingQuizAddQuestionTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add question'**
+  String get adminTrainingQuizAddQuestionTooltip;
+
+  /// No description provided for @adminTrainingQuizEmptyState.
+  ///
+  /// In en, this message translates to:
+  /// **'No quiz questions yet — members can\'t take this course\'s quiz until you add some'**
+  String get adminTrainingQuizEmptyState;
+
+  /// No description provided for @adminTrainingQuizAddDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add question'**
+  String get adminTrainingQuizAddDialogTitle;
+
+  /// No description provided for @adminTrainingQuizEditDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit question'**
+  String get adminTrainingQuizEditDialogTitle;
+
+  /// No description provided for @adminTrainingQuizQuestionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get adminTrainingQuizQuestionHint;
+
+  /// No description provided for @adminTrainingQuizOptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Option {number}'**
+  String adminTrainingQuizOptionHint(int number);
+
+  /// No description provided for @adminTrainingQuizAddOptionTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add another option'**
+  String get adminTrainingQuizAddOptionTooltip;
+
+  /// No description provided for @adminTrainingQuizRemoveOptionTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this option'**
+  String get adminTrainingQuizRemoveOptionTooltip;
+
+  /// No description provided for @adminTrainingQuizCorrectAnswerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answer'**
+  String get adminTrainingQuizCorrectAnswerLabel;
+
+  /// No description provided for @adminTrainingQuizCorrectAnswerNotReadableNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This question\'s saved correct answer can\'t be shown here yet — pick it again before saving.'**
+  String get adminTrainingQuizCorrectAnswerNotReadableNotice;
+
+  /// No description provided for @adminTrainingQuizQuestionRequiredError.
+  ///
+  /// In en, this message translates to:
+  /// **'Question text is required.'**
+  String get adminTrainingQuizQuestionRequiredError;
+
+  /// No description provided for @adminTrainingQuizMinOptionsError.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 2 options are required.'**
+  String get adminTrainingQuizMinOptionsError;
+
+  /// No description provided for @adminTrainingQuizBlankOptionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Options can\'t be blank.'**
+  String get adminTrainingQuizBlankOptionError;
+
+  /// No description provided for @adminTrainingQuizCorrectAnswerRequiredError.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the correct answer.'**
+  String get adminTrainingQuizCorrectAnswerRequiredError;
+
+  /// No description provided for @adminTrainingQuizAddedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Question added'**
+  String get adminTrainingQuizAddedMessage;
+
+  /// No description provided for @adminTrainingQuizUpdatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Question updated'**
+  String get adminTrainingQuizUpdatedMessage;
+
+  /// No description provided for @adminTrainingQuizDemoModeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — question not saved (connect Supabase to persist)'**
+  String get adminTrainingQuizDemoModeMessage;
+
+  /// No description provided for @adminTrainingQuizAddErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add this question. Please try again.'**
+  String get adminTrainingQuizAddErrorMessage;
+
+  /// No description provided for @adminTrainingQuizUpdateErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update this question. Please try again.'**
+  String get adminTrainingQuizUpdateErrorMessage;
+
+  /// No description provided for @adminTrainingQuizDeleteDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete question?'**
+  String get adminTrainingQuizDeleteDialogTitle;
+
+  /// No description provided for @adminTrainingQuizDeleteDialogContent.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes this question from the course\'s quiz.'**
+  String get adminTrainingQuizDeleteDialogContent;
+
+  /// No description provided for @adminTrainingQuizDeletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Question deleted'**
+  String get adminTrainingQuizDeletedMessage;
+
+  /// No description provided for @adminTrainingQuizDeleteDemoModeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — not saved (connect Supabase to persist)'**
+  String get adminTrainingQuizDeleteDemoModeMessage;
+
+  /// No description provided for @adminTrainingQuizDeleteErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete this question. Please try again.'**
+  String get adminTrainingQuizDeleteErrorMessage;
+
+  /// No description provided for @adminTrainingQuizEditTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit question'**
+  String get adminTrainingQuizEditTooltip;
+
+  /// No description provided for @adminTrainingQuizDeleteTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete question'**
+  String get adminTrainingQuizDeleteTooltip;
 
   /// No description provided for @supportStatusOpen.
   ///

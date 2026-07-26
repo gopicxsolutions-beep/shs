@@ -8,6 +8,7 @@ import '../../models/loan.dart';
 import '../../models/meeting.dart';
 import '../../models/report.dart';
 import '../../models/savings.dart';
+import '../../models/scheme.dart';
 import '../../models/training.dart';
 import '../../repositories/announcement_repository.dart';
 import '../../repositories/loan_repository.dart';
@@ -112,7 +113,21 @@ class MemberDashboard extends StatelessWidget {
       }
     }
 
-    final newSchemesCount = schemes.where((s) => !myApplications.containsKey(s.id as String)).length;
+    // A scheme whose deadline has already passed was still counted here
+    // just for never having been applied to — the same "count says N,
+    // tapping through finds nothing actually actionable" shape already
+    // fixed for the leader dashboard's pending-loan count. Deadline
+    // comparison mirrors scheme_detail_page.dart's own Apply-button gate
+    // exactly (compare calendar date only, not the exact instant, since
+    // `deadline` is a DATE column).
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final newSchemesCount = schemes.where((s) {
+      final scheme = s as Scheme;
+      if (myApplications.containsKey(scheme.id)) return false;
+      if (scheme.deadline != null && todayDate.isAfter(scheme.deadline!)) return false;
+      return true;
+    }).length;
 
     return _MemberDashboardData(
       report: report,

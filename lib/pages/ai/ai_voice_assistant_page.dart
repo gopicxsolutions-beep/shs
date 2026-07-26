@@ -64,6 +64,12 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
   late Language _language;
   String? _transcript;
   String? _answer;
+  // Bumped on every _listen() call and captured locally as `requestId` so a
+  // stale call (e.g. its 900ms pre-navigation delay for addSavings) can tell
+  // it's been superseded by a newer tap and bail out instead of clobbering
+  // the newer request's state or force-navigating out from under it — see
+  // the guard comments in _listen().
+  int _requestId = 0;
 
   @override
   void initState() {
@@ -100,6 +106,13 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
   }
 
   Future<void> _listen() async {
+    // Captured once per call: the button is re-enabled as soon as _state
+    // becomes `answered`, including during the 900ms addSavings delay below
+    // — so a member who taps again quickly (well within that window) starts
+    // a second, overlapping _listen() call in the same still-mounted State.
+    // `mounted` alone can't distinguish "this call's own request" from "a
+    // newer one that superseded it"; comparing against `_requestId` can.
+    final requestId = ++_requestId;
     setState(() {
       _state = _AssistantState.listening;
       _transcript = null;
@@ -107,7 +120,7 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
     });
     try {
       final command = await _service.listen(_language);
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
       setState(() {
         _transcript = command.transcript;
         _state = _AssistantState.thinking;
@@ -117,19 +130,24 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
       final memberId = appState.profile?.id;
       final shgId = appState.profile?.shgId;
       final answer = await _resolve(context, command.intent, memberId, shgId);
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
       setState(() {
         _answer = answer;
         _state = _AssistantState.answered;
       });
       unawaited(_speak(answer));
 
-      if (command.intent == VoiceIntent.addSavings && mounted) {
+      if (command.intent == VoiceIntent.addSavings) {
         await Future.delayed(const Duration(milliseconds: 900));
-        if (mounted) context.go(Paths.savingsEntry);
+        // Re-checked after the delay, not just before it: a newer tap could
+        // have started (and even finished) while this was waiting. Without
+        // this, a member who asks "add a savings entry" and then quickly
+        // asks something else gets yanked into the Savings Entry form out
+        // from under whatever they just asked next.
+        if (mounted && requestId == _requestId) context.go(Paths.savingsEntry);
       }
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
       // Same isNetworkError-branched, localized message the rest of the app
       // uses (AppAsyncBuilder, otp_page.dart) — a dropped connection while
       // resolving the intent against a live repository looks different to
@@ -206,18 +224,23 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Follows `_language` (this page's own selector), not the ambient
+    // system display language — same reasoning as `_resolve`'s doc comment:
+    // a member speaking Telugu into this page should see the whole voice
+    // interaction, not just the resolved answer, in Telugu.
+    final l10n = lookupAppLocalizations(_localeFor(_language));
     final label = switch (_state) {
-      _AssistantState.idle => 'Tap to speak a command',
-      _AssistantState.listening => 'Listening…',
-      _AssistantState.thinking => 'Finding an answer…',
-      _AssistantState.answered => 'Tap to ask again',
+      _AssistantState.idle => l10n.voiceAssistantTapToSpeak,
+      _AssistantState.listening => l10n.voiceAssistantListening,
+      _AssistantState.thinking => l10n.voiceAssistantThinking,
+      _AssistantState.answered => l10n.voiceAssistantTapToAskAgain,
     };
     final busy =
         _state == _AssistantState.listening ||
         _state == _AssistantState.thinking;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Voice Assistant'),
+      appBar: PageHeader(title: l10n.voiceAssistantTitle),
       body: Column(
         children: [
           const AiDisclaimerBanner(),
@@ -304,7 +327,7 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              'You said',
+                              l10n.voiceAssistantYouSaid,
                               style: AppTheme.sans(
                                 11,
                                 weight: FontWeight.w700,
@@ -338,7 +361,7 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              'Assistant',
+                              l10n.voiceAssistantLabel,
                               style: AppTheme.sans(
                                 11,
                                 weight: FontWeight.w700,
@@ -358,7 +381,7 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
                 ],
                 const SizedBox(height: 24),
                 Text(
-                  'Try saying',
+                  l10n.voiceAssistantTrySaying,
                   style: AppTheme.sans(
                     12,
                     weight: FontWeight.w700,
@@ -392,21 +415,29 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
     );
   }
 
+  // Mirrors MockVoiceRecognitionService's per-language command lists 1:1
+  // (all 4 intents, not just 3) — the addSavings phrase used to be missing
+  // here even though it's this page's one voice-triggered-navigation
+  // feature (see the class doc comment): a member had no way to discover
+  // she could say it, since it was never suggested anywhere in the UI.
   List<String> _examplesFor(Language language) => switch (language) {
     Language.te => const [
       'నా రుణ వివరాలు చూపించు',
       'ఈ నెల పొదుపు ఎంత?',
       'నా ప్రకటనలు చదవండి',
+      'పొదుపు నమోదు చేయండి',
     ],
     Language.hi => const [
       'मेरे ऋण का विवरण दिखाओ',
       'इस महीने कितनी बचत हुई?',
       'मेरी घोषणाएं पढ़ो',
+      'बचत जोड़ें',
     ],
     Language.en => const [
       'Show my loan details',
       'How much savings this month?',
       'Read my announcements',
+      'Add a savings entry',
     ],
   };
 }

@@ -146,6 +146,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final repo = _repo;
     final productId = widget.productId;
     final l10n = AppLocalizations.of(context)!;
+    // Only `profile?.id` is used below — `.select` avoids rebuilding this
+    // page (and re-creating the AppAsyncBuilder futures) on unrelated
+    // AppState changes, matching the pattern used throughout this app.
+    final viewerId = context.select<AppState, String?>((s) => s.profile?.id);
 
     return Scaffold(
       appBar: PageHeader(title: l10n.productDetailTitle),
@@ -156,6 +160,22 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           if (product == null) {
             return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.productDetailNotFound);
           }
+          // `marketplace_reviews_insert_authenticated` (RLS) blocks a
+          // seller from reviewing her own product (see
+          // MarketplaceRepository.addReview's doc comment) — without this,
+          // a seller browsing her own listing saw the same always-offered
+          // "Write a Review" action as any buyer, filled out a full
+          // rating+comment dialog, and hit a generic "could not submit"
+          // error that (accurately, for every OTHER rejection reason) tells
+          // buyers to purchase first — nonsensical advice for a seller
+          // reviewing her own item, and a dead end no error message could
+          // meaningfully explain. `SupabaseService.isConfigured` guards this
+          // the same way canRecordPayment/canUpdate-style checks do
+          // elsewhere in this app: demo mode has no real seller/buyer
+          // identity split (every product's `sellerId` is the same fixed
+          // mock id, `appState.profile` is always null), so this check
+          // would otherwise hide the action for every demo persona.
+          final isOwnProduct = SupabaseService.isConfigured && viewerId != null && product.sellerId == viewerId;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -200,8 +220,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               const SizedBox(height: 24),
               SectionHeader(
                 title: l10n.productDetailReviewsSection,
-                action: _submittingReview ? l10n.productDetailSubmittingAction : l10n.productDetailWriteReviewAction,
-                onAction: () => _writeReview(productId),
+                action: isOwnProduct ? null : (_submittingReview ? l10n.productDetailSubmittingAction : l10n.productDetailWriteReviewAction),
+                onAction: isOwnProduct ? null : () => _writeReview(productId),
               ),
               AppAsyncBuilder<List<Review>>(
                 key: _reviewsKey,

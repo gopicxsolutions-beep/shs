@@ -15,8 +15,28 @@ class TrainingRepository {
   // of the session, mirroring AnnouncementRepository._locallyRead.
   static final Set<String> _locallyCertified = {};
 
+  // Admin catalog CRUD (courses + their quiz questions) — same idea as
+  // SchemeRepository's _locallyAdded/_locallyDeleted/_locallyUpdated
+  // Schemes fields: adding/editing/deleting would otherwise silently revert
+  // the moment the catalog reloads, since demo mode has no backing table.
+  // Quiz questions are keyed by course id for "added" (a fresh list per
+  // course) but by question id for "updated"/"deleted", mirroring how
+  // fetchQuizQuestions synthesizes a stable-per-call id
+  // (`'$courseId-q$i'`) for pre-existing mock questions.
+  static final List<Course> _locallyAddedCourses = [];
+  static final Set<String> _locallyDeletedCourses = {};
+  static final Map<String, Course> _locallyUpdatedCourses = {};
+  static final Map<String, List<QuizQuestion>> _locallyAddedQuizQuestions = {};
+  static final Set<String> _locallyDeletedQuizQuestionIds = {};
+  static final Map<String, QuizQuestion> _locallyUpdatedQuizQuestions = {};
+
   Future<List<Course>> fetchCourses() async {
-    if (!_live) return mock.courses.map((c) => Course(id: c.id, title: c.title, topic: c.topic, format: c.format, duration: c.duration)).toList();
+    if (!_live) {
+      final base = mock.courses
+          .where((c) => !_locallyDeletedCourses.contains(c.id))
+          .map((c) => _locallyUpdatedCourses[c.id] ?? Course(id: c.id, title: c.title, topic: c.topic, format: c.format, duration: c.duration));
+      return [...base, ..._locallyAddedCourses];
+    }
     // Platform-wide catalog shared by every SHG (see class doc comment and
     // TrainingHomePage's own note on this), not bounded by any one group's
     // size — it grows as more content is added over time. Previously had no
@@ -25,6 +45,48 @@ class TrainingRepository {
     // platform-wide catalogs (marketplace products, admin user/SHG lists).
     final rows = await _client.from('training_courses').select().order('created_at').limit(500);
     return (rows as List).map((r) => Course.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
+  /// Admin-only: creates a new course in the platform-wide catalog. RLS
+  /// (`training_courses_write_staff`) restricts the live-mode insert to
+  /// crp/clf/admin — see `admin_training_courses_page.dart`'s own UI-level
+  /// gate, which matches that same staff scope (not narrowed to admin-only).
+  Future<Course> createCourse({required String title, required String topic, required String format, String? duration}) async {
+    if (!_live) {
+      final course = Course(id: 'local-course-${_locallyAddedCourses.length}-${title.hashCode}', title: title, topic: topic, format: format, duration: duration);
+      _locallyAddedCourses.add(course);
+      return course;
+    }
+    final row = await _client.from('training_courses').insert({'title': title, 'topic': topic, 'format': format, 'duration': duration}).select().single();
+    return Course.fromMap(row);
+  }
+
+  Future<void> updateCourse(String id, {required String title, required String topic, required String format, String? duration}) async {
+    if (!_live) {
+      final updated = Course(id: id, title: title, topic: topic, format: format, duration: duration);
+      final addedIdx = _locallyAddedCourses.indexWhere((c) => c.id == id);
+      if (addedIdx != -1) {
+        _locallyAddedCourses[addedIdx] = updated;
+      } else {
+        _locallyUpdatedCourses[id] = updated;
+      }
+      return;
+    }
+    await _client.from('training_courses').update({'title': title, 'topic': topic, 'format': format, 'duration': duration}).eq('id', id);
+  }
+
+  /// Deleting a course cascades to its quiz questions and every member's
+  /// progress row (`on delete cascade` on both `quiz_questions.course_id`
+  /// and `course_progress.course_id`, migrations 0001/0041) — real content
+  /// removal, not a soft-delete, matching this repository's course-catalog
+  /// scope (no "archive instead of delete" concept exists here today).
+  Future<void> deleteCourse(String id) async {
+    if (!_live) {
+      _locallyAddedCourses.removeWhere((c) => c.id == id);
+      _locallyDeletedCourses.add(id);
+      return;
+    }
+    await _client.from('training_courses').delete().eq('id', id);
   }
 
   Future<Course?> fetchCourseById(String id) async {
@@ -46,16 +108,88 @@ class TrainingRepository {
   Future<List<QuizQuestion>> fetchQuizQuestions(String courseId) async {
     if (!_live) {
       final mockQs = mock.quizQuestions[courseId] ?? const <mock.MockQuizQuestion>[];
-      return [
+      final base = [
         for (var i = 0; i < mockQs.length; i++)
-          QuizQuestion(id: '$courseId-q$i', courseId: courseId, question: mockQs[i].question, options: mockQs[i].options, correctIndex: mockQs[i].correctIndex),
+          if (!_locallyDeletedQuizQuestionIds.contains('$courseId-q$i'))
+            _locallyUpdatedQuizQuestions['$courseId-q$i'] ??
+                QuizQuestion(id: '$courseId-q$i', courseId: courseId, question: mockQs[i].question, options: mockQs[i].options, correctIndex: mockQs[i].correctIndex),
       ];
+      return [...base, ...?_locallyAddedQuizQuestions[courseId]];
     }
     // Reads the masked `quiz_questions_public` view (migration 0051), not
     // the base table — `correct_index` is never sent to the client. See
     // `submitQuiz`'s doc comment for the full write-up of why.
     final rows = await _client.from('quiz_questions_public').select().eq('course_id', courseId).order('order_index');
     return (rows as List).map((r) => QuizQuestion.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
+  /// Admin-editor-only counterpart to [fetchQuizQuestions]: reads the BASE
+  /// `quiz_questions` table (not the masked view) so an existing question's
+  /// `correctIndex` can be shown when editing it — `fetchQuizQuestions`
+  /// deliberately never exposes that column to any caller, by design (see
+  /// its own doc comment), which is exactly right for a member taking a
+  /// quiz but wrong for an admin authoring one.
+  ///
+  /// Requires migration `0060_quiz_questions_staff_base_table_read.sql` to
+  /// be deployed — until then, the base-table query legitimately returns
+  /// zero rows for every caller (the table-level SELECT grant for
+  /// `authenticated` is still fully revoked; see that migration's own
+  /// comment), which is indistinguishable here from "this course genuinely
+  /// has no questions yet". Rather than surface that ambiguity as a false
+  /// empty state, fall back to the masked view so the admin page still
+  /// lists real existing questions (`correctIndex` just comes back null,
+  /// same as any other caller) instead of hiding them.
+  Future<List<QuizQuestion>> fetchQuizQuestionsForAdmin(String courseId) async {
+    if (!_live) return fetchQuizQuestions(courseId);
+    final rows = await _client.from('quiz_questions').select().eq('course_id', courseId).order('order_index');
+    if (rows.isEmpty) return fetchQuizQuestions(courseId);
+    return rows.map((r) => QuizQuestion.fromMap(r)).toList();
+  }
+
+  /// `options` must have at least 2 entries and `correctIndex` must be a
+  /// valid index into it — enforced client-side by the admin form, and
+  /// independently by the live database
+  /// (`quiz_questions_options_min_length`/`quiz_questions_correct_index_in_range`,
+  /// migration 0041), so a malformed write fails loudly rather than
+  /// silently corrupting a course's quiz.
+  Future<QuizQuestion> createQuizQuestion({required String courseId, required String question, required List<String> options, required int correctIndex}) async {
+    if (!_live) {
+      final q = QuizQuestion(
+        id: 'local-question-${(_locallyAddedQuizQuestions[courseId]?.length ?? 0)}-${question.hashCode}',
+        courseId: courseId,
+        question: question,
+        options: options,
+        correctIndex: correctIndex,
+      );
+      (_locallyAddedQuizQuestions[courseId] ??= []).add(q);
+      return q;
+    }
+    final row = await _client.from('quiz_questions').insert({'course_id': courseId, 'question': question, 'options': options, 'correct_index': correctIndex}).select().single();
+    return QuizQuestion.fromMap(row);
+  }
+
+  Future<void> updateQuizQuestion(String id, {required String courseId, required String question, required List<String> options, required int correctIndex}) async {
+    if (!_live) {
+      final updated = QuizQuestion(id: id, courseId: courseId, question: question, options: options, correctIndex: correctIndex);
+      final addedList = _locallyAddedQuizQuestions[courseId];
+      final addedIdx = addedList?.indexWhere((q) => q.id == id) ?? -1;
+      if (addedList != null && addedIdx != -1) {
+        addedList[addedIdx] = updated;
+      } else {
+        _locallyUpdatedQuizQuestions[id] = updated;
+      }
+      return;
+    }
+    await _client.from('quiz_questions').update({'question': question, 'options': options, 'correct_index': correctIndex}).eq('id', id);
+  }
+
+  Future<void> deleteQuizQuestion(String id, {required String courseId}) async {
+    if (!_live) {
+      _locallyAddedQuizQuestions[courseId]?.removeWhere((q) => q.id == id);
+      _locallyDeletedQuizQuestionIds.add(id);
+      return;
+    }
+    await _client.from('quiz_questions').delete().eq('id', id);
   }
 
   Future<Map<String, CourseProgress>> fetchMyProgress(String? memberId) async {

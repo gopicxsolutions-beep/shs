@@ -66,6 +66,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get commonBack => 'वापस';
 
   @override
+  String get commonStaffNoShgMessage =>
+      'आपकी भूमिका किसी एक SHG से जुड़ी नहीं है — यह दृश्य लागू नहीं होता';
+
+  @override
   String get asyncErrorGeneric => 'कुछ गलत हो गया। कृपया फिर से कोशिश करें।';
 
   @override
@@ -413,6 +417,30 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get voiceUnknownCommand => 'माफ़ कीजिए, मुझे वह समझ नहीं आया।';
+
+  @override
+  String get voiceAssistantTitle => 'वॉइस असिस्टेंट';
+
+  @override
+  String get voiceAssistantTapToSpeak => 'कमांड बोलने के लिए टैप करें';
+
+  @override
+  String get voiceAssistantListening => 'सुन रहा है…';
+
+  @override
+  String get voiceAssistantThinking => 'जवाब ढूंढ रहा है…';
+
+  @override
+  String get voiceAssistantTapToAskAgain => 'फिर से पूछने के लिए टैप करें';
+
+  @override
+  String get voiceAssistantYouSaid => 'आपने कहा';
+
+  @override
+  String get voiceAssistantLabel => 'असिस्टेंट';
+
+  @override
+  String get voiceAssistantTrySaying => 'यह कहकर देखें';
 
   @override
   String get aiDisclaimer =>
@@ -1917,6 +1945,191 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get adminSchemesDeleteErrorMessage =>
       'इस योजना को हटाया नहीं जा सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get adminTrainingCoursesTitle => 'प्रशिक्षण कोर्स प्रबंधित करें';
+
+  @override
+  String get adminTrainingCoursesAddCourseTooltip => 'कोर्स जोड़ें';
+
+  @override
+  String get adminTrainingCoursesEmptyState =>
+      'अभी तक सूची में कोई कोर्स नहीं है';
+
+  @override
+  String adminTrainingCoursesEditTooltip(String title) {
+    return '$title संपादित करें';
+  }
+
+  @override
+  String adminTrainingCoursesDeleteTooltip(String title) {
+    return '$title हटाएं';
+  }
+
+  @override
+  String adminTrainingCoursesManageQuizTooltip(String title) {
+    return '$title के लिए क्विज़ प्रबंधित करें';
+  }
+
+  @override
+  String get adminTrainingCoursesAddDialogTitle => 'कोर्स जोड़ें';
+
+  @override
+  String get adminTrainingCoursesTitleHint => 'कोर्स शीर्षक';
+
+  @override
+  String get adminTrainingCoursesTopicHint => 'विषय';
+
+  @override
+  String get adminTrainingCoursesFormatLabel => 'प्रारूप';
+
+  @override
+  String get adminTrainingCoursesDurationHint => 'अवधि (वैकल्पिक)';
+
+  @override
+  String get adminTrainingCoursesTitleRequiredError =>
+      'कोर्स शीर्षक आवश्यक है।';
+
+  @override
+  String get adminTrainingCoursesAddedMessage => 'कोर्स जोड़ा गया';
+
+  @override
+  String get adminTrainingCoursesDemoModeMessage =>
+      'डेमो मोड — कोर्स सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
+
+  @override
+  String get adminTrainingCoursesAddErrorMessage =>
+      'इस कोर्स को जोड़ा नहीं जा सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get adminTrainingCoursesEditDialogTitle => 'कोर्स संपादित करें';
+
+  @override
+  String get adminTrainingCoursesUpdatedMessage => 'कोर्स अपडेट हो गया';
+
+  @override
+  String get adminTrainingCoursesUpdateErrorMessage =>
+      'इस कोर्स को अपडेट नहीं किया जा सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get adminTrainingCoursesDeleteDialogTitle => 'कोर्स हटाएं?';
+
+  @override
+  String adminTrainingCoursesDeleteDialogContent(String title) {
+    return 'यह \"$title\" और उसके क्विज़ को सूची से हटा देगा।';
+  }
+
+  @override
+  String get adminTrainingCoursesDeletedMessage => 'कोर्स हटा दिया गया';
+
+  @override
+  String get adminTrainingCoursesDeleteDemoModeMessage =>
+      'डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
+
+  @override
+  String get adminTrainingCoursesDeleteErrorMessage =>
+      'इस कोर्स को हटाया नहीं जा सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get adminDashboardTrainingTile => 'प्रशिक्षण';
+
+  @override
+  String get servicesManageTrainingLabel => 'प्रशिक्षण प्रबंधित करें';
+
+  @override
+  String adminTrainingQuizTitle(String courseTitle) {
+    return 'क्विज़ — $courseTitle';
+  }
+
+  @override
+  String get adminTrainingQuizAddQuestionTooltip => 'प्रश्न जोड़ें';
+
+  @override
+  String get adminTrainingQuizEmptyState =>
+      'अभी तक कोई क्विज़ प्रश्न नहीं है — जब तक आप कुछ जोड़ नहीं देते, सदस्य इस कोर्स का क्विज़ नहीं दे पाएंगे';
+
+  @override
+  String get adminTrainingQuizAddDialogTitle => 'प्रश्न जोड़ें';
+
+  @override
+  String get adminTrainingQuizEditDialogTitle => 'प्रश्न संपादित करें';
+
+  @override
+  String get adminTrainingQuizQuestionHint => 'प्रश्न';
+
+  @override
+  String adminTrainingQuizOptionHint(int number) {
+    return 'विकल्प $number';
+  }
+
+  @override
+  String get adminTrainingQuizAddOptionTooltip => 'एक और विकल्प जोड़ें';
+
+  @override
+  String get adminTrainingQuizRemoveOptionTooltip => 'यह विकल्प हटाएं';
+
+  @override
+  String get adminTrainingQuizCorrectAnswerLabel => 'सही उत्तर';
+
+  @override
+  String get adminTrainingQuizCorrectAnswerNotReadableNotice =>
+      'इस प्रश्न का सेव किया हुआ सही उत्तर अभी यहां नहीं दिखाया जा सकता — सेव करने से पहले इसे फिर से चुनें।';
+
+  @override
+  String get adminTrainingQuizQuestionRequiredError =>
+      'प्रश्न का टेक्स्ट आवश्यक है।';
+
+  @override
+  String get adminTrainingQuizMinOptionsError =>
+      'कम से कम 2 विकल्प आवश्यक हैं।';
+
+  @override
+  String get adminTrainingQuizBlankOptionError => 'विकल्प खाली नहीं हो सकते।';
+
+  @override
+  String get adminTrainingQuizCorrectAnswerRequiredError => 'सही उत्तर चुनें।';
+
+  @override
+  String get adminTrainingQuizAddedMessage => 'प्रश्न जोड़ा गया';
+
+  @override
+  String get adminTrainingQuizUpdatedMessage => 'प्रश्न अपडेट हो गया';
+
+  @override
+  String get adminTrainingQuizDemoModeMessage =>
+      'डेमो मोड — प्रश्न सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
+
+  @override
+  String get adminTrainingQuizAddErrorMessage =>
+      'इस प्रश्न को जोड़ा नहीं जा सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get adminTrainingQuizUpdateErrorMessage =>
+      'इस प्रश्न को अपडेट नहीं किया जा सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get adminTrainingQuizDeleteDialogTitle => 'प्रश्न हटाएं?';
+
+  @override
+  String get adminTrainingQuizDeleteDialogContent =>
+      'यह इस प्रश्न को कोर्स के क्विज़ से हटा देगा।';
+
+  @override
+  String get adminTrainingQuizDeletedMessage => 'प्रश्न हटा दिया गया';
+
+  @override
+  String get adminTrainingQuizDeleteDemoModeMessage =>
+      'डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
+
+  @override
+  String get adminTrainingQuizDeleteErrorMessage =>
+      'इस प्रश्न को हटाया नहीं जा सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get adminTrainingQuizEditTooltip => 'प्रश्न संपादित करें';
+
+  @override
+  String get adminTrainingQuizDeleteTooltip => 'प्रश्न हटाएं';
 
   @override
   String get supportStatusOpen => 'खुला';

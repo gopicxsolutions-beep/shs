@@ -61,14 +61,18 @@ void main() {
     expect(afterShg.avgAttendancePct, isNot(closeTo(beforeShg.avgAttendancePct, 0.0001)));
 
     // Exact expected shift, derived by hand: mt2/mt3/mt4/mt5 are the only
-    // 'completed' meetings in the mock set, all dated in June 2026, so they
-    // all bucket into the same monthly point (`TrendRepository` aggregates
-    // present/total across every attendance row in the month, not an
-    // average of each meeting's own percentage), and the other 5 of the 6
-    // plotted months are always 0 (no completed-meeting data at all).
-    final beforeJuneAggregatePct = (11 + 12 + 12 + 12) / (12 * 4) * 100; // mt2 (11/12) + mt3/mt4/mt5 (12/12 each)
-    final afterJuneAggregatePct = (12 + 12 + 12) / (12 * 3) * 100; // mt2 excluded (cancelled); mt3/mt4/mt5 only
-    expect(beforeShg.avgAttendancePct, closeTo(beforeJuneAggregatePct / 6, 0.01));
-    expect(afterShg.avgAttendancePct, closeTo(afterJuneAggregatePct / 6, 0.01));
+    // 'completed' meetings in the mock set (all within the last-6-months
+    // window as of any real run date). `avgAttendancePct` now comes from
+    // `TrendRepository.attendanceRate` — a single present/total ratio
+    // across every qualifying attendance row, not an average of
+    // `attendanceTrend`'s own zero-filled monthly points (round 157/161's
+    // fix: the old "/6" formula understated attendance for any SHG that
+    // doesn't meet in literally every one of the last 6 months — see that
+    // method's doc comment). mt2 (11/12) + mt3/mt4/mt5 (12/12 each) before;
+    // mt2 excluded (cancelled) after.
+    final beforePct = (11 + 12 + 12 + 12) / (12 * 4) * 100;
+    final afterPct = (12 + 12 + 12) / (12 * 3) * 100;
+    expect(beforeShg.avgAttendancePct, closeTo(beforePct, 0.01));
+    expect(afterShg.avgAttendancePct, closeTo(afterPct, 0.01));
   });
 }

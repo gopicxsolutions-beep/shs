@@ -107,4 +107,15 @@ class Paths {
   static const adminSchemes = '/app/admin/schemes';
   static const adminMonitoring = '/app/admin/monitoring';
   static const adminShgs = '/app/admin/shgs';
+  // Deliberately NOT under `/app/admin/...`: RLS already permits crp/clf
+  // (not just admin) to write training content (`training_courses_write_staff`/
+  // `quiz_questions_write_staff`, both `is_staff()`), and `/app/admin` is
+  // blanket-restricted to `Role.admin` by `_roleRestrictedPrefixes` in
+  // router.dart — nesting here would make the router redirect crp/clf away
+  // before this page's own isStaff-gated UI ever renders. Sits under
+  // `/app/training/...` instead, with its own narrower staff-only
+  // `_roleRestrictedPrefixes` entry (mirrors `shgJoinRequests`'s
+  // narrower-than-its-neighbors override).
+  static const adminTrainingCourses = '/app/training/manage';
+  static String adminTrainingQuiz(String courseId) => '/app/training/manage/$courseId/quiz';
 }

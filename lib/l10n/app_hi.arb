@@ -23,6 +23,7 @@
   "commonLoading": "लोड हो रहा है…",
   "commonError": "कुछ गलत हो गया",
   "commonBack": "वापस",
+  "commonStaffNoShgMessage": "आपकी भूमिका किसी एक SHG से जुड़ी नहीं है — यह दृश्य लागू नहीं होता",
 
   "asyncErrorGeneric": "कुछ गलत हो गया। कृपया फिर से कोशिश करें।",
   "asyncErrorNetwork": "अपना इंटरनेट कनेक्शन जांचें और फिर से कोशिश करें।",
@@ -143,6 +144,14 @@
   "voiceNoAnnouncements": "आपके लिए कोई घोषणा नहीं है।",
   "voiceOpeningSavingsForm": "आपके लिए बचत प्रविष्टि फ़ॉर्म खोला जा रहा है।",
   "voiceUnknownCommand": "माफ़ कीजिए, मुझे वह समझ नहीं आया।",
+  "voiceAssistantTitle": "वॉइस असिस्टेंट",
+  "voiceAssistantTapToSpeak": "कमांड बोलने के लिए टैप करें",
+  "voiceAssistantListening": "सुन रहा है…",
+  "voiceAssistantThinking": "जवाब ढूंढ रहा है…",
+  "voiceAssistantTapToAskAgain": "फिर से पूछने के लिए टैप करें",
+  "voiceAssistantYouSaid": "आपने कहा",
+  "voiceAssistantLabel": "असिस्टेंट",
+  "voiceAssistantTrySaying": "यह कहकर देखें",
 
   "aiDisclaimer": "यह सलाह AI द्वारा तैयार की गई है और गलत हो सकती है। यह पेशेवर वित्तीय, कानूनी या चिकित्सा सलाह नहीं है; महत्वपूर्ण निर्णय लेने से पहले अपने SHG लीडर या किसी योग्य सलाहकार से पुष्टि करें।",
 
@@ -1001,6 +1010,140 @@
   "adminSchemesDeleteDemoModeMessage": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
 
   "adminSchemesDeleteErrorMessage": "इस योजना को हटाया नहीं जा सका। कृपया फिर से कोशिश करें।",
+
+  "adminTrainingCoursesTitle": "प्रशिक्षण कोर्स प्रबंधित करें",
+
+  "adminTrainingCoursesAddCourseTooltip": "कोर्स जोड़ें",
+
+  "adminTrainingCoursesEmptyState": "अभी तक सूची में कोई कोर्स नहीं है",
+
+  "adminTrainingCoursesEditTooltip": "{title} संपादित करें",
+  "@adminTrainingCoursesEditTooltip": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "adminTrainingCoursesDeleteTooltip": "{title} हटाएं",
+  "@adminTrainingCoursesDeleteTooltip": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "adminTrainingCoursesManageQuizTooltip": "{title} के लिए क्विज़ प्रबंधित करें",
+  "@adminTrainingCoursesManageQuizTooltip": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "adminTrainingCoursesAddDialogTitle": "कोर्स जोड़ें",
+
+  "adminTrainingCoursesTitleHint": "कोर्स शीर्षक",
+
+  "adminTrainingCoursesTopicHint": "विषय",
+
+  "adminTrainingCoursesFormatLabel": "प्रारूप",
+
+  "adminTrainingCoursesDurationHint": "अवधि (वैकल्पिक)",
+
+  "adminTrainingCoursesTitleRequiredError": "कोर्स शीर्षक आवश्यक है।",
+
+  "adminTrainingCoursesAddedMessage": "कोर्स जोड़ा गया",
+
+  "adminTrainingCoursesDemoModeMessage": "डेमो मोड — कोर्स सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "adminTrainingCoursesAddErrorMessage": "इस कोर्स को जोड़ा नहीं जा सका। कृपया फिर से कोशिश करें।",
+
+  "adminTrainingCoursesEditDialogTitle": "कोर्स संपादित करें",
+
+  "adminTrainingCoursesUpdatedMessage": "कोर्स अपडेट हो गया",
+
+  "adminTrainingCoursesUpdateErrorMessage": "इस कोर्स को अपडेट नहीं किया जा सका। कृपया फिर से कोशिश करें।",
+
+  "adminTrainingCoursesDeleteDialogTitle": "कोर्स हटाएं?",
+
+  "adminTrainingCoursesDeleteDialogContent": "यह \"{title}\" और उसके क्विज़ को सूची से हटा देगा।",
+  "@adminTrainingCoursesDeleteDialogContent": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "adminTrainingCoursesDeletedMessage": "कोर्स हटा दिया गया",
+
+  "adminTrainingCoursesDeleteDemoModeMessage": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "adminTrainingCoursesDeleteErrorMessage": "इस कोर्स को हटाया नहीं जा सका। कृपया फिर से कोशिश करें।",
+
+  "adminDashboardTrainingTile": "प्रशिक्षण",
+
+  "servicesManageTrainingLabel": "प्रशिक्षण प्रबंधित करें",
+
+  "adminTrainingQuizTitle": "क्विज़ — {courseTitle}",
+  "@adminTrainingQuizTitle": {
+    "placeholders": {
+      "courseTitle": {"type": "String"}
+    }
+  },
+
+  "adminTrainingQuizAddQuestionTooltip": "प्रश्न जोड़ें",
+
+  "adminTrainingQuizEmptyState": "अभी तक कोई क्विज़ प्रश्न नहीं है — जब तक आप कुछ जोड़ नहीं देते, सदस्य इस कोर्स का क्विज़ नहीं दे पाएंगे",
+
+  "adminTrainingQuizAddDialogTitle": "प्रश्न जोड़ें",
+
+  "adminTrainingQuizEditDialogTitle": "प्रश्न संपादित करें",
+
+  "adminTrainingQuizQuestionHint": "प्रश्न",
+
+  "adminTrainingQuizOptionHint": "विकल्प {number}",
+  "@adminTrainingQuizOptionHint": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+
+  "adminTrainingQuizAddOptionTooltip": "एक और विकल्प जोड़ें",
+
+  "adminTrainingQuizRemoveOptionTooltip": "यह विकल्प हटाएं",
+
+  "adminTrainingQuizCorrectAnswerLabel": "सही उत्तर",
+
+  "adminTrainingQuizCorrectAnswerNotReadableNotice": "इस प्रश्न का सेव किया हुआ सही उत्तर अभी यहां नहीं दिखाया जा सकता — सेव करने से पहले इसे फिर से चुनें।",
+
+  "adminTrainingQuizQuestionRequiredError": "प्रश्न का टेक्स्ट आवश्यक है।",
+
+  "adminTrainingQuizMinOptionsError": "कम से कम 2 विकल्प आवश्यक हैं।",
+
+  "adminTrainingQuizBlankOptionError": "विकल्प खाली नहीं हो सकते।",
+
+  "adminTrainingQuizCorrectAnswerRequiredError": "सही उत्तर चुनें।",
+
+  "adminTrainingQuizAddedMessage": "प्रश्न जोड़ा गया",
+
+  "adminTrainingQuizUpdatedMessage": "प्रश्न अपडेट हो गया",
+
+  "adminTrainingQuizDemoModeMessage": "डेमो मोड — प्रश्न सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "adminTrainingQuizAddErrorMessage": "इस प्रश्न को जोड़ा नहीं जा सका। कृपया फिर से कोशिश करें।",
+
+  "adminTrainingQuizUpdateErrorMessage": "इस प्रश्न को अपडेट नहीं किया जा सका। कृपया फिर से कोशिश करें।",
+
+  "adminTrainingQuizDeleteDialogTitle": "प्रश्न हटाएं?",
+
+  "adminTrainingQuizDeleteDialogContent": "यह इस प्रश्न को कोर्स के क्विज़ से हटा देगा।",
+
+  "adminTrainingQuizDeletedMessage": "प्रश्न हटा दिया गया",
+
+  "adminTrainingQuizDeleteDemoModeMessage": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "adminTrainingQuizDeleteErrorMessage": "इस प्रश्न को हटाया नहीं जा सका। कृपया फिर से कोशिश करें।",
+
+  "adminTrainingQuizEditTooltip": "प्रश्न संपादित करें",
+
+  "adminTrainingQuizDeleteTooltip": "प्रश्न हटाएं",
 
   "supportStatusOpen": "खुला",
 

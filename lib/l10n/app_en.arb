@@ -23,6 +23,7 @@
   "commonLoading": "Loading…",
   "commonError": "Something went wrong",
   "commonBack": "Back",
+  "commonStaffNoShgMessage": "Your role isn't linked to a specific SHG — this view doesn't apply",
 
   "asyncErrorGeneric": "Something went wrong. Please try again.",
   "asyncErrorNetwork": "Check your internet connection and try again.",
@@ -166,6 +167,14 @@
   "voiceNoAnnouncements": "You have no announcements.",
   "voiceOpeningSavingsForm": "Opening the savings entry form for you.",
   "voiceUnknownCommand": "Sorry, I didn't understand that.",
+  "voiceAssistantTitle": "Voice Assistant",
+  "voiceAssistantTapToSpeak": "Tap to speak a command",
+  "voiceAssistantListening": "Listening…",
+  "voiceAssistantThinking": "Finding an answer…",
+  "voiceAssistantTapToAskAgain": "Tap to ask again",
+  "voiceAssistantYouSaid": "You said",
+  "voiceAssistantLabel": "Assistant",
+  "voiceAssistantTrySaying": "Try saying",
 
   "aiDisclaimer": "AI-generated guidance — may be inaccurate. Not professional financial, legal, or medical advice; confirm important decisions with your SHG leader or a qualified advisor.",
 
@@ -1350,6 +1359,140 @@
   "adminSchemesDeleteDemoModeMessage": "Demo mode — not saved (connect Supabase to persist)",
 
   "adminSchemesDeleteErrorMessage": "Could not delete this scheme. Please try again.",
+
+  "adminTrainingCoursesTitle": "Manage Training Courses",
+
+  "adminTrainingCoursesAddCourseTooltip": "Add course",
+
+  "adminTrainingCoursesEmptyState": "No courses in the catalog yet",
+
+  "adminTrainingCoursesEditTooltip": "Edit {title}",
+  "@adminTrainingCoursesEditTooltip": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "adminTrainingCoursesDeleteTooltip": "Delete {title}",
+  "@adminTrainingCoursesDeleteTooltip": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "adminTrainingCoursesManageQuizTooltip": "Manage quiz for {title}",
+  "@adminTrainingCoursesManageQuizTooltip": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "adminTrainingCoursesAddDialogTitle": "Add course",
+
+  "adminTrainingCoursesTitleHint": "Course title",
+
+  "adminTrainingCoursesTopicHint": "Topic",
+
+  "adminTrainingCoursesFormatLabel": "Format",
+
+  "adminTrainingCoursesDurationHint": "Duration (optional)",
+
+  "adminTrainingCoursesTitleRequiredError": "Course title is required.",
+
+  "adminTrainingCoursesAddedMessage": "Course added",
+
+  "adminTrainingCoursesDemoModeMessage": "Demo mode — course not saved (connect Supabase to persist)",
+
+  "adminTrainingCoursesAddErrorMessage": "Could not add this course. Please try again.",
+
+  "adminTrainingCoursesEditDialogTitle": "Edit course",
+
+  "adminTrainingCoursesUpdatedMessage": "Course updated",
+
+  "adminTrainingCoursesUpdateErrorMessage": "Could not update this course. Please try again.",
+
+  "adminTrainingCoursesDeleteDialogTitle": "Delete course?",
+
+  "adminTrainingCoursesDeleteDialogContent": "This removes \"{title}\" and its quiz from the catalog.",
+  "@adminTrainingCoursesDeleteDialogContent": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+
+  "adminTrainingCoursesDeletedMessage": "Course deleted",
+
+  "adminTrainingCoursesDeleteDemoModeMessage": "Demo mode — not saved (connect Supabase to persist)",
+
+  "adminTrainingCoursesDeleteErrorMessage": "Could not delete this course. Please try again.",
+
+  "adminDashboardTrainingTile": "Training",
+
+  "servicesManageTrainingLabel": "Manage Training",
+
+  "adminTrainingQuizTitle": "Quiz — {courseTitle}",
+  "@adminTrainingQuizTitle": {
+    "placeholders": {
+      "courseTitle": {"type": "String"}
+    }
+  },
+
+  "adminTrainingQuizAddQuestionTooltip": "Add question",
+
+  "adminTrainingQuizEmptyState": "No quiz questions yet — members can't take this course's quiz until you add some",
+
+  "adminTrainingQuizAddDialogTitle": "Add question",
+
+  "adminTrainingQuizEditDialogTitle": "Edit question",
+
+  "adminTrainingQuizQuestionHint": "Question",
+
+  "adminTrainingQuizOptionHint": "Option {number}",
+  "@adminTrainingQuizOptionHint": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+
+  "adminTrainingQuizAddOptionTooltip": "Add another option",
+
+  "adminTrainingQuizRemoveOptionTooltip": "Remove this option",
+
+  "adminTrainingQuizCorrectAnswerLabel": "Correct answer",
+
+  "adminTrainingQuizCorrectAnswerNotReadableNotice": "This question's saved correct answer can't be shown here yet — pick it again before saving.",
+
+  "adminTrainingQuizQuestionRequiredError": "Question text is required.",
+
+  "adminTrainingQuizMinOptionsError": "At least 2 options are required.",
+
+  "adminTrainingQuizBlankOptionError": "Options can't be blank.",
+
+  "adminTrainingQuizCorrectAnswerRequiredError": "Select the correct answer.",
+
+  "adminTrainingQuizAddedMessage": "Question added",
+
+  "adminTrainingQuizUpdatedMessage": "Question updated",
+
+  "adminTrainingQuizDemoModeMessage": "Demo mode — question not saved (connect Supabase to persist)",
+
+  "adminTrainingQuizAddErrorMessage": "Could not add this question. Please try again.",
+
+  "adminTrainingQuizUpdateErrorMessage": "Could not update this question. Please try again.",
+
+  "adminTrainingQuizDeleteDialogTitle": "Delete question?",
+
+  "adminTrainingQuizDeleteDialogContent": "This removes this question from the course's quiz.",
+
+  "adminTrainingQuizDeletedMessage": "Question deleted",
+
+  "adminTrainingQuizDeleteDemoModeMessage": "Demo mode — not saved (connect Supabase to persist)",
+
+  "adminTrainingQuizDeleteErrorMessage": "Could not delete this question. Please try again.",
+
+  "adminTrainingQuizEditTooltip": "Edit question",
+
+  "adminTrainingQuizDeleteTooltip": "Delete question",
 
   "supportStatusOpen": "Open",
 

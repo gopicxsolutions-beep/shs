@@ -124,7 +124,7 @@ void main() {
   group('admin-reachable /app routes render without throwing', () {
     // Role.admin passes every _roleRestrictedPrefixes check in router.dart
     // except the leader-only join-requests route (covered separately
-    // above), so one fully-onboarded admin AppState can reach the other 69
+    // above), so one fully-onboarded admin AppState can reach the other 70
     // parameterless /app/* routes.
     const prefs = {'shg_session_started': true, 'shg_authenticated': true, 'shg_role': 'admin'};
 
@@ -134,6 +134,19 @@ void main() {
         await goAndCheck(tester, router, path);
       });
     }
+  });
+
+  group('federation-staff (non-admin) route render without throwing', () {
+    // Paths.adminTrainingCourses is deliberately NOT under /app/admin
+    // (see its own doc comment in paths.dart) specifically so crp/clf, not
+    // just admin, can reach it — RLS already grants them the write. A crp
+    // account is representative of _federationStaff here.
+    const prefs = {'shg_session_started': true, 'shg_authenticated': true, 'shg_role': 'crp'};
+
+    testWidgets(Paths.adminTrainingCourses, (tester) async {
+      final router = await boot(tester, prefs);
+      await goAndCheck(tester, router, Paths.adminTrainingCourses);
+    });
   });
 }
 
@@ -207,4 +220,5 @@ const _adminAccessibleRoutes = <String>[
   Paths.adminSchemes,
   Paths.adminMonitoring,
   Paths.adminShgs,
+  Paths.adminTrainingCourses,
 ];

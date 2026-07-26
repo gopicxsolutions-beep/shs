@@ -62,6 +62,14 @@ class ServicesPage extends StatelessWidget {
         _Service(Icons.dns_rounded, l10n.servicesSystemMonitoringLabel, TileTone.sky, Paths.adminMonitoring),
       ];
 
+  // Separate from _adminTools: RLS (`training_courses_write_staff`/
+  // `quiz_questions_write_staff`) grants writes to `is_staff()` — crp/clf
+  // too, not just admin — so this is shown to every staff role below, while
+  // _adminTools above stays admin-only.
+  static List<_Service> _staffTrainingTools(AppLocalizations l10n) => [
+        _Service(Icons.school_rounded, l10n.servicesManageTrainingLabel, TileTone.violet, Paths.adminTrainingCourses),
+      ];
+
   @override
   Widget build(BuildContext context) {
     final role = context.watch<AppState>().user.role;
@@ -78,7 +86,11 @@ class ServicesPage extends StatelessWidget {
           _section(context, l10n.servicesCommerceSection, _commerce(l10n)),
           _section(context, l10n.servicesLearningSupportSection, _learningSupport(l10n)),
           _section(context, l10n.servicesInsightsSection, [..._insights(l10n), if (isStaff) ..._insightsStaff(l10n)]),
-          if (isAdmin) _section(context, l10n.servicesAdminToolsSection, _adminTools(l10n)),
+          if (isAdmin || isStaff)
+            _section(context, l10n.servicesAdminToolsSection, [
+              if (isAdmin) ..._adminTools(l10n),
+              if (isStaff) ..._staffTrainingTools(l10n),
+            ]),
         ],
       ),
     );

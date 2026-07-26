@@ -10,6 +10,7 @@ import '../../models/types.dart';
 import '../../repositories/loan_repository.dart';
 import '../../routes/paths.dart';
 import '../../services/notification_service.dart';
+import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
@@ -110,6 +111,18 @@ class LoansHomePage extends StatelessWidget {
     final repo = LoanRepository();
     final notifications = notificationService ?? LocalNotificationService.instance;
     final l10n = AppLocalizations.of(context)!;
+
+    // crp/clf/admin have no `profile.shgId` of their own — without this
+    // guard a staff account saw ₹0 outstanding, 0 pending approvals, and an
+    // indistinguishable-from-genuinely-empty loan list instead of an honest
+    // explanation. `isConfigured` excludes demo mode, whose simulated
+    // identity leaves `shgId` null for every previewed role.
+    if (SupabaseService.isConfigured && isLeaderOrStaff && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: l10n.loansHomeTitle),
+        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
+      );
+    }
 
     return Scaffold(
       appBar: PageHeader(

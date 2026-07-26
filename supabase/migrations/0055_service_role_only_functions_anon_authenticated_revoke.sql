@@ -1,0 +1,59 @@
+-- Three functions were designed and documented as service_role-only —
+-- callable exclusively by the service-role client inside a trusted
+-- server-side context (an Edge Function or pg_cron), never directly by an
+-- authenticated app user or an anonymous caller:
+--   - check_and_increment_ai_advisor_rate_limit() (0031) — the AI advisor
+--     cost/abuse-control counter. Its own migration's comment states
+--     "Deliberately NOT granted to authenticated: this function's whole
+--     purpose is a cost/abuse control the caller must not be able to
+--     bypass or reset by invoking it directly as a client-callable RPC."
+--   - purge_old_ai_advisor_logs() (0043) — the AI advisor log retention
+--     purge, meant to run only via its nightly pg_cron job.
+--   - record_system_heartbeat() (0044) — backs the Admin Dashboard's
+--     system-health indicator, meant to run only via its own pg_cron job.
+--
+-- All three migrations correctly wrote `revoke all ... from public; grant
+-- execute ... to service_role;` — but live verification against this
+-- project's actual database (2026-07-24) found `has_function_privilege`
+-- returns true for BOTH `anon` and `authenticated` on all three, directly
+-- contradicting every one of those migrations' own stated intent. Root
+-- cause: this project has a schema-level `ALTER DEFAULT PRIVILEGES ... TO
+-- anon, authenticated` (or equivalent per-role grant) that runs on function
+-- creation independently of the `PUBLIC` pseudo-role — `revoke ... from
+-- public` does not touch a privilege a role holds directly rather than
+-- through PUBLIC membership. Every function in this schema that intends to
+-- be genuinely client-callable already grants to `authenticated` directly
+-- (e.g. `approve_loan`, `record_loan_payment`) so those are unaffected by
+-- this fix; this migration only touches the three functions above that
+-- explicitly never intended a client grant at all.
+--
+-- Concretely exploitable for the worst of the three: with no `p_member_id`
+-- ownership check inside `check_and_increment_ai_advisor_rate_limit`
+-- itself (it trusts whichever id the caller passes, correct ONLY when the
+-- caller is the trusted Edge Function forwarding a JWT-derived id), any
+-- authenticated — or, per this same gap, even anonymous — user could call
+-- `POST /rest/v1/rpc/check_and_increment_ai_advisor_rate_limit` directly
+-- with an arbitrary victim `member_id` and `p_max_per_window`/
+-- `p_window_seconds` matching the real Edge Function's own values (10/60),
+-- repeated 10+ times in under a minute, to push that specific victim's
+-- counter past the limit before they ever send a real request — the
+-- Edge Function's own subsequent call for that same member, window, and
+-- limit would then see the pre-inflated count and wrongly reject their
+-- genuine question with 429, a targeted denial-of-service against any
+-- member whose profile id is known or guessable. Live-confirmed exactly
+-- this call succeeding and writing a real row for an arbitrary target id
+-- before this fix (test id `00000000-0000-0000-0000-000000000099`, not a
+-- real member, chosen specifically so no genuine account could be
+-- affected by the verification itself; deleted immediately after).
+--
+-- The other two are lower severity — `purge_old_ai_advisor_logs` can only
+-- ever delete rows already past the 180-day threshold the scheduled job
+-- would eventually delete anyway (changes *when*, not *what*, is deleted);
+-- `record_system_heartbeat` lets a caller make the Admin Dashboard's
+-- "system healthy" indicator look fresher than reality, a minor monitoring-
+-- integrity concern rather than an exploitable one. Fixed together since
+-- all three share the identical root cause and fix shape.
+
+revoke execute on function public.check_and_increment_ai_advisor_rate_limit(uuid, int, int) from anon, authenticated;
+revoke execute on function public.purge_old_ai_advisor_logs() from anon, authenticated;
+revoke execute on function public.record_system_heartbeat() from anon, authenticated;

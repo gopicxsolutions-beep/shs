@@ -36,7 +36,9 @@ class LeaderDashboard extends StatelessWidget {
   const LeaderDashboard({super.key});
 
   Future<_LeaderDashboardData> _load(BuildContext context) async {
-    final shgId = context.read<AppState>().profile?.shgId;
+    final profile = context.read<AppState>().profile;
+    final shgId = profile?.shgId;
+    final memberId = profile?.id;
     final results = await Future.wait([
       ReportRepository().fetchShgReport(shgId),
       ShgRepository().fetchShg(shgId),
@@ -58,7 +60,15 @@ class LeaderDashboard extends StatelessWidget {
     return _LeaderDashboardData(
       report: results[0] as ShgReportData,
       shg: results[1] as ShgProfile?,
-      pendingLoans: loans.where((l) => l.status == 'pending').toList(),
+      // `loans_update_leader_or_staff` (RLS) blocks a leader from
+      // approving/rejecting her own loan (no identity may escalate itself)
+      // — see loan_approval_page.dart's and loans_home_page.dart's matching
+      // `l.memberId != memberId` filters. Without the same exclusion here,
+      // a self-applied loan showed on this dashboard as an actionable
+      // "Pending Approval" (badge, preview card, member name and amount all
+      // included), but tapping through to the real Approvals page — which
+      // already excludes it — landed on an empty list with no explanation.
+      pendingLoans: loans.where((l) => l.status == 'pending' && l.memberId != memberId).toList(),
       overdueLoans: loans.where((l) => l.status == 'overdue').toList(),
       upcomingMeeting: upcoming.isEmpty ? null : upcoming.first,
     );

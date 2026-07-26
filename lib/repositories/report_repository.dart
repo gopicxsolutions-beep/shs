@@ -115,15 +115,14 @@ class ReportRepository {
       final activeLoans = loans.where((l) => l.status == 'active' || l.status == 'overdue').toList();
       final totalOutstanding = activeLoans.fold<num>(0, (s, l) => s + l.outstanding);
       final memberCount = (await ShgRepository().fetchMembers(shgId)).length;
-      // Derived from the same monthly points the Performance Report's own
-      // trend chart plots (TrendRepository.attendanceTrend), rather than
-      // recomputed independently from the raw meeting records — two
-      // separate calculations here previously drifted apart (88% headline
-      // vs a ~83% trend-chart average) since they read different fields.
-      final attendancePoints = await TrendRepository().attendanceTrend(shgId: shgId);
-      final avgAttendancePct = attendancePoints.isEmpty
-          ? 0.0
-          : attendancePoints.fold<num>(0, (s, p) => s + p.value) / attendancePoints.length;
+      // Same last-6-months window the Performance Report's own trend chart
+      // plots (TrendRepository), but as a single present/total ratio
+      // (`attendanceRate`) rather than an average of the chart's own
+      // zero-filled monthly points — see that method's doc comment for why
+      // averaging the chart's points directly understates attendance for
+      // any SHG that doesn't meet in literally every one of the last 6
+      // months.
+      final avgAttendancePct = await TrendRepository().attendanceRate(shgId: shgId);
       return ShgReportData(
         memberCount: memberCount,
         totalSavings: totalSavings,
@@ -154,22 +153,18 @@ class ReportRepository {
       }
     }
 
-    // Derived from the same monthly points the Performance Report's own
-    // trend chart plots (TrendRepository.attendanceTrend), rather than
-    // recomputed independently from the raw meeting/attendance rows —
-    // mirrors the demo-mode branch's identical fix above. The two used to
-    // drift apart in live mode: this used an all-time window with a
-    // `meetingsTotal * memberCount` assumed denominator (silently assuming
-    // every member has an attendance row at every meeting), while the
-    // trend chart uses a last-6-months window with the actual recorded
-    // row count as its denominator — two structurally different formulas
-    // over two different time windows, so ShgPerformanceReportPage's own
-    // headline stat and the chart directly beneath it (and
-    // ShgFinancialSummaryPage's "Avg. Attendance" tile, and the CRP "SHG
-    // Health" drill-down that reuses this same value) could each show a
-    // different percentage for the same SHG.
-    final attendancePoints = await TrendRepository().attendanceTrend(shgId: shgId);
-    final avgAttendancePct = attendancePoints.isEmpty ? 0.0 : attendancePoints.fold<num>(0, (s, p) => s + p.value) / attendancePoints.length;
+    // Same last-6-months window the Performance Report's own trend chart
+    // plots (TrendRepository), but as a single present/total ratio
+    // (`attendanceRate`), not an average of the chart's own zero-filled
+    // monthly points (mirrors the demo-mode branch's identical fix above)
+    // — see that method's doc comment: averaging the chart's own points
+    // directly understates attendance for any SHG that doesn't meet in
+    // literally every one of the last 6 months, since a no-meeting month
+    // zero-fills into the average alongside months that did meet. Feeds
+    // ShgPerformanceReportPage's headline stat and the chart directly
+    // beneath it, ShgFinancialSummaryPage's "Avg. Attendance" tile, and
+    // the CRP "SHG Health" drill-down that reuses this same value.
+    final avgAttendancePct = await TrendRepository().attendanceRate(shgId: shgId);
 
     return ShgReportData(
       memberCount: memberCount,

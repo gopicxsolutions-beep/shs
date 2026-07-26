@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/ai_advisor.dart';
 import 'supabase_service.dart';
@@ -68,6 +69,25 @@ AiAdvisorRequestException mapFunctionExceptionToAdvisorException(FunctionExcepti
 class EdgeFunctionAiAdvisorService implements AiAdvisorService {
   SupabaseClient get _client => SupabaseService.instance.client;
 
+  // Belt-and-suspenders alongside `TimeoutHttpClient` (main.dart's global
+  // 30s bound on every Supabase HTTP call): `functions.invoke` JSON-encodes
+  // the request body on a background isolate (`YAJsonIsolate`, see the
+  // installed `functions_client` package) *before* the wrapped HTTP client
+  // is ever reached, and the auth layer can trigger a token-refresh network
+  // call of its own first too — both are real, plausible hang points that
+  // sit outside what a client wrapper alone can bound. Without an outer
+  // timeout here, a member asking the (real, deployed) Groq-backed advisor
+  // a question could see the send button's spinner forever with no error
+  // ever surfacing — every failure this service can otherwise produce
+  // (`FunctionException`, the `data['ok'] != true` case below) already
+  // reaches the chat page as a distinct message; only "the call itself
+  // never resolves" had no bound. `TimeoutException` is already exactly
+  // what `AiAdvisorChatPage._errorMessageFor`'s `isNetworkError` branch
+  // expects (see `test/pages/ai_advisor_chat_error_messages_test.dart`'s
+  // "genuine dropped-connection failure" case), so no new error-handling
+  // path is needed on top of this — it reuses the existing one.
+  static const _timeout = Duration(seconds: 30);
+
   @override
   Future<String> ask({
     required String advisorType,
@@ -80,7 +100,10 @@ class EdgeFunctionAiAdvisorService implements AiAdvisorService {
         'advisor_type': advisorType,
         'query': query,
         if (history.isNotEmpty) 'history': history.map((h) => h.toJson()).toList(),
-      });
+      }).timeout(
+        _timeout,
+        onTimeout: () => throw TimeoutException('ai-advisor-proxy request timed out after ${_timeout.inSeconds}s', _timeout),
+      );
       data = res.data as Map<String, dynamic>?;
     } on FunctionException catch (e) {
       // Any non-2xx response (400 validation/moderation rejection, 401

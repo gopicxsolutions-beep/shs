@@ -82,6 +82,52 @@ class TrendRepository {
     }).toList();
   }
 
+  /// Single overall attendance rate across the same last-6-months window
+  /// `attendanceTrend()` charts — present attendance rows over total
+  /// attendance rows for every qualifying meeting in that window, NOT an
+  /// average of `attendanceTrend()`'s own per-month percentages.
+  /// `ReportRepository.fetchShgReport`'s `avgAttendancePct` headline used
+  /// to average those monthly points directly — correct for the *chart*
+  /// (a month with no meeting should plot as 0, not be omitted) but wrong
+  /// once reused as a single summary number: a month with no meeting at
+  /// all isn't "0% attendance", it's "no meeting happened", and averaging
+  /// it in alongside months that did meet drags the headline down for any
+  /// SHG that doesn't meet in literally every one of the last 6 months.
+  /// Live-confirmed against a real SHG with exactly one meeting in the
+  /// window at a genuine 2/3 (66.7%) turnout: the old average-of-months
+  /// formula reported an 11.1% headline (66.7 / 6, the other five
+  /// no-meeting months zero-filling the average); this method reports the
+  /// true 66.7% instead — the number a leader/CRP/CLF actually means by
+  /// "average attendance" (how well-attended are the meetings that
+  /// happen), not "how many of the last 6 months had a well-attended
+  /// meeting in them".
+  Future<double> attendanceRate({String? shgId}) async {
+    if (!_live) {
+      final meetingRepo = MeetingRepository();
+      final windowStart = DateTime(DateTime.now().year, DateTime.now().month - 5);
+      final completedMeetings = (await meetingRepo.fetchForShg(shgId)).where((m) => m.status == 'completed' && !m.date.isBefore(windowStart));
+      var present = 0, total = 0;
+      for (final m in completedMeetings) {
+        final roster = await meetingRepo.fetchAttendance(m.id, shgId);
+        present += roster.where((r) => r.present).length;
+        total += roster.length;
+      }
+      return total == 0 ? 0.0 : (present / total) * 100;
+    }
+    final now = DateTime.now();
+    final windowStartStr = DateFormat('yyyy-MM-dd').format(DateTime(now.year, now.month - 5));
+    final todayStr = now.toIso8601String().split('T').first;
+    var meetingsQuery = _client.from('meetings').select('id').neq('status', 'cancelled').gte('meeting_date', windowStartStr).lt('meeting_date', todayStr);
+    final meetings = (shgId != null ? await meetingsQuery.eq('shg_id', shgId) : await meetingsQuery) as List;
+    if (meetings.isEmpty) return 0.0;
+    final meetingIds = meetings.map((m) => (m as Map<String, dynamic>)['id'] as String).toList();
+    final attendance = await _client.from('meeting_attendance').select('present').inFilter('meeting_id', meetingIds);
+    final total = attendance.length;
+    if (total == 0) return 0.0;
+    final present = attendance.where((r) => r['present'] == true).length;
+    return (present / total) * 100;
+  }
+
   /// Demo-mode `attendanceTrend`, computed from `MeetingRepository`'s own
   /// mock/session-local state instead of a fixed illustrative array. Before
   /// this fix, the hardcoded array ignored [shgId] entirely and never
