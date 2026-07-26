@@ -249,6 +249,10 @@
 
   "crpDashboardAttendanceProxyTrend": "उपस्थिति के आधार पर अनुमान",
 
+  "crpDashboardTrainingCompletionLabel": "प्रशिक्षण पूर्णता",
+
+  "crpDashboardTrainingCompletionTrend": "प्लेटफ़ॉर्म-व्यापी औसत",
+
   "crpDashboardShgsUnderMonitoringTitle": "निगरानी में ली गई SHGs",
 
   "crpDashboardViewAllAction": "सभी देखें",
@@ -645,6 +649,8 @@
 
   "meetingsHomeDefaultTitle": "बैठक",
 
+  "meetingsHomeShgName": "SHG: {shg}",
+
   "meetingDetailTitle": "बैठक विवरण",
 
   "meetingDetailNotFound": "यह बैठक नहीं मिली",
@@ -676,6 +682,8 @@
   "meetingDetailPresentCount": "{present} / {total} उपस्थित",
 
   "meetingAttendanceTitle": "उपस्थिति",
+
+  "meetingAttendanceShgName": "SHG: {shg}",
 
   "meetingAttendanceNoMeetings": "उपस्थिति दर्ज करने के लिए कोई बैठक नहीं है",
 
@@ -827,6 +835,8 @@
 
   "savingsHomeMySavingsLabel": "मेरी बचत",
 
+  "savingsHomePlatformSavingsLabel": "प्लेटफ़ॉर्म बचत",
+
   "savingsHomeEntriesCount": "{count} एंट्री",
 
   "savingsHomePendingVerificationLabel": "पेंडिंग सत्यापन",
@@ -847,9 +857,13 @@
 
   "savingsHomeRecentEntriesTitle": "हाल की एंट्रियां",
 
+  "savingsHomeAllShgsEntriesTitle": "हाल की एंट्रियां (सभी SHG)",
+
   "savingsHomeViewAllAction": "सभी देखें",
 
   "savingsHomeEmpty": "अभी तक कोई बचत एंट्री नहीं है",
+
+  "savingsHomeDateModeShg": "{date} · {mode} · {shg}",
 
   "savingsLedgerTitle": "बचत लेजर",
 
@@ -858,6 +872,8 @@
   "savingsLedgerAddTooltip": "बचत जोड़ें",
 
   "savingsLedgerEmpty": "अभी तक कोई बचत एंट्री दर्ज नहीं की गई",
+
+  "savingsLedgerShgName": "SHG: {shg}",
 
   "savingsLedgerVerifyError": "इस एंट्री को सत्यापित नहीं किया जा सका। कृपया पुनः प्रयास करें।",
 
@@ -1427,6 +1443,8 @@
 
   "loansHomeMyOutstandingLabel": "मेरी बकाया राशि",
 
+  "loansHomePlatformOutstandingLabel": "प्लेटफ़ॉर्म की बकाया राशि",
+
   "loansHomeLoanCount": "{count} ऋण",
 
   "loansHomePendingApprovalLabel": "अनुमोदन लंबित",
@@ -1449,11 +1467,15 @@
 
   "loansHomeAllLoansTitle": "सभी ऋण",
 
+  "loansHomeAllShgsLoansTitle": "सभी ऋण (सभी SHG)",
+
   "loansHomeMyLoansTitle": "मेरे ऋण",
 
   "loansHomeEmptyMessage": "अभी तक कोई ऋण नहीं",
 
   "loansHomeOutstandingOfAmount": "₹{amount} में से ₹{outstanding} बकाया",
+
+  "loansHomePurposeAndShg": "{purpose} · {shg}",
 
   "loanTrackingTitle": "ऋण ट्रैकिंग",
 
@@ -1468,6 +1490,8 @@
   "loanApprovalTitle": "ऋण अनुमोदन",
 
   "loanApprovalEmptyMessage": "कोई लंबित ऋण आवेदन नहीं है",
+
+  "loanApprovalShgName": "SHG: {shg}",
 
   "loanApprovalTenureMonths": "{months} महीने की अवधि",
 
@@ -1635,6 +1659,8 @@
 
   "livelihoodHomeEmpty": "अभी तक कोई आजीविका गतिविधि नहीं",
 
+  "livelihoodHomeMemberAndShg": "{member} · {shg}",
+
   "livelihoodHomeNetAmount": "नेट {amount}",
 
   "livelihoodDetailTitle": "गतिविधि विवरण",
@@ -1788,6 +1814,8 @@
   "financialLedgerDemoMode": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
 
   "financialLedgerEmpty": "अभी तक कोई {title} एंट्री नहीं",
+
+  "financialLedgerShgName": "SHG: {shg}",
 
   "financialLedgerCashbookTitle": "कैशबुक",
 

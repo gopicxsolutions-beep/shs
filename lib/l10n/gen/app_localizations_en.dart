@@ -617,6 +617,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crpDashboardAttendanceProxyTrend => 'Attendance-based proxy';
 
   @override
+  String get crpDashboardTrainingCompletionLabel => 'Training Completion';
+
+  @override
+  String get crpDashboardTrainingCompletionTrend => 'Platform-wide average';
+
+  @override
   String get crpDashboardShgsUnderMonitoringTitle => 'SHGs Under Monitoring';
 
   @override
@@ -1340,6 +1346,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetingsHomeDefaultTitle => 'Meeting';
 
   @override
+  String meetingsHomeShgName(String shg) {
+    return 'SHG: $shg';
+  }
+
+  @override
   String get meetingDetailTitle => 'Meeting Detail';
 
   @override
@@ -1392,6 +1403,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meetingAttendanceTitle => 'Attendance';
+
+  @override
+  String meetingAttendanceShgName(String shg) {
+    return 'SHG: $shg';
+  }
 
   @override
   String get meetingAttendanceNoMeetings =>
@@ -1663,6 +1679,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savingsHomeMySavingsLabel => 'My Savings';
 
   @override
+  String get savingsHomePlatformSavingsLabel => 'Platform Savings';
+
+  @override
   String savingsHomeEntriesCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1701,10 +1720,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savingsHomeRecentEntriesTitle => 'Recent Entries';
 
   @override
+  String get savingsHomeAllShgsEntriesTitle => 'Recent Entries (All SHGs)';
+
+  @override
   String get savingsHomeViewAllAction => 'View all';
 
   @override
   String get savingsHomeEmpty => 'No savings entries yet';
+
+  @override
+  String savingsHomeDateModeShg(String date, String mode, String shg) {
+    return '$date · $mode · $shg';
+  }
 
   @override
   String get savingsLedgerTitle => 'Savings Ledger';
@@ -1717,6 +1744,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get savingsLedgerEmpty => 'No savings entries recorded yet';
+
+  @override
+  String savingsLedgerShgName(String shg) {
+    return 'SHG: $shg';
+  }
 
   @override
   String get savingsLedgerVerifyError =>
@@ -2640,6 +2672,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loansHomeMyOutstandingLabel => 'My Outstanding';
 
   @override
+  String get loansHomePlatformOutstandingLabel => 'Platform Outstanding';
+
+  @override
   String loansHomeLoanCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -2683,6 +2718,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loansHomeAllLoansTitle => 'All Loans';
 
   @override
+  String get loansHomeAllShgsLoansTitle => 'All Loans (All SHGs)';
+
+  @override
   String get loansHomeMyLoansTitle => 'My Loans';
 
   @override
@@ -2691,6 +2729,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String loansHomeOutstandingOfAmount(String outstanding, String amount) {
     return '₹$outstanding of ₹$amount outstanding';
+  }
+
+  @override
+  String loansHomePurposeAndShg(String purpose, String shg) {
+    return '$purpose · $shg';
   }
 
   @override
@@ -2717,6 +2760,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loanApprovalEmptyMessage => 'No pending loan applications';
+
+  @override
+  String loanApprovalShgName(String shg) {
+    return 'SHG: $shg';
+  }
 
   @override
   String loanApprovalTenureMonths(int months) {
@@ -3012,6 +3060,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get livelihoodHomeEmpty => 'No livelihood activities yet';
 
   @override
+  String livelihoodHomeMemberAndShg(String member, String shg) {
+    return '$member · $shg';
+  }
+
+  @override
   String livelihoodHomeNetAmount(String amount) {
     return '$amount net';
   }
@@ -3268,6 +3321,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String financialLedgerEmpty(String title) {
     return 'No $title entries yet';
+  }
+
+  @override
+  String financialLedgerShgName(String shg) {
+    return 'SHG: $shg';
   }
 
   @override

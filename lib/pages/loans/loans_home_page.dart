@@ -34,7 +34,11 @@ class LoansHomePage extends StatelessWidget {
   // Injectable for tests (mirrors `SettingsPage`'s `notificationService`
   // seam) — defaults to the real on-device implementation.
   final NotificationService? notificationService;
-  const LoansHomePage({super.key, this.notificationService});
+  // Injectable so the platform-wide staff portfolio (live-mode-only) can be
+  // widget-tested against canned cross-SHG data instead of a real network
+  // call — defaults to a real LoanRepository.
+  final LoanRepository? repository;
+  const LoansHomePage({super.key, this.notificationService, this.repository});
 
   /// Fetches the loans this page actually displays (group-wide for a
   /// leader/staff account, own-only for a member), and — best-effort,
@@ -66,8 +70,13 @@ class LoansHomePage extends StatelessWidget {
   /// fake), never resolves at all and hung `pumpAndSettle` forever. Firing
   /// it off with [unawaited] instead means the already-fetched `loans`
   /// render immediately no matter how long (or whether) that ever resolves.
-  Future<List<Loan>> _loadAndSyncReminders(LoanRepository repo, bool isLeaderOrStaff, String? shgId, String? memberId, NotificationService notifications) async {
-    final loans = await (isLeaderOrStaff ? repo.fetchForShg(shgId) : repo.fetchForMember(memberId));
+  ///
+  /// [platformWide] is true for a crp/clf/admin account (no `shgId` of its
+  /// own) in live mode — see [build]'s doc comment on `isPlatformWideStaff`
+  /// for the full history of why this became a real fetch instead of an
+  /// honest "doesn't apply to your role" dead end.
+  Future<List<Loan>> _loadAndSyncReminders(LoanRepository repo, bool isLeaderOrStaff, bool platformWide, String? shgId, String? memberId, NotificationService notifications) async {
+    final loans = await (platformWide ? repo.fetchAllForStaff() : (isLeaderOrStaff ? repo.fetchForShg(shgId) : repo.fetchForMember(memberId)));
     unawaited(_syncReminders(repo, isLeaderOrStaff, memberId, loans, notifications));
     return loans;
   }
@@ -108,21 +117,21 @@ class LoansHomePage extends StatelessWidget {
     final isLeaderOrStaff = context.select<AppState, bool>((s) => s.user.role != Role.member);
     final shgId = context.select<AppState, String?>((s) => s.profile?.shgId);
     final memberId = context.select<AppState, String?>((s) => s.profile?.id);
-    final repo = LoanRepository();
+    final repo = repository ?? LoanRepository();
     final notifications = notificationService ?? LocalNotificationService.instance;
     final l10n = AppLocalizations.of(context)!;
 
-    // crp/clf/admin have no `profile.shgId` of their own — without this
-    // guard a staff account saw ₹0 outstanding, 0 pending approvals, and an
-    // indistinguishable-from-genuinely-empty loan list instead of an honest
-    // explanation. `isConfigured` excludes demo mode, whose simulated
-    // identity leaves `shgId` null for every previewed role.
-    if (SupabaseService.isConfigured && isLeaderOrStaff && shgId == null) {
-      return Scaffold(
-        appBar: PageHeader(title: l10n.loansHomeTitle),
-        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
-      );
-    }
+    // crp/clf/admin have no `profile.shgId` of their own — this used to mean
+    // a staff account saw ₹0 outstanding, 0 pending approvals, and an
+    // indistinguishable-from-genuinely-empty loan list (round 140's gap
+    // note), later replaced with an honest "doesn't apply to your role"
+    // dead end (round 147). Both were stand-ins for the real fix:
+    // `loans_select_shg_or_staff`/`loans_update_leader_or_staff` (RLS) have
+    // always granted `is_staff()` unrestricted platform-wide read/write —
+    // the capability existed, only the UI never called it. `isConfigured`
+    // still excludes demo mode, whose simulated identity leaves `shgId`
+    // null for every previewed role, not just staff.
+    final isPlatformWideStaff = SupabaseService.isConfigured && isLeaderOrStaff && shgId == null;
 
     return Scaffold(
       appBar: PageHeader(
@@ -144,7 +153,7 @@ class LoansHomePage extends StatelessWidget {
         right: isLeaderOrStaff ? null : IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.loanApply), tooltip: l10n.loansHomeApplyTooltip),
       ),
       body: AppAsyncBuilder<List<Loan>>(
-        future: () => _loadAndSyncReminders(repo, isLeaderOrStaff, shgId, memberId, notifications),
+        future: () => _loadAndSyncReminders(repo, isLeaderOrStaff, isPlatformWideStaff, shgId, memberId, notifications),
         builder: (context, loans) {
           // A pending or rejected loan's `outstanding` is set to the full
           // requested amount (never disbursed, so never reduced by a
@@ -168,7 +177,7 @@ class LoansHomePage extends StatelessWidget {
               Row(children: [
                 Expanded(
                   child: StatCard(
-                    label: isLeaderOrStaff ? l10n.loansHomeGroupOutstandingLabel : l10n.loansHomeMyOutstandingLabel,
+                    label: isPlatformWideStaff ? l10n.loansHomePlatformOutstandingLabel : (isLeaderOrStaff ? l10n.loansHomeGroupOutstandingLabel : l10n.loansHomeMyOutstandingLabel),
                     value: '₹${NumberFormat('#,##,##0', 'en_IN').format(outstanding)}',
                     tone: StatTone.gold,
                     trend: l10n.loansHomeLoanCount(loans.length),
@@ -204,7 +213,7 @@ class LoansHomePage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              SectionHeader(title: isLeaderOrStaff ? l10n.loansHomeAllLoansTitle : l10n.loansHomeMyLoansTitle),
+              SectionHeader(title: isPlatformWideStaff ? l10n.loansHomeAllShgsLoansTitle : (isLeaderOrStaff ? l10n.loansHomeAllLoansTitle : l10n.loansHomeMyLoansTitle)),
               if (loans.isEmpty)
                 AppEmptyState(icon: Icons.account_balance_rounded, message: l10n.loansHomeEmptyMessage)
               else
@@ -215,7 +224,9 @@ class LoansHomePage extends StatelessWidget {
                       return AppListRow(
                         leading: isLeaderOrStaff ? AppAvatar(name: l.memberName, size: 36) : null,
                         title: isLeaderOrStaff ? l.memberName : l.purpose,
-                        subtitle: isLeaderOrStaff ? l.purpose : l10n.loansHomeOutstandingOfAmount(NumberFormat('#,##,##0', 'en_IN').format(l.outstanding), NumberFormat('#,##,##0', 'en_IN').format(l.amount)),
+                        subtitle: isLeaderOrStaff
+                            ? (isPlatformWideStaff && l.shgName != null ? l10n.loansHomePurposeAndShg(l.purpose, l.shgName!) : l.purpose)
+                            : l10n.loansHomeOutstandingOfAmount(NumberFormat('#,##,##0', 'en_IN').format(l.outstanding), NumberFormat('#,##,##0', 'en_IN').format(l.amount)),
                         trailing: AppBadge(text: l.status, tone: _statusTones[l.status] ?? BadgeTone.neutral),
                         onTap: () => context.go(Paths.loanDetail(l.id)),
                       );

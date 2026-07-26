@@ -8,6 +8,10 @@ class SavingsEntry {
   final String mode; // Cash | UPI | Bank Transfer
   final String frequency; // Weekly | Monthly | Daily
   final String status; // verified | pending
+  // Only populated when the query joins `shgs(name)` (today: only
+  // SavingsRepository.fetchAllForStaff()'s platform-wide portfolio fetch) —
+  // null everywhere else, including demo mode. Mirrors Loan.shgName.
+  final String? shgName;
 
   const SavingsEntry({
     required this.id,
@@ -18,6 +22,7 @@ class SavingsEntry {
     required this.mode,
     required this.frequency,
     required this.status,
+    this.shgName,
   });
 
   factory SavingsEntry.fromMap(Map<String, dynamic> map) => SavingsEntry(
@@ -29,6 +34,7 @@ class SavingsEntry {
         mode: map['mode'] as String,
         frequency: map['frequency'] as String,
         status: map['status'] as String,
+        shgName: (map['shgs'] as Map<String, dynamic>?)?['name'] as String?,
       );
 }
 

@@ -50,6 +50,26 @@ class FinancialRepository {
     return (rows as List).map((r) => FinancialEntry.fromMap(r as Map<String, dynamic>)).toList();
   }
 
+  /// Platform-wide feed for crp/clf/admin — every SHG's entries of this
+  /// [entryType], not just one. `financial_ledger_select_shg_or_staff` (RLS)
+  /// already grants `is_staff()` an unconditional, unscoped SELECT — mirrors
+  /// LoanRepository.fetchAllForStaff()'s round-168 fix. Joins `shgs(name)`
+  /// in addition to `profiles(name)`: each row's `balance` is a per-SHG
+  /// running total (see `addEntry`'s doc comment), so a flat cross-SHG list
+  /// needs the SHG tagged per row or the balance appears to jump around
+  /// arbitrarily between unrelated rows.
+  Future<List<FinancialEntry>> fetchAllForStaff(String entryType) async {
+    if (!_live) {
+      final mockEntries = mock.financialLedgerEntries
+          .where((e) => e.entryType == entryType)
+          .map((e) => FinancialEntry(id: e.id, entryType: e.entryType, description: e.description, debit: e.debit, credit: e.credit, balance: e.balance, date: _parseMockDate(e.date)));
+      final localEntries = _locallyAdded.where((e) => e.entryType == entryType).toList().reversed;
+      return [...localEntries, ...mockEntries];
+    }
+    final rows = await _client.from('financial_ledger').select('*, profiles(name), shgs(name)').eq('entry_type', entryType).order('entry_date', ascending: false).order('created_at', ascending: false).limit(500);
+    return (rows as List).map((r) => FinancialEntry.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
   /// Adds an entry, computing the running balance from the last entry of the
   /// same type (mirrors a simple cashbook: balance = previous ± this entry).
   /// Returns whether the entry was actually saved — `false` (not an

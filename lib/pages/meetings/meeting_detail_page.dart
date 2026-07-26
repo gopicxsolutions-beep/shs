@@ -134,7 +134,6 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
           if (meeting == null) {
             return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.meetingDetailNotFound);
           }
-          final shgId = appState.profile?.shgId;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -197,7 +196,16 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
               const SizedBox(height: 24),
               SectionHeader(title: l10n.meetingDetailAttendanceSection, action: isLeaderOrStaff ? l10n.meetingDetailMarkAction : null, onAction: isLeaderOrStaff ? () => context.go(Paths.meetingAttendance) : null),
               AppAsyncBuilder<List<AttendanceRow>>(
-                future: () => repo.fetchAttendance(meetingId, shgId),
+                // The meeting's OWN shgId, not the viewer's — a platform-
+                // wide staff account (no shgId of its own) opening a real
+                // cross-SHG meeting's detail page would otherwise see an
+                // empty roster despite the meeting genuinely having one
+                // (`fetchAttendance`/`fetchRoster` treat a null shgId as "no
+                // roster" in live mode). For a leader these always
+                // coincided anyway (she could only ever reach her own SHG's
+                // meetings before this fix), so this is a strict correction,
+                // not a behavior change for that role.
+                future: () => repo.fetchAttendance(meetingId, meeting.shgId),
                 builder: (context, roster) {
                   final present = roster.where((r) => r.present).toList();
                   final absent = roster.where((r) => !r.present).toList();

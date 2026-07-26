@@ -19,28 +19,28 @@ import '../../widgets/avatar.dart';
 import '../../widgets/stat_card.dart';
 
 class LivelihoodHomePage extends StatelessWidget {
-  const LivelihoodHomePage({super.key});
+  // Injectable so the platform-wide staff feed (live-mode-only) can be
+  // widget-tested against canned cross-SHG data instead of a real network
+  // call — mirrors LoansHomePage's round-168 `repository` seam.
+  final LivelihoodRepository? repository;
+  const LivelihoodHomePage({super.key, this.repository});
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final isLeaderOrStaff = appState.user.role != Role.member;
-    final repo = LivelihoodRepository();
+    final repo = repository ?? LivelihoodRepository();
     final shgId = appState.profile?.shgId;
     final memberId = appState.profile?.id;
     final l10n = AppLocalizations.of(context)!;
 
-    // crp/clf/admin have no `profile.shgId` of their own — without this
-    // guard a staff account saw ₹0 investment/revenue and an
-    // indistinguishable-from-genuinely-empty activity list instead of an
-    // honest explanation. `isConfigured` excludes demo mode, whose
+    // crp/clf/admin have no `profile.shgId` of their own.
+    // `livelihood_select_shg_or_staff` (RLS) has always granted `is_staff()`
+    // unrestricted platform-wide read — round 168's fix template (Loans,
+    // Savings) applied here too: a real platform-wide feed instead of an
+    // explained-away dead end. `isConfigured` excludes demo mode, whose
     // simulated identity leaves `shgId` null for every previewed role.
-    if (SupabaseService.isConfigured && isLeaderOrStaff && shgId == null) {
-      return Scaffold(
-        appBar: PageHeader(title: l10n.livelihoodHomeTitle),
-        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
-      );
-    }
+    final isPlatformWideStaff = SupabaseService.isConfigured && isLeaderOrStaff && shgId == null;
 
     return Scaffold(
       appBar: PageHeader(
@@ -48,7 +48,7 @@ class LivelihoodHomePage extends StatelessWidget {
         right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.livelihoodEntry), tooltip: l10n.livelihoodHomeAddActivityTooltip),
       ),
       body: AppAsyncBuilder<List<LivelihoodActivity>>(
-        future: () => isLeaderOrStaff ? repo.fetchForShg(shgId) : repo.fetchForMember(memberId),
+        future: () => isPlatformWideStaff ? repo.fetchAllForStaff() : (isLeaderOrStaff ? repo.fetchForShg(shgId) : repo.fetchForMember(memberId)),
         builder: (context, activities) {
           final totalInvestment = activities.fold<num>(0, (s, a) => s + a.investment);
           final totalRevenue = activities.fold<num>(0, (s, a) => s + a.revenue);
@@ -75,7 +75,14 @@ class LivelihoodHomePage extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(livelihoodActivityTypeLabel(a.activityType, l10n), style: AppTheme.sans(14, weight: FontWeight.w700)),
-                                Text(isLeaderOrStaff ? a.memberName : (a.description ?? ''), maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500)),
+                                Text(
+                                  isLeaderOrStaff
+                                      ? (isPlatformWideStaff && a.shgName != null ? l10n.livelihoodHomeMemberAndShg(a.memberName, a.shgName!) : a.memberName)
+                                      : (a.description ?? ''),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTheme.sans(12, color: Neutral.c500),
+                                ),
                               ],
                             ),
                           ),

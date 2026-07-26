@@ -53,6 +53,20 @@ class LoanRepository {
     return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
   }
 
+  /// Platform-wide loan portfolio for crp/clf/admin — every SHG's loans,
+  /// not just one. `loans_select_shg_or_staff` (RLS) already grants
+  /// `is_staff()` an unconditional, unscoped SELECT — this was previously
+  /// never called from anywhere, leaving staff with no working UI despite
+  /// the backend already supporting it (see loans_home_page.dart's and
+  /// loan_approval_page.dart's doc comments for the full history). Joins
+  /// `shgs(name)` in addition to `profiles(name)` so the UI can tell loans
+  /// from different SHGs apart in one flat list.
+  Future<List<Loan>> fetchAllForStaff() async {
+    if (!_live) return _demoLoans();
+    final rows = await _client.from('loans').select('*, profiles(name), shgs(name)').order('created_at', ascending: false);
+    return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
   Future<List<Loan>> fetchForMember(String? memberId) async {
     // Demo mode has no real per-member session, so `_mockLoans()` is scoped
     // to the requested member's own loans (resolved to a name since the mock

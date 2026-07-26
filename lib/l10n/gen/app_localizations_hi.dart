@@ -614,6 +614,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get crpDashboardAttendanceProxyTrend => 'उपस्थिति के आधार पर अनुमान';
 
   @override
+  String get crpDashboardTrainingCompletionLabel => 'प्रशिक्षण पूर्णता';
+
+  @override
+  String get crpDashboardTrainingCompletionTrend => 'प्लेटफ़ॉर्म-व्यापी औसत';
+
+  @override
   String get crpDashboardShgsUnderMonitoringTitle => 'निगरानी में ली गई SHGs';
 
   @override
@@ -1320,6 +1326,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get meetingsHomeDefaultTitle => 'बैठक';
 
   @override
+  String meetingsHomeShgName(String shg) {
+    return 'SHG: $shg';
+  }
+
+  @override
   String get meetingDetailTitle => 'बैठक विवरण';
 
   @override
@@ -1372,6 +1383,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get meetingAttendanceTitle => 'उपस्थिति';
+
+  @override
+  String meetingAttendanceShgName(String shg) {
+    return 'SHG: $shg';
+  }
 
   @override
   String get meetingAttendanceNoMeetings =>
@@ -1637,6 +1653,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get savingsHomeMySavingsLabel => 'मेरी बचत';
 
   @override
+  String get savingsHomePlatformSavingsLabel => 'प्लेटफ़ॉर्म बचत';
+
+  @override
   String savingsHomeEntriesCount(int count) {
     return '$count एंट्री';
   }
@@ -1669,10 +1688,18 @@ class AppLocalizationsHi extends AppLocalizations {
   String get savingsHomeRecentEntriesTitle => 'हाल की एंट्रियां';
 
   @override
+  String get savingsHomeAllShgsEntriesTitle => 'हाल की एंट्रियां (सभी SHG)';
+
+  @override
   String get savingsHomeViewAllAction => 'सभी देखें';
 
   @override
   String get savingsHomeEmpty => 'अभी तक कोई बचत एंट्री नहीं है';
+
+  @override
+  String savingsHomeDateModeShg(String date, String mode, String shg) {
+    return '$date · $mode · $shg';
+  }
 
   @override
   String get savingsLedgerTitle => 'बचत लेजर';
@@ -1685,6 +1712,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get savingsLedgerEmpty => 'अभी तक कोई बचत एंट्री दर्ज नहीं की गई';
+
+  @override
+  String savingsLedgerShgName(String shg) {
+    return 'SHG: $shg';
+  }
 
   @override
   String get savingsLedgerVerifyError =>
@@ -2595,6 +2627,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get loansHomeMyOutstandingLabel => 'मेरी बकाया राशि';
 
   @override
+  String get loansHomePlatformOutstandingLabel => 'प्लेटफ़ॉर्म की बकाया राशि';
+
+  @override
   String loansHomeLoanCount(int count) {
     return '$count ऋण';
   }
@@ -2632,6 +2667,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get loansHomeAllLoansTitle => 'सभी ऋण';
 
   @override
+  String get loansHomeAllShgsLoansTitle => 'सभी ऋण (सभी SHG)';
+
+  @override
   String get loansHomeMyLoansTitle => 'मेरे ऋण';
 
   @override
@@ -2640,6 +2678,11 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String loansHomeOutstandingOfAmount(String outstanding, String amount) {
     return '₹$amount में से ₹$outstanding बकाया';
+  }
+
+  @override
+  String loansHomePurposeAndShg(String purpose, String shg) {
+    return '$purpose · $shg';
   }
 
   @override
@@ -2667,6 +2710,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get loanApprovalEmptyMessage => 'कोई लंबित ऋण आवेदन नहीं है';
+
+  @override
+  String loanApprovalShgName(String shg) {
+    return 'SHG: $shg';
+  }
 
   @override
   String loanApprovalTenureMonths(int months) {
@@ -2943,6 +2991,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get livelihoodHomeEmpty => 'अभी तक कोई आजीविका गतिविधि नहीं';
 
   @override
+  String livelihoodHomeMemberAndShg(String member, String shg) {
+    return '$member · $shg';
+  }
+
+  @override
   String livelihoodHomeNetAmount(String amount) {
     return 'नेट $amount';
   }
@@ -3196,6 +3249,11 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String financialLedgerEmpty(String title) {
     return 'अभी तक कोई $title एंट्री नहीं';
+  }
+
+  @override
+  String financialLedgerShgName(String shg) {
+    return 'SHG: $shg';
   }
 
   @override

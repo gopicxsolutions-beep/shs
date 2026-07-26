@@ -48,6 +48,19 @@ class SavingsRepository {
     return (rows as List).map((r) => SavingsEntry.fromMap(r as Map<String, dynamic>)).toList();
   }
 
+  /// Platform-wide savings feed for crp/clf/admin — every SHG's entries,
+  /// not just one. `savings_select_shg_or_staff` (RLS) already grants
+  /// `is_staff()` an unconditional, unscoped SELECT, and `savings_update_
+  /// leader_or_staff`'s `with check` does the same for verification —
+  /// mirrors LoanRepository.fetchAllForStaff()'s round-168 fix exactly.
+  /// Joins `shgs(name)` in addition to `profiles(name)` so the UI can tell
+  /// entries from different SHGs apart in one flat list.
+  Future<List<SavingsEntry>> fetchAllForStaff() async {
+    if (!_live) return [..._locallyAdded.reversed, ..._mockEntries()];
+    final rows = await _client.from('savings_entries').select('*, profiles(name), shgs(name)').order('entry_date', ascending: false);
+    return (rows as List).map((r) => SavingsEntry.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
   Future<List<SavingsEntry>> fetchForMember(String? memberId) async {
     // Demo mode has no real per-member session, so `_mockEntries()` is
     // scoped to the requested member's own entries (resolved to a name

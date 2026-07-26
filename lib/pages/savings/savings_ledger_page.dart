@@ -24,7 +24,11 @@ import '../../widgets/list_row.dart';
 /// refresh). In demo mode it falls back to a one-shot mock fetch, since a
 /// realtime channel has nothing to subscribe to without a live project.
 class SavingsLedgerPage extends StatefulWidget {
-  const SavingsLedgerPage({super.key});
+  // Injectable so the platform-wide staff queue (live-mode-only) can be
+  // widget-tested against canned cross-SHG data instead of a real network
+  // call — mirrors LoanApprovalPage's round-168 `repository` seam.
+  final SavingsRepository? repository;
+  const SavingsLedgerPage({super.key, this.repository});
 
   @override
   State<SavingsLedgerPage> createState() => _SavingsLedgerPageState();
@@ -56,14 +60,18 @@ class _SavingsLedgerPageState extends State<SavingsLedgerPage> {
     super.initState();
     final shgId = context.read<AppState>().profile?.shgId;
     if (SupabaseService.isConfigured && shgId != null) {
+      // `.catchError` swallows a failed roster fetch on purpose — names just
+      // fall back to the stream's own 'Member' placeholder (today's pre-fix
+      // behavior) rather than surfacing a second error state on top of
+      // whatever the ledger's own StreamBuilder/AppAsyncBuilder already
+      // shows for a real failure. Without this, a rejected Future here is an
+      // *unhandled* zone error, not a silently-ignored one — harmless in a
+      // real app (Flutter's root zone just logs it) but exactly the kind of
+      // thing `flutter test` escalates into a hard test failure, caught
+      // while writing this page's first-ever widget test.
       ShgRepository().fetchMembers(shgId).then((members) {
         if (mounted) setState(() => _memberNames = {for (final m in members) m.id: m.name});
-      });
-      // Deliberately no .catchError: a failed roster fetch just means names
-      // fall back to the stream's own 'Member' placeholder (today's
-      // pre-fix behavior) rather than surfacing a second error state on top
-      // of whatever the ledger's own StreamBuilder/AppAsyncBuilder already
-      // shows for a real failure.
+      }).catchError((_) {});
     }
   }
 
@@ -80,26 +88,24 @@ class _SavingsLedgerPageState extends State<SavingsLedgerPage> {
     // otherwise get their live subscription silently torn down and rebuilt
     // for no reason. `.select` only rebuilds when shgId itself changes.
     final shgId = context.select<AppState, String?>((s) => s.profile?.shgId);
-    final repo = SavingsRepository();
+    final repo = widget.repository ?? SavingsRepository();
     final live = SupabaseService.isConfigured && shgId != null;
     final l10n = AppLocalizations.of(context)!;
 
     // This route is already router-restricted to leader/staff (see
-    // `_roleRestrictedPrefixes` in router.dart), so anyone here passed that
-    // gate — but crp/clf/admin still have no `profile.shgId` of their own
-    // (platform-wide roles, never SHG-scoped), and `fetchForShg(null)`
-    // silently resolves to an empty list, rendering as an indistinguishable
-    // "no entries yet" instead of explaining the real reason. Checked
-    // against `isConfigured`, not just `shgId`, because demo mode's
-    // simulated identity leaves `profile` (and so `shgId`) null for every
-    // previewed role too, and must keep showing its own intentional mock
-    // ledger unaffected by this guard.
-    if (SupabaseService.isConfigured && shgId == null) {
-      return Scaffold(
-        appBar: PageHeader(title: l10n.savingsLedgerTitle),
-        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
-      );
-    }
+    // `_roleRestrictedPrefixes` in router.dart) — crp/clf/admin have no
+    // `profile.shgId` of their own (platform-wide roles, never SHG-scoped).
+    // `savings_select_shg_or_staff`/`savings_update_leader_or_staff` (RLS)
+    // have always granted `is_staff()` unrestricted platform-wide read/
+    // verify — round 168 (Loans) established the fix template this mirrors:
+    // a real cross-SHG queue instead of the honest-but-dead-end message
+    // round 147 shipped. No realtime stream for the platform-wide branch
+    // (Supabase Realtime's `.stream()` API needs a specific row filter, and
+    // a one-shot fetch — the same choice `loan_approval_page.dart` made —
+    // is enough for an oversight queue). `isConfigured` still excludes demo
+    // mode, whose simulated identity leaves `shgId` null for every
+    // previewed role too.
+    final isPlatformWide = SupabaseService.isConfigured && shgId == null;
 
     return Scaffold(
       appBar: PageHeader(
@@ -119,12 +125,12 @@ class _SavingsLedgerPageState extends State<SavingsLedgerPage> {
                   final l10n = AppLocalizations.of(context);
                   return Center(child: Text(l10n?.asyncErrorGeneric ?? 'Something went wrong. Please try again.', style: AppTheme.sans(13, color: Neutral.c500)));
                 }
-                return _LedgerList(entries: snapshot.data ?? const [], repo: repo, memberNames: _memberNames);
+                return _LedgerList(entries: snapshot.data ?? const [], repo: repo, memberNames: _memberNames, isPlatformWide: false);
               },
             )
           : AppAsyncBuilder<List<SavingsEntry>>(
-              future: () => repo.fetchForShg(shgId),
-              builder: (context, entries) => _LedgerList(entries: entries, repo: repo, memberNames: _memberNames),
+              future: () => isPlatformWide ? repo.fetchAllForStaff() : repo.fetchForShg(shgId),
+              builder: (context, entries) => _LedgerList(entries: entries, repo: repo, memberNames: _memberNames, isPlatformWide: isPlatformWide),
             ),
     );
   }
@@ -134,7 +140,8 @@ class _LedgerList extends StatefulWidget {
   final List<SavingsEntry> entries;
   final SavingsRepository repo;
   final Map<String, String> memberNames;
-  const _LedgerList({required this.entries, required this.repo, required this.memberNames});
+  final bool isPlatformWide;
+  const _LedgerList({required this.entries, required this.repo, required this.memberNames, required this.isPlatformWide});
 
   @override
   State<_LedgerList> createState() => _LedgerListState();
@@ -165,7 +172,9 @@ class _LedgerListState extends State<_LedgerList> {
             child: AppListRow(
               leading: AppAvatar(name: memberName, size: 36),
               title: memberName,
-              subtitle: '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.mode} · ${e.frequency}',
+              subtitle: widget.isPlatformWide && e.shgName != null
+                  ? '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.mode} · ${e.frequency} · ${l10n.savingsLedgerShgName(e.shgName!)}'
+                  : '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.mode} · ${e.frequency}',
               trailing: e.status == 'pending'
                   ? SizedBox(
                       height: 30,

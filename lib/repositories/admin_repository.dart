@@ -131,6 +131,45 @@ class AdminRepository {
     );
   }
 
+  /// Average training-completion percentage platform-wide, split out of
+  /// [fetchDashboardStats] specifically so a CRP/CLF dashboard can show
+  /// just this one stat — round 135's SRS.md gap note found `is_staff()`
+  /// already made this genuinely staff-wide (not admin-only) at the RLS
+  /// layer, but the only call site was `fetchDashboardStats`, which
+  /// non-trivially bundles this together with an admin-flavored
+  /// pendingReviewCount/recentActivity feed. Building "just the stat" is
+  /// what that round explicitly deferred; this is that follow-up.
+  ///
+  /// Demo mode routes through `TrainingRepository` itself (not the static
+  /// mock catalog directly) so it reflects whatever that repository's own
+  /// mutable demo-mode state currently says
+  /// (`TrainingRepository._locallyCertified` via `markCertified()`) —
+  /// reading the const mock list directly would go stale the instant a
+  /// demo user actually certified a course.
+  ///
+  /// Live mode: `is_staff()` lets this bypass `course_progress_select_
+  /// related`'s normal member-scoped read (supabase/migrations/0037_
+  /// select_scope_overexposure_fix.sql). The denominator is every
+  /// (member × course) pair that could exist, not just the course_progress
+  /// rows that already do — a member who has never opened a single course
+  /// has 0% completion, not "excluded from the average entirely".
+  /// Averaging only over existing rows let a handful of early adopters
+  /// who'd each finished one course out of a 500-member platform read as
+  /// ~100% adoption instead of the true fraction-of-a-percent. `count()`
+  /// below issues a HEAD request (no rows returned) rather than an
+  /// expensive full cross-join.
+  Future<int> fetchTrainingCompletionPct() async {
+    if (!_live) {
+      final progress = await TrainingRepository().fetchMyProgress(null);
+      return progress.isEmpty ? 0 : (progress.values.map((c) => c.progress).reduce((a, b) => a + b) / progress.length).round();
+    }
+    final progressRows = await _client.from('course_progress').select('progress');
+    final progressSum = (progressRows as List).fold<int>(0, (sum, r) => sum + ((r as Map<String, dynamic>)['progress'] as int));
+    final totalMembers = await _client.from('profiles').count().eq('role', 'member');
+    final totalCourses = await _client.from('training_courses').count();
+    return trainingCompletionPctFrom(progressSum: progressSum, totalMembers: totalMembers, totalCourses: totalCourses);
+  }
+
   /// Backs the Admin dashboard's "Training Completion" stat, "pending
   /// verification" banner, and "Recent System Activity" feed — all three
   /// used to be static constants in `admin_dashboard.dart` that never
@@ -150,17 +189,7 @@ class AdminRepository {
   /// showed one fewer actionable row than this count claimed.
   Future<AdminDashboardStats> fetchDashboardStats(String? viewerId) async {
     if (!_live) {
-      // Routed through TrainingRepository/SchemeRepository themselves —
-      // not the static mock catalogs directly — so this reflects whatever
-      // those repositories' own mutable demo-mode state currently says
-      // (TrainingRepository._locallyCertified via markCertified(),
-      // SchemeRepository._locallyApplied/_locallyDecided via
-      // apply()/decideApplication()). Reading the const mock lists directly
-      // made this go stale the instant a demo user actually certified a
-      // course or a staff account actually decided an application — the
-      // dashboard kept showing the session's starting numbers forever.
-      final progress = await TrainingRepository().fetchMyProgress(null);
-      final trainingCompletionPct = progress.isEmpty ? 0 : (progress.values.map((c) => c.progress).reduce((a, b) => a + b) / progress.length).round();
+      final trainingCompletionPct = await fetchTrainingCompletionPct();
       final pendingApps = await SchemeRepository().fetchPendingApplications();
       final pendingReviewCount = pendingApps.where((a) => a.memberId != viewerId).length;
 
@@ -175,24 +204,7 @@ class AdminRepository {
       return AdminDashboardStats(trainingCompletionPct: trainingCompletionPct, pendingReviewCount: pendingReviewCount, recentActivity: activity.take(5).toList());
     }
 
-    // Average completion across every member/course pair platform-wide —
-    // `is_staff()` lets this bypass `course_progress_select_related`'s
-    // normal member-scoped read (supabase/migrations/0037_select_scope_
-    // overexposure_fix.sql).
-    //
-    // The denominator is every (member × course) pair that could exist, not
-    // just the course_progress rows that already do — a member who has
-    // never opened a single course has 0% completion, not "excluded from
-    // the average entirely". Averaging only over existing rows let a
-    // handful of early adopters who'd each finished one course out of a
-    // 500-member platform read as ~100% adoption instead of the true
-    // fraction-of-a-percent. `count()` below issues a HEAD request (no rows
-    // returned) rather than an expensive full cross-join.
-    final progressRows = await _client.from('course_progress').select('progress');
-    final progressSum = (progressRows as List).fold<int>(0, (sum, r) => sum + ((r as Map<String, dynamic>)['progress'] as int));
-    final totalMembers = await _client.from('profiles').count().eq('role', 'member');
-    final totalCourses = await _client.from('training_courses').count();
-    final trainingCompletionPct = trainingCompletionPctFrom(progressSum: progressSum, totalMembers: totalMembers, totalCourses: totalCourses);
+    final trainingCompletionPct = await fetchTrainingCompletionPct();
 
     // Same staff-only queue SchemeApplicationsReviewPage already surfaces —
     // just the count, not the full joined row set that page needs. Also

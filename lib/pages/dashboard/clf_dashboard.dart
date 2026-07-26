@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/analytics.dart';
 import '../../models/report.dart';
+import '../../repositories/admin_repository.dart';
 import '../../repositories/analytics_repository.dart';
 import '../../repositories/report_repository.dart';
 import '../../routes/paths.dart';
@@ -17,18 +18,23 @@ import '../../widgets/stat_card.dart';
 class _ClfDashboardData {
   final PlatformKpis kpis;
   final List<VillageShgGroup> villages;
-  const _ClfDashboardData({required this.kpis, required this.villages});
+  final int trainingCompletionPct;
+  const _ClfDashboardData({required this.kpis, required this.villages, required this.trainingCompletionPct});
 }
 
 class CLFDashboard extends StatelessWidget {
   const CLFDashboard({super.key});
 
+  // Round 135's SRS.md gap note: same fix as `crp_dashboard.dart` — CLF
+  // shares CRP's `is_staff()` surface almost everywhere (see that file's
+  // doc comment), and this stat is no exception.
   Future<_ClfDashboardData> _load() async {
     final results = await Future.wait([
       AnalyticsRepository().fetchPlatformKpis(),
       ReportRepository().fetchVillageWiseShgs(),
+      AdminRepository().fetchTrainingCompletionPct(),
     ]);
-    return _ClfDashboardData(kpis: results[0] as PlatformKpis, villages: results[1] as List<VillageShgGroup>);
+    return _ClfDashboardData(kpis: results[0] as PlatformKpis, villages: results[1] as List<VillageShgGroup>, trainingCompletionPct: results[2] as int);
   }
 
   @override
@@ -142,6 +148,22 @@ class _ClfDashboardBody extends StatelessWidget {
                 ),
               ),
             ]),
+          ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SectionHeader(title: l10n.crpDashboardTrainingCompletionLabel),
+            AppCard(
+              child: Row(children: [
+                Container(width: 44, height: 44, decoration: BoxDecoration(color: Brand.c50, borderRadius: BorderRadius.circular(16)), child: Icon(Icons.school_rounded, color: Brand.c600, size: 20)),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(l10n.crpDashboardTrainingCompletionTrend, style: AppTheme.sans(12, color: Neutral.c500)),
+                  Text('${data.trainingCompletionPct}%', style: AppTheme.display(20)),
+                ])),
+              ]),
+            ),
           ]),
         ),
         Padding(

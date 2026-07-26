@@ -41,6 +41,10 @@ class LivelihoodActivity {
   final num investment;
   final num revenue;
   final String status; // planned | active | completed
+  // Only populated when the query joins `shgs(name)` (today: only
+  // LivelihoodRepository.fetchAllForStaff()'s platform-wide fetch) — null
+  // everywhere else, including demo mode. Mirrors Loan.shgName.
+  final String? shgName;
 
   const LivelihoodActivity({
     required this.id,
@@ -51,6 +55,7 @@ class LivelihoodActivity {
     required this.investment,
     required this.revenue,
     required this.status,
+    this.shgName,
   });
 
   num get profit => revenue - investment;
@@ -64,5 +69,6 @@ class LivelihoodActivity {
         investment: map['investment'] as num? ?? 0,
         revenue: map['revenue'] as num? ?? 0,
         status: map['status'] as String,
+        shgName: (map['shgs'] as Map<String, dynamic>?)?['name'] as String?,
       );
 }

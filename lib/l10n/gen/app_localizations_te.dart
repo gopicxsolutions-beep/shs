@@ -622,6 +622,12 @@ class AppLocalizationsTe extends AppLocalizations {
   String get crpDashboardAttendanceProxyTrend => 'హాజరు ఆధారంగా అంచనా';
 
   @override
+  String get crpDashboardTrainingCompletionLabel => 'శిక్షణ పూర్తి';
+
+  @override
+  String get crpDashboardTrainingCompletionTrend => 'ప్లాట్‌ఫారమ్-వ్యాప్త సగటు';
+
+  @override
   String get crpDashboardShgsUnderMonitoringTitle => 'పర్యవేక్షణలో ఉన్న SHGలు';
 
   @override
@@ -1345,6 +1351,11 @@ class AppLocalizationsTe extends AppLocalizations {
   String get meetingsHomeDefaultTitle => 'సమావేశం';
 
   @override
+  String meetingsHomeShgName(String shg) {
+    return 'SHG: $shg';
+  }
+
+  @override
   String get meetingDetailTitle => 'సమావేశ వివరాలు';
 
   @override
@@ -1397,6 +1408,11 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get meetingAttendanceTitle => 'హాజరు';
+
+  @override
+  String meetingAttendanceShgName(String shg) {
+    return 'SHG: $shg';
+  }
 
   @override
   String get meetingAttendanceNoMeetings =>
@@ -1662,6 +1678,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get savingsHomeMySavingsLabel => 'నా పొదుపు';
 
   @override
+  String get savingsHomePlatformSavingsLabel => 'ప్లాట్‌ఫారమ్ పొదుపు';
+
+  @override
   String savingsHomeEntriesCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1700,10 +1719,18 @@ class AppLocalizationsTe extends AppLocalizations {
   String get savingsHomeRecentEntriesTitle => 'ఇటీవలి ఎంట్రీలు';
 
   @override
+  String get savingsHomeAllShgsEntriesTitle => 'ఇటీవలి ఎంట్రీలు (అన్ని SHGలు)';
+
+  @override
   String get savingsHomeViewAllAction => 'అన్నీ చూడండి';
 
   @override
   String get savingsHomeEmpty => 'ఇంకా పొదుపు ఎంట్రీలు లేవు';
+
+  @override
+  String savingsHomeDateModeShg(String date, String mode, String shg) {
+    return '$date · $mode · $shg';
+  }
 
   @override
   String get savingsLedgerTitle => 'పొదుపు లెడ్జర్';
@@ -1716,6 +1743,11 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get savingsLedgerEmpty => 'ఇంకా ఏ పొదుపు ఎంట్రీలు నమోదు కాలేదు';
+
+  @override
+  String savingsLedgerShgName(String shg) {
+    return 'SHG: $shg';
+  }
 
   @override
   String get savingsLedgerVerifyError =>
@@ -2638,6 +2670,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get loansHomeMyOutstandingLabel => 'నా బకాయి';
 
   @override
+  String get loansHomePlatformOutstandingLabel => 'ప్లాట్‌ఫారమ్ బకాయి';
+
+  @override
   String loansHomeLoanCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -2681,6 +2716,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get loansHomeAllLoansTitle => 'అన్ని రుణాలు';
 
   @override
+  String get loansHomeAllShgsLoansTitle => 'అన్ని రుణాలు (అన్ని SHGలు)';
+
+  @override
   String get loansHomeMyLoansTitle => 'నా రుణాలు';
 
   @override
@@ -2689,6 +2727,11 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String loansHomeOutstandingOfAmount(String outstanding, String amount) {
     return '₹$amountలో ₹$outstanding బాకీ ఉంది';
+  }
+
+  @override
+  String loansHomePurposeAndShg(String purpose, String shg) {
+    return '$purpose · $shg';
   }
 
   @override
@@ -2716,6 +2759,11 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get loanApprovalEmptyMessage => 'పెండింగ్‌లో రుణ దరఖాస్తులు లేవు';
+
+  @override
+  String loanApprovalShgName(String shg) {
+    return 'SHG: $shg';
+  }
 
   @override
   String loanApprovalTenureMonths(int months) {
@@ -3011,6 +3059,11 @@ class AppLocalizationsTe extends AppLocalizations {
   String get livelihoodHomeEmpty => 'ఇంకా జీవనోపాధి కార్యకలాపాలు లేవు';
 
   @override
+  String livelihoodHomeMemberAndShg(String member, String shg) {
+    return '$member · $shg';
+  }
+
+  @override
   String livelihoodHomeNetAmount(String amount) {
     return 'నికర $amount';
   }
@@ -3268,6 +3321,11 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String financialLedgerEmpty(String title) {
     return 'ఇంకా $title ఎంట్రీలు లేవు';
+  }
+
+  @override
+  String financialLedgerShgName(String shg) {
+    return 'SHG: $shg';
   }
 
   @override

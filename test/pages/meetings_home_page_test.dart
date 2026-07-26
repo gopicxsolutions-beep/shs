@@ -3,10 +3,50 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shg_saathi/l10n/gen/app_localizations.dart';
+import 'package:shg_saathi/models/meeting.dart';
+import 'package:shg_saathi/models/profile.dart';
 import 'package:shg_saathi/pages/meetings/meetings_home_page.dart';
+import 'package:shg_saathi/repositories/meeting_repository.dart';
+import 'package:shg_saathi/services/auth_service.dart';
 import 'package:shg_saathi/services/notification_service.dart';
+import 'package:shg_saathi/services/profile_repository.dart';
+import 'package:shg_saathi/services/supabase_service.dart';
 import 'package:shg_saathi/state/app_state.dart';
+
+class _FixedProfileRepository extends ProfileRepository {
+  _FixedProfileRepository(this._profile);
+  final Profile? _profile;
+  @override
+  Future<Profile?> fetchMyProfile() async => _profile;
+}
+
+class _FakeAuthServiceWithSession extends AuthService {
+  @override
+  Session? get currentSession => Session(
+        accessToken: 'token',
+        tokenType: 'bearer',
+        refreshToken: 'refresh',
+        user: User(id: 'u1', appMetadata: const {}, userMetadata: const {}, aud: 'authenticated', createdAt: DateTime(2026).toIso8601String()),
+      );
+
+  @override
+  Stream<AuthState> get onAuthStateChange => const Stream.empty();
+}
+
+/// Canned cross-SHG data — avoids a real network call in a test environment
+/// with no live backend, mirroring loans_home_page_test.dart's
+/// `_FakePlatformWideLoanRepository`.
+class _FakePlatformWideMeetingRepository extends MeetingRepository {
+  @override
+  Future<List<Meeting>> fetchAllForStaff() async => [
+        Meeting(id: 'm-1', shgId: 'shg-1', date: DateTime.now().subtract(const Duration(days: 10)), venue: 'Community Hall', agenda: 'Monthly review', status: 'upcoming', shgName: 'Jyothi SHG'),
+        Meeting(id: 'm-2', shgId: 'shg-2', date: DateTime.now().subtract(const Duration(days: 20)), venue: 'Panchayat Office', agenda: 'Loan discussion', status: 'upcoming', shgName: 'Sneha SHG'),
+      ];
+  @override
+  Future<List<Meeting>> fetchForShg(String? shgId) async => const [];
+}
 
 /// Records calls instead of touching a platform channel — see
 /// `LocalNotificationService`'s doc comment.
@@ -156,6 +196,77 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(fake.scheduled.length + fake.cancelled.length, greaterThan(0));
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  // Round 168's fix template (Loans, Savings, Livelihood, Financial Ledger)
+  // applied to Meetings: crp/clf/admin (no `shgId` of their own) used to see
+  // a `commonStaffNoShgMessage` dead end — now a real platform-wide feed,
+  // since `meetings_select_shg_or_staff` already grants `is_staff()`
+  // unrestricted platform-wide read.
+  group('platform-wide staff feed (round 168)', () {
+    setUp(() {
+      SupabaseService.isConfigured = true;
+    });
+    tearDown(() {
+      SupabaseService.isConfigured = false;
+    });
+
+    for (final staffRole in ['crp', 'clf', 'admin']) {
+      testWidgets('a $staffRole account with no linked SHG sees a real cross-SHG feed, not the old dead-end message, and no Schedule tile', (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final profile = Profile(id: 'staff-$staffRole', name: 'QA $staffRole', role: staffRole, shgId: null);
+        final appState = AppState(
+          profileRepository: _FixedProfileRepository(profile),
+          authService: _FakeAuthServiceWithSession(),
+        );
+        await appState.init();
+        final fake = _FakeNotificationService();
+        await tester.pumpWidget(
+          ChangeNotifierProvider<AppState>.value(
+            value: appState,
+            child: MaterialApp(
+              home: MeetingsHomePage(notificationService: fake, repository: _FakePlatformWideMeetingRepository()),
+              localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
+              supportedLocales: AppLocalizations.supportedLocales,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text("Your role isn't linked to a specific SHG — this view doesn't apply"), findsNothing);
+        expect(find.textContaining('SHG: Jyothi SHG'), findsOneWidget, reason: 'each row must show which SHG it belongs to');
+        expect(find.textContaining('SHG: Sneha SHG'), findsOneWidget);
+        expect(find.byTooltip('Schedule meeting'), findsNothing, reason: 'there is no SHG to schedule a platform-wide meeting against');
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('a leader account with a real linked SHG sees her own SHG-scoped feed and a working Schedule tile, no SHG tags', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      const profile = Profile(id: 'leader-1', name: 'QA Leader', role: 'leader', shgId: 'shg-1');
+      final appState = AppState(
+        profileRepository: _FixedProfileRepository(profile),
+        authService: _FakeAuthServiceWithSession(),
+      );
+      await appState.init();
+      final fake = _FakeNotificationService();
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppState>.value(
+          value: appState,
+          child: MaterialApp(
+            home: MeetingsHomePage(notificationService: fake, repository: _FakePlatformWideMeetingRepository()),
+            localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text("Your role isn't linked to a specific SHG — this view doesn't apply"), findsNothing);
+      expect(find.textContaining('SHG:'), findsNothing, reason: 'a leader only ever sees her own SHG, so the tag would be redundant noise');
+      expect(find.byTooltip('Schedule meeting'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

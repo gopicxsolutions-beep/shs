@@ -5,10 +5,10 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shg_saathi/l10n/gen/app_localizations.dart';
-import 'package:shg_saathi/models/loan.dart';
+import 'package:shg_saathi/models/livelihood.dart';
 import 'package:shg_saathi/models/profile.dart';
-import 'package:shg_saathi/pages/loans/loan_approval_page.dart';
-import 'package:shg_saathi/repositories/loan_repository.dart';
+import 'package:shg_saathi/pages/livelihood/livelihood_home_page.dart';
+import 'package:shg_saathi/repositories/livelihood_repository.dart';
 import 'package:shg_saathi/services/auth_service.dart';
 import 'package:shg_saathi/services/profile_repository.dart';
 import 'package:shg_saathi/services/supabase_service.dart';
@@ -34,36 +34,35 @@ class _FakeAuthServiceWithSession extends AuthService {
   Stream<AuthState> get onAuthStateChange => const Stream.empty();
 }
 
-/// Canned cross-SHG pending applications — avoids a real network call in a
-/// test environment with no live backend, mirroring
-/// `loans_home_page_test.dart`'s `_FakePlatformWideLoanRepository`.
-class _FakePlatformWidePendingRepository extends LoanRepository {
+/// Canned cross-SHG data — avoids a real network call in a test environment
+/// with no live backend, mirroring loans_home_page_test.dart's
+/// `_FakePlatformWideLoanRepository`.
+class _FakePlatformWideLivelihoodRepository extends LivelihoodRepository {
   @override
-  Future<List<Loan>> fetchAllForStaff() async => const [
-        Loan(id: 'pending-1', memberId: 'mem-a', memberName: 'Padma', purpose: 'Sewing machine', amount: 8000, outstanding: 8000, emi: 0, tenureMonths: 10, status: 'pending', shgName: 'Amara SHG'),
-        Loan(id: 'pending-2', memberId: 'mem-b', memberName: 'Saroja', purpose: 'Cattle feed', amount: 4000, outstanding: 4000, emi: 0, tenureMonths: 6, status: 'pending', shgName: 'Deepthi SHG'),
+  Future<List<LivelihoodActivity>> fetchAllForStaff() async => const [
+        LivelihoodActivity(id: 'act-1', memberId: 'mem-1', memberName: 'Test Member One', activityType: 'Dairy', investment: 1000, revenue: 1500, status: 'active', shgName: 'Jyothi SHG'),
+        LivelihoodActivity(id: 'act-2', memberId: 'mem-2', memberName: 'Test Member Two', activityType: 'Tailoring', investment: 500, revenue: 200, status: 'active', shgName: 'Sneha SHG'),
       ];
   @override
-  Future<List<Loan>> fetchForShg(String? shgId) async => const [];
+  Future<List<LivelihoodActivity>> fetchForMember(String? memberId) async => const [];
+  @override
+  Future<List<LivelihoodActivity>> fetchForShg(String? shgId) async => const [];
 }
 
-/// Regression coverage for round 146's fix on the second guard shape used
-/// across that round's nine pages: `LoanApprovalPage` is already router-
-/// restricted to leader/staff (`_roleRestrictedPrefixes` in router.dart),
-/// so its own guard doesn't need an `isLeaderOrStaff` check — just
-/// `isConfigured && shgId == null`. Round 168 replaced that guard's dead-end
-/// message with a real platform-wide pending-approval queue (see
-/// `LoanRepository.fetchAllForStaff()`); this file now proves that queue
-/// actually renders cross-SHG data, not just that the old message is gone.
+/// Round 168 (Loans/Savings) fix template applied to Livelihood: crp/clf/
+/// admin (no `shgId` of their own) used to see round-146-style honest
+/// "doesn't apply" message — now a real platform-wide activity feed, since
+/// `livelihood_select_shg_or_staff` already grants `is_staff()` unrestricted
+/// platform-wide read.
 void main() {
-  Future<void> boot(WidgetTester tester, AppState appState, {LoanRepository? repository}) async {
+  Future<void> boot(WidgetTester tester, AppState appState, {LivelihoodRepository? repository}) async {
     SharedPreferences.setMockInitialValues(const {});
     await appState.init();
     await tester.pumpWidget(
       ChangeNotifierProvider<AppState>.value(
         value: appState,
         child: MaterialApp(
-          home: LoanApprovalPage(repository: repository),
+          home: LivelihoodHomePage(repository: repository),
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
@@ -77,7 +76,7 @@ void main() {
     await tester.pump();
   }
 
-  group('live mode — staff-with-no-linked-SHG platform-wide queue (round 168)', () {
+  group('live mode — staff-with-no-linked-SHG platform-wide feed (round 168)', () {
     setUp(() {
       SupabaseService.isConfigured = true;
     });
@@ -86,36 +85,33 @@ void main() {
     });
 
     for (final staffRole in ['crp', 'clf', 'admin']) {
-      testWidgets('a $staffRole account with no linked SHG sees a real cross-SHG pending queue, not the old dead-end message', (tester) async {
+      testWidgets('a $staffRole account with no linked SHG sees a real cross-SHG feed, not the old dead-end message', (tester) async {
         final profile = Profile(id: 'staff-$staffRole', name: 'QA $staffRole', role: staffRole, shgId: null);
         final appState = AppState(
           profileRepository: _FixedProfileRepository(profile),
           authService: _FakeAuthServiceWithSession(),
         );
 
-        await boot(tester, appState, repository: _FakePlatformWidePendingRepository());
+        await boot(tester, appState, repository: _FakePlatformWideLivelihoodRepository());
 
         expect(find.text("Your role isn't linked to a specific SHG — this view doesn't apply"), findsNothing);
-        expect(find.text('Padma'), findsOneWidget);
-        expect(find.text('Saroja'), findsOneWidget);
-        expect(find.text('SHG: Amara SHG'), findsOneWidget, reason: 'a flat cross-SHG queue needs the SHG tagged per card to disambiguate applicants');
-        expect(find.text('SHG: Deepthi SHG'), findsOneWidget);
-        expect(find.text('Approve'), findsNWidgets(2));
+        expect(find.text('Test Member One · Jyothi SHG'), findsOneWidget, reason: 'each row must show which SHG it belongs to');
+        expect(find.text('Test Member Two · Sneha SHG'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
     }
 
-    testWidgets('a leader account with a real linked SHG sees her own SHG-scoped queue, not the platform-wide one (no SHG tag shown)', (tester) async {
+    testWidgets('a leader account with a real linked SHG sees plain member names, not SHG-tagged ones', (tester) async {
       const profile = Profile(id: 'leader-1', name: 'QA Leader', role: 'leader', shgId: 'shg-1');
       final appState = AppState(
         profileRepository: _FixedProfileRepository(profile),
         authService: _FakeAuthServiceWithSession(),
       );
 
-      await boot(tester, appState, repository: _FakePlatformWidePendingRepository());
+      await boot(tester, appState, repository: _FakePlatformWideLivelihoodRepository());
 
       expect(find.text("Your role isn't linked to a specific SHG — this view doesn't apply"), findsNothing);
-      expect(find.textContaining('SHG:'), findsNothing, reason: 'a leader only ever sees her own SHG, so the per-card SHG tag would be redundant noise, not shown');
+      expect(find.textContaining(' · '), findsNothing, reason: 'a leader only ever sees her own SHG, so the SHG tag would be redundant noise');
       expect(tester.takeException(), isNull);
     });
   });

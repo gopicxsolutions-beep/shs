@@ -21,34 +21,31 @@ import '../../widgets/section_header.dart';
 import '../../widgets/stat_card.dart';
 
 class SavingsHomePage extends StatelessWidget {
-  const SavingsHomePage({super.key});
+  // Injectable so the platform-wide staff portfolio (live-mode-only) can be
+  // widget-tested against canned cross-SHG data instead of a real network
+  // call — mirrors LoansHomePage's round-168 `repository` seam.
+  final SavingsRepository? repository;
+  const SavingsHomePage({super.key, this.repository});
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
     final isLeaderOrStaff = appState.user.role != Role.member;
-    final repo = SavingsRepository();
+    final repo = repository ?? SavingsRepository();
     final shgId = appState.profile?.shgId;
     final memberId = appState.profile?.id;
 
     // crp/clf/admin are platform-wide roles with no `profile.shgId` of their
-    // own — this whole page (stat cards, tile row, recent-entries list)
-    // resolves "which SHG" from that field, so without this guard a staff
-    // account fell through to a page that looked like a genuinely-empty SHG
-    // (₹0 group savings, 0 pending, "no entries yet") instead of an honest
-    // explanation that this per-SHG view simply doesn't apply to their role.
-    // Gated on `isConfigured` too: demo mode's simulated identity never
-    // populates `profile` for ANY previewed role (see LoansHomePage's own
-    // note on this), so `shgId` is null there for Leader/Member as well —
-    // without this check the guard would wrongly swallow demo mode's own
-    // intentional mock-data walkthrough for every role, not just live staff.
-    if (SupabaseService.isConfigured && isLeaderOrStaff && shgId == null) {
-      return Scaffold(
-        appBar: PageHeader(title: l10n.savingsHomeTitle),
-        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
-      );
-    }
+    // own. `savings_select_shg_or_staff`/`savings_update_leader_or_staff`
+    // (RLS) have always granted `is_staff()` unrestricted platform-wide
+    // read/verify — round 147 replaced the old silently-empty zero-state
+    // with an honest "doesn't apply to your role" message, but round 168
+    // (Loans) established the real fix template: surface the capability
+    // RLS already grants instead of explaining it away. `isConfigured`
+    // still excludes demo mode, whose simulated identity leaves `shgId`
+    // null for every previewed role, not just staff.
+    final isPlatformWideStaff = SupabaseService.isConfigured && isLeaderOrStaff && shgId == null;
 
     return Scaffold(
       appBar: PageHeader(
@@ -60,7 +57,7 @@ class SavingsHomePage extends StatelessWidget {
         ),
       ),
       body: AppAsyncBuilder<List<SavingsEntry>>(
-        future: () => isLeaderOrStaff ? repo.fetchForShg(shgId) : repo.fetchForMember(memberId),
+        future: () => isPlatformWideStaff ? repo.fetchAllForStaff() : (isLeaderOrStaff ? repo.fetchForShg(shgId) : repo.fetchForMember(memberId)),
         builder: (context, entries) {
           // Only verified entries count toward the confirmed total — a
           // pending entry is an unconfirmed self-report the SHG leader
@@ -74,7 +71,7 @@ class SavingsHomePage extends StatelessWidget {
               Row(children: [
                 Expanded(
                   child: StatCard(
-                    label: isLeaderOrStaff ? l10n.savingsHomeGroupSavingsLabel : l10n.savingsHomeMySavingsLabel,
+                    label: isPlatformWideStaff ? l10n.savingsHomePlatformSavingsLabel : (isLeaderOrStaff ? l10n.savingsHomeGroupSavingsLabel : l10n.savingsHomeMySavingsLabel),
                     value: '₹${NumberFormat('#,##,##0', 'en_IN').format(total)}',
                     tone: StatTone.brand,
                     trend: l10n.savingsHomeEntriesCount(entries.length),
@@ -109,7 +106,7 @@ class SavingsHomePage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               SectionHeader(
-                title: l10n.savingsHomeRecentEntriesTitle,
+                title: isPlatformWideStaff ? l10n.savingsHomeAllShgsEntriesTitle : l10n.savingsHomeRecentEntriesTitle,
                 action: l10n.savingsHomeViewAllAction,
                 onAction: () => context.go(isLeaderOrStaff ? Paths.savingsLedger : Paths.savingsHistory),
               ),
@@ -128,7 +125,9 @@ class SavingsHomePage extends StatelessWidget {
                           child: Icon(Icons.arrow_downward_rounded, size: 16, color: Brand.c600),
                         ),
                         title: isLeaderOrStaff ? e.memberName : l10n.savingsFrequencyEntryTitle(e.frequency),
-                        subtitle: '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.mode}',
+                        subtitle: isPlatformWideStaff && e.shgName != null
+                            ? l10n.savingsHomeDateModeShg(DateFormat('dd MMM yyyy').format(e.date), e.mode, e.shgName!)
+                            : '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.mode}',
                         trailing: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           mainAxisSize: MainAxisSize.min,

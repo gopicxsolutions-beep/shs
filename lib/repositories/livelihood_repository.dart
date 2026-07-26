@@ -33,6 +33,18 @@ class LivelihoodRepository {
     return (rows as List).map((r) => LivelihoodActivity.fromMap(r as Map<String, dynamic>)).toList();
   }
 
+  /// Platform-wide activity feed for crp/clf/admin — every SHG's activities,
+  /// not just one. `livelihood_select_shg_or_staff` (RLS) already grants
+  /// `is_staff()` an unconditional, unscoped SELECT — mirrors
+  /// LoanRepository.fetchAllForStaff()'s round-168 fix exactly. Joins
+  /// `shgs(name)` in addition to `profiles(name)` so the UI can tell
+  /// activities from different SHGs apart in one flat list.
+  Future<List<LivelihoodActivity>> fetchAllForStaff() async {
+    if (!_live) return _demoActivities();
+    final rows = await _client.from('livelihood_activities').select('*, profiles(name), shgs(name)').order('created_at', ascending: false);
+    return (rows as List).map((r) => LivelihoodActivity.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
   Future<List<LivelihoodActivity>> fetchForMember(String? memberId) async {
     // Demo mode has no real per-member session, so `_demoActivities()` is
     // scoped to the requested member's own activities (resolved to a name

@@ -318,12 +318,40 @@ not a staff/platform-wide role) reaching it directly, a narrower and much
 rarer edge case left as a noted-but-unfixed observation rather than
 expanded scope.
 
+**Fixed (2026-07-26, round 168): the underlying capability gap this note
+described is now closed for Savings — crp/clf/admin genuinely verify
+entries platform-wide, not just see an honest explanation that they
+can't.** Same fix template as §3.4's Loans note: `SavingsEntry` gained an
+optional `shgName`; `SavingsRepository.fetchAllForStaff()` is the new
+platform-wide fetch (`savings_select_shg_or_staff`/`savings_update_leader_
+or_staff` were already unconditionally `is_staff()`-granted, confirmed by
+re-reading the current policy text and, separately, live against the
+deployed project — see below). `savings_home_page.dart` shows a real
+"Platform Savings" stat and an "All SHGs" recent-entries list;
+`savings_ledger_page.dart` shows a real cross-SHG pending-verification
+queue (one-shot fetch, not the realtime stream the leader's own-SHG branch
+uses — the same choice `loan_approval_page.dart` made, since Supabase
+Realtime's `.stream()` API needs a specific row filter and an oversight
+queue doesn't need sub-second freshness). Each row/card is tagged with its
+SHG name. `Verify` itself needed no changes — already entry-scoped, not
+viewer's-SHG-scoped. While adding this page's first-ever widget test, also
+fixed a small, genuinely latent bug the new test surfaced: the ledger
+page's member-name-roster fetch in `initState()` had no `.catchError`, so a
+failed fetch was an *unhandled* Future rejection, not the silently-ignored
+fallback its own comment claimed — harmless in a real app (Flutter's root
+zone just logs it) but worth a one-line fix regardless. Live-verified
+against the real deployed project: a real crp profile's cross-SHG
+`select`/`update` on a `savings_entries` row it doesn't own succeeded (both
+inside a rolled-back transaction); a real cross-SHG leader's identical
+attempt returned 0 rows. **Still open**: the identical pattern in Meetings,
+Financial Ledger, and Livelihood — see those sections' own notes.
+
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-SAV-1 | Member (or leader/staff for a roster member) records a savings entry, always starting `pending` | Member, Leader, staff |
 | FR-SAV-2 | Member views own savings history and a running-balance statement (verified entries only) | Member |
 | FR-SAV-3 | SHG members share realtime read access to the group's savings ledger | Member, Leader |
-| FR-SAV-4 | Leader verifies a pending entry (flat status flip; self-verification permitted) — crp/clf/admin have RLS permission but no working UI path today; shown an honest explanation, not a broken page (see gap note above) | Leader (CRP/CLF/Admin planned) |
+| FR-SAV-4 | Leader verifies a pending entry from her own SHG's queue (flat status flip; self-verification permitted); CRP/CLF/Admin verify platform-wide across every SHG (since round 168) | Leader, CRP, CLF, Admin |
 | FR-SAV-5 | Member views a group savings report: per-member leaderboard and monthly trend, verified entries only (SHG transparency) — reached from Savings home's "Group" tile; leader/staff are routed to the ledger (FR-SAV-4) instead, not this report | Member |
 
 ### 3.4 Loans (`loans/`)
@@ -402,23 +430,67 @@ confirmed gap immediately and documenting one that needs a real design
 decision for a dedicated development pass.
 
 **Follow-up (2026-07-25, round 147): the *misleading-UI* half of the gap
-above is now fixed** — see the Savings gap note (§3.2) for the full
-nine-page fix. `loans_home_page.dart` and `loan_approval_page.dart` now show
-an honest "this per-SHG view doesn't apply to your role" message instead of
-the silently-empty zero/portfolio state, gated on `SupabaseService.isConfigured`
-so demo mode is unaffected. This does **not** close the gap described above
-— crp/clf/admin still cannot approve a loan or see a real portfolio through
-this UI; that still needs the genuine new capability (`fetchAllPending()`/
-portfolio method + a third UI branch) described here, which remains unbuilt.
+above was fixed** — see the Savings gap note (§3.2) for the full nine-page
+fix. `loans_home_page.dart` and `loan_approval_page.dart` showed an honest
+"this per-SHG view doesn't apply to your role" message instead of the
+silently-empty zero/portfolio state, gated on `SupabaseService.isConfigured`
+so demo mode was unaffected. That fix explicitly did **not** close the
+underlying capability gap — crp/clf/admin still couldn't approve a loan or
+see a real portfolio through this UI at that point.
+
+**Fixed (2026-07-26, round 168): the genuine capability itself is now
+built — the honest dead-end message above is gone, replaced with a real
+platform-wide portfolio and approval queue.** `LoanRepository.
+fetchAllForStaff()` is the new platform-wide fetch this gap note always said
+was missing — `select('*, profiles(name), shgs(name)')` with no `shg_id`
+filter, relying on the same `loans_select_shg_or_staff` `is_staff()` branch
+already confirmed live via `pg_policies`. `loans_home_page.dart` now shows a
+real "Platform Outstanding" stat, a real platform-wide pending count, and an
+"All Loans (All SHGs)" list (each row tagged with its SHG name, since a flat
+cross-SHG list needs that to disambiguate two members who might share a
+first name) whenever a crp/clf/admin account has no `shgId` of its own in
+live mode. `loan_approval_page.dart` does the same for the pending-approval
+queue, tagging each card with its SHG name.
+
+**The second, previously-open product question this gap note raised —
+"should any crp/clf/admin be able to approve any SHG's loan platform-wide?"
+— resolved to yes, because it already was.** `loans_update_leader_or_staff`'s
+`with check` clause (re-derived in migration `0023`, still current) is
+`public.is_staff() or (...)` — an unconditional, unscoped grant, not narrowed
+to the staff account's own SHG. Same for `loan_payments_insert_related`.
+Building a narrower "staff can only act on SHGs assigned to them" model
+would have been a real, separate feature (an assignment table that doesn't
+exist yet) contradicting RLS already deployed and relied upon elsewhere in
+this exact way (e.g. `AnalyticsRepository`'s cross-SHG reads) — so this
+round's fix surfaces the capability RLS already grants, rather than
+re-litigating it. `loan_detail_page.dart` and the approve/reject/
+record-payment code paths needed **no changes at all** — they were already
+loan-scoped, not viewer's-SHG-scoped, so they worked correctly for any loan
+ID reachable from the new platform-wide list the moment that list existed.
+
+**Live-verified against the real deployed project, not just reasoned about
+from the policy text.** Impersonated a real crp profile (`begin; set local
+role authenticated; set local request.jwt.claims ...`) and confirmed, inside
+a transaction rolled back afterward: `select count(*) from public.loans`
+returned 2 (both of the project's real loans, both belonging to a SHG this
+crp is not a member of), and `update ... where id = <the other SHG's loan>
+returning 1` genuinely affected 1 row — not a read of `pg_policies`, an
+actual cross-SHG write. Negative control in the same session: a real leader
+of a *different* SHG (not staff) querying/updating that same loan got 0 rows
+both times, confirming `is_staff()` — not some accidentally-broader
+condition — is what's granting the staff account's access. No fixtures
+created (reused existing rows); both checks rolled back, re-queried
+outside any transaction afterward to confirm the loan's `outstanding` was
+genuinely untouched.
 
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-LOAN-1 | Member applies for a loan (purpose, amount, tenure); starts `pending`, fully undisbursed | Member |
-| FR-LOAN-2 | Leader approves (setting EMI, disbursement date) or rejects a pending application from her own SHG's queue — crp/clf/admin have RLS permission but no working UI path to a meaningful queue today (see gap note above) | Leader (CRP/CLF/Admin planned) |
+| FR-LOAN-2 | Leader approves (setting EMI, disbursement date) or rejects a pending application — from her own SHG's queue (Leader), or platform-wide across every SHG (CRP/CLF/Admin, since round 168) | Leader, CRP, CLF, Admin |
 | FR-LOAN-3 | A leader cannot approve/reject her own loan application — enforced at the database layer, not just hidden in the UI | System |
 | FR-LOAN-4 | Member tracks her own loan(s): outstanding balance, EMI, status, payment history | Member |
-| FR-LOAN-5 | Non-member roles record a payment against a loan; balance decrement, overpayment rejection, and auto-close-on-zero happen atomically | Leader (staff RLS-ready, no UI path yet — see gap note above) |
-| FR-LOAN-6 | Leader views the group loan list with status badges; a platform-wide "portfolio" view for CRP/CLF/Admin is RLS-ready but not built (see gap note above) | Leader (CRP/CLF/Admin planned) |
+| FR-LOAN-5 | Non-member roles record a payment against a loan; balance decrement, overpayment rejection, and auto-close-on-zero happen atomically | Leader, CRP, CLF, Admin |
+| FR-LOAN-6 | Leader views her SHG's loan list with status badges; CRP/CLF/Admin view a platform-wide portfolio across every SHG, each row tagged with its SHG name (since round 168) | Leader, CRP, CLF, Admin |
 | FR-LOAN-7 | `overdue` status is modeled in schema and UI but has no automated trigger in the current codebase — documented as not-yet-implemented, not broken | — |
 
 ### 3.5 Financial Ledger (`financial/`)
@@ -443,11 +515,31 @@ even staff editing a mid-sequence entry would desync every later row's chained
 balance with no trace, which is exactly what this design prevents by
 omission).
 
+**Fixed (2026-07-26, round 168): crp/clf/admin (no `shgId` of their own) now
+see a real platform-wide feed across all four record types, same fix
+template as §3.3/§3.4/§3.7's Savings/Loans/Livelihood notes.** Round 147's
+nine-page sweep had already replaced this shared page's silently-empty
+zero-state with an honest "doesn't apply to your role" message, but left the
+underlying capability unbuilt (undocumented here at the time — an oversight
+this note corrects). `FinancialEntry` gained an optional `shgName`;
+`FinancialRepository.fetchAllForStaff(entryType)` is the new platform-wide
+fetch (`financial_ledger_select_shg_or_staff` was already unconditionally
+`is_staff()`-granted, live-confirmed: a real crp profile's cross-SHG select
+against a SHG it isn't a member of returned the real row count, inside a
+rolled-back transaction). **Needed one design decision the other three
+modules didn't**: `balance` is a per-SHG running total, so a flat cross-SHG
+list without a visible SHG tag would show the number jumping between
+unrelated SHGs' balances with no explanation — every row is tagged with its
+SHG name to make that expected, not confusing. The Add-entry button is
+hidden for the platform-wide view — not a new permission restriction (staff
+already had unconditional `is_staff()` insert rights), just that there's no
+"which SHG" picker for a platform-wide staff account to post against.
+
 | ID | Requirement | Roles |
 |---|---|---|
-| FR-FIN-1 | Leader posts a ledger entry (description, amount, credit/debit) to one of Cashbook/Ledger/Bank/Audit | Leader |
+| FR-FIN-1 | Leader posts a ledger entry (description, amount, credit/debit) to one of Cashbook/Ledger/Bank/Audit; CRP/CLF/Admin can post too (RLS `is_staff()`-unconditional) but have no SHG of their own to post against | Leader |
 | FR-FIN-2 | Running-balance computation and insert happen atomically per `(shg_id, entry_type)`, race-safe under concurrent postings | System |
-| FR-FIN-3 | All SHG members have read access to the ledger; no client path exists to edit or delete a posted entry | Member, Leader |
+| FR-FIN-3 | All SHG members have read access to the ledger; CRP/CLF/Admin see a platform-wide feed across every SHG, each row tagged with its SHG name (since round 168); no client path exists to edit or delete a posted entry | Member, Leader, CRP, CLF, Admin |
 
 ### 3.6 Meetings (`meetings/`)
 
@@ -493,11 +585,55 @@ meeting records is staff-only (hardened specifically because a leader could
 otherwise scrub an inconvenient meeting and cascade-delete its minutes and
 every member's attendance record via foreign-key cascade).
 
+**Fixed (2026-07-26, round 168): crp/clf/admin (no `shgId` of their own) now
+see a real platform-wide meeting feed and attendance picker, same fix
+template as §3.3/§3.4/§3.5/§3.7's Savings/Loans/Financial Ledger/Livelihood
+notes.** `Meeting` gained an optional `shgName`; `MeetingRepository.
+fetchAllForStaff()` is the new platform-wide fetch
+(`meetings_select_shg_or_staff` was already unconditionally `is_staff()`-
+granted). `meetings_home_page.dart` shows a real cross-SHG upcoming/past
+feed; `meeting_attendance_page.dart` shows a real cross-SHG meeting picker
+that a staff account can mark attendance for — each meeting/row tagged with
+its SHG name. Scheduling still needs a specific SHG to post against (no
+"which SHG" picker), so the Schedule tile/button is hidden for the
+platform-wide view, the same choice made for §3.5's Add-entry button — not
+a new restriction, since `meetings_write_leader_or_staff` already grants
+`is_staff()` unconditional insert rights, just nothing to post against yet.
+
+**Found and fixed a real latent bug while building this, previously
+unreachable and so invisible until now**: `meeting_attendance_page.dart`,
+`meeting_detail_page.dart`, and `meeting_mom_page.dart` all resolved a
+meeting's roster/attendance using the *viewer's own* `shgId`, not the
+*selected meeting's own* `shgId`. For a leader these always coincided (she
+could only ever reach her own SHG's meetings before this fix), so it was
+invisible — but the moment a platform-wide staff account can reach a real
+cross-SHG meeting (exactly what this round's fix enables), passing the
+viewer's `shgId` (`null` for staff) into `fetchAttendance`/`fetchRoster`
+would have silently returned an empty roster for a meeting that genuinely
+has one. Fixed all three call sites to use `meeting.shgId` instead — a
+strict correction for every role, not a platform-wide-only special case.
+
+**Live-verified against the real deployed project.** A real crp profile's
+cross-SHG `select` against `meetings`/`meeting_attendance` for a SHG it
+isn't a member of returned the real row counts (2 meetings, 3 attendance
+rows), and an `update` against one of those attendance rows genuinely
+affected 1 row — all inside a rolled-back transaction. Negative control: a
+real leader of a *different* SHG (not staff) got 0 rows on the identical
+select/update.
+
+**Correctly left unbuilt, not a gap**: `meeting_qr_page.dart` (member
+self-check-in) keeps its existing "doesn't apply to your role" message for
+crp/clf/admin, and that's the right permanent answer, not a stand-in for an
+unbuilt capability. Self-check-in is inherently personal — "mark myself
+present at my own SHG's meeting happening today" — and a platform-wide
+staff role has no "own SHG" to check into. Unlike the other four modules'
+gap, there is no genuine platform-wide capability to build here.
+
 | ID | Requirement | Roles |
 |---|---|---|
-| FR-MTG-1 | Leader schedules a meeting (date/time/venue/agenda) | Leader |
-| FR-MTG-2 | Any member self-checks-in (via QR gesture or a plain button — functionally identical) for whichever meeting is scheduled *today* | Member |
-| FR-MTG-3 | Leader marks/edits the attendance roster via per-row toggle | Leader |
+| FR-MTG-1 | Leader schedules a meeting (date/time/venue/agenda); CRP/CLF/Admin can too (RLS `is_staff()`-unconditional) but have no SHG of their own to post against | Leader |
+| FR-MTG-2 | Any member self-checks-in (via QR gesture or a plain button — functionally identical) for whichever meeting is scheduled *today* — inherently personal/SHG-scoped, correctly not extended to platform-wide staff | Member |
+| FR-MTG-3 | Leader marks/edits the attendance roster via per-row toggle for her own SHG; CRP/CLF/Admin do the same platform-wide across every SHG, via a cross-SHG picker (since round 168) | Leader, CRP, CLF, Admin |
 | FR-MTG-4 | "Has this meeting happened" is derived from date, not from `status` — `status` reaching `'completed'` is still not implemented — but a leader/staff can genuinely cancel a meeting, and a cancelled meeting is correctly excluded from every completed/attendance stat regardless of date | Leader, staff |
 | FR-MTG-5 | Leader/owner records Minutes of Meeting (append-only decisions) and action items, assignable to a specific SHG member via a roster picker, with per-owner toggle | Leader |
 | FR-MTG-6 | Meeting record deletion is staff-only, to protect minutes/attendance from cascade-loss | System |
@@ -514,6 +650,20 @@ specifically to prevent a teammate who can *see* the button (because reads
 are SHG-wide) from tapping it and hitting a silent RLS no-op that looks like a
 successful save. Progress updates overwrite revenue/status directly; there is
 no history of intermediate updates retained.
+
+**Fixed (2026-07-26, round 168): crp/clf/admin (no `shgId` of their own) now
+see a real platform-wide activity feed, same fix template as §3.3/§3.4's
+Loans/Savings notes.** Round 147's nine-page sweep had already replaced
+`livelihood_home_page.dart`'s silently-empty zero-state with an honest
+"doesn't apply to your role" message, but — like Loans/Savings — that left
+the underlying capability unbuilt. `LivelihoodActivity` gained an optional
+`shgName`; `LivelihoodRepository.fetchAllForStaff()` is the new
+platform-wide fetch (`livelihood_select_shg_or_staff` was already
+unconditionally `is_staff()`-granted, live-confirmed: a real crp profile's
+cross-SHG `select count(*)` against a SHG it isn't a member of returned 2,
+inside a rolled-back transaction). Each row is tagged with its SHG name
+when viewed platform-wide. `updateProgress()` needed no changes — already
+activity-scoped, not viewer's-SHG-scoped.
 
 | ID | Requirement | Roles |
 |---|---|---|
@@ -706,14 +856,29 @@ not just a mechanical wiring fix) — a good candidate for this project's
 CRP/CLF-role development pass, alongside the courses/quiz-authoring gap
 above.
 
+**Fixed (2026-07-26, round 168): the design decision above resolved to "just
+the stat, on its own."** `AdminRepository.fetchTrainingCompletionPct()` is a
+new standalone method — the exact computation `fetchDashboardStats()`
+already did, split out behind its own call site rather than refactoring the
+bundled method's public shape (both now call the same shared logic; no
+behavior change for the Admin dashboard, confirmed by the existing
+`admin_dashboard_stats_test.dart` suite still passing unmodified).
+`crp_dashboard.dart` and `clf_dashboard.dart` each gained a "Training
+Completion" stat card wired to it — deliberately **not** pulling in
+`pendingReviewCount`/`recentActivity`, matching this note's own original
+scoping. Both dashboards already computed everything else client-side with
+no server round trip of their own for this figure before; now it's one more
+parallel `Future.wait` entry, same pattern each file already used for its
+existing repository calls.
+
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-TRN-1 | Any user browses the course catalog and course detail | All |
 | FR-TRN-2 | Progress advances via a flat increment per "Continue" tap — not real content-consumption tracking | All |
 | FR-TRN-3 | A real per-course quiz (`quiz_questions` table) is the sole path to certification, proportional ≥2/3 pass threshold, unlimited retries | All |
 | FR-TRN-4 | A certificate/completion date is issued on quiz pass | All |
-| FR-TRN-5 | Aggregate training-completion view — RLS is staff-wide but the only actual UI is on the Admin dashboard (see gap note above) | Admin (CRP/CLF planned) |
-| FR-TRN-6 | Staff/admin author courses and quiz questions — RLS-ready but **no UI exists yet** (see gap note above) | Admin (planned) |
+| FR-TRN-5 | Aggregate training-completion view, now a real standalone stat on each of the three staff dashboards (since round 168) | CRP, CLF, Admin |
+| FR-TRN-6 | Staff/admin author courses and quiz questions via `admin_training_courses_page.dart`/`admin_training_quiz_page.dart` (since round 167) | CRP, CLF, Admin |
 
 ### 3.11 Digital Payments (`payments/`)
 

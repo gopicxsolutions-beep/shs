@@ -31,7 +31,11 @@ class MeetingsHomePage extends StatelessWidget {
   // Injectable for tests (mirrors `SettingsPage`'s `notificationService`
   // seam) — defaults to the real on-device implementation.
   final NotificationService? notificationService;
-  const MeetingsHomePage({super.key, this.notificationService});
+  // Injectable so the platform-wide staff feed (live-mode-only) can be
+  // widget-tested against canned cross-SHG data instead of a real network
+  // call — mirrors LoansHomePage's round-168 `repository` seam.
+  final MeetingRepository? repository;
+  const MeetingsHomePage({super.key, this.notificationService, this.repository});
 
   /// Fetches this SHG's meetings and, best-effort and without blocking the
   /// list from rendering, brings this device's scheduled meeting reminders
@@ -61,8 +65,8 @@ class MeetingsHomePage extends StatelessWidget {
   /// fake), never resolves at all and hung `pumpAndSettle` forever. Firing
   /// it off with [unawaited] instead means the already-fetched `meetings`
   /// render immediately no matter how long (or whether) that ever resolves.
-  Future<List<Meeting>> _loadAndSyncReminders(MeetingRepository repo, String? shgId, NotificationService notifications) async {
-    final meetings = await repo.fetchForShg(shgId);
+  Future<List<Meeting>> _loadAndSyncReminders(MeetingRepository repo, bool platformWide, String? shgId, NotificationService notifications) async {
+    final meetings = await (platformWide ? repo.fetchAllForStaff() : repo.fetchForShg(shgId));
     unawaited(_syncReminders(notifications, meetings));
     return meetings;
   }
@@ -94,33 +98,35 @@ class MeetingsHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final isLeaderOrStaff = appState.user.role != Role.member;
-    final repo = MeetingRepository();
+    final repo = repository ?? MeetingRepository();
     final shgId = appState.profile?.shgId;
     final notifications = notificationService ?? LocalNotificationService.instance;
     final l10n = AppLocalizations.of(context)!;
 
-    // crp/clf/admin have no `profile.shgId` of their own — without this
-    // guard a staff account saw an indistinguishable-from-genuinely-empty
-    // "No past meetings" page instead of an honest explanation that this
-    // per-SHG view doesn't apply to a platform-wide role. `isConfigured`
-    // excludes demo mode, whose simulated identity leaves `shgId` null for
-    // every previewed role.
-    if (SupabaseService.isConfigured && isLeaderOrStaff && shgId == null) {
-      return Scaffold(
-        appBar: PageHeader(title: l10n.meetingsHomeTitle),
-        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
-      );
-    }
+    // crp/clf/admin have no `profile.shgId` of their own.
+    // `meetings_select_shg_or_staff`/`meetings_write_leader_or_staff` (RLS)
+    // have always granted `is_staff()` unrestricted platform-wide read/
+    // write — round 168's fix template (Loans, Savings, Livelihood,
+    // Financial Ledger) applies here too: a real platform-wide feed instead
+    // of an explained-away dead end. `isConfigured` still excludes demo
+    // mode, whose simulated identity leaves `shgId` null for every
+    // previewed role.
+    final isPlatformWideStaff = SupabaseService.isConfigured && isLeaderOrStaff && shgId == null;
 
     return Scaffold(
       appBar: PageHeader(
         title: l10n.meetingsHomeTitle,
-        right: isLeaderOrStaff
+        // Scheduling still needs a specific SHG to post against — there's
+        // no "which SHG" picker built (same choice `financial_ledger_page.
+        // dart`'s Add-entry button made) — so this stays hidden for the
+        // platform-wide view even though `meetings_write_leader_or_staff`
+        // already grants `is_staff()` unconditional insert rights.
+        right: isLeaderOrStaff && !isPlatformWideStaff
             ? IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.meetingSchedule), tooltip: l10n.meetingsHomeScheduleTooltip)
             : null,
       ),
       body: AppAsyncBuilder<List<Meeting>>(
-        future: () => _loadAndSyncReminders(repo, shgId, notifications),
+        future: () => _loadAndSyncReminders(repo, isPlatformWideStaff, shgId, notifications),
         builder: (context, meetings) {
           // `status` alone isn't reliable here: nothing in the app ever
           // advances a meeting from 'upcoming' to 'completed' (see
@@ -142,7 +148,7 @@ class MeetingsHomePage extends StatelessWidget {
                 children: [
                   IconTile(onTap: () => context.go(Paths.meetingQr), icon: Icons.qr_code_rounded, label: l10n.meetingsHomeCheckIn, tone: TileTone.brand),
                   if (isLeaderOrStaff) ...[
-                    IconTile(onTap: () => context.go(Paths.meetingSchedule), icon: Icons.event_rounded, label: l10n.meetingsHomeScheduleLabel, tone: TileTone.sky),
+                    if (!isPlatformWideStaff) IconTile(onTap: () => context.go(Paths.meetingSchedule), icon: Icons.event_rounded, label: l10n.meetingsHomeScheduleLabel, tone: TileTone.sky),
                     IconTile(onTap: () => context.go(Paths.meetingAttendance), icon: Icons.fact_check_rounded, label: l10n.meetingsHomeAttendanceLabel, tone: TileTone.gold),
                   ],
                 ],
@@ -150,7 +156,7 @@ class MeetingsHomePage extends StatelessWidget {
               const SizedBox(height: 24),
               if (upcoming.isNotEmpty) ...[
                 SectionHeader(title: l10n.meetingsHomeUpcoming),
-                ...upcoming.map((m) => _meetingCard(context, m)),
+                ...upcoming.map((m) => _meetingCard(context, m, isPlatformWideStaff)),
                 const SizedBox(height: 16),
               ],
               SectionHeader(title: l10n.meetingsHomePastMeetings),
@@ -163,7 +169,10 @@ class MeetingsHomePage extends StatelessWidget {
                     children: past.map((m) {
                       return AppListRow(
                         title: DateFormat('dd MMM yyyy').format(m.date),
-                        subtitle: m.agenda ?? m.venue ?? '',
+                        subtitle: [
+                          if ((m.agenda ?? m.venue) != null) (m.agenda ?? m.venue)!,
+                          if (isPlatformWideStaff && m.shgName != null) l10n.meetingsHomeShgName(m.shgName!),
+                        ].join(' · '),
                         trailing: AppBadge(text: m.status, tone: _statusTones[m.status] ?? BadgeTone.neutral),
                         onTap: () => context.go(Paths.meetingDetail(m.id)),
                       );
@@ -177,7 +186,7 @@ class MeetingsHomePage extends StatelessWidget {
     );
   }
 
-  Widget _meetingCard(BuildContext context, Meeting m) {
+  Widget _meetingCard(BuildContext context, Meeting m, bool isPlatformWideStaff) {
     final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -207,7 +216,15 @@ class MeetingsHomePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(m.agenda ?? l10n.meetingsHomeDefaultTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700)),
-                Text('${m.time ?? ''} · ${m.venue ?? ''}', style: AppTheme.sans(11, color: Neutral.c500)),
+                Text(
+                  [
+                    '${m.time ?? ''} · ${m.venue ?? ''}',
+                    if (isPlatformWideStaff && m.shgName != null) l10n.meetingsHomeShgName(m.shgName!),
+                  ].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.sans(11, color: Neutral.c500),
+                ),
               ],
             ),
           ),

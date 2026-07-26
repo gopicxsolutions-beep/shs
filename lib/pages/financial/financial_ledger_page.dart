@@ -47,14 +47,18 @@ String financialLedgerTitleFor(String entryType, AppLocalizations l10n) {
 
 class FinancialLedgerPage extends StatefulWidget {
   final String entryType;
-  const FinancialLedgerPage({super.key, required this.entryType});
+  // Injectable so the platform-wide staff feed (live-mode-only) can be
+  // widget-tested against canned cross-SHG data instead of a real network
+  // call — mirrors LoansHomePage's round-168 `repository` seam.
+  final FinancialRepository? repository;
+  const FinancialLedgerPage({super.key, required this.entryType, this.repository});
 
   @override
   State<FinancialLedgerPage> createState() => _FinancialLedgerPageState();
 }
 
 class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
-  final _repo = FinancialRepository();
+  late final FinancialRepository _repo = widget.repository ?? FinancialRepository();
   final GlobalKey<AppAsyncBuilderState<List<FinancialEntry>>> _key = GlobalKey();
 
   @override
@@ -66,24 +70,23 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
     final recordTypes = _recordTypes(l10n);
     final title = financialLedgerTitleFor(widget.entryType, l10n);
 
-    // crp/clf/admin have no `profile.shgId` of their own — all four record
-    // types this shared widget renders (cashbook/ledger/bank/audit) resolve
-    // "which SHG" from that field, so without this guard a staff account
-    // saw an indistinguishable-from-genuinely-empty ledger (plus a
-    // nonfunctional Add-entry button) instead of an honest explanation.
-    // `isConfigured` excludes demo mode, whose simulated identity leaves
-    // `shgId` null for every previewed role, including Leader/Member.
-    if (SupabaseService.isConfigured && isLeaderOrStaff && shgId == null) {
-      return Scaffold(
-        appBar: PageHeader(title: title),
-        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
-      );
-    }
+    // crp/clf/admin have no `profile.shgId` of their own.
+    // `financial_ledger_select_shg_or_staff`/`financial_ledger_write_
+    // leader_or_staff` (RLS) have always granted `is_staff()` unrestricted
+    // platform-wide read/write — round 168's fix template (Loans, Savings,
+    // Livelihood) applies here too: a real platform-wide feed instead of an
+    // explained-away dead end. Posting an entry still needs a specific
+    // `shgId` to post *against* (there's no "which SHG" picker), so the
+    // Add-entry button stays hidden for the platform-wide view — not a
+    // permission restriction, just nothing to post an entry against.
+    // `isConfigured` still excludes demo mode, whose simulated identity
+    // leaves `shgId` null for every previewed role, including Leader/Member.
+    final isPlatformWideStaff = SupabaseService.isConfigured && isLeaderOrStaff && shgId == null;
 
     return Scaffold(
       appBar: PageHeader(
         title: title,
-        right: isLeaderOrStaff
+        right: isLeaderOrStaff && !isPlatformWideStaff
             ? IconButton(
                 icon: Icon(Icons.add_circle_rounded, color: Brand.c600),
                 tooltip: l10n.financialLedgerAddEntryTooltip,
@@ -111,7 +114,7 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
           Expanded(
             child: AppAsyncBuilder<List<FinancialEntry>>(
               key: _key,
-              future: () => _repo.fetchForShg(shgId, widget.entryType),
+              future: () => isPlatformWideStaff ? _repo.fetchAllForStaff(widget.entryType) : _repo.fetchForShg(shgId, widget.entryType),
               builder: (context, entries) {
                 if (entries.isEmpty) {
                   return AppEmptyState(icon: Icons.receipt_long_rounded, message: l10n.financialLedgerEmpty(title.toLowerCase()));
@@ -146,7 +149,11 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
                                     style: AppTheme.sans(13, weight: FontWeight.w700),
                                   ),
                                   Text(
-                                    e.createdByName != null ? '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.createdByName}' : DateFormat('dd MMM yyyy').format(e.date),
+                                    [
+                                      DateFormat('dd MMM yyyy').format(e.date),
+                                      if (e.createdByName != null) e.createdByName!,
+                                      if (isPlatformWideStaff && e.shgName != null) l10n.financialLedgerShgName(e.shgName!),
+                                    ].join(' · '),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: AppTheme.sans(11, color: Neutral.c500),

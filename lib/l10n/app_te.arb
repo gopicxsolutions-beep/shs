@@ -249,6 +249,10 @@
 
   "crpDashboardAttendanceProxyTrend": "హాజరు ఆధారంగా అంచనా",
 
+  "crpDashboardTrainingCompletionLabel": "శిక్షణ పూర్తి",
+
+  "crpDashboardTrainingCompletionTrend": "ప్లాట్‌ఫారమ్-వ్యాప్త సగటు",
+
   "crpDashboardShgsUnderMonitoringTitle": "పర్యవేక్షణలో ఉన్న SHGలు",
 
   "crpDashboardViewAllAction": "అన్నీ చూడండి",
@@ -645,6 +649,8 @@
 
   "meetingsHomeDefaultTitle": "సమావేశం",
 
+  "meetingsHomeShgName": "SHG: {shg}",
+
   "meetingDetailTitle": "సమావేశ వివరాలు",
 
   "meetingDetailNotFound": "ఈ సమావేశం కనుగొనబడలేదు",
@@ -676,6 +682,8 @@
   "meetingDetailPresentCount": "{present} / {total} హాజరు",
 
   "meetingAttendanceTitle": "హాజరు",
+
+  "meetingAttendanceShgName": "SHG: {shg}",
 
   "meetingAttendanceNoMeetings": "హాజరు నమోదు చేయడానికి సమావేశాలు లేవు",
 
@@ -827,6 +835,8 @@
 
   "savingsHomeMySavingsLabel": "నా పొదుపు",
 
+  "savingsHomePlatformSavingsLabel": "ప్లాట్‌ఫారమ్ పొదుపు",
+
   "savingsHomeEntriesCount": "{count} {count, plural, =1{ఎంట్రీ} other{ఎంట్రీలు}}",
 
   "savingsHomePendingVerificationLabel": "పెండింగ్ ధృవీకరణ",
@@ -847,9 +857,13 @@
 
   "savingsHomeRecentEntriesTitle": "ఇటీవలి ఎంట్రీలు",
 
+  "savingsHomeAllShgsEntriesTitle": "ఇటీవలి ఎంట్రీలు (అన్ని SHGలు)",
+
   "savingsHomeViewAllAction": "అన్నీ చూడండి",
 
   "savingsHomeEmpty": "ఇంకా పొదుపు ఎంట్రీలు లేవు",
+
+  "savingsHomeDateModeShg": "{date} · {mode} · {shg}",
 
   "savingsLedgerTitle": "పొదుపు లెడ్జర్",
 
@@ -858,6 +872,8 @@
   "savingsLedgerAddTooltip": "పొదుపు జోడించండి",
 
   "savingsLedgerEmpty": "ఇంకా ఏ పొదుపు ఎంట్రీలు నమోదు కాలేదు",
+
+  "savingsLedgerShgName": "SHG: {shg}",
 
   "savingsLedgerVerifyError": "ఈ ఎంట్రీని ధృవీకరించడం సాధ్యం కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.",
 
@@ -1427,6 +1443,8 @@
 
   "loansHomeMyOutstandingLabel": "నా బకాయి",
 
+  "loansHomePlatformOutstandingLabel": "ప్లాట్‌ఫారమ్ బకాయి",
+
   "loansHomeLoanCount": "{count} {count, plural, =1{రుణం} other{రుణాలు}}",
 
   "loansHomePendingApprovalLabel": "ఆమోదం పెండింగ్‌లో",
@@ -1449,11 +1467,15 @@
 
   "loansHomeAllLoansTitle": "అన్ని రుణాలు",
 
+  "loansHomeAllShgsLoansTitle": "అన్ని రుణాలు (అన్ని SHGలు)",
+
   "loansHomeMyLoansTitle": "నా రుణాలు",
 
   "loansHomeEmptyMessage": "ఇంకా రుణాలు లేవు",
 
   "loansHomeOutstandingOfAmount": "₹{amount}లో ₹{outstanding} బాకీ ఉంది",
+
+  "loansHomePurposeAndShg": "{purpose} · {shg}",
 
   "loanTrackingTitle": "రుణ ట్రాకింగ్",
 
@@ -1468,6 +1490,8 @@
   "loanApprovalTitle": "రుణ ఆమోదాలు",
 
   "loanApprovalEmptyMessage": "పెండింగ్‌లో రుణ దరఖాస్తులు లేవు",
+
+  "loanApprovalShgName": "SHG: {shg}",
 
   "loanApprovalTenureMonths": "{months} {months, plural, =1{నెల} other{నెలల}} వ్యవధి",
 
@@ -1635,6 +1659,8 @@
 
   "livelihoodHomeEmpty": "ఇంకా జీవనోపాధి కార్యకలాపాలు లేవు",
 
+  "livelihoodHomeMemberAndShg": "{member} · {shg}",
+
   "livelihoodHomeNetAmount": "నికర {amount}",
 
   "livelihoodDetailTitle": "కార్యకలాప వివరాలు",
@@ -1788,6 +1814,8 @@
   "financialLedgerDemoMode": "డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
 
   "financialLedgerEmpty": "ఇంకా {title} ఎంట్రీలు లేవు",
+
+  "financialLedgerShgName": "SHG: {shg}",
 
   "financialLedgerCashbookTitle": "క్యాష్‌బుక్",
 

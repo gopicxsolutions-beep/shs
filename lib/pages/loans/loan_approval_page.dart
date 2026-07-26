@@ -15,13 +15,17 @@ import '../../widgets/avatar.dart';
 import '../../widgets/input_formatters.dart';
 
 class LoanApprovalPage extends StatefulWidget {
-  const LoanApprovalPage({super.key});
+  // Injectable so the platform-wide staff approval queue (live-mode-only)
+  // can be widget-tested against canned cross-SHG data instead of a real
+  // network call — defaults to a real LoanRepository.
+  final LoanRepository? repository;
+  const LoanApprovalPage({super.key, this.repository});
   @override
   State<LoanApprovalPage> createState() => _LoanApprovalPageState();
 }
 
 class _LoanApprovalPageState extends State<LoanApprovalPage> {
-  final _repo = LoanRepository();
+  late final LoanRepository _repo = widget.repository ?? LoanRepository();
   final _key = GlobalKey<AppAsyncBuilderState<List<Loan>>>();
   final _rejecting = <String>{};
   final _approving = <String>{};
@@ -34,23 +38,21 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
     final myId = appState.profile?.id;
 
     // Router-restricted to leader/staff already, but crp/clf/admin have no
-    // `profile.shgId` of their own — `fetchForShg(null)` resolves to an
-    // empty pending queue, indistinguishable from a genuinely caught-up SHG,
-    // instead of explaining that this per-SHG view doesn't apply to a
-    // platform-wide role. `isConfigured` excludes demo mode, whose
-    // simulated identity leaves `shgId` null for every previewed role too.
-    if (SupabaseService.isConfigured && shgId == null) {
-      return Scaffold(
-        appBar: PageHeader(title: l10n.loanApprovalTitle),
-        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
-      );
-    }
+    // `profile.shgId` of their own. `loans_update_leader_or_staff` (RLS) has
+    // always granted `is_staff()` unrestricted platform-wide approve/reject
+    // rights — the same capability loans_home_page.dart's platform-wide
+    // portfolio now surfaces — so rather than `fetchForShg(null)`'s
+    // permanently-empty queue (or the honest-but-dead-end message that
+    // replaced it), fetch every SHG's pending applications instead.
+    // `isConfigured` excludes demo mode, whose simulated identity leaves
+    // `shgId` null for every previewed role too.
+    final isPlatformWide = SupabaseService.isConfigured && shgId == null;
 
     return Scaffold(
       appBar: PageHeader(title: l10n.loanApprovalTitle),
       body: AppAsyncBuilder<List<Loan>>(
         key: _key,
-        future: () => _repo.fetchForShg(shgId),
+        future: () => isPlatformWide ? _repo.fetchAllForStaff() : _repo.fetchForShg(shgId),
         builder: (context, loans) {
           // `loans_update_leader_or_staff` (RLS) requires the loan's own
           // member to NOT be the caller — a leader can never approve/reject
@@ -99,6 +101,10 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                       ]),
                       const SizedBox(height: 4),
                       Text(l10n.loanApprovalTenureMonths(l.tenureMonths), style: AppTheme.sans(11, color: Neutral.c400)),
+                      if (isPlatformWide && l.shgName != null) ...[
+                        const SizedBox(height: 2),
+                        Text(l10n.loanApprovalShgName(l.shgName!), style: AppTheme.sans(11, color: Neutral.c400)),
+                      ],
                       const SizedBox(height: 12),
                       Row(children: [
                         Expanded(

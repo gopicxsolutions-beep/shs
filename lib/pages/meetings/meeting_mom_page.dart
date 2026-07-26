@@ -146,7 +146,6 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
     final appState = context.watch<AppState>();
     final isLeaderOrStaff = appState.user.role != Role.member;
     final currentMemberId = appState.profile?.id;
-    final shgId = appState.profile?.shgId;
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: PageHeader(title: l10n.meetingMomTitle),
@@ -166,7 +165,14 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
           if (meeting == null) {
             return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.meetingMomNotFound);
           }
-          return _buildContent(context, isLeaderOrStaff, currentMemberId, shgId);
+          // The meeting's OWN shgId, not the viewer's — a platform-wide
+          // staff account (no shgId of its own) opening a real cross-SHG
+          // meeting's MoM page would otherwise get an empty "Assign to"
+          // roster despite the meeting's SHG genuinely having members
+          // (`fetchRoster` treats a null shgId as "no roster" in live
+          // mode). For a leader these always coincided anyway (she could
+          // only ever reach her own SHG's meetings before this fix).
+          return _buildContent(context, isLeaderOrStaff, currentMemberId, meeting.shgId);
         },
       ),
     );

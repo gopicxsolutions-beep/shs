@@ -7,6 +7,10 @@ class Meeting {
   final String? venue;
   final String? agenda;
   final String status; // upcoming | completed | cancelled
+  // Only populated when the query joins `shgs(name)` (today: only
+  // MeetingRepository.fetchAllForStaff()'s platform-wide fetch) — null
+  // everywhere else, including demo mode. Mirrors Loan.shgName.
+  final String? shgName;
 
   const Meeting({
     required this.id,
@@ -16,6 +20,7 @@ class Meeting {
     this.venue,
     this.agenda,
     required this.status,
+    this.shgName,
   });
 
   factory Meeting.fromMap(Map<String, dynamic> map) => Meeting(
@@ -26,6 +31,7 @@ class Meeting {
         venue: map['venue'] as String?,
         agenda: map['agenda'] as String?,
         status: map['status'] as String,
+        shgName: (map['shgs'] as Map<String, dynamic>?)?['name'] as String?,
       );
 
   /// True once this meeting's scheduled date has passed — regardless of the

@@ -4,12 +4,52 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shg_saathi/l10n/gen/app_localizations.dart';
 import 'package:shg_saathi/models/meeting.dart';
+import 'package:shg_saathi/models/profile.dart';
 import 'package:shg_saathi/pages/meetings/meeting_attendance_page.dart';
 import 'package:shg_saathi/repositories/meeting_repository.dart';
+import 'package:shg_saathi/services/auth_service.dart';
+import 'package:shg_saathi/services/profile_repository.dart';
 import 'package:shg_saathi/services/supabase_service.dart';
 import 'package:shg_saathi/state/app_state.dart';
+
+class _FixedProfileRepository extends ProfileRepository {
+  _FixedProfileRepository(this._profile);
+  final Profile? _profile;
+  @override
+  Future<Profile?> fetchMyProfile() async => _profile;
+}
+
+class _FakeAuthServiceWithSession extends AuthService {
+  @override
+  Session? get currentSession => Session(
+        accessToken: 'token',
+        tokenType: 'bearer',
+        refreshToken: 'refresh',
+        user: User(id: 'u1', appMetadata: const {}, userMetadata: const {}, aud: 'authenticated', createdAt: DateTime(2026).toIso8601String()),
+      );
+
+  @override
+  Stream<AuthState> get onAuthStateChange => const Stream.empty();
+}
+
+/// Canned cross-SHG pending data — avoids a real network call in a test
+/// environment with no live backend.
+class _FakePlatformWideMeetingRepository extends MeetingRepository {
+  @override
+  Future<List<Meeting>> fetchAllForStaff() async => [
+        Meeting(id: 'm-1', shgId: 'shg-1', date: DateTime.now().add(const Duration(days: 3)), venue: 'Community Hall', agenda: 'Monthly review', status: 'upcoming', shgName: 'Amara SHG'),
+        Meeting(id: 'm-2', shgId: 'shg-2', date: DateTime.now().add(const Duration(days: 5)), venue: 'Panchayat Office', agenda: 'Loan discussion', status: 'upcoming', shgName: 'Deepthi SHG'),
+      ];
+  @override
+  Future<List<AttendanceRow>> fetchAttendance(String meetingId, String? shgId) async => [
+        AttendanceRow(memberId: 'mem-a', memberName: shgId == 'shg-1' ? 'Padma' : 'Saroja', present: false),
+      ];
+  @override
+  Future<List<Meeting>> fetchForShg(String? shgId) async => const [];
+}
 
 /// Regression coverage for the second finding an adversarial review flagged
 /// in the "Cancel Meeting" / attendance-marking interaction:
@@ -123,6 +163,67 @@ void main() {
     // overwritten by the rejected call either.
     final afterRoster = await repo.fetchAttendance(meetingId, 'demo-shg');
     expect(afterRoster.firstWhere((r) => r.memberId == 'm1').present, isFalse);
+  });
+
+  // Round 168's fix template (Loans, Savings, Livelihood, Financial Ledger,
+  // Meetings home) applied to the attendance picker: crp/clf/admin (no
+  // `shgId` of their own) used to see a `commonStaffNoShgMessage` dead end —
+  // now a real platform-wide meeting picker, since `meetings_select_shg_or_
+  // staff`/`meeting_attendance_self_or_leader` already grant `is_staff()`
+  // unrestricted platform-wide read/write. Uses live mode + an injected fake
+  // repository (not the demo-mode session-local state the tests above/below
+  // mutate), so ordering relative to them doesn't matter — placed before the
+  // "runs last" test below anyway, so that comment's placement stays honest.
+  group('platform-wide staff picker (round 168)', () {
+    setUp(() {
+      SupabaseService.isConfigured = true;
+    });
+    tearDown(() {
+      SupabaseService.isConfigured = false;
+    });
+
+    Future<void> pumpWithRepo(WidgetTester tester, AppState appState, MeetingRepository repository) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppState>.value(
+          value: appState,
+          child: MaterialApp(
+            home: MeetingAttendancePage(repository: repository),
+            localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    for (final staffRole in ['crp', 'clf', 'admin']) {
+      testWidgets('a $staffRole account with no linked SHG sees a real cross-SHG picker, not the old dead-end message', (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final profile = Profile(id: 'staff-$staffRole', name: 'QA $staffRole', role: staffRole, shgId: null);
+        final appState = AppState(profileRepository: _FixedProfileRepository(profile), authService: _FakeAuthServiceWithSession());
+        await appState.init();
+
+        await pumpWithRepo(tester, appState, _FakePlatformWideMeetingRepository());
+
+        expect(find.text("Your role isn't linked to a specific SHG — this view doesn't apply"), findsNothing);
+        expect(find.textContaining('SHG: Amara SHG'), findsOneWidget, reason: 'the selected meeting card must show which SHG it belongs to');
+        expect(find.text('Padma'), findsOneWidget, reason: 'the roster must be resolved from the SELECTED MEETING\'s own shgId (shg-1), not the viewer\'s (null)');
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('a leader account with a real linked SHG sees her own SHG-scoped picker, no SHG tag', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      const profile = Profile(id: 'leader-1', name: 'QA Leader', role: 'leader', shgId: 'shg-1');
+      final appState = AppState(profileRepository: _FixedProfileRepository(profile), authService: _FakeAuthServiceWithSession());
+      await appState.init();
+
+      await pumpWithRepo(tester, appState, _FakePlatformWideMeetingRepository());
+
+      expect(find.text("Your role isn't linked to a specific SHG — this view doesn't apply"), findsNothing);
+      expect(find.textContaining('SHG:'), findsNothing, reason: 'a leader only ever sees her own SHG, so the tag would be redundant noise');
+      expect(tester.takeException(), isNull);
+    });
   });
 
   // Runs last: cancels every meeting this SHG has (the fixed mock meetings

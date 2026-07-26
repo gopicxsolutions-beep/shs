@@ -48,6 +48,17 @@ class MeetingRepository {
     return (rows as List).map((r) => Meeting.fromMap(r as Map<String, dynamic>)).toList();
   }
 
+  /// Platform-wide meeting feed for crp/clf/admin — every SHG's meetings,
+  /// not just one. `meetings_select_shg_or_staff` (RLS) already grants
+  /// `is_staff()` an unconditional, unscoped SELECT — mirrors
+  /// LoanRepository.fetchAllForStaff()'s round-168 fix exactly. Joins
+  /// `shgs(name)` so the UI can tell meetings from different SHGs apart.
+  Future<List<Meeting>> fetchAllForStaff() async {
+    if (!_live) return [..._locallyScheduled.reversed.map(_withLocalCancelOverlay), ..._mockMeetings()];
+    final rows = await _client.from('meetings').select('*, shgs(name)').order('meeting_date', ascending: false);
+    return (rows as List).map((r) => Meeting.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
   Future<Meeting?> fetchById(String id) async {
     if (!_live) {
       final matches = [..._locallyScheduled.map(_withLocalCancelOverlay), ..._mockMeetings()].where((m) => m.id == id);

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/analytics.dart';
 import '../../models/training.dart';
+import '../../repositories/admin_repository.dart';
 import '../../repositories/analytics_repository.dart';
 import '../../repositories/training_repository.dart';
 import '../../routes/paths.dart';
@@ -18,7 +19,8 @@ import '../../widgets/stat_card.dart';
 class _CrpDashboardData {
   final List<ShgHealth> shgs;
   final List<Course> courses;
-  const _CrpDashboardData({required this.shgs, required this.courses});
+  final int trainingCompletionPct;
+  const _CrpDashboardData({required this.shgs, required this.courses, required this.trainingCompletionPct});
 }
 
 class CRPDashboard extends StatelessWidget {
@@ -26,12 +28,19 @@ class CRPDashboard extends StatelessWidget {
 
   static const _gradeTone = <String, BadgeTone>{'A+': BadgeTone.success, 'A': BadgeTone.brand, 'B+': BadgeTone.brand, 'B': BadgeTone.warning, 'C': BadgeTone.danger};
 
+  // Round 135's SRS.md gap note: `AdminRepository.fetchTrainingCompletionPct()`
+  // (`is_staff()` RLS bypass) has always been genuinely platform-wide, not
+  // admin-only — only `admin_dashboard.dart` ever called it. Added here as
+  // its own standalone stat rather than pulling in the admin dashboard's
+  // bundled pendingReviewCount/recentActivity feed alongside it, matching
+  // that gap note's own reasoning for what a CRP dashboard actually needs.
   Future<_CrpDashboardData> _load() async {
     final results = await Future.wait([
       AnalyticsRepository().fetchShgList(),
       TrainingRepository().fetchCourses(),
+      AdminRepository().fetchTrainingCompletionPct(),
     ]);
-    return _CrpDashboardData(shgs: results[0] as List<ShgHealth>, courses: results[1] as List<Course>);
+    return _CrpDashboardData(shgs: results[0] as List<ShgHealth>, courses: results[1] as List<Course>, trainingCompletionPct: results[2] as int);
   }
 
   @override
@@ -66,6 +75,19 @@ class _CrpDashboardBody extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(child: StatCard(label: l10n.crpDashboardAvgHealthScoreLabel, value: '$avgHealth%', tone: StatTone.gold, trend: l10n.crpDashboardAttendanceProxyTrend, icon: Icons.trending_up_rounded)),
             ]),
+          ),
+        ),
+        Transform.translate(
+          offset: const Offset(0, -28),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: StatCard(
+              label: l10n.crpDashboardTrainingCompletionLabel,
+              value: '${data.trainingCompletionPct}%',
+              tone: StatTone.ink,
+              trend: l10n.crpDashboardTrainingCompletionTrend,
+              icon: Icons.school_rounded,
+            ),
           ),
         ),
         Padding(

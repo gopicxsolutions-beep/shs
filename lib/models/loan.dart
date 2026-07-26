@@ -11,6 +11,12 @@ class Loan {
   final DateTime? disbursedOn;
   final String status; // pending | approved | rejected | active | closed | overdue
   final DateTime? nextDueDate;
+  // Only populated when the query joins `shgs(name)` (today: only
+  // LoanRepository.fetchAllForStaff()'s platform-wide portfolio fetch) —
+  // null everywhere else, including demo mode. Lets the staff-facing
+  // cross-SHG list/approval queue tell loans from different SHGs apart,
+  // which a plain member-name/purpose row can't.
+  final String? shgName;
 
   const Loan({
     required this.id,
@@ -24,6 +30,7 @@ class Loan {
     this.disbursedOn,
     required this.status,
     this.nextDueDate,
+    this.shgName,
   });
 
   factory Loan.fromMap(Map<String, dynamic> map) => Loan(
@@ -38,6 +45,7 @@ class Loan {
         disbursedOn: map['disbursed_on'] != null ? DateTime.parse(map['disbursed_on'] as String) : null,
         status: map['status'] as String,
         nextDueDate: map['next_due_date'] != null ? DateTime.parse(map['next_due_date'] as String) : null,
+        shgName: (map['shgs'] as Map<String, dynamic>?)?['name'] as String?,
       );
 }
 

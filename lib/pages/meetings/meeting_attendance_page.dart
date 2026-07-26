@@ -17,13 +17,17 @@ import '../../widgets/avatar.dart';
 /// most recent past one if none is upcoming) since this route isn't
 /// parameterized by meeting id; a picker lets the user switch meetings.
 class MeetingAttendancePage extends StatefulWidget {
-  const MeetingAttendancePage({super.key});
+  // Injectable so the platform-wide staff queue (live-mode-only) can be
+  // widget-tested against canned cross-SHG data instead of a real network
+  // call — mirrors LoanApprovalPage's round-168 `repository` seam.
+  final MeetingRepository? repository;
+  const MeetingAttendancePage({super.key, this.repository});
   @override
   State<MeetingAttendancePage> createState() => _MeetingAttendancePageState();
 }
 
 class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
-  final _repo = MeetingRepository();
+  late final MeetingRepository _repo = widget.repository ?? MeetingRepository();
   Meeting? _selected;
   final _updating = <String>{};
 
@@ -34,22 +38,19 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
     final l10n = AppLocalizations.of(context)!;
 
     // Router-restricted to leader/staff already, but crp/clf/admin have no
-    // `profile.shgId` of their own — `fetchForShg(null)` resolves to `[]`,
-    // which this page would otherwise show as "No meetings scheduled"
-    // instead of the real reason (this per-SHG view doesn't apply to a
-    // platform-wide role). `isConfigured` excludes demo mode, whose
-    // simulated identity leaves `shgId` null for every previewed role too.
-    if (SupabaseService.isConfigured && shgId == null) {
-      return Scaffold(
-        appBar: PageHeader(title: l10n.meetingAttendanceTitle),
-        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
-      );
-    }
+    // `profile.shgId` of their own. `meetings_select_shg_or_staff`/
+    // `meeting_attendance_self_or_leader` (RLS) have always granted
+    // `is_staff()` unrestricted platform-wide read/write — round 168's fix
+    // template (Loans, Savings, Livelihood, Financial Ledger) applies here
+    // too: a real platform-wide meeting picker instead of an explained-away
+    // dead end. `isConfigured` still excludes demo mode, whose simulated
+    // identity leaves `shgId` null for every previewed role too.
+    final isPlatformWide = SupabaseService.isConfigured && shgId == null;
 
     return Scaffold(
       appBar: PageHeader(title: l10n.meetingAttendanceTitle),
       body: AppAsyncBuilder<List<Meeting>>(
-        future: () => _repo.fetchForShg(shgId),
+        future: () => isPlatformWide ? _repo.fetchAllForStaff() : _repo.fetchForShg(shgId),
         builder: (context, meetings) {
           if (meetings.isEmpty) {
             return AppEmptyState(icon: Icons.event_busy_rounded, message: l10n.meetingAttendanceNoMeetings);
@@ -107,7 +108,14 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(DateFormat('dd MMM yyyy').format(meeting.date), style: AppTheme.sans(14, weight: FontWeight.w700)),
-                            Text(meeting.agenda ?? meeting.venue ?? '', overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500)),
+                            Text(
+                              [
+                                if ((meeting.agenda ?? meeting.venue) != null) (meeting.agenda ?? meeting.venue)!,
+                                if (isPlatformWide && meeting.shgName != null) l10n.meetingAttendanceShgName(meeting.shgName!),
+                              ].join(' · '),
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.sans(12, color: Neutral.c500),
+                            ),
                           ],
                         ),
                       ),
@@ -115,7 +123,13 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                         value: meeting,
                         underline: const SizedBox(),
                         items: selectableMeetings
-                            .map((m) => DropdownMenuItem(value: m, child: Text(DateFormat('dd MMM').format(m.date), style: AppTheme.sans(12, weight: FontWeight.w600))))
+                            .map((m) => DropdownMenuItem(
+                                  value: m,
+                                  child: Text(
+                                    isPlatformWide && m.shgName != null ? '${DateFormat('dd MMM').format(m.date)} · ${m.shgName}' : DateFormat('dd MMM').format(m.date),
+                                    style: AppTheme.sans(12, weight: FontWeight.w600),
+                                  ),
+                                ))
                             .toList(),
                         onChanged: (m) => setState(() => _selected = m),
                       ),
@@ -126,7 +140,14 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
               Expanded(
                 child: AppAsyncBuilder<List<AttendanceRow>>(
                   key: ValueKey(meeting.id),
-                  future: () => _repo.fetchAttendance(meeting.id, shgId),
+                  // The selected meeting's OWN shgId, not the viewer's —
+                  // for a leader these always coincided (fetchForShg(shgId)
+                  // only ever returned her own SHG's meetings), but a
+                  // platform-wide staff account's `shgId` is null, and
+                  // `fetchAttendance`/`fetchRoster` treat a null shgId as
+                  // "no roster" (live mode), which would silently show an
+                  // empty roster for a meeting that genuinely has one.
+                  future: () => _repo.fetchAttendance(meeting.id, meeting.shgId),
                   builder: (context, roster) {
                     if (roster.isEmpty) {
                       return AppEmptyState(icon: Icons.groups_rounded, message: l10n.meetingAttendanceNoMembers);

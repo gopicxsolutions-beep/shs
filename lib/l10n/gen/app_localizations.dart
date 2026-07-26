@@ -1186,6 +1186,18 @@ abstract class AppLocalizations {
   /// **'Attendance-based proxy'**
   String get crpDashboardAttendanceProxyTrend;
 
+  /// No description provided for @crpDashboardTrainingCompletionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Training Completion'**
+  String get crpDashboardTrainingCompletionLabel;
+
+  /// No description provided for @crpDashboardTrainingCompletionTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform-wide average'**
+  String get crpDashboardTrainingCompletionTrend;
+
   /// No description provided for @crpDashboardShgsUnderMonitoringTitle.
   ///
   /// In en, this message translates to:
@@ -2374,6 +2386,12 @@ abstract class AppLocalizations {
   /// **'Meeting'**
   String get meetingsHomeDefaultTitle;
 
+  /// No description provided for @meetingsHomeShgName.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG: {shg}'**
+  String meetingsHomeShgName(String shg);
+
   /// No description provided for @meetingDetailTitle.
   ///
   /// In en, this message translates to:
@@ -2469,6 +2487,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Attendance'**
   String get meetingAttendanceTitle;
+
+  /// No description provided for @meetingAttendanceShgName.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG: {shg}'**
+  String meetingAttendanceShgName(String shg);
 
   /// No description provided for @meetingAttendanceNoMeetings.
   ///
@@ -2920,6 +2944,12 @@ abstract class AppLocalizations {
   /// **'My Savings'**
   String get savingsHomeMySavingsLabel;
 
+  /// No description provided for @savingsHomePlatformSavingsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform Savings'**
+  String get savingsHomePlatformSavingsLabel;
+
   /// No description provided for @savingsHomeEntriesCount.
   ///
   /// In en, this message translates to:
@@ -2980,6 +3010,12 @@ abstract class AppLocalizations {
   /// **'Recent Entries'**
   String get savingsHomeRecentEntriesTitle;
 
+  /// No description provided for @savingsHomeAllShgsEntriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Entries (All SHGs)'**
+  String get savingsHomeAllShgsEntriesTitle;
+
   /// No description provided for @savingsHomeViewAllAction.
   ///
   /// In en, this message translates to:
@@ -2991,6 +3027,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No savings entries yet'**
   String get savingsHomeEmpty;
+
+  /// No description provided for @savingsHomeDateModeShg.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} · {mode} · {shg}'**
+  String savingsHomeDateModeShg(String date, String mode, String shg);
 
   /// No description provided for @savingsLedgerTitle.
   ///
@@ -3015,6 +3057,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No savings entries recorded yet'**
   String get savingsLedgerEmpty;
+
+  /// No description provided for @savingsLedgerShgName.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG: {shg}'**
+  String savingsLedgerShgName(String shg);
 
   /// No description provided for @savingsLedgerVerifyError.
   ///
@@ -4630,6 +4678,12 @@ abstract class AppLocalizations {
   /// **'My Outstanding'**
   String get loansHomeMyOutstandingLabel;
 
+  /// No description provided for @loansHomePlatformOutstandingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform Outstanding'**
+  String get loansHomePlatformOutstandingLabel;
+
   /// No description provided for @loansHomeLoanCount.
   ///
   /// In en, this message translates to:
@@ -4696,6 +4750,12 @@ abstract class AppLocalizations {
   /// **'All Loans'**
   String get loansHomeAllLoansTitle;
 
+  /// No description provided for @loansHomeAllShgsLoansTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All Loans (All SHGs)'**
+  String get loansHomeAllShgsLoansTitle;
+
   /// No description provided for @loansHomeMyLoansTitle.
   ///
   /// In en, this message translates to:
@@ -4713,6 +4773,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'₹{outstanding} of ₹{amount} outstanding'**
   String loansHomeOutstandingOfAmount(String outstanding, String amount);
+
+  /// No description provided for @loansHomePurposeAndShg.
+  ///
+  /// In en, this message translates to:
+  /// **'{purpose} · {shg}'**
+  String loansHomePurposeAndShg(String purpose, String shg);
 
   /// No description provided for @loanTrackingTitle.
   ///
@@ -4755,6 +4821,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No pending loan applications'**
   String get loanApprovalEmptyMessage;
+
+  /// No description provided for @loanApprovalShgName.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG: {shg}'**
+  String loanApprovalShgName(String shg);
 
   /// No description provided for @loanApprovalTenureMonths.
   ///
@@ -5254,6 +5326,12 @@ abstract class AppLocalizations {
   /// **'No livelihood activities yet'**
   String get livelihoodHomeEmpty;
 
+  /// No description provided for @livelihoodHomeMemberAndShg.
+  ///
+  /// In en, this message translates to:
+  /// **'{member} · {shg}'**
+  String livelihoodHomeMemberAndShg(String member, String shg);
+
   /// No description provided for @livelihoodHomeNetAmount.
   ///
   /// In en, this message translates to:
@@ -5715,6 +5793,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No {title} entries yet'**
   String financialLedgerEmpty(String title);
+
+  /// No description provided for @financialLedgerShgName.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG: {shg}'**
+  String financialLedgerShgName(String shg);
 
   /// No description provided for @financialLedgerCashbookTitle.
   ///
