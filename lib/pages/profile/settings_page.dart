@@ -128,14 +128,18 @@ class _SettingsPageState extends State<SettingsPage> {
   /// it for as long as the flag stays set (see `meetingCancelPending`), and
   /// a failure here also surfaces a visible, actionable error immediately
   /// instead of a silently-succeeding-looking toggle.
-  Future<void> _onMeetingsToggle(bool value, String? shgId) async {
+  // [l10n] is resolved synchronously by the caller (build()) and passed in
+  // rather than looked up here after the awaits below — this method spans
+  // several async gaps, and re-resolving AppLocalizations.of(context) that
+  // late risks touching a BuildContext the widget tree has since disposed.
+  Future<void> _onMeetingsToggle(bool value, String? shgId, AppLocalizations l10n) async {
     await _setPref(_notifyMeetingsKey, value, (val) => _notifyMeetings = val);
     await _requestPermissionIfEnabling(value);
     if (value) {
       await setMeetingCancelPending(false);
       try {
         final meetings = await _meetingRepository.fetchForShg(shgId);
-        await syncMeetingReminders(_notifications, meetings);
+        await syncMeetingReminders(_notifications, meetings, l10n);
       } catch (_) {
         /* best-effort, see doc comment above */
       }
@@ -162,14 +166,15 @@ class _SettingsPageState extends State<SettingsPage> {
   /// EMI due dates (`LoanRepository.fetchForMember`, not `fetchForShg` — a
   /// payment due-date reminder is inherently personal, not shared across the
   /// SHG the way meetings/announcements are).
-  Future<void> _onSavingsToggle(bool value, String? memberId) async {
+  // Same reasoning as _onMeetingsToggle's doc comment for [l10n].
+  Future<void> _onSavingsToggle(bool value, String? memberId, AppLocalizations l10n) async {
     await _setPref(_notifySavingsKey, value, (val) => _notifySavings = val);
     await _requestPermissionIfEnabling(value);
     if (value) {
       await setLoanCancelPending(false);
       try {
         final loans = await _loanRepository.fetchForMember(memberId);
-        await syncLoanDueReminders(_notifications, loans);
+        await syncLoanDueReminders(_notifications, loans, l10n);
       } catch (_) {
         /* best-effort, see _onMeetingsToggle's doc comment */
       }
@@ -236,9 +241,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   padded: false,
                   child: Column(
                     children: [
-                      _toggleRow(l10n.settingsNotifMeetingReminders, _notifyMeetings, (v) => _onMeetingsToggle(v, appState.profile?.shgId)),
+                      _toggleRow(l10n.settingsNotifMeetingReminders, _notifyMeetings, (v) => _onMeetingsToggle(v, appState.profile?.shgId, l10n)),
                       const Divider(height: 1, color: Neutral.c100),
-                      _toggleRow(l10n.settingsNotifPaymentAlerts, _notifySavings, (v) => _onSavingsToggle(v, appState.profile?.id)),
+                      _toggleRow(l10n.settingsNotifPaymentAlerts, _notifySavings, (v) => _onSavingsToggle(v, appState.profile?.id, l10n)),
                       const Divider(height: 1, color: Neutral.c100),
                       _toggleRow(l10n.settingsNotifAnnouncements, _notifyAnnouncements, (v) => _onAnnouncementsToggle(v)),
                     ],

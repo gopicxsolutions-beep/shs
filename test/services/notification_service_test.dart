@@ -1,9 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shg_saathi/l10n/gen/app_localizations_en.dart';
 import 'package:shg_saathi/models/announcement.dart';
 import 'package:shg_saathi/models/loan.dart';
 import 'package:shg_saathi/models/meeting.dart';
 import 'package:shg_saathi/services/notification_service.dart';
+
+// AppLocalizationsEn can be constructed directly (no BuildContext needed) —
+// title/body strings are now caller-localized (see notification_service.dart's
+// doc comments), so these pure-Dart tests need a concrete instance to pass.
+final _l10n = AppLocalizationsEn();
 
 /// A lightweight fake implementing [NotificationService] — records every
 /// call instead of touching a platform channel, exactly as
@@ -30,7 +36,7 @@ class _FakeNotificationService implements NotificationService {
   }
 
   @override
-  Future<void> scheduleMeetingReminder({required String meetingId, required DateTime meetingAt, required String venue}) async {
+  Future<void> scheduleMeetingReminder({required String meetingId, required DateTime meetingAt, required String title, required String body}) async {
     scheduledMeetings.add(meetingId);
   }
 
@@ -40,7 +46,7 @@ class _FakeNotificationService implements NotificationService {
   }
 
   @override
-  Future<void> scheduleLoanDueReminder({required String loanId, required DateTime dueDate, required num emiAmount}) async {
+  Future<void> scheduleLoanDueReminder({required String loanId, required DateTime dueDate, required String title, required String body}) async {
     scheduledLoans.add(loanId);
   }
 
@@ -50,7 +56,7 @@ class _FakeNotificationService implements NotificationService {
   }
 
   @override
-  Future<void> showAnnouncementNotification({required String announcementId, required String title}) async {
+  Future<void> showAnnouncementNotification({required String announcementId, required String title, required String notificationTitle}) async {
     shownAnnouncements.add(announcementId);
   }
 }
@@ -86,7 +92,7 @@ void main() {
   group('syncMeetingReminders', () {
     test('schedules a reminder for an upcoming, not-yet-passed meeting', () async {
       final service = _FakeNotificationService();
-      await syncMeetingReminders(service, [_meeting(id: 'm-future', date: future)]);
+      await syncMeetingReminders(service, [_meeting(id: 'm-future', date: future)], _l10n);
       expect(service.scheduledMeetings, ['m-future']);
       expect(service.cancelledMeetings, isEmpty);
     });
@@ -96,14 +102,14 @@ void main() {
       // advances a meeting's stored status to 'completed', so a genuinely
       // past meeting can still read status == 'upcoming' forever.
       final service = _FakeNotificationService();
-      await syncMeetingReminders(service, [_meeting(id: 'm-past', date: past, status: 'upcoming')]);
+      await syncMeetingReminders(service, [_meeting(id: 'm-past', date: past, status: 'upcoming')], _l10n);
       expect(service.scheduledMeetings, isEmpty);
       expect(service.cancelledMeetings, ['m-past']);
     });
 
     test('cancels any reminder for a cancelled meeting', () async {
       final service = _FakeNotificationService();
-      await syncMeetingReminders(service, [_meeting(id: 'm-cancelled', date: future, status: 'cancelled')]);
+      await syncMeetingReminders(service, [_meeting(id: 'm-cancelled', date: future, status: 'cancelled')], _l10n);
       expect(service.scheduledMeetings, isEmpty);
       expect(service.cancelledMeetings, ['m-cancelled']);
     });
@@ -115,7 +121,7 @@ void main() {
         _meeting(id: 'b', date: past),
         _meeting(id: 'c', date: future, status: 'cancelled'),
         _meeting(id: 'd', date: future),
-      ]);
+      ], _l10n);
       expect(service.scheduledMeetings, ['a', 'd']);
       expect(service.cancelledMeetings, ['b', 'c']);
     });
@@ -124,27 +130,27 @@ void main() {
   group('syncLoanDueReminders', () {
     test('schedules a reminder for an active loan with a known next due date', () async {
       final service = _FakeNotificationService();
-      await syncLoanDueReminders(service, [_loan(id: 'l-active', status: 'active', nextDueDate: future)]);
+      await syncLoanDueReminders(service, [_loan(id: 'l-active', status: 'active', nextDueDate: future)], _l10n);
       expect(service.scheduledLoans, ['l-active']);
       expect(service.cancelledLoans, isEmpty);
     });
 
     test('schedules a reminder for an overdue loan too', () async {
       final service = _FakeNotificationService();
-      await syncLoanDueReminders(service, [_loan(id: 'l-overdue', status: 'overdue', nextDueDate: future)]);
+      await syncLoanDueReminders(service, [_loan(id: 'l-overdue', status: 'overdue', nextDueDate: future)], _l10n);
       expect(service.scheduledLoans, ['l-overdue']);
     });
 
     test('cancels for a pending loan with no due date yet', () async {
       final service = _FakeNotificationService();
-      await syncLoanDueReminders(service, [_loan(id: 'l-pending', status: 'pending', nextDueDate: null)]);
+      await syncLoanDueReminders(service, [_loan(id: 'l-pending', status: 'pending', nextDueDate: null)], _l10n);
       expect(service.scheduledLoans, isEmpty);
       expect(service.cancelledLoans, ['l-pending']);
     });
 
     test('cancels for a closed loan even if a stale next due date is still present', () async {
       final service = _FakeNotificationService();
-      await syncLoanDueReminders(service, [_loan(id: 'l-closed', status: 'closed', nextDueDate: future)]);
+      await syncLoanDueReminders(service, [_loan(id: 'l-closed', status: 'closed', nextDueDate: future)], _l10n);
       expect(service.scheduledLoans, isEmpty);
       expect(service.cancelledLoans, ['l-closed']);
     });
@@ -159,26 +165,26 @@ void main() {
 
     test('first run on a device seeds the "seen" registry without notifying for pre-existing announcements', () async {
       final service = _FakeNotificationService();
-      await notifyNewAnnouncements(service, [announcement('a1'), announcement('a2')]);
+      await notifyNewAnnouncements(service, [announcement('a1'), announcement('a2')], _l10n);
       expect(service.shownAnnouncements, isEmpty, reason: 'a member opening Announcements for the first time after this feature ships should not get a backlog of notifications');
     });
 
     test('a genuinely new announcement (posted after the registry was seeded) does notify', () async {
       final service = _FakeNotificationService();
-      await notifyNewAnnouncements(service, [announcement('a1')]);
+      await notifyNewAnnouncements(service, [announcement('a1')], _l10n);
       expect(service.shownAnnouncements, isEmpty);
 
-      await notifyNewAnnouncements(service, [announcement('a1'), announcement('a2')]);
+      await notifyNewAnnouncements(service, [announcement('a1'), announcement('a2')], _l10n);
       expect(service.shownAnnouncements, ['a2']);
     });
 
     test('never notifies twice for the same announcement id', () async {
       final service = _FakeNotificationService();
-      await notifyNewAnnouncements(service, [announcement('a1')]);
-      await notifyNewAnnouncements(service, [announcement('a1'), announcement('a2')]);
+      await notifyNewAnnouncements(service, [announcement('a1')], _l10n);
+      await notifyNewAnnouncements(service, [announcement('a1'), announcement('a2')], _l10n);
       expect(service.shownAnnouncements, ['a2']);
 
-      await notifyNewAnnouncements(service, [announcement('a1'), announcement('a2')]);
+      await notifyNewAnnouncements(service, [announcement('a1'), announcement('a2')], _l10n);
       expect(service.shownAnnouncements, ['a2'], reason: 'a2 was already notified on the previous call; it must not fire again on a later call that still includes it');
     });
   });

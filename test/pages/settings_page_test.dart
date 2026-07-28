@@ -46,7 +46,7 @@ class _FakeNotificationService implements NotificationService {
   }
 
   @override
-  Future<void> scheduleMeetingReminder({required String meetingId, required DateTime meetingAt, required String venue}) async {}
+  Future<void> scheduleMeetingReminder({required String meetingId, required DateTime meetingAt, required String title, required String body}) async {}
 
   @override
   Future<void> cancelMeetingReminder(String meetingId) async {
@@ -54,7 +54,7 @@ class _FakeNotificationService implements NotificationService {
   }
 
   @override
-  Future<void> scheduleLoanDueReminder({required String loanId, required DateTime dueDate, required num emiAmount}) async {}
+  Future<void> scheduleLoanDueReminder({required String loanId, required DateTime dueDate, required String title, required String body}) async {}
 
   @override
   Future<void> cancelLoanDueReminder(String loanId) async {
@@ -62,7 +62,7 @@ class _FakeNotificationService implements NotificationService {
   }
 
   @override
-  Future<void> showAnnouncementNotification({required String announcementId, required String title}) async {}
+  Future<void> showAnnouncementNotification({required String announcementId, required String title, required String notificationTitle}) async {}
 }
 
 /// Regression coverage for SettingsPage's `_loadPrefs()`/`_setPref()` fixes.

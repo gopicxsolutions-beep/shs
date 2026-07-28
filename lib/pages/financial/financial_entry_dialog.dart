@@ -43,7 +43,11 @@ Future<bool?> showFinancialEntryDialog(
               ),
               if (error != null) ...[
                 const SizedBox(height: 12),
-                Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                // liveRegion so a screen-reader user hears the validation
+                // error the instant it appears, not just if they happen to
+                // already be focused here — same fix as AppAsyncBuilder's
+                // error state.
+                Semantics(liveRegion: true, child: Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12))),
               ],
             ],
           ),

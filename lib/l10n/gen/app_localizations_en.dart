@@ -195,6 +195,32 @@ class AppLocalizationsEn extends AppLocalizations {
       'Reminders are scheduled on this device only — not sent by a server. They won\'t reach you if you use a different phone or reinstall the app. If a meeting is cancelled, only this device\'s own reminder is cancelled right away — another member\'s phone may still show a stale reminder for it until she reopens the Meetings tab.';
 
   @override
+  String get notificationMeetingReminderTitle => 'Meeting reminder';
+
+  @override
+  String get notificationMeetingReminderBodyNoVenue =>
+      'Your SHG meeting starts in about an hour.';
+
+  @override
+  String notificationMeetingReminderBodyWithVenue(String venue) {
+    return 'Your SHG meeting starts in about an hour at $venue.';
+  }
+
+  @override
+  String get notificationLoanDueTitle => 'Loan payment due tomorrow';
+
+  @override
+  String get notificationLoanDueBodyNoAmount => 'Your EMI is due tomorrow.';
+
+  @override
+  String notificationLoanDueBodyWithAmount(String amount) {
+    return 'Your EMI of ₹$amount is due tomorrow.';
+  }
+
+  @override
+  String get notificationNewAnnouncementTitle => 'New announcement';
+
+  @override
   String get settingsNotifPermissionDenied =>
       'Notifications are turned off for this app in your phone\'s settings. Turn them on there to actually receive reminders.';
 
@@ -1119,6 +1145,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addProductAddPhotoOptional => 'Add a photo (optional)';
+
+  @override
+  String get addProductRemovePhotoTooltip => 'Remove photo';
 
   @override
   String get addProductNameLabel => 'Product name';
@@ -3549,6 +3578,24 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get aiAdvisorUpstreamUnavailable =>
       'The advisor service is temporarily unavailable right now. Please try again in a moment.';
+
+  @override
+  String get aiAdvisorChatInputHint => 'Ask a question…';
+
+  @override
+  String get aiAdvisorChatSendTooltip => 'Send';
+
+  @override
+  String get aiAdvisorChatFinancialHint =>
+      'Ask about savings, loans, or budgeting for your SHG.';
+
+  @override
+  String get aiAdvisorChatSchemeHint =>
+      'Ask which government schemes you may be eligible for.';
+
+  @override
+  String get aiAdvisorChatMarketHint =>
+      'Ask about pricing, demand, or selling your products.';
 
   @override
   String get actionLoadMore => 'Load more';

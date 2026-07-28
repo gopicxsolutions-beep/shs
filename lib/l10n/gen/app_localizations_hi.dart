@@ -195,6 +195,32 @@ class AppLocalizationsHi extends AppLocalizations {
       'रिमाइंडर केवल इस डिवाइस पर शेड्यूल किए जाते हैं — किसी सर्वर से नहीं भेजे जाते। यदि आप कोई दूसरा फ़ोन इस्तेमाल करें या ऐप फिर से इंस्टॉल करें, तो ये आप तक नहीं पहुंचेंगे। यदि कोई बैठक रद्द कर दी जाती है, तो केवल इसी डिवाइस का रिमाइंडर तुरंत रद्द होता है — किसी अन्य सदस्य के फ़ोन पर पुराना रिमाइंडर तब तक दिख सकता है जब तक वह बैठक टैब फिर से न खोले।';
 
   @override
+  String get notificationMeetingReminderTitle => 'बैठक रिमाइंडर';
+
+  @override
+  String get notificationMeetingReminderBodyNoVenue =>
+      'आपकी SHG बैठक लगभग एक घंटे में शुरू होगी।';
+
+  @override
+  String notificationMeetingReminderBodyWithVenue(String venue) {
+    return 'आपकी SHG बैठक लगभग एक घंटे में $venue पर शुरू होगी।';
+  }
+
+  @override
+  String get notificationLoanDueTitle => 'ऋण भुगतान कल देय है';
+
+  @override
+  String get notificationLoanDueBodyNoAmount => 'आपकी EMI कल देय है।';
+
+  @override
+  String notificationLoanDueBodyWithAmount(String amount) {
+    return 'आपकी ₹$amount की EMI कल देय है।';
+  }
+
+  @override
+  String get notificationNewAnnouncementTitle => 'नई घोषणा';
+
+  @override
   String get settingsNotifPermissionDenied =>
       'आपके फ़ोन की सेटिंग्स में इस ऐप के लिए नोटिफिकेशन बंद हैं। रिमाइंडर पाने के लिए वहां उन्हें चालू करें।';
 
@@ -1097,6 +1123,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get addProductAddPhotoOptional => 'एक फोटो जोड़ें (वैकल्पिक)';
+
+  @override
+  String get addProductRemovePhotoTooltip => 'फोटो हटाएं';
 
   @override
   String get addProductNameLabel => 'उत्पाद का नाम';
@@ -3479,6 +3508,24 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get aiAdvisorUpstreamUnavailable =>
       'सलाहकार सेवा अभी अस्थायी रूप से उपलब्ध नहीं है। कृपया थोड़ी देर बाद फिर से प्रयास करें।';
+
+  @override
+  String get aiAdvisorChatInputHint => 'एक सवाल पूछें…';
+
+  @override
+  String get aiAdvisorChatSendTooltip => 'भेजें';
+
+  @override
+  String get aiAdvisorChatFinancialHint =>
+      'अपने SHG के लिए बचत, ऋण, या बजट के बारे में पूछें।';
+
+  @override
+  String get aiAdvisorChatSchemeHint =>
+      'पूछें कि आप किन सरकारी योजनाओं के लिए पात्र हो सकते हैं।';
+
+  @override
+  String get aiAdvisorChatMarketHint =>
+      'अपने उत्पादों की कीमत, मांग, या बिक्री के बारे में पूछें।';
 
   @override
   String get actionLoadMore => 'और लोड करें';

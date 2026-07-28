@@ -84,17 +84,17 @@ class LoansHomePage extends StatelessWidget {
   /// own) in live mode — see [build]'s doc comment on `isPlatformWideStaff`
   /// for the full history of why this became a real fetch instead of an
   /// honest "doesn't apply to your role" dead end.
-  Future<List<Loan>> _loadAndSyncReminders(LoanRepository repo, bool isLeaderOrStaff, bool platformWide, String? shgId, String? memberId, NotificationService notifications) async {
+  Future<List<Loan>> _loadAndSyncReminders(LoanRepository repo, bool isLeaderOrStaff, bool platformWide, String? shgId, String? memberId, NotificationService notifications, AppLocalizations l10n) async {
     final loans = await (platformWide ? repo.fetchAllForStaff() : (isLeaderOrStaff ? repo.fetchForShg(shgId) : repo.fetchForMember(memberId)));
-    unawaited(_syncReminders(repo, isLeaderOrStaff, memberId, loans, notifications));
+    unawaited(_syncReminders(repo, isLeaderOrStaff, memberId, loans, notifications, l10n));
     return loans;
   }
 
-  Future<void> _syncReminders(LoanRepository repo, bool isLeaderOrStaff, String? memberId, List<Loan> loans, NotificationService notifications) async {
+  Future<void> _syncReminders(LoanRepository repo, bool isLeaderOrStaff, String? memberId, List<Loan> loans, NotificationService notifications, AppLocalizations l10n) async {
     final enabled = await ensureNotificationPermissionForDefaultEnabled(notifications, kNotifyPaymentsPrefKey, await paymentAlertsEnabled());
     if (enabled) {
       final ownLoans = isLeaderOrStaff ? await repo.fetchForMember(memberId) : loans;
-      await syncLoanDueReminders(notifications, ownLoans);
+      await syncLoanDueReminders(notifications, ownLoans, l10n);
     } else if (await loanCancelPending()) {
       final ownLoans = isLeaderOrStaff ? await repo.fetchForMember(memberId) : loans;
       await _retryPendingCancellation(notifications, ownLoans);
@@ -162,7 +162,7 @@ class LoansHomePage extends StatelessWidget {
         right: isLeaderOrStaff ? null : IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.loanApply), tooltip: l10n.loansHomeApplyTooltip),
       ),
       body: AppAsyncBuilder<List<Loan>>(
-        future: () => _loadAndSyncReminders(repo, isLeaderOrStaff, isPlatformWideStaff, shgId, memberId, notifications),
+        future: () => _loadAndSyncReminders(repo, isLeaderOrStaff, isPlatformWideStaff, shgId, memberId, notifications, l10n),
         builder: (context, loans) {
           // A pending or rejected loan's `outstanding` is set to the full
           // requested amount (never disbursed, so never reduced by a

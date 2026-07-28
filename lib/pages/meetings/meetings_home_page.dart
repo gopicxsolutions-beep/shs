@@ -65,16 +65,16 @@ class MeetingsHomePage extends StatelessWidget {
   /// fake), never resolves at all and hung `pumpAndSettle` forever. Firing
   /// it off with [unawaited] instead means the already-fetched `meetings`
   /// render immediately no matter how long (or whether) that ever resolves.
-  Future<List<Meeting>> _loadAndSyncReminders(MeetingRepository repo, bool platformWide, String? shgId, NotificationService notifications) async {
+  Future<List<Meeting>> _loadAndSyncReminders(MeetingRepository repo, bool platformWide, String? shgId, NotificationService notifications, AppLocalizations l10n) async {
     final meetings = await (platformWide ? repo.fetchAllForStaff() : repo.fetchForShg(shgId));
-    unawaited(_syncReminders(notifications, meetings));
+    unawaited(_syncReminders(notifications, meetings, l10n));
     return meetings;
   }
 
-  Future<void> _syncReminders(NotificationService notifications, List<Meeting> meetings) async {
+  Future<void> _syncReminders(NotificationService notifications, List<Meeting> meetings, AppLocalizations l10n) async {
     final enabled = await ensureNotificationPermissionForDefaultEnabled(notifications, kNotifyMeetingsPrefKey, await meetingRemindersEnabled());
     if (enabled) {
-      await syncMeetingReminders(notifications, meetings);
+      await syncMeetingReminders(notifications, meetings, l10n);
     } else if (await meetingCancelPending()) {
       await _retryPendingCancellation(notifications, meetings);
     }
@@ -126,7 +126,7 @@ class MeetingsHomePage extends StatelessWidget {
             : null,
       ),
       body: AppAsyncBuilder<List<Meeting>>(
-        future: () => _loadAndSyncReminders(repo, isPlatformWideStaff, shgId, notifications),
+        future: () => _loadAndSyncReminders(repo, isPlatformWideStaff, shgId, notifications, l10n),
         builder: (context, meetings) {
           // `status` alone isn't reliable here: nothing in the app ever
           // advances a meeting from 'upcoming' to 'completed' (see

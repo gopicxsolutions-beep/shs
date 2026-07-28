@@ -69,6 +69,24 @@
   "settingsNotifPaymentAlerts": "Payment alerts",
   "settingsNotifAnnouncements": "Announcements",
   "settingsNotifLocalOnly": "Reminders are scheduled on this device only — not sent by a server. They won't reach you if you use a different phone or reinstall the app. If a meeting is cancelled, only this device's own reminder is cancelled right away — another member's phone may still show a stale reminder for it until she reopens the Meetings tab.",
+
+  "notificationMeetingReminderTitle": "Meeting reminder",
+  "notificationMeetingReminderBodyNoVenue": "Your SHG meeting starts in about an hour.",
+  "notificationMeetingReminderBodyWithVenue": "Your SHG meeting starts in about an hour at {venue}.",
+  "@notificationMeetingReminderBodyWithVenue": {
+    "placeholders": {
+      "venue": {"type": "String"}
+    }
+  },
+  "notificationLoanDueTitle": "Loan payment due tomorrow",
+  "notificationLoanDueBodyNoAmount": "Your EMI is due tomorrow.",
+  "notificationLoanDueBodyWithAmount": "Your EMI of ₹{amount} is due tomorrow.",
+  "@notificationLoanDueBodyWithAmount": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "notificationNewAnnouncementTitle": "New announcement",
   "settingsNotifPermissionDenied": "Notifications are turned off for this app in your phone's settings. Turn them on there to actually receive reminders.",
   "settingsNotifCancelPendingError": "Couldn't turn off these reminders on this device. We'll keep retrying automatically — please check your connection, or try again.",
   "settingsLanguage": "Language",
@@ -743,6 +761,8 @@
   "addProductImageTooLarge": "Image is too large — please choose one under 5 MB",
 
   "addProductAddPhotoOptional": "Add a photo (optional)",
+
+  "addProductRemovePhotoTooltip": "Remove photo",
 
   "addProductNameLabel": "Product name",
 
@@ -2520,6 +2540,11 @@
   },
 
   "aiAdvisorUpstreamUnavailable": "The advisor service is temporarily unavailable right now. Please try again in a moment.",
+  "aiAdvisorChatInputHint": "Ask a question…",
+  "aiAdvisorChatSendTooltip": "Send",
+  "aiAdvisorChatFinancialHint": "Ask about savings, loans, or budgeting for your SHG.",
+  "aiAdvisorChatSchemeHint": "Ask which government schemes you may be eligible for.",
+  "aiAdvisorChatMarketHint": "Ask about pricing, demand, or selling your products.",
 
   "actionLoadMore": "Load more",
 

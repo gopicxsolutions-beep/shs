@@ -69,16 +69,21 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
   /// forever). Firing this off with [unawaited] instead means the
   /// already-fetched `items` render immediately regardless of how long (or
   /// whether) the permission dance ever resolves.
-  Future<List<Announcement>> _loadAndNotify(String? shgId, String? memberId) async {
+  Future<List<Announcement>> _loadAndNotify(String? shgId, String? memberId, AppLocalizations l10n) async {
     final items = await _repo.fetchForShg(shgId, memberId);
-    unawaited(_syncNotifications(items));
+    unawaited(_syncNotifications(items, l10n));
     return items;
   }
 
-  Future<void> _syncNotifications(List<Announcement> items) async {
+  // [l10n] is resolved synchronously in build() and passed in, rather than
+  // looked up here after the `unawaited` async gap above — this method can
+  // still be running after the page is popped, and re-resolving
+  // AppLocalizations.of(context) on a possibly-deactivated widget would be
+  // unsafe.
+  Future<void> _syncNotifications(List<Announcement> items, AppLocalizations l10n) async {
     final enabled = await ensureNotificationPermissionForDefaultEnabled(_notifications, kNotifyAnnouncementsPrefKey, await announcementNotificationsEnabled());
     if (enabled) {
-      await notifyNewAnnouncements(_notifications, items);
+      await notifyNewAnnouncements(_notifications, items, l10n);
     }
   }
 
@@ -187,7 +192,7 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
       ),
       body: AppAsyncBuilder<List<Announcement>>(
         key: _key,
-        future: () => _loadAndNotify(shgId, memberId),
+        future: () => _loadAndNotify(shgId, memberId, l10n),
         builder: (context, items) {
           if (items.isEmpty) {
             return AppEmptyState(icon: Icons.campaign_rounded, message: l10n.announcementsHomeEmptyState);

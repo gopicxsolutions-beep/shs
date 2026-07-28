@@ -95,17 +95,28 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
                 child: InkWell(
                   onTap: () => context.go(Paths.announcements),
                   borderRadius: BorderRadius.circular(999),
-                  child: Container(
-                    width: 40, height: 40,
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
-                    child: Stack(children: [
-                      const Center(child: Icon(Icons.notifications_rounded, color: Colors.white, size: 18)),
-                      if (unread > 0)
-                        Positioned(
-                          right: 8, top: 8,
-                          child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Gold.c400, shape: BoxShape.circle, border: Border.all(color: Brand.c600, width: 2))),
-                        ),
-                    ]),
+                  // A raw InkWell (unlike IconButton) doesn't enforce a
+                  // minimum tap target on its own — the 40x40 visible circle
+                  // was also the entire hit area, under the 44x44 minimum
+                  // touch-target guideline. Centering it in a 44x44 SizedBox
+                  // grows the tappable area without changing how it looks.
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Center(
+                      child: Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
+                        child: Stack(children: [
+                          const Center(child: Icon(Icons.notifications_rounded, color: Colors.white, size: 18)),
+                          if (unread > 0)
+                            Positioned(
+                              right: 8, top: 8,
+                              child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Gold.c400, shape: BoxShape.circle, border: Border.all(color: Brand.c600, width: 2))),
+                            ),
+                        ]),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -114,7 +125,14 @@ class _DashboardTopBarState extends State<DashboardTopBar> {
                 message: l10n.profileTitle,
                 child: InkWell(
                   onTap: () => context.go(Paths.profile),
-                  child: AppAvatar(name: user.name, size: 40, ringColor: Colors.white.withValues(alpha: 0.4)),
+                  borderRadius: BorderRadius.circular(999),
+                  // Same 44x44 minimum-tap-target fix as the notification
+                  // bell above.
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Center(child: AppAvatar(name: user.name, size: 40, ringColor: Colors.white.withValues(alpha: 0.4))),
+                  ),
                 ),
               ),
             ],

@@ -88,16 +88,22 @@ class AppAsyncBuilderState<T> extends State<AppAsyncBuilder<T>> {
           final message = isNetwork
               ? (l10n?.asyncErrorNetwork ?? 'Check your internet connection and try again.')
               : (widget.errorMessage ?? l10n?.asyncErrorGeneric ?? 'Something went wrong. Please try again.');
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(isNetwork ? Icons.wifi_off_rounded : Icons.error_outline_rounded, color: Accent.red500, size: 32),
-                const SizedBox(height: 12),
-                Text(message, textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
-                const SizedBox(height: 12),
-                TextButton(onPressed: reload, child: Text(l10n?.actionRetry ?? 'Retry')),
-              ]),
+          // Same reasoning as the loading state's Semantics above — a
+          // screen-reader user not already focused on this region would
+          // otherwise hear nothing at all when a load fails.
+          return Semantics(
+            liveRegion: true,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(isNetwork ? Icons.wifi_off_rounded : Icons.error_outline_rounded, color: Accent.red500, size: 32),
+                  const SizedBox(height: 12),
+                  Text(message, textAlign: TextAlign.center, style: AppTheme.sans(13, color: Neutral.c500)),
+                  const SizedBox(height: 12),
+                  TextButton(onPressed: reload, child: Text(l10n?.actionRetry ?? 'Retry')),
+                ]),
+              ),
             ),
           );
         }

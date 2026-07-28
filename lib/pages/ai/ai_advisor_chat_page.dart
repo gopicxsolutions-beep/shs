@@ -162,6 +162,10 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Nullable, not `!` — see _errorMessageFor's identical reasoning above:
+    // this page's own widget tests pump a bare MaterialApp with no
+    // localization delegates configured.
+    final l10n = AppLocalizations.of(context);
     final appState = context.watch<AppState>();
     final memberId = appState.profile?.id;
 
@@ -238,7 +242,7 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
                     textInputAction: TextInputAction.send,
                     style: AppTheme.sans(13),
                     decoration: InputDecoration(
-                      hintText: 'Ask a question…',
+                      hintText: l10n?.aiAdvisorChatInputHint ?? 'Ask a question…',
                       filled: true,
                       fillColor: Neutral.c50,
                       border: OutlineInputBorder(
@@ -264,7 +268,7 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
                         )
                       : Icon(Icons.send_rounded, color: Brand.c600),
                   onPressed: _asking ? null : () => _ask(memberId),
-                  tooltip: 'Send',
+                  tooltip: l10n?.aiAdvisorChatSendTooltip ?? 'Send',
                 ),
               ],
             ),

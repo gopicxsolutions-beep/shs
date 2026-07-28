@@ -105,7 +105,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       // is correct for every case instead of hardcoding one destination.
       if (mounted) context.go(Paths.dashboard);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not save your profile. Please try again.');
+      if (mounted) setState(() => _error = AppLocalizations.of(context)!.profileUpdateError);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

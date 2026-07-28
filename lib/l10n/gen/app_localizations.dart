@@ -454,6 +454,48 @@ abstract class AppLocalizations {
   /// **'Reminders are scheduled on this device only — not sent by a server. They won\'t reach you if you use a different phone or reinstall the app. If a meeting is cancelled, only this device\'s own reminder is cancelled right away — another member\'s phone may still show a stale reminder for it until she reopens the Meetings tab.'**
   String get settingsNotifLocalOnly;
 
+  /// No description provided for @notificationMeetingReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting reminder'**
+  String get notificationMeetingReminderTitle;
+
+  /// No description provided for @notificationMeetingReminderBodyNoVenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SHG meeting starts in about an hour.'**
+  String get notificationMeetingReminderBodyNoVenue;
+
+  /// No description provided for @notificationMeetingReminderBodyWithVenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SHG meeting starts in about an hour at {venue}.'**
+  String notificationMeetingReminderBodyWithVenue(String venue);
+
+  /// No description provided for @notificationLoanDueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Loan payment due tomorrow'**
+  String get notificationLoanDueTitle;
+
+  /// No description provided for @notificationLoanDueBodyNoAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Your EMI is due tomorrow.'**
+  String get notificationLoanDueBodyNoAmount;
+
+  /// No description provided for @notificationLoanDueBodyWithAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Your EMI of ₹{amount} is due tomorrow.'**
+  String notificationLoanDueBodyWithAmount(String amount);
+
+  /// No description provided for @notificationNewAnnouncementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New announcement'**
+  String get notificationNewAnnouncementTitle;
+
   /// No description provided for @settingsNotifPermissionDenied.
   ///
   /// In en, this message translates to:
@@ -2007,6 +2049,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add a photo (optional)'**
   String get addProductAddPhotoOptional;
+
+  /// No description provided for @addProductRemovePhotoTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get addProductRemovePhotoTooltip;
 
   /// No description provided for @addProductNameLabel.
   ///
@@ -6177,6 +6225,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The advisor service is temporarily unavailable right now. Please try again in a moment.'**
   String get aiAdvisorUpstreamUnavailable;
+
+  /// No description provided for @aiAdvisorChatInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask a question…'**
+  String get aiAdvisorChatInputHint;
+
+  /// No description provided for @aiAdvisorChatSendTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get aiAdvisorChatSendTooltip;
+
+  /// No description provided for @aiAdvisorChatFinancialHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about savings, loans, or budgeting for your SHG.'**
+  String get aiAdvisorChatFinancialHint;
+
+  /// No description provided for @aiAdvisorChatSchemeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask which government schemes you may be eligible for.'**
+  String get aiAdvisorChatSchemeHint;
+
+  /// No description provided for @aiAdvisorChatMarketHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about pricing, demand, or selling your products.'**
+  String get aiAdvisorChatMarketHint;
 
   /// No description provided for @actionLoadMore.
   ///

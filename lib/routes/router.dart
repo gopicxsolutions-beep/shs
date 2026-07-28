@@ -272,15 +272,19 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.aiHub, builder: (context, state) => const AiHubPage()),
           GoRoute(
             path: Paths.aiFinancialAdvisor,
-            builder: (context, state) => const AiAdvisorChatPage(advisorType: 'financial', title: 'Financial Advisor', hint: 'Ask about savings, loans, or budgeting for your SHG.'),
+            // Title/hint were hardcoded English literals here regardless of
+            // the app's language setting — reuses the same
+            // `aiHubFinancialAdvisorTitle` key already shown on the AI hub
+            // tile for the title, plus a new hint key per advisor type.
+            builder: (context, state) => AiAdvisorChatPage(advisorType: 'financial', title: AppLocalizations.of(context)!.aiHubFinancialAdvisorTitle, hint: AppLocalizations.of(context)!.aiAdvisorChatFinancialHint),
           ),
           GoRoute(
             path: Paths.aiSchemeRecommender,
-            builder: (context, state) => const AiAdvisorChatPage(advisorType: 'scheme', title: 'Scheme Recommender', hint: 'Ask which government schemes you may be eligible for.'),
+            builder: (context, state) => AiAdvisorChatPage(advisorType: 'scheme', title: AppLocalizations.of(context)!.aiHubSchemeRecommenderTitle, hint: AppLocalizations.of(context)!.aiAdvisorChatSchemeHint),
           ),
           GoRoute(
             path: Paths.aiMarketAdvisor,
-            builder: (context, state) => const AiAdvisorChatPage(advisorType: 'market', title: 'Market Advisor', hint: 'Ask about pricing, demand, or selling your products.'),
+            builder: (context, state) => AiAdvisorChatPage(advisorType: 'market', title: AppLocalizations.of(context)!.aiHubMarketAdvisorTitle, hint: AppLocalizations.of(context)!.aiAdvisorChatMarketHint),
           ),
           GoRoute(path: Paths.aiVoiceAssistant, builder: (context, state) => const AiVoiceAssistantPage()),
           GoRoute(path: Paths.reports, builder: (context, state) => const ReportsHubPage()),

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../models/announcement.dart';
 import '../models/loan.dart';
 import '../models/meeting.dart';
@@ -129,16 +130,26 @@ abstract class NotificationService {
   /// reports it back.
   Future<bool> requestPermission();
 
-  Future<void> scheduleMeetingReminder({required String meetingId, required DateTime meetingAt, required String venue});
+  /// [title]/[body] are caller-supplied (not built internally) so they can
+  /// be localized — this service has no `BuildContext`/locale of its own to
+  /// resolve `AppLocalizations` from. See [syncMeetingReminders], the sole
+  /// real caller, for how they're built (venue is folded into [body]
+  /// there, not passed separately here).
+  Future<void> scheduleMeetingReminder({required String meetingId, required DateTime meetingAt, required String title, required String body});
   Future<void> cancelMeetingReminder(String meetingId);
 
-  Future<void> scheduleLoanDueReminder({required String loanId, required DateTime dueDate, required num emiAmount});
+  /// See [scheduleMeetingReminder]'s doc comment — same reasoning for
+  /// [title]/[body] here (EMI amount is folded into [body] by
+  /// [syncLoanDueReminders]).
+  Future<void> scheduleLoanDueReminder({required String loanId, required DateTime dueDate, required String title, required String body});
   Future<void> cancelLoanDueReminder(String loanId);
 
   /// Shows an immediate (not scheduled) notification for a newly-seen
   /// announcement — see [notifyNewAnnouncements] for how "newly-seen" is
-  /// determined.
-  Future<void> showAnnouncementNotification({required String announcementId, required String title});
+  /// determined. [notificationTitle] is the caller-supplied, localized
+  /// wrapper title (e.g. "New announcement"); [title] is the announcement's
+  /// own headline, shown as the notification body.
+  Future<void> showAnnouncementNotification({required String announcementId, required String title, required String notificationTitle});
 }
 
 /// Real implementation backed by the `flutter_local_notifications` package.
@@ -225,7 +236,7 @@ class LocalNotificationService implements NotificationService {
   }
 
   @override
-  Future<void> scheduleMeetingReminder({required String meetingId, required DateTime meetingAt, required String venue}) async {
+  Future<void> scheduleMeetingReminder({required String meetingId, required DateTime meetingAt, required String title, required String body}) async {
     final fireAt = meetingAt.subtract(meetingLeadTime);
     if (!fireAt.isAfter(DateTime.now())) {
       // Already inside (or past) the lead window — nothing useful to remind
@@ -245,15 +256,14 @@ class LocalNotificationService implements NotificationService {
       ),
       iOS: const DarwinNotificationDetails(),
     );
-    final body = venue.trim().isEmpty ? 'Your SHG meeting starts in about an hour.' : 'Your SHG meeting starts in about an hour at $venue.';
-    await _zonedSchedule(_idFor('meeting', meetingId), 'Meeting reminder', body, fireAt, details);
+    await _zonedSchedule(_idFor('meeting', meetingId), title, body, fireAt, details);
   }
 
   @override
   Future<void> cancelMeetingReminder(String meetingId) => _cancel(_idFor('meeting', meetingId));
 
   @override
-  Future<void> scheduleLoanDueReminder({required String loanId, required DateTime dueDate, required num emiAmount}) async {
+  Future<void> scheduleLoanDueReminder({required String loanId, required DateTime dueDate, required String title, required String body}) async {
     final fireAt = dueDate.subtract(loanLeadTime);
     if (!fireAt.isAfter(DateTime.now())) {
       await cancelLoanDueReminder(loanId);
@@ -270,15 +280,14 @@ class LocalNotificationService implements NotificationService {
       ),
       iOS: const DarwinNotificationDetails(),
     );
-    final amountText = emiAmount > 0 ? ' of ₹${emiAmount.round()}' : '';
-    await _zonedSchedule(_idFor('loan', loanId), 'Loan payment due tomorrow', 'Your EMI$amountText is due tomorrow.', fireAt, details);
+    await _zonedSchedule(_idFor('loan', loanId), title, body, fireAt, details);
   }
 
   @override
   Future<void> cancelLoanDueReminder(String loanId) => _cancel(_idFor('loan', loanId));
 
   @override
-  Future<void> showAnnouncementNotification({required String announcementId, required String title}) async {
+  Future<void> showAnnouncementNotification({required String announcementId, required String title, required String notificationTitle}) async {
     await _ensureInitialized();
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -291,7 +300,7 @@ class LocalNotificationService implements NotificationService {
       iOS: DarwinNotificationDetails(),
     );
     try {
-      await _plugin.show(id: _idFor('announcement', announcementId), title: 'New announcement', body: title, notificationDetails: details);
+      await _plugin.show(id: _idFor('announcement', announcementId), title: notificationTitle, body: title, notificationDetails: details);
     } catch (_) {
       // No platform channel (test/unsupported target) — showing a
       // notification is inherently best-effort; nothing to recover.
@@ -365,10 +374,12 @@ class LocalNotificationService implements NotificationService {
 /// tab loads (`MeetingsHomePage`) or the toggle is switched on
 /// (`SettingsPage`) — scheduling twice for the same meeting just overwrites
 /// the same notification id.
-Future<void> syncMeetingReminders(NotificationService service, List<Meeting> meetings) async {
+Future<void> syncMeetingReminders(NotificationService service, List<Meeting> meetings, AppLocalizations l10n) async {
   for (final m in meetings) {
     if (m.status == 'upcoming' && !m.hasPassed) {
-      await service.scheduleMeetingReminder(meetingId: m.id, meetingAt: m.scheduledAt, venue: m.venue ?? '');
+      final venue = m.venue ?? '';
+      final body = venue.trim().isEmpty ? l10n.notificationMeetingReminderBodyNoVenue : l10n.notificationMeetingReminderBodyWithVenue(venue);
+      await service.scheduleMeetingReminder(meetingId: m.id, meetingAt: m.scheduledAt, title: l10n.notificationMeetingReminderTitle, body: body);
     } else {
       await service.cancelMeetingReminder(m.id);
     }
@@ -378,11 +389,12 @@ Future<void> syncMeetingReminders(NotificationService service, List<Meeting> mee
 /// Same idea as [syncMeetingReminders], for a member's own loan EMI due
 /// dates: only a disbursed, still-owed loan (`active`/`overdue`) with a
 /// known `nextDueDate` has a real upcoming due date to remind about.
-Future<void> syncLoanDueReminders(NotificationService service, List<Loan> loans) async {
+Future<void> syncLoanDueReminders(NotificationService service, List<Loan> loans, AppLocalizations l10n) async {
   for (final l in loans) {
     final due = l.nextDueDate;
     if ((l.status == 'active' || l.status == 'overdue') && due != null) {
-      await service.scheduleLoanDueReminder(loanId: l.id, dueDate: due, emiAmount: l.emi);
+      final body = l.emi > 0 ? l10n.notificationLoanDueBodyWithAmount(l.emi.round().toString()) : l10n.notificationLoanDueBodyNoAmount;
+      await service.scheduleLoanDueReminder(loanId: l.id, dueDate: due, title: l10n.notificationLoanDueTitle, body: body);
     } else {
       await service.cancelLoanDueReminder(l.id);
     }
@@ -482,7 +494,7 @@ Future<bool> ensureNotificationPermissionForDefaultEnabled(NotificationService s
 /// announcement history would get 20+ notifications the very first time she
 /// opens the Announcements tab after this feature ships, indistinguishable
 /// from a spam bug.
-Future<void> notifyNewAnnouncements(NotificationService service, List<Announcement> items) async {
+Future<void> notifyNewAnnouncements(NotificationService service, List<Announcement> items, AppLocalizations l10n) async {
   SharedPreferences prefs;
   try {
     prefs = await SharedPreferences.getInstance();
@@ -498,7 +510,7 @@ Future<void> notifyNewAnnouncements(NotificationService service, List<Announceme
   final seen = seenList.toSet();
   final newOnes = items.where((a) => !seen.contains(a.id));
   for (final a in newOnes) {
-    await service.showAnnouncementNotification(announcementId: a.id, title: a.title);
+    await service.showAnnouncementNotification(announcementId: a.id, title: a.title, notificationTitle: l10n.notificationNewAnnouncementTitle);
   }
   if (newOnes.isNotEmpty) {
     await prefs.setStringList(kSeenAnnouncementIdsPrefKey, {...seen, ...ids}.toList());

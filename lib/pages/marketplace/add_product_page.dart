@@ -180,17 +180,22 @@ class _AddProductPageState extends State<AddProductPage> {
                   children: [
                     Image.memory(_image!.bytes!, fit: BoxFit.cover),
                     Positioned(
-                      top: 8,
-                      right: 8,
-                      child: InkWell(
-                        onTap: _saving
+                      top: 0,
+                      right: 0,
+                      // IconButton (not a bare InkWell) so this gets a real
+                      // ~48x48 tap target and an accessible name for free —
+                      // the previous ~24x24 InkWell had neither, well under
+                      // the 44x44 minimum touch-target guideline and silent
+                      // to a screen reader.
+                      child: IconButton(
+                        tooltip: AppLocalizations.of(context)!.addProductRemovePhotoTooltip,
+                        onPressed: _saving
                             ? null
                             : () => setState(() {
                                   _image = null;
                                   _markDirty();
                                 }),
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
+                        icon: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
                           child: const Icon(Icons.close_rounded, size: 16, color: Colors.white),

@@ -69,6 +69,24 @@
   "settingsNotifPaymentAlerts": "भुगतान अलर्ट",
   "settingsNotifAnnouncements": "घोषणाएं",
   "settingsNotifLocalOnly": "रिमाइंडर केवल इस डिवाइस पर शेड्यूल किए जाते हैं — किसी सर्वर से नहीं भेजे जाते। यदि आप कोई दूसरा फ़ोन इस्तेमाल करें या ऐप फिर से इंस्टॉल करें, तो ये आप तक नहीं पहुंचेंगे। यदि कोई बैठक रद्द कर दी जाती है, तो केवल इसी डिवाइस का रिमाइंडर तुरंत रद्द होता है — किसी अन्य सदस्य के फ़ोन पर पुराना रिमाइंडर तब तक दिख सकता है जब तक वह बैठक टैब फिर से न खोले।",
+
+  "notificationMeetingReminderTitle": "बैठक रिमाइंडर",
+  "notificationMeetingReminderBodyNoVenue": "आपकी SHG बैठक लगभग एक घंटे में शुरू होगी।",
+  "notificationMeetingReminderBodyWithVenue": "आपकी SHG बैठक लगभग एक घंटे में {venue} पर शुरू होगी।",
+  "@notificationMeetingReminderBodyWithVenue": {
+    "placeholders": {
+      "venue": {"type": "String"}
+    }
+  },
+  "notificationLoanDueTitle": "ऋण भुगतान कल देय है",
+  "notificationLoanDueBodyNoAmount": "आपकी EMI कल देय है।",
+  "notificationLoanDueBodyWithAmount": "आपकी ₹{amount} की EMI कल देय है।",
+  "@notificationLoanDueBodyWithAmount": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "notificationNewAnnouncementTitle": "नई घोषणा",
   "settingsNotifPermissionDenied": "आपके फ़ोन की सेटिंग्स में इस ऐप के लिए नोटिफिकेशन बंद हैं। रिमाइंडर पाने के लिए वहां उन्हें चालू करें।",
   "settingsNotifCancelPendingError": "इस डिवाइस पर ये रिमाइंडर बंद नहीं हो सके। हम स्वचालित रूप से फिर से कोशिश करते रहेंगे — कृपया अपना कनेक्शन जांचें, या दोबारा कोशिश करें।",
   "settingsLanguage": "भाषा",
@@ -522,6 +540,7 @@
   "addProductImageTooLarge": "इमेज बहुत बड़ी है — कृपया 5 MB से कम की कोई इमेज चुनें",
 
   "addProductAddPhotoOptional": "एक फोटो जोड़ें (वैकल्पिक)",
+  "addProductRemovePhotoTooltip": "फोटो हटाएं",
 
   "addProductNameLabel": "उत्पाद का नाम",
 
@@ -1947,6 +1966,11 @@
   "adminDashboardActivityDocument": "दस्तावेज़ अपलोड किया गया — {name}",
 
   "aiAdvisorUpstreamUnavailable": "सलाहकार सेवा अभी अस्थायी रूप से उपलब्ध नहीं है। कृपया थोड़ी देर बाद फिर से प्रयास करें।",
+  "aiAdvisorChatInputHint": "एक सवाल पूछें…",
+  "aiAdvisorChatSendTooltip": "भेजें",
+  "aiAdvisorChatFinancialHint": "अपने SHG के लिए बचत, ऋण, या बजट के बारे में पूछें।",
+  "aiAdvisorChatSchemeHint": "पूछें कि आप किन सरकारी योजनाओं के लिए पात्र हो सकते हैं।",
+  "aiAdvisorChatMarketHint": "अपने उत्पादों की कीमत, मांग, या बिक्री के बारे में पूछें।",
 
   "actionLoadMore": "और लोड करें",
 

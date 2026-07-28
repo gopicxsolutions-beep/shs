@@ -197,6 +197,33 @@ class AppLocalizationsTe extends AppLocalizations {
       'రిమైండర్‌లు ఈ పరికరంలో మాత్రమే షెడ్యూల్ చేయబడతాయి — సర్వర్ ద్వారా పంపబడవు. మీరు వేరే ఫోన్ ఉపయోగిస్తే లేదా యాప్‌ను మళ్లీ ఇన్‌స్టాల్ చేస్తే, ఇవి మీకు చేరవు. ఒక సమావేశం రద్దు చేయబడితే, ఈ పరికరం యొక్క రిమైండర్ మాత్రమే వెంటనే రద్దవుతుంది — మరో సభ్యురాలి ఫోన్‌లో ఆమె సమావేశాల ట్యాబ్‌ను మళ్లీ తెరిచే వరకు పాత రిమైండర్ కనిపించవచ్చు.';
 
   @override
+  String get notificationMeetingReminderTitle => 'సమావేశం రిమైండర్';
+
+  @override
+  String get notificationMeetingReminderBodyNoVenue =>
+      'మీ SHG సమావేశం సుమారు ఒక గంటలో ప్రారంభమవుతుంది.';
+
+  @override
+  String notificationMeetingReminderBodyWithVenue(String venue) {
+    return 'మీ SHG సమావేశం సుమారు ఒక గంటలో $venue వద్ద ప్రారంభమవుతుంది.';
+  }
+
+  @override
+  String get notificationLoanDueTitle => 'రుణ చెల్లింపు రేపు గడువు';
+
+  @override
+  String get notificationLoanDueBodyNoAmount =>
+      'మీ EMI రేపు గడువు ముగుస్తుంది.';
+
+  @override
+  String notificationLoanDueBodyWithAmount(String amount) {
+    return 'మీ ₹$amount EMI రేపు గడువు ముగుస్తుంది.';
+  }
+
+  @override
+  String get notificationNewAnnouncementTitle => 'కొత్త ప్రకటన';
+
+  @override
   String get settingsNotifPermissionDenied =>
       'మీ ఫోన్ సెట్టింగ్‌లలో ఈ యాప్ కోసం నోటిఫికేషన్‌లు ఆఫ్‌లో ఉన్నాయి. రిమైండర్‌లు అందుకోవాలంటే వాటిని అక్కడ ఆన్ చేయండి.';
 
@@ -1123,6 +1150,9 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get addProductAddPhotoOptional => 'ఒక ఫోటో జోడించండి (ఐచ్ఛికం)';
+
+  @override
+  String get addProductRemovePhotoTooltip => 'ఫోటోను తొలగించండి';
 
   @override
   String get addProductNameLabel => 'ఉత్పత్తి పేరు';
@@ -3550,6 +3580,24 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get aiAdvisorUpstreamUnavailable =>
       'సలహాదారు సేవ ప్రస్తుతం తాత్కాలికంగా అందుబాటులో లేదు. దయచేసి కొద్దిసేపటి తర్వాత మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get aiAdvisorChatInputHint => 'ఒక ప్రశ్న అడగండి…';
+
+  @override
+  String get aiAdvisorChatSendTooltip => 'పంపండి';
+
+  @override
+  String get aiAdvisorChatFinancialHint =>
+      'మీ SHG కోసం పొదుపు, రుణాలు, లేదా బడ్జెట్ గురించి అడగండి.';
+
+  @override
+  String get aiAdvisorChatSchemeHint =>
+      'మీరు ఏ ప్రభుత్వ పథకాలకు అర్హులు కావచ్చో అడగండి.';
+
+  @override
+  String get aiAdvisorChatMarketHint =>
+      'మీ ఉత్పత్తుల ధర, డిమాండ్, లేదా అమ్మకం గురించి అడగండి.';
 
   @override
   String get actionLoadMore => 'మరిన్ని లోడ్ చేయండి';

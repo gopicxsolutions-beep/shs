@@ -14247,3 +14247,163 @@ console/server errors, same as last round. Not treated as a one-off flake
 at this point (three independent attempts across two rounds, same
 symptom) — relied on live-DB verification for every fix above instead, per
 this repo's own documented fallback guidance.
+
+## Update (round 178) — Gap-hunting loop, iteration 6: launched 4 fresh module audits (Marketplace products/SHG join, Profile/Notifications, Scheme catalog, AI Market Advisor/accessibility), fixed 13 real gaps
+
+Four parallel background audits, all new ground. Two genuine security
+gaps closed (a scheme-eligibility bypass and an SHG-hopping gap), two more
+delete-cascade blast-radius fixes matching this loop's now-established
+pattern, one unlocked profile column, and a real localization/
+accessibility sweep across notifications and several widgets.
+
+**Fixed, live-verified against the real Supabase project:**
+
+1. **Scheme eligibility criteria were never enforced — a member could
+   apply to, and be approved for, a scheme this app's own catalog says
+   they don't qualify for.** `evaluateSchemeEligibility` (the structured
+   rules engine) only ever ran on the standalone "checker" page
+   (`SchemeEligibilityPage`), with no wiring into the real Apply flow —
+   `SchemeDetailPage`'s Apply button gated on the deadline only, and
+   neither `scheme_applications_insert_self` (0030) nor
+   `decide_scheme_application` (0029) ever looked at
+   `eligibility_criteria`. Fixed (`0074_scheme_eligibility_enforcement_
+   and_delete_restrict.sql`) with a new `scheme_eligibility_met(scheme_id,
+   member_id)` security-definer function re-deriving the same
+   requires-membership/min-age/min-grade checks server-side, wired into
+   the INSERT policy's `with check` — the real trust boundary, not just
+   the UI. **Live-verified**: created a `__TEST__` scheme requiring
+   `min_shg_grade: 'A+'`; a real member whose SHG is only grade 'A' had
+   the application insert rejected (`42501`); the same member applying to
+   a scheme requiring grade 'C' (which 'A' satisfies) succeeded. Both
+   wrapped in `begin;...rollback;`, confirmed zero rows left behind
+   afterward.
+2. **`scheme_applications.scheme_id` was still `ON DELETE CASCADE`** —
+   deleting a scheme from the admin catalog silently destroyed every
+   application ever filed against it, including already-decided rows with
+   `decided_by`/`decided_at` attribution. Same fix as loans (0063)/
+   financial_ledger (0072): switched to `ON DELETE RESTRICT` in the same
+   migration. **Live-verified**: `pg_constraint.confdeltype = 'r'`.
+3. **`marketplace_orders.product_id`/`marketplace_reviews.product_id`
+   were still `ON DELETE CASCADE`** — 0039 correctly restricted product
+   DELETE to `is_staff()` (closing the self-service-seller-abuse angle),
+   but never touched the underlying FKs, and `is_staff()` covers
+   crp/clf/admin alike, not just admin. Any CRP or CLF account could
+   delete a product and cascade away every order (including already-
+   `'delivered'`, paid transactions) and every review, zero archival.
+   Fixed (`0075_marketplace_delete_restrict_and_shg_hop_guard.sql`) to
+   `ON DELETE RESTRICT`, same pattern. **Live-verified**:
+   `pg_constraint.confdeltype = 'r'` for both.
+4. **An already-SHG-linked member could submit a new join request to a
+   different SHG, silently hopping SHGs the moment another leader
+   approved it.** `shg_join_requests_insert_self` (0027) locked the
+   request's own lifecycle columns but never checked the caller's
+   CURRENT `profiles.shg_id` — the only thing stopping this was the
+   client router's `needsShgApproval` gate (shgId == null), UX only per
+   this schema's own security model. `approve_shg_join_request` would
+   then silently overwrite `profiles.shg_id` from the old SHG to the new
+   one, on a page that shows only name + mobile with nothing indicating
+   the requester already belongs elsewhere. Fixed in the same migration:
+   an already-linked member can no longer insert a join request at all
+   (preserving every lifecycle lock 0027 already added). **Live-
+   verified**: a real, already-linked member's join-request insert was
+   rejected (`42501`).
+5. **`profiles.mobile`/`created_at` were never locked in a member's own
+   self-update** — `profiles_update_self_or_admin` (0023) constrains
+   `shg_id`/`role` but said nothing about any other column. The Flutter
+   UI never exposes editing `mobile`, but a direct REST PATCH could set
+   it to anything, letting a member present a fabricated contact number
+   to staff that no longer matches the real OTP-verified phone number.
+   Fixed (`0076_profiles_mobile_created_at_column_lock.sql`) with a
+   `profiles_locked_fields(id)` security-definer helper, same shape as
+   `meetings_locked_fields` (round 177). **Live-verified**: a self-update
+   setting `mobile` was rejected (`42501`); a no-op self-update (name set
+   to itself) still succeeded, confirming the normal profile-edit flow
+   wasn't broken by the lock.
+6. **Loan `next_due_date` advancement, financial-ledger cap/delete-
+   restrict** — carried over verification only; see round 177 for the
+   fixes themselves (this round's audits re-confirmed them solid, no
+   regressions).
+7. **AI advisor chat page/router had 5 hardcoded English strings**
+   (page title + hint per advisor type passed as literals from
+   `router.dart`, plus the shared chat widget's input hint and send-button
+   tooltip) — a Hindi/Telugu user saw every one of these in English
+   regardless of language setting, missed by a prior round's fix that
+   only localized the upstream-unavailable fallback message. Fixed with
+   new `.arb` keys (all 3 languages); reused the existing
+   `aiHub*AdvisorTitle`/`aiHub*RecommenderTitle` keys for the page title
+   instead of duplicating them. Kept the file's own established
+   null-safe-fallback convention (`l10n?.key ?? 'English default'`) for
+   the chat widget's build() — this page's own tests pump a bare
+   `MaterialApp` with no localization delegates.
+8. **Notification content (meeting reminders, loan-due reminders,
+   "New announcement") was hardcoded English inside
+   `LocalNotificationService`**, which has no `BuildContext`/locale of its
+   own to resolve strings from — every real OS notification a Hindi/
+   Telugu user ever saw was in English. Fixed by making `title`/`body`
+   caller-supplied instead of built internally: `scheduleMeetingReminder`/
+   `scheduleLoanDueReminder`/`showAnnouncementNotification`'s interface
+   now takes localized strings, and the three sync free-functions
+   (`syncMeetingReminders`, `syncLoanDueReminders`, `notifyNewAnnouncements`)
+   build them from a new `AppLocalizations` parameter. Threaded `l10n`
+   through `MeetingsHomePage`/`LoansHomePage`/`AnnouncementsHomePage`'s
+   existing sync-on-load methods and `SettingsPage`'s toggle handlers —
+   resolved synchronously at the point closest to `build()` in each case
+   (not re-looked-up after an async gap, which `flutter analyze` correctly
+   flagged as a `BuildContext`-across-async-gap risk in `SettingsPage`
+   before this was fixed). Updated all 6 test-file fakes implementing
+   `NotificationService` to match the new signature.
+9. **`AppAsyncBuilder`'s error state had no live-region announcement**
+   (HIGH — this widget backs nearly every data-driven page in the app),
+   unlike its own loading state immediately above it. A screen-reader
+   user not already focused there heard nothing when a load failed. Fixed
+   with the same `Semantics(liveRegion: true)` wrap the loading state
+   already uses.
+10. **Same live-region gap in `FinancialEntryDialog`'s validation error
+    text** — fixed identically.
+11. **Icon-only "remove photo" button in `AddProductPage`** had no
+    accessible label and a ~24×24 tap target, well under the 44×44
+    minimum touch-target guideline. Replaced the bare `InkWell` with an
+    `IconButton` (real ~48×48 target + tooltip/semantics for free), added
+    a new `addProductRemovePhotoTooltip` key (all 3 languages).
+12. **Dashboard top bar's notification bell and profile avatar** were
+    40×40 `InkWell`s with no minimum-tap-target enforcement (a raw
+    `InkWell`, unlike `IconButton`, doesn't add one). Centered each in a
+    44×44 `SizedBox` so the tappable area meets the guideline without
+    changing how either control looks.
+13. Fixed a hardcoded, unlocalized profile-save error string in
+    `profile_setup_page.dart` (now reuses the already-translated
+    `profileUpdateError` key, matching the sibling flow in
+    `profile_page.dart`).
+
+**Documented, deliberately not fixed this round:**
+
+- **No audit trail on scheme eligibility-criteria edits** — `updateScheme`
+  overwrites `eligibility_criteria` in place with no history/snapshot; a
+  pending applicant's original criteria isn't preserved for staff to
+  compare against if it changes later. Lower priority since criteria is
+  now actually enforced at apply-time (finding 1) — a changed criterion
+  only affects future applicants, not retroactively invalidating a
+  decision.
+
+**Re-confirmed, not fresh findings:** RLS write-gate on the scheme catalog
+(`schemes_write_admin`, admin-only, both USING and WITH CHECK) is solid;
+SHG grade/CLF/VO self-service is correctly locked (0013); AI Market
+Advisor reuses the exact same moderation/rate-limit pipeline as the other
+two advisors, no separate unguarded path, and its system prompt stays
+correctly scoped to pricing/selling (no investment-advice creep); color is
+never the sole signal on any status badge or unread indicator checked
+this round.
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1033/1033) both clean — required fixing 9 test-file fakes/call sites
+across the `NotificationService` interface change (6 fakes) plus 2
+`AppLocalizations`-null-safety regressions the refactor introduced and
+`flutter analyze` caught (`BuildContext`-across-async-gap in
+`SettingsPage`; a null-check crash in `AiAdvisorChatPage`'s own
+bare-`MaterialApp` tests). Migrations 0074–0076 pushed to the linked live
+project via `supabase db push`. `flutter build web` rebuilt cleanly.
+**Browser preview attempted again, still stuck** — fresh server + fresh
+tab, same `flt-glass-pane`-never-paints symptom as the last two rounds
+(now four independent attempts total). Relied on live-DB verification via
+`set local role authenticated` + `request.jwt.claims` for every RLS/
+business-logic fix above instead.
