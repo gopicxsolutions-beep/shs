@@ -274,7 +274,10 @@ class LoanRepository {
           tenureMonths: l.tenureMonths,
           disbursedOn: l.disbursedOn,
           status: newOutstanding <= 0 ? 'closed' : l.status,
-          nextDueDate: l.nextDueDate,
+          // Mirrors the live-mode `record_loan_payment` fix (migration
+          // 0073) — was frozen at `l.nextDueDate` forever, never advancing
+          // as payments were recorded.
+          nextDueDate: newOutstanding <= 0 ? null : DateTime.now().add(const Duration(days: 30)),
         );
       }
       return;
@@ -302,6 +305,10 @@ class LoanRepository {
       await _client.from('loans').update({
         'outstanding': newOutstanding,
         if (newOutstanding <= 0) 'status': 'closed',
+        // Mirrors the RPC's own fix (migration 0073) — was previously
+        // omitted here too, leaving next_due_date frozen at its
+        // approval-time value forever.
+        'next_due_date': newOutstanding <= 0 ? null : DateTime.now().add(const Duration(days: 30)).toIso8601String().split('T').first,
       }).eq('id', loanId);
     }
   }

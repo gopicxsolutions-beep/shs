@@ -11,6 +11,7 @@ Future<bool?> showFinancialEntryDialog(
   required String? createdBy,
   required String entryType,
 }) {
+  const maxAmount = 1000000;
   final descController = TextEditingController();
   final amountController = TextEditingController();
   var isCredit = true;
@@ -59,6 +60,10 @@ Future<bool?> showFinancialEntryDialog(
                       }
                       if (amount == null || amount <= 0) {
                         setState(() => error = l10n.financialEntryDialogInvalidAmountError);
+                        return;
+                      }
+                      if (amount > maxAmount) {
+                        setState(() => error = l10n.financialEntryDialogAmountTooLargeError);
                         return;
                       }
                       setState(() {

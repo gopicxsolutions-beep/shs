@@ -2699,6 +2699,27 @@ class AppLocalizationsTe extends AppLocalizations {
   String get loansHomeOverdueLabel => 'గడువు మీరిన';
 
   @override
+  String get loanStatusPending => 'పెండింగ్';
+
+  @override
+  String get loanStatusActive => 'క్రియాశీలం';
+
+  @override
+  String get loanStatusOverdue => 'గడువు మీరిన';
+
+  @override
+  String get loanStatusClosed => 'ముగిసింది';
+
+  @override
+  String get loanStatusRejected => 'తిరస్కరించబడింది';
+
+  @override
+  String get savingsStatusPending => 'పెండింగ్';
+
+  @override
+  String get savingsStatusVerified => 'ధృవీకరించబడింది';
+
+  @override
   String get loansHomeNeedsReviewTrend => 'సమీక్ష అవసరం';
 
   @override
@@ -3380,6 +3401,10 @@ class AppLocalizationsTe extends AppLocalizations {
       'సరైన మొత్తాన్ని నమోదు చేయండి';
 
   @override
+  String get financialEntryDialogAmountTooLargeError =>
+      'మొత్తం అసాధారణంగా ఎక్కువగా ఉంది — దయచేసి సరిచూసి మళ్ళీ నమోదు చేయండి';
+
+  @override
   String get financialEntryDialogNoShgError =>
       'మీరు ఏ SHGకి లింక్ చేయబడలేదు, కాబట్టి దీనికి వ్యతిరేకంగా నమోదు చేయడానికి ఏమీ లేదు.';
 
@@ -3562,6 +3587,15 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఈ SHGని కేటాయించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
 
   @override
+  String get adminUsersManageTitle => 'వినియోగదారులను నిర్వహించండి';
+
+  @override
+  String get adminUsersNoUsersFoundMessage => 'వినియోగదారులు కనుగొనబడలేదు';
+
+  @override
+  String get adminUsersAssignShgTooltip => 'SHGని కేటాయించండి';
+
+  @override
   String get adminShgsLoadMoreError =>
       'మరిన్ని SHGలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
 
@@ -3590,6 +3624,49 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get adminShgsUpdateError =>
       'ఈ SHGని అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get adminShgsManageTitle => 'SHGలను నిర్వహించండి';
+
+  @override
+  String get adminShgsNameHint => 'SHG పేరు';
+
+  @override
+  String get adminShgsVillageHint => 'గ్రామం';
+
+  @override
+  String get adminShgsDistrictHint => 'జిల్లా';
+
+  @override
+  String get adminShgsFormationDateNotSet => 'సెట్ చేయలేదు';
+
+  @override
+  String get adminShgsGradeHint => 'గ్రేడ్ (ఐచ్ఛికం)';
+
+  @override
+  String get adminShgsClearFormationDateTooltip => 'ఏర్పాటు తేదీని తొలగించండి';
+
+  @override
+  String get adminShgsAddedMessage => 'SHG జోడించబడింది';
+
+  @override
+  String get adminShgsAddedDemoModeMessage =>
+      'డెమో మోడ్ — SHG సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
+
+  @override
+  String get adminShgsUpdatedMessage => 'SHG అప్‌డేట్ చేయబడింది';
+
+  @override
+  String get adminShgsGradeChangeConfirmTitle => 'గ్రేడ్ మార్చాలా?';
+
+  @override
+  String adminShgsGradeChangeConfirmMessage(
+    String shgName,
+    String oldGrade,
+    String newGrade,
+  ) {
+    return 'ఇది $shgName గ్రేడ్‌ను $oldGrade నుండి $newGradeకి మారుస్తుంది, ఇది రుణ/పథక అర్హతను ప్రభావితం చేస్తుంది.';
+  }
 
   @override
   String get paymentsQrScanPrompt => 'QR కోడ్‌ను స్కాన్ చేయడానికి నొక్కండి';

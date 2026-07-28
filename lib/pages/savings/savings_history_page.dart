@@ -12,6 +12,12 @@ import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/list_row.dart';
 
+String _savingsStatusLabel(AppLocalizations l10n, String status) => switch (status) {
+      'verified' => l10n.savingsStatusVerified,
+      'pending' => l10n.savingsStatusPending,
+      _ => status,
+    };
+
 class SavingsHistoryPage extends StatefulWidget {
   const SavingsHistoryPage({super.key});
   @override
@@ -66,7 +72,7 @@ class _SavingsHistoryPageState extends State<SavingsHistoryPage> {
                         children: [
                           Text('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                           const SizedBox(height: 4),
-                          AppBadge(text: e.status, tone: e.status == 'verified' ? BadgeTone.success : BadgeTone.warning),
+                          AppBadge(text: _savingsStatusLabel(l10n, e.status), tone: e.status == 'verified' ? BadgeTone.success : BadgeTone.warning),
                         ],
                       ),
                       chevron: false,

@@ -131,6 +131,13 @@ void main() {
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
 
+      // Changing the grade now surfaces its own explicit old→new
+      // confirmation (grade gates loan/scheme eligibility) before the write
+      // actually happens — tap through it too.
+      expect(find.text('Change grade?'), findsOneWidget);
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
       expect(tester.takeException(), isNull);
       expect(find.text('Demo mode — SHG not saved (connect Supabase to persist)'), findsOneWidget);
 

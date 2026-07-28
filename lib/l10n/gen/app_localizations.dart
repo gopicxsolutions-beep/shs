@@ -4714,6 +4714,48 @@ abstract class AppLocalizations {
   /// **'Overdue'**
   String get loansHomeOverdueLabel;
 
+  /// No description provided for @loanStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get loanStatusPending;
+
+  /// No description provided for @loanStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get loanStatusActive;
+
+  /// No description provided for @loanStatusOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get loanStatusOverdue;
+
+  /// No description provided for @loanStatusClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get loanStatusClosed;
+
+  /// No description provided for @loanStatusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get loanStatusRejected;
+
+  /// No description provided for @savingsStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get savingsStatusPending;
+
+  /// No description provided for @savingsStatusVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get savingsStatusVerified;
+
   /// No description provided for @loansHomeNeedsReviewTrend.
   ///
   /// In en, this message translates to:
@@ -5890,6 +5932,12 @@ abstract class AppLocalizations {
   /// **'Enter a valid amount'**
   String get financialEntryDialogInvalidAmountError;
 
+  /// No description provided for @financialEntryDialogAmountTooLargeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount seems unusually large — please check and re-enter'**
+  String get financialEntryDialogAmountTooLargeError;
+
   /// No description provided for @financialEntryDialogNoShgError.
   ///
   /// In en, this message translates to:
@@ -6182,6 +6230,24 @@ abstract class AppLocalizations {
   /// **'Could not assign this SHG. Please try again.'**
   String get adminUsersAssignShgError;
 
+  /// No description provided for @adminUsersManageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Users'**
+  String get adminUsersManageTitle;
+
+  /// No description provided for @adminUsersNoUsersFoundMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No users found'**
+  String get adminUsersNoUsersFoundMessage;
+
+  /// No description provided for @adminUsersAssignShgTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign SHG'**
+  String get adminUsersAssignShgTooltip;
+
   /// No description provided for @adminShgsLoadMoreError.
   ///
   /// In en, this message translates to:
@@ -6235,6 +6301,82 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not update this SHG. Please try again.'**
   String get adminShgsUpdateError;
+
+  /// No description provided for @adminShgsManageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage SHGs'**
+  String get adminShgsManageTitle;
+
+  /// No description provided for @adminShgsNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG name'**
+  String get adminShgsNameHint;
+
+  /// No description provided for @adminShgsVillageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Village'**
+  String get adminShgsVillageHint;
+
+  /// No description provided for @adminShgsDistrictHint.
+  ///
+  /// In en, this message translates to:
+  /// **'District'**
+  String get adminShgsDistrictHint;
+
+  /// No description provided for @adminShgsFormationDateNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get adminShgsFormationDateNotSet;
+
+  /// No description provided for @adminShgsGradeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade (optional)'**
+  String get adminShgsGradeHint;
+
+  /// No description provided for @adminShgsClearFormationDateTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear formation date'**
+  String get adminShgsClearFormationDateTooltip;
+
+  /// No description provided for @adminShgsAddedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG added'**
+  String get adminShgsAddedMessage;
+
+  /// No description provided for @adminShgsAddedDemoModeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — SHG not saved (connect Supabase to persist)'**
+  String get adminShgsAddedDemoModeMessage;
+
+  /// No description provided for @adminShgsUpdatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG updated'**
+  String get adminShgsUpdatedMessage;
+
+  /// No description provided for @adminShgsGradeChangeConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change grade?'**
+  String get adminShgsGradeChangeConfirmTitle;
+
+  /// No description provided for @adminShgsGradeChangeConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This changes {shgName}\'s grade from {oldGrade} to {newGrade}, which affects loan/scheme eligibility.'**
+  String adminShgsGradeChangeConfirmMessage(
+    String shgName,
+    String oldGrade,
+    String newGrade,
+  );
 
   /// No description provided for @paymentsQrScanPrompt.
   ///

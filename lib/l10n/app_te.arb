@@ -1460,6 +1460,20 @@
 
   "loansHomeOverdueLabel": "గడువు మీరిన",
 
+  "loanStatusPending": "పెండింగ్",
+
+  "loanStatusActive": "క్రియాశీలం",
+
+  "loanStatusOverdue": "గడువు మీరిన",
+
+  "loanStatusClosed": "ముగిసింది",
+
+  "loanStatusRejected": "తిరస్కరించబడింది",
+
+  "savingsStatusPending": "పెండింగ్",
+
+  "savingsStatusVerified": "ధృవీకరించబడింది",
+
   "loansHomeNeedsReviewTrend": "సమీక్ష అవసరం",
 
   "loansHomeActionNeededTrend": "చర్య అవసరం",
@@ -1852,6 +1866,8 @@
 
   "financialEntryDialogInvalidAmountError": "సరైన మొత్తాన్ని నమోదు చేయండి",
 
+  "financialEntryDialogAmountTooLargeError": "మొత్తం అసాధారణంగా ఎక్కువగా ఉంది — దయచేసి సరిచూసి మళ్ళీ నమోదు చేయండి",
+
   "financialEntryDialogNoShgError": "మీరు ఏ SHGకి లింక్ చేయబడలేదు, కాబట్టి దీనికి వ్యతిరేకంగా నమోదు చేయడానికి ఏమీ లేదు.",
 
   "financialEntryDialogSaveError": "ఈ ఎంట్రీని సేవ్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
@@ -1941,6 +1957,9 @@
   "adminUsersChangeRoleConfirmButton": "మార్చండి",
   "adminUsersUpdateRoleError": "ఈ పాత్రను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
   "adminUsersAssignShgError": "ఈ SHGని కేటాయించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  "adminUsersManageTitle": "వినియోగదారులను నిర్వహించండి",
+  "adminUsersNoUsersFoundMessage": "వినియోగదారులు కనుగొనబడలేదు",
+  "adminUsersAssignShgTooltip": "SHGని కేటాయించండి",
 
   "adminShgsLoadMoreError": "మరిన్ని SHGలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
   "adminShgsFormationDateLabel": "ఏర్పాటు తేదీ (ఐచ్ఛికం)",
@@ -1951,6 +1970,25 @@
   "adminShgsAddError": "ఈ SHGని జోడించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
   "adminShgsEditTitle": "SHGని సవరించండి",
   "adminShgsUpdateError": "ఈ SHGని అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  "adminShgsManageTitle": "SHGలను నిర్వహించండి",
+  "adminShgsNameHint": "SHG పేరు",
+  "adminShgsVillageHint": "గ్రామం",
+  "adminShgsDistrictHint": "జిల్లా",
+  "adminShgsFormationDateNotSet": "సెట్ చేయలేదు",
+  "adminShgsGradeHint": "గ్రేడ్ (ఐచ్ఛికం)",
+  "adminShgsClearFormationDateTooltip": "ఏర్పాటు తేదీని తొలగించండి",
+  "adminShgsAddedMessage": "SHG జోడించబడింది",
+  "adminShgsAddedDemoModeMessage": "డెమో మోడ్ — SHG సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
+  "adminShgsUpdatedMessage": "SHG అప్‌డేట్ చేయబడింది",
+  "adminShgsGradeChangeConfirmTitle": "గ్రేడ్ మార్చాలా?",
+  "adminShgsGradeChangeConfirmMessage": "ఇది {shgName} గ్రేడ్‌ను {oldGrade} నుండి {newGrade}కి మారుస్తుంది, ఇది రుణ/పథక అర్హతను ప్రభావితం చేస్తుంది.",
+  "@adminShgsGradeChangeConfirmMessage": {
+    "placeholders": {
+      "shgName": {"type": "String"},
+      "oldGrade": {"type": "String"},
+      "newGrade": {"type": "String"}
+    }
+  },
 
   "paymentsQrScanPrompt": "QR కోడ్‌ను స్కాన్ చేయడానికి నొక్కండి",
   "paymentsQrPayingLabel": "{name}కి చెల్లిస్తున్నారు",

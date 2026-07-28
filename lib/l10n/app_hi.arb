@@ -1460,6 +1460,20 @@
 
   "loansHomeOverdueLabel": "अतिदेय",
 
+  "loanStatusPending": "लंबित",
+
+  "loanStatusActive": "सक्रिय",
+
+  "loanStatusOverdue": "अतिदेय",
+
+  "loanStatusClosed": "बंद",
+
+  "loanStatusRejected": "अस्वीकृत",
+
+  "savingsStatusPending": "लंबित",
+
+  "savingsStatusVerified": "सत्यापित",
+
   "loansHomeNeedsReviewTrend": "समीक्षा जरूरी",
 
   "loansHomeActionNeededTrend": "कार्रवाई जरूरी",
@@ -1852,6 +1866,8 @@
 
   "financialEntryDialogInvalidAmountError": "एक मान्य राशि दर्ज करें",
 
+  "financialEntryDialogAmountTooLargeError": "राशि असामान्य रूप से अधिक लग रही है — कृपया जांचकर फिर से दर्ज करें",
+
   "financialEntryDialogNoShgError": "आप किसी SHG से जुड़े नहीं हैं, इसलिए इसके विरुद्ध दर्ज करने के लिए कुछ नहीं है।",
 
   "financialEntryDialogSaveError": "यह एंट्री सेव नहीं हो सकी। कृपया फिर से कोशिश करें।",
@@ -1941,6 +1957,9 @@
   "adminUsersChangeRoleConfirmButton": "बदलें",
   "adminUsersUpdateRoleError": "यह भूमिका अपडेट नहीं हो सकी। कृपया फिर से प्रयास करें।",
   "adminUsersAssignShgError": "यह SHG असाइन नहीं हो सका। कृपया फिर से प्रयास करें।",
+  "adminUsersManageTitle": "उपयोगकर्ता प्रबंधित करें",
+  "adminUsersNoUsersFoundMessage": "कोई उपयोगकर्ता नहीं मिला",
+  "adminUsersAssignShgTooltip": "SHG असाइन करें",
 
   "adminShgsLoadMoreError": "और SHG लोड नहीं हो सके। कृपया फिर से प्रयास करें।",
   "adminShgsFormationDateLabel": "गठन तिथि (वैकल्पिक)",
@@ -1951,6 +1970,25 @@
   "adminShgsAddError": "यह SHG जोड़ा नहीं जा सका। कृपया फिर से प्रयास करें।",
   "adminShgsEditTitle": "SHG संपादित करें",
   "adminShgsUpdateError": "यह SHG अपडेट नहीं हो सका। कृपया फिर से प्रयास करें।",
+  "adminShgsManageTitle": "SHG प्रबंधित करें",
+  "adminShgsNameHint": "SHG का नाम",
+  "adminShgsVillageHint": "गांव",
+  "adminShgsDistrictHint": "जिला",
+  "adminShgsFormationDateNotSet": "सेट नहीं है",
+  "adminShgsGradeHint": "ग्रेड (वैकल्पिक)",
+  "adminShgsClearFormationDateTooltip": "गठन तिथि हटाएं",
+  "adminShgsAddedMessage": "SHG जोड़ा गया",
+  "adminShgsAddedDemoModeMessage": "डेमो मोड — SHG सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+  "adminShgsUpdatedMessage": "SHG अपडेट हो गया",
+  "adminShgsGradeChangeConfirmTitle": "ग्रेड बदलें?",
+  "adminShgsGradeChangeConfirmMessage": "इससे {shgName} का ग्रेड {oldGrade} से {newGrade} में बदल जाएगा, जो ऋण/योजना पात्रता को प्रभावित करता है।",
+  "@adminShgsGradeChangeConfirmMessage": {
+    "placeholders": {
+      "shgName": {"type": "String"},
+      "oldGrade": {"type": "String"},
+      "newGrade": {"type": "String"}
+    }
+  },
 
   "paymentsQrScanPrompt": "QR कोड स्कैन करने के लिए टैप करें",
   "paymentsQrPayingLabel": "{name} को भुगतान कर रहे हैं",

@@ -179,7 +179,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     final isAdmin = context.watch<AppState>().user.role == Role.admin;
 
     return Scaffold(
-      appBar: const PageHeader(title: 'Manage Users'),
+      appBar: PageHeader(title: AppLocalizations.of(context)!.adminUsersManageTitle),
       body: AppAsyncBuilder<PagedResult<Profile>>(
         key: _key,
         future: _loadFirstPage,
@@ -190,7 +190,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
         // drop anything a prior "Load more" tap had already appended.
         builder: (context, data) {
           if (_users.isEmpty) {
-            return const AppEmptyState(icon: Icons.people_rounded, message: 'No users found');
+            return AppEmptyState(icon: Icons.people_rounded, message: AppLocalizations.of(context)!.adminUsersNoUsersFoundMessage);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -237,7 +237,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
                         icon: assigningShg
                             ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                             : const Icon(Icons.add_link_rounded),
-                        tooltip: 'Assign SHG',
+                        tooltip: AppLocalizations.of(context)!.adminUsersAssignShgTooltip,
                         color: Brand.c600,
                         onPressed: assigningShg ? null : () => _assignShg(u),
                       ),

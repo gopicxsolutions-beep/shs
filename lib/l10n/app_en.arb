@@ -1874,6 +1874,20 @@
 
   "loansHomeOverdueLabel": "Overdue",
 
+  "loanStatusPending": "Pending",
+
+  "loanStatusActive": "Active",
+
+  "loanStatusOverdue": "Overdue",
+
+  "loanStatusClosed": "Closed",
+
+  "loanStatusRejected": "Rejected",
+
+  "savingsStatusPending": "Pending",
+
+  "savingsStatusVerified": "Verified",
+
   "loansHomeNeedsReviewTrend": "Needs review",
 
   "loansHomeActionNeededTrend": "Action needed",
@@ -2366,6 +2380,8 @@
 
   "financialEntryDialogInvalidAmountError": "Enter a valid amount",
 
+  "financialEntryDialogAmountTooLargeError": "Amount seems unusually large — please check and re-enter",
+
   "financialEntryDialogNoShgError": "You're not linked to an SHG, so there's nothing to record this entry against.",
 
   "financialEntryDialogSaveError": "Could not save this entry. Please try again.",
@@ -2526,6 +2542,9 @@
   "adminUsersChangeRoleConfirmButton": "Change",
   "adminUsersUpdateRoleError": "Could not update this role. Please try again.",
   "adminUsersAssignShgError": "Could not assign this SHG. Please try again.",
+  "adminUsersManageTitle": "Manage Users",
+  "adminUsersNoUsersFoundMessage": "No users found",
+  "adminUsersAssignShgTooltip": "Assign SHG",
 
   "adminShgsLoadMoreError": "Could not load more SHGs. Please try again.",
   "adminShgsFormationDateLabel": "Formation date (optional)",
@@ -2536,6 +2555,25 @@
   "adminShgsAddError": "Could not add this SHG. Please try again.",
   "adminShgsEditTitle": "Edit SHG",
   "adminShgsUpdateError": "Could not update this SHG. Please try again.",
+  "adminShgsManageTitle": "Manage SHGs",
+  "adminShgsNameHint": "SHG name",
+  "adminShgsVillageHint": "Village",
+  "adminShgsDistrictHint": "District",
+  "adminShgsFormationDateNotSet": "Not set",
+  "adminShgsGradeHint": "Grade (optional)",
+  "adminShgsClearFormationDateTooltip": "Clear formation date",
+  "adminShgsAddedMessage": "SHG added",
+  "adminShgsAddedDemoModeMessage": "Demo mode — SHG not saved (connect Supabase to persist)",
+  "adminShgsUpdatedMessage": "SHG updated",
+  "adminShgsGradeChangeConfirmTitle": "Change grade?",
+  "adminShgsGradeChangeConfirmMessage": "This changes {shgName}'s grade from {oldGrade} to {newGrade}, which affects loan/scheme eligibility.",
+  "@adminShgsGradeChangeConfirmMessage": {
+    "placeholders": {
+      "shgName": {"type": "String"},
+      "oldGrade": {"type": "String"},
+      "newGrade": {"type": "String"}
+    }
+  },
 
   "paymentsQrScanPrompt": "Tap to scan a QR code",
   "paymentsQrPayingLabel": "Paying {name}",

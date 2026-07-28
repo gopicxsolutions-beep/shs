@@ -15,6 +15,15 @@ import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/progress_bar.dart';
 
+String _loanStatusLabel(AppLocalizations l10n, String status) => switch (status) {
+      'pending' => l10n.loanStatusPending,
+      'active' => l10n.loanStatusActive,
+      'overdue' => l10n.loanStatusOverdue,
+      'closed' => l10n.loanStatusClosed,
+      'rejected' => l10n.loanStatusRejected,
+      _ => status,
+    };
+
 class LoanTrackingPage extends StatelessWidget {
   const LoanTrackingPage({super.key});
 
@@ -48,7 +57,7 @@ class LoanTrackingPage extends StatelessWidget {
                     children: [
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                         Expanded(child: Text(l.purpose, style: AppTheme.sans(14, weight: FontWeight.w700))),
-                        AppBadge(text: l.status, tone: l.status == 'overdue' ? BadgeTone.danger : BadgeTone.brand),
+                        AppBadge(text: _loanStatusLabel(l10n, l.status), tone: l.status == 'overdue' ? BadgeTone.danger : BadgeTone.brand),
                       ]),
                       const SizedBox(height: 10),
                       Row(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [

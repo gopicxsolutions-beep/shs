@@ -99,54 +99,57 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
   /// Shared by both Add and Edit dialogs — identical fields in each, just
   /// seeded from different starting values. Mirrors
   /// `admin_schemes_page.dart`'s `_criteriaFields` helper.
-  List<Widget> _shgFormFields(BuildContext dialogContext, StateSetter setDialogState) => [
-        TextField(controller: _name, maxLength: 100, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'SHG name')),
-        const SizedBox(height: 12),
-        TextField(controller: _village, maxLength: 100, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'Village')),
-        const SizedBox(height: 12),
-        TextField(controller: _district, maxLength: 100, textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'District')),
-        const SizedBox(height: 16),
-        Text(AppLocalizations.of(dialogContext)!.adminShgsFormationDateLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                _formationDate == null ? 'Not set' : DateFormat('dd MMM yyyy').format(_formationDate!),
-                style: AppTheme.sans(13),
-              ),
+  List<Widget> _shgFormFields(BuildContext dialogContext, StateSetter setDialogState) {
+    final l10n = AppLocalizations.of(dialogContext)!;
+    return [
+      TextField(controller: _name, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminShgsNameHint)),
+      const SizedBox(height: 12),
+      TextField(controller: _village, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminShgsVillageHint)),
+      const SizedBox(height: 12),
+      TextField(controller: _district, maxLength: 100, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.adminShgsDistrictHint)),
+      const SizedBox(height: 16),
+      Text(l10n.adminShgsFormationDateLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+      const SizedBox(height: 4),
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              _formationDate == null ? l10n.adminShgsFormationDateNotSet : DateFormat('dd MMM yyyy').format(_formationDate!),
+              style: AppTheme.sans(13),
             ),
-            TextButton(
-              onPressed: () async {
-                final picked = await showDatePicker(
-                  context: dialogContext,
-                  initialDate: _formationDate ?? DateTime.now(),
-                  firstDate: DateTime(1990),
-                  lastDate: DateTime.now(),
-                );
-                if (picked != null) setDialogState(() => _formationDate = picked);
-              },
-              child: Text(AppLocalizations.of(dialogContext)!.adminShgsPickDateButton),
+          ),
+          TextButton(
+            onPressed: () async {
+              final picked = await showDatePicker(
+                context: dialogContext,
+                initialDate: _formationDate ?? DateTime.now(),
+                firstDate: DateTime(1990),
+                lastDate: DateTime.now(),
+              );
+              if (picked != null) setDialogState(() => _formationDate = picked);
+            },
+            child: Text(l10n.adminShgsPickDateButton),
+          ),
+          if (_formationDate != null)
+            IconButton(
+              icon: const Icon(Icons.clear_rounded),
+              tooltip: l10n.adminShgsClearFormationDateTooltip,
+              onPressed: () => setDialogState(() => _formationDate = null),
             ),
-            if (_formationDate != null)
-              IconButton(
-                icon: const Icon(Icons.clear_rounded),
-                tooltip: 'Clear formation date',
-                onPressed: () => setDialogState(() => _formationDate = null),
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String?>(
-          initialValue: _grade,
-          decoration: const InputDecoration(hintText: 'Grade (optional)'),
-          items: [
-            DropdownMenuItem<String?>(value: null, child: Text(AppLocalizations.of(dialogContext)!.adminShgsNotGradedOption)),
-            ..._gradeOptions.map((g) => DropdownMenuItem<String?>(value: g, child: Text(g))),
-          ],
-          onChanged: (v) => setDialogState(() => _grade = v),
-        ),
-      ];
+        ],
+      ),
+      const SizedBox(height: 12),
+      DropdownButtonFormField<String?>(
+        initialValue: _grade,
+        decoration: InputDecoration(hintText: l10n.adminShgsGradeHint),
+        items: [
+          DropdownMenuItem<String?>(value: null, child: Text(l10n.adminShgsNotGradedOption)),
+          ..._gradeOptions.map((g) => DropdownMenuItem<String?>(value: g, child: Text(g))),
+        ],
+        onChanged: (v) => setDialogState(() => _grade = v),
+      ),
+    ];
+  }
 
   Future<void> _addShg() async {
     _name.clear();
@@ -193,8 +196,9 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
         grade: _grade,
       );
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? 'SHG added' : 'Demo mode — SHG not saved (connect Supabase to persist)'),
+          content: Text(SupabaseService.isConfigured ? l10n.adminShgsAddedMessage : l10n.adminShgsAddedDemoModeMessage),
         ));
         _key.currentState?.reload();
       }
@@ -253,6 +257,29 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
       }
       return;
     }
+    // Grade gates loan/scheme eligibility (0013_self_service_write_check_
+    // gaps.sql's own reasoning) — unlike name/village/district/formation
+    // date, a misclick here has real downstream consequences, so a grade
+    // CHANGE specifically gets its own explicit old→new confirmation, the
+    // same two-step caution `admin_users_page.dart`'s role-change flow
+    // already uses. Declining aborts the whole edit rather than silently
+    // dropping just the grade change, avoiding a confusing partial save.
+    if (_grade != s.grade && mounted) {
+      final l10n = AppLocalizations.of(context)!;
+      String gradeLabel(String? g) => g ?? l10n.adminShgsNotGradedOption;
+      final gradeConfirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.adminShgsGradeChangeConfirmTitle),
+          content: Text(l10n.adminShgsGradeChangeConfirmMessage(s.name, gradeLabel(s.grade), gradeLabel(_grade))),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.actionSave)),
+          ],
+        ),
+      );
+      if (gradeConfirmed != true || !mounted) return;
+    }
     setState(() => _busy = true);
     try {
       await _repo.updateShg(
@@ -264,14 +291,19 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
         grade: _grade,
       );
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? 'SHG updated' : 'Demo mode — SHG not saved (connect Supabase to persist)'),
+          content: Text(SupabaseService.isConfigured ? l10n.adminShgsUpdatedMessage : l10n.adminShgsAddedDemoModeMessage),
         ));
         _key.currentState?.reload();
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update this SHG. Please try again.')));
+        // Was a hardcoded literal that made the already-translated
+        // `adminShgsUpdateError` key (present in all 3 .arb files) dead,
+        // unreachable code — a Hindi/Telugu admin always saw this in
+        // English regardless of language setting.
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.adminShgsUpdateError)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -284,7 +316,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
 
     return Scaffold(
       appBar: PageHeader(
-        title: 'Manage SHGs',
+        title: AppLocalizations.of(context)!.adminShgsManageTitle,
         right: isAdmin
             ? IconButton(
                 icon: Icon(Icons.add_circle_rounded, color: !_busy ? Brand.c600 : Neutral.c300),

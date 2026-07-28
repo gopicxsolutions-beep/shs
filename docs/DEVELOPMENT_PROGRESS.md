@@ -14100,3 +14100,150 @@ authenticated` + `request.jwt.claims`, per this project's RLS-testing
 convention) for every backend behavior change, which is the authoritative
 check for RLS/RPC correctness regardless of UI rendering. Stating this
 explicitly rather than claiming a visual click-through that didn't happen.
+
+## Update (round 177) — Gap-hunting loop, iteration 5: launched 4 fresh module audits (Financial Ledger, Meetings, Admin SHG/User management, Savings/Loan repayment), fixed 9 real gaps including one HIGH-severity meetings RLS reopening
+
+Four parallel background audits this round, none of the modules covered
+before in this loop. One HIGH-severity finding (meetings) and eight more
+real, verified gaps fixed; three findings from the Admin SHG/User audit
+documented but deliberately not fixed this round (see below — genuinely
+too broad/risky to rush).
+
+**Fixed, live-verified against the real Supabase project:**
+
+1. **[HIGH] `meetings` UPDATE had no column lock — a leader could bundle a
+   `meeting_date` change into the SAME statement as a `status='cancelled'`
+   transition, defeating two previously-shipped guards in one PATCH.**
+   `meetings_update_leader_or_staff`'s cancel-guard (0042: `status <>
+   'cancelled' or meeting_date >= current_date`) evaluates the SUBMITTED
+   row, not the meeting's real stored date — `update meetings set
+   status='cancelled', meeting_date=current_date where id=<old meeting>`
+   passed trivially, silently reopening 0042's own fix one write-verb
+   later. The same gap separately reopened 0064's INSERT-only backdating
+   guard (mark a fresh meeting's attendance, then PATCH its date back
+   months later) and let a leader silently drop a poorly-attended meeting
+   out of the rolling attendance window by pushing its date forward, with
+   no cancellation at all. Fixed (`0071_meetings_update_column_lock.sql`)
+   by locking every column except `status` for non-staff, mirroring
+   `marketplace_orders_update_seller_or_staff` (0013) — correct because
+   `MeetingRepository` has no edit-meeting method at all; `setStatus()`
+   (status only) is the app's entire UPDATE surface. Once `meeting_date`
+   is pinned to its stored value, the cancel-guard necessarily refers to
+   the meeting's real original date. **Live-verified**: the exact bundled
+   exploit against a real 10-day-old meeting now raises an RLS violation;
+   a genuinely upcoming meeting can still be cancelled by its leader (1
+   row updated); staff retain their unconditional correction bypass (venue
+   + backdated meeting_date in one call, still succeeds). All three
+   wrapped in `begin;...rollback;`.
+2. **`financial_ledger` had no amount cap** — same fat-finger gap already
+   closed for loans (0062)/savings_entries (0067); `FinancialEntryDialog`
+   only rejected `amount <= 0` client-side with a 9-digit max length (up
+   to 999,999,999) and no server backstop. Fixed with the same ₹10,00,000
+   cap (`0072_financial_ledger_hardening.sql`) plus a matching client-side
+   `_maxAmount` check and error message (all 3 languages). **Live-
+   verified**: a 999,999,999 credit now fails with `23514
+   financial_ledger_amount_cap`.
+3. **`financial_ledger.shg_id` was still `ON DELETE CASCADE`** — the one
+   table whose entire purpose is being the SHG's permanent audit trail,
+   never covered by 0063's identical fix for loans. An admin deleting a
+   duplicate/defunct SHG would silently destroy its entire cashbook/
+   ledger/bank/audit history with zero archival. Fixed to `ON DELETE
+   RESTRICT` in the same migration. **Live-verified**: `pg_constraint`
+   confirms `confdeltype = 'r'`.
+4. **Loan `next_due_date` never advanced after a payment** — set once at
+   approval (hardcoded +30 days) and then frozen forever; every "next EMI
+   due" display across member/leader dashboards and loan detail/tracking
+   pages showed the same stale, increasingly-past date for the loan's
+   entire active life. Fixed `record_loan_payment`
+   (`0073_loan_payment_advances_next_due_date.sql`) to advance it by 30
+   days on a partial payment or clear it to null once the loan closes;
+   mirrored the same fix into the demo-mode branch and the PGRST202
+   fallback in `loan_repository.dart` (return value was never consumed by
+   the Dart caller, so no client-side change was needed for the live RPC
+   path itself — the next fetch just reflects the corrected server state).
+   **Live-verified**: a partial payment against a real loan advanced
+   `next_due_date` from its stored value to exactly today+30 days; a
+   full-payoff payment against the same loan set it to null and closed the
+   loan. Both wrapped in `begin;...rollback;`, confirmed unchanged after.
+5. **Loan/savings status badges rendered raw DB strings** — `active`/
+   `overdue`/`pending`/`closed`/`rejected`/`verified` shown directly via
+   `AppBadge(text: status)` in `loan_tracking_page.dart`,
+   `loan_detail_page.dart`, `loans_home_page.dart`,
+   `savings_history_page.dart`, and `savings_home_page.dart`, unlike
+   support's own `_statusLabel(l10n, status)` helper pattern — Hindi/
+   Telugu users saw literal English words. Added matching
+   `loanStatus*`/`savingsStatus*` keys (all 3 languages) and a
+   per-file `_loanStatusLabel`/`_savingsStatusLabel` helper in each of the
+   5 files, mirroring support's established per-file-duplication
+   convention rather than introducing a new shared abstraction.
+6. **`admin_shgs_page.dart`'s update-error snackbar was a hardcoded
+   literal**, making the already-translated `adminShgsUpdateError` key
+   (present and correct in all 3 `.arb` files) dead, unreachable code — a
+   Hindi/Telugu admin always saw the English fallback regardless of
+   language. Fixed to actually call the existing key. Also replaced ~11
+   other hardcoded strings on the same page (title, field hints, "Not
+   set", the date-clear tooltip, add/update success + demo-mode
+   snackbars) with new `.arb` keys across all 3 languages.
+7. **SHG grade edits had no confirmation step**, unlike `admin_users_page`
+   .dart's role-change flow (pick → explicit old→new confirm) — despite
+   0013's own comment that grade "gates loan/scheme eligibility." Added a
+   second confirmation dialog specifically when `_grade` differs from the
+   SHG's stored value (old→new, all 3 languages), shown only for a grade
+   change (not for the lower-stakes name/village/district/date edits the
+   same dialog also handles) — declining aborts the whole edit rather than
+   silently dropping just the grade change. Updated
+   `test/pages/admin_shgs_page_test.dart` to tap through the new
+   confirmation step; full suite re-verified green (1033/1033) afterward.
+8. **`admin_users_page.dart` had 3 hardcoded strings** (page title, "No
+   users found" empty state, "Assign SHG" tooltip) — added matching keys,
+   all 3 languages.
+
+**Documented, deliberately not fixed this round** (Admin SHG/User audit —
+genuinely too broad or too risky to rush in the same pass as the fixes
+above):
+
+- **No audit trail at all** for role/grade changes — `profiles`/`shgs`
+  have only `created_at`, zero history of who changed a role or grade or
+  when. A real gap, but a proper fix (an audit-log table + triggers, or
+  at minimum `updated_at`/`updated_by` columns) is a distinct, scoped
+  feature better done deliberately than folded into this round.
+- **No optimistic locking on SHG grade/user role edits** — a blind
+  `.update({...}).eq('id', id)` on both, so two admins editing the same
+  row concurrently silently last-write-wins with no conflict warning.
+- **No account deactivation/suspension feature exists at all** —
+  `profiles_delete_admin` RLS policy exists but has zero call sites; an
+  admin has no in-app way to cut off a compromised or abusive account
+  short of raw DB access. Real missing functionality, but implementing it
+  properly means threading an `is_active` check through every RLS helper
+  function (`current_role()`, `is_staff()`, `is_leader_or_staff()`, etc.)
+  used across the ENTIRE schema — the kind of security-foundation change
+  that needs its own dedicated round with full cross-module regression
+  testing, not something to bolt on inside a broader gap-hunting pass.
+
+**Re-confirmed, not fresh findings:** savings entry editing/deletion is
+fully locked out for the owning member (verified solid);
+`record_loan_payment`'s amount validation and race-safety hold up
+(`for update` lock + `outstanding <= amount` DB check); loan self-approval
+is genuinely blocked while savings self-verification is reachable but
+deliberately so (0034's own documented reasoning, "moves no money out of
+the SHG") — the two workflows intentionally diverge; `loan_payments_
+insert_related` still lets a member insert an arbitrary-amount payment row
+directly via REST, but this is an explicitly disclosed, three-times-
+deferred judgment call (0027/0038), not a new gap; `financial_ledger_
+update_staff` has no column lock on UPDATE, but this matches an already-
+accepted "is_staff()-only writers are fully trusted" convention this
+schema uses elsewhere (`analytics_kpis`, `payments`).
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1033/1033, after fixing the one test that needed to tap through the new
+grade-change confirmation) both clean. Migrations 0071–0073 pushed to the
+linked live project via `supabase db push` (0073 needed a `drop function`
+first — Postgres rejects `create or replace` when a function's OUT-
+parameter shape changes, SQLSTATE 42P13; fixed and repushed). No edge
+functions changed this round. `flutter build web` rebuilt cleanly.
+**Browser preview attempted again this round, still stuck** — fresh
+server + fresh tab, `flt-glass-pane` never gained children after 10s, zero
+console/server errors, same as last round. Not treated as a one-off flake
+at this point (three independent attempts across two rounds, same
+symptom) — relied on live-DB verification for every fix above instead, per
+this repo's own documented fallback guidance.

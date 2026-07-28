@@ -18,6 +18,15 @@ import '../../widgets/input_formatters.dart';
 import '../../widgets/progress_bar.dart';
 import '../../widgets/section_header.dart';
 
+String _loanStatusLabel(AppLocalizations l10n, String status) => switch (status) {
+      'pending' => l10n.loanStatusPending,
+      'active' => l10n.loanStatusActive,
+      'overdue' => l10n.loanStatusOverdue,
+      'closed' => l10n.loanStatusClosed,
+      'rejected' => l10n.loanStatusRejected,
+      _ => status,
+    };
+
 class LoanDetailPage extends StatefulWidget {
   final String loanId;
   const LoanDetailPage({super.key, required this.loanId});
@@ -75,7 +84,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                       Expanded(child: Text(loan.purpose, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white))),
-                      AppBadge(text: loan.status, tone: BadgeTone.neutral),
+                      AppBadge(text: _loanStatusLabel(l10n, loan.status), tone: BadgeTone.neutral),
                     ]),
                     const SizedBox(height: 12),
                     Text('₹${NumberFormat('#,##,##0', 'en_IN').format(loan.outstanding)}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: Colors.white)),

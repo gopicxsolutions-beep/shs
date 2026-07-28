@@ -2702,6 +2702,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loansHomeOverdueLabel => 'Overdue';
 
   @override
+  String get loanStatusPending => 'Pending';
+
+  @override
+  String get loanStatusActive => 'Active';
+
+  @override
+  String get loanStatusOverdue => 'Overdue';
+
+  @override
+  String get loanStatusClosed => 'Closed';
+
+  @override
+  String get loanStatusRejected => 'Rejected';
+
+  @override
+  String get savingsStatusPending => 'Pending';
+
+  @override
+  String get savingsStatusVerified => 'Verified';
+
+  @override
   String get loansHomeNeedsReviewTrend => 'Needs review';
 
   @override
@@ -3379,6 +3400,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financialEntryDialogInvalidAmountError => 'Enter a valid amount';
 
   @override
+  String get financialEntryDialogAmountTooLargeError =>
+      'Amount seems unusually large — please check and re-enter';
+
+  @override
   String get financialEntryDialogNoShgError =>
       'You\'re not linked to an SHG, so there\'s nothing to record this entry against.';
 
@@ -3561,6 +3586,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not assign this SHG. Please try again.';
 
   @override
+  String get adminUsersManageTitle => 'Manage Users';
+
+  @override
+  String get adminUsersNoUsersFoundMessage => 'No users found';
+
+  @override
+  String get adminUsersAssignShgTooltip => 'Assign SHG';
+
+  @override
   String get adminShgsLoadMoreError =>
       'Could not load more SHGs. Please try again.';
 
@@ -3588,6 +3622,49 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get adminShgsUpdateError =>
       'Could not update this SHG. Please try again.';
+
+  @override
+  String get adminShgsManageTitle => 'Manage SHGs';
+
+  @override
+  String get adminShgsNameHint => 'SHG name';
+
+  @override
+  String get adminShgsVillageHint => 'Village';
+
+  @override
+  String get adminShgsDistrictHint => 'District';
+
+  @override
+  String get adminShgsFormationDateNotSet => 'Not set';
+
+  @override
+  String get adminShgsGradeHint => 'Grade (optional)';
+
+  @override
+  String get adminShgsClearFormationDateTooltip => 'Clear formation date';
+
+  @override
+  String get adminShgsAddedMessage => 'SHG added';
+
+  @override
+  String get adminShgsAddedDemoModeMessage =>
+      'Demo mode — SHG not saved (connect Supabase to persist)';
+
+  @override
+  String get adminShgsUpdatedMessage => 'SHG updated';
+
+  @override
+  String get adminShgsGradeChangeConfirmTitle => 'Change grade?';
+
+  @override
+  String adminShgsGradeChangeConfirmMessage(
+    String shgName,
+    String oldGrade,
+    String newGrade,
+  ) {
+    return 'This changes $shgName\'s grade from $oldGrade to $newGrade, which affects loan/scheme eligibility.';
+  }
 
   @override
   String get paymentsQrScanPrompt => 'Tap to scan a QR code';

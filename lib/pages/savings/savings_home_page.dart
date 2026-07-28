@@ -20,6 +20,12 @@ import '../../widgets/list_row.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stat_card.dart';
 
+String _savingsStatusLabel(AppLocalizations l10n, String status) => switch (status) {
+      'verified' => l10n.savingsStatusVerified,
+      'pending' => l10n.savingsStatusPending,
+      _ => status,
+    };
+
 class SavingsHomePage extends StatelessWidget {
   // Injectable so the platform-wide staff portfolio (live-mode-only) can be
   // widget-tested against canned cross-SHG data instead of a real network
@@ -134,7 +140,7 @@ class SavingsHomePage extends StatelessWidget {
                           children: [
                             Text('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                             const SizedBox(height: 4),
-                            AppBadge(text: e.status, tone: e.status == 'verified' ? BadgeTone.success : BadgeTone.warning),
+                            AppBadge(text: _savingsStatusLabel(l10n, e.status), tone: e.status == 'verified' ? BadgeTone.success : BadgeTone.warning),
                           ],
                         ),
                         chevron: false,
