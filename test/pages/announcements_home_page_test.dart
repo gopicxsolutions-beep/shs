@@ -38,6 +38,9 @@ class _FakeNotificationService implements NotificationService {
   Future<void> showAnnouncementNotification({required String announcementId, required String title, required String notificationTitle}) async {
     shown.add(announcementId);
   }
+
+  @override
+  Future<void> cancelAllScheduled() async {}
 }
 
 /// Regression coverage for `AnnouncementsHomePage` opportunistically firing a

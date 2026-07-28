@@ -349,6 +349,10 @@ class AppLocalizationsTe extends AppLocalizations {
       'కోడ్‌ను మళ్ళీ పంపలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
+  String get otpMissingPhoneError =>
+      'మీ ఫోన్ నంబర్ కనుగొనబడలేదు. దయచేసి మళ్ళీ సైన్ ఇన్ చేయండి.';
+
+  @override
   String otpDigitLabel(int position) {
     return 'OTP అంకె $position, 6లో';
   }
@@ -1263,6 +1267,16 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get marketplaceOrdersEmpty => 'ఇంకా ఆర్డర్లు లేవు';
+
+  @override
+  String get marketplaceOrdersMyPurchasesTab => 'నా కొనుగోళ్లు';
+
+  @override
+  String get marketplaceOrdersMySalesTab => 'నా అమ్మకాలు';
+
+  @override
+  String get marketplaceOrdersBuyerEmpty =>
+      'మీరు ఇంకా మార్కెట్‌ప్లేస్ నుండి ఏమీ కొనలేదు';
 
   @override
   String get marketplaceReviewsTitle => 'సమీక్షలు';

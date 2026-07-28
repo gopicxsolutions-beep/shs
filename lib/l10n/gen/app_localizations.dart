@@ -718,6 +718,12 @@ abstract class AppLocalizations {
   /// **'Could not resend the code. Please try again.'**
   String get otpResendError;
 
+  /// No description provided for @otpMissingPhoneError.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone number wasn\'t found. Please sign in again.'**
+  String get otpMissingPhoneError;
+
   /// No description provided for @otpDigitLabel.
   ///
   /// In en, this message translates to:
@@ -2259,6 +2265,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No orders yet'**
   String get marketplaceOrdersEmpty;
+
+  /// No description provided for @marketplaceOrdersMyPurchasesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'My Purchases'**
+  String get marketplaceOrdersMyPurchasesTab;
+
+  /// No description provided for @marketplaceOrdersMySalesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'My Sales'**
+  String get marketplaceOrdersMySalesTab;
+
+  /// No description provided for @marketplaceOrdersBuyerEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t bought anything from the marketplace yet'**
+  String get marketplaceOrdersBuyerEmpty;
 
   /// No description provided for @marketplaceReviewsTitle.
   ///

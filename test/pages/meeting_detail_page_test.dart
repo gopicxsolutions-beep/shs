@@ -36,6 +36,9 @@ class _FakeNotificationService implements NotificationService {
 
   @override
   Future<void> showAnnouncementNotification({required String announcementId, required String title, required String notificationTitle}) async {}
+
+  @override
+  Future<void> cancelAllScheduled() async {}
 }
 
 /// Regression coverage for the "Cancel Meeting" action added to

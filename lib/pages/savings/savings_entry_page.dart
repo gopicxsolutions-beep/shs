@@ -54,7 +54,13 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
     final members = await _shgRepo.fetchMembers(appState.profile?.shgId);
     if (mounted) {
       setState(() {
-        _members = members;
+        // A deactivated member can't log in to submit her own entries, but
+        // nothing stopped a leader/staff from picking her here and logging
+        // a NEW savings entry against her closed account — `fetchMembers`
+        // is shared with `shg_members_page.dart`, which deliberately still
+        // needs deactivated members (to show their inactive badge), so the
+        // filter belongs here rather than in the repository.
+        _members = members.where((m) => m.isActive).toList();
         _loadingMembers = false;
       });
     }

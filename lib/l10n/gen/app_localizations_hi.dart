@@ -345,6 +345,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'कोड फिर से नहीं भेजा जा सका। कृपया फिर से कोशिश करें।';
 
   @override
+  String get otpMissingPhoneError =>
+      'आपका फ़ोन नंबर नहीं मिला। कृपया फिर से साइन इन करें।';
+
+  @override
   String otpDigitLabel(int position) {
     return 'OTP अंक $position, 6 में से';
   }
@@ -1237,6 +1241,16 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get marketplaceOrdersEmpty => 'अभी तक कोई ऑर्डर नहीं है';
+
+  @override
+  String get marketplaceOrdersMyPurchasesTab => 'मेरी खरीदारी';
+
+  @override
+  String get marketplaceOrdersMySalesTab => 'मेरी बिक्री';
+
+  @override
+  String get marketplaceOrdersBuyerEmpty =>
+      'आपने अभी तक मार्केटप्लेस से कुछ नहीं खरीदा है';
 
   @override
   String get marketplaceReviewsTitle => 'समीक्षाएं';

@@ -28,6 +28,7 @@ class _FakeNotificationService implements NotificationService {
   final List<String> shownAnnouncements = [];
   int permissionRequests = 0;
   bool permissionGranted = true;
+  int cancelAllCalls = 0;
 
   @override
   Future<bool> requestPermission() async {
@@ -58,6 +59,11 @@ class _FakeNotificationService implements NotificationService {
   @override
   Future<void> showAnnouncementNotification({required String announcementId, required String title, required String notificationTitle}) async {
     shownAnnouncements.add(announcementId);
+  }
+
+  @override
+  Future<void> cancelAllScheduled() async {
+    cancelAllCalls++;
   }
 }
 

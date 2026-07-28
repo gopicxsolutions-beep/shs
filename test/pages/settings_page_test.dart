@@ -63,6 +63,9 @@ class _FakeNotificationService implements NotificationService {
 
   @override
   Future<void> showAnnouncementNotification({required String announcementId, required String title, required String notificationTitle}) async {}
+
+  @override
+  Future<void> cancelAllScheduled() async {}
 }
 
 /// Regression coverage for SettingsPage's `_loadPrefs()`/`_setPref()` fixes.

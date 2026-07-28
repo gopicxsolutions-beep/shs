@@ -150,6 +150,20 @@ abstract class NotificationService {
   /// wrapper title (e.g. "New announcement"); [title] is the announcement's
   /// own headline, shown as the notification body.
   Future<void> showAnnouncementNotification({required String announcementId, required String title, required String notificationTitle});
+
+  /// Cancels EVERY scheduled local notification outright, regardless of
+  /// type/id — called from `AppState.signOut()` (gap-hunt round 184).
+  /// Scheduled notifications are OS-level state keyed only by a hash of
+  /// `meetingId`/`loanId` (see `_idFor`), not by which account scheduled
+  /// them, so they otherwise survive a sign-out and can fire on whichever
+  /// account signs into the same physical device next — a real
+  /// cross-account data leak on a shared device (a departed member's real
+  /// meeting/loan details showing up on a different member's phone).
+  /// Per-type `cancelAllMeetingReminders`/`cancelAllLoanDueReminders` need
+  /// the caller's own already-fetched list of meetings/loans to cancel one
+  /// by one; sign-out has neither list cached, so this is a blanket
+  /// "everything, unconditionally" cancel instead.
+  Future<void> cancelAllScheduled();
 }
 
 /// Real implementation backed by the `flutter_local_notifications` package.
@@ -342,6 +356,16 @@ class LocalNotificationService implements NotificationService {
     await _ensureInitialized();
     try {
       await _plugin.cancel(id: id);
+    } catch (_) {
+      // No platform channel (test/unsupported target) — nothing to cancel.
+    }
+  }
+
+  @override
+  Future<void> cancelAllScheduled() async {
+    await _ensureInitialized();
+    try {
+      await _plugin.cancelAll();
     } catch (_) {
       // No platform channel (test/unsupported target) — nothing to cancel.
     }

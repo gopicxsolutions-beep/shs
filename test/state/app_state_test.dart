@@ -7,6 +7,7 @@ import 'package:shg_saathi/models/shg.dart';
 import 'package:shg_saathi/repositories/shg_join_request_repository.dart';
 import 'package:shg_saathi/repositories/shg_repository.dart';
 import 'package:shg_saathi/services/auth_service.dart';
+import 'package:shg_saathi/services/notification_service.dart';
 import 'package:shg_saathi/services/profile_repository.dart';
 import 'package:shg_saathi/services/supabase_service.dart';
 import 'package:shg_saathi/state/app_state.dart';
@@ -29,6 +30,51 @@ class _FakeProfileRepository extends ProfileRepository {
 class _FakeAuthService extends AuthService {
   @override
   Future<void> signOut() async {}
+}
+
+/// Records whether `AppState.signOut()` actually called `cancelAllScheduled`
+/// — every other method is a no-op since these tests only exercise sign-out.
+class _FakeNotificationService implements NotificationService {
+  int cancelAllCalls = 0;
+
+  @override
+  Future<bool> requestPermission() async => true;
+  @override
+  Future<void> scheduleMeetingReminder({required String meetingId, required DateTime meetingAt, required String title, required String body}) async {}
+  @override
+  Future<void> cancelMeetingReminder(String meetingId) async {}
+  @override
+  Future<void> scheduleLoanDueReminder({required String loanId, required DateTime dueDate, required String title, required String body}) async {}
+  @override
+  Future<void> cancelLoanDueReminder(String loanId) async {}
+  @override
+  Future<void> showAnnouncementNotification({required String announcementId, required String title, required String notificationTitle}) async {}
+  @override
+  Future<void> cancelAllScheduled() async {
+    cancelAllCalls++;
+  }
+}
+
+/// Simulates a device with no platform channel (e.g. web) — `signOut()`
+/// wraps its `cancelAllScheduled()` call in a best-effort try/catch
+/// specifically so a failure here can never block sign-out itself.
+class _FakeThrowingNotificationService implements NotificationService {
+  @override
+  Future<bool> requestPermission() async => true;
+  @override
+  Future<void> scheduleMeetingReminder({required String meetingId, required DateTime meetingAt, required String title, required String body}) async {}
+  @override
+  Future<void> cancelMeetingReminder(String meetingId) async {}
+  @override
+  Future<void> scheduleLoanDueReminder({required String loanId, required DateTime dueDate, required String title, required String body}) async {}
+  @override
+  Future<void> cancelLoanDueReminder(String loanId) async {}
+  @override
+  Future<void> showAnnouncementNotification({required String announcementId, required String title, required String notificationTitle}) async {}
+  @override
+  Future<void> cancelAllScheduled() async {
+    throw StateError('no platform channel');
+  }
 }
 
 /// Drives a controllable [onAuthStateChange] stream so tests can push
@@ -243,6 +289,41 @@ void main() {
       await appState.signOut();
 
       expect(appState.pendingDeepLink, isNull, reason: 'a stale deep link must not survive into a fresh sign-in as a possibly-different account');
+    });
+  });
+
+  group('AppState signOut cancels scheduled notifications (gap-hunt round 184)', () {
+    // Scheduled meeting/loan-due reminders are OS-level state keyed only by
+    // a hash of meetingId/loanId, not by which account scheduled them — they
+    // previously survived a sign-out and could fire on whichever account
+    // signs into the same physical device next, leaking the signed-out
+    // account's real meeting/loan details to them.
+    test('signOut calls NotificationService.cancelAllScheduled exactly once', () async {
+      final fakeNotifications = _FakeNotificationService();
+      final appState = AppState(
+        profileRepository: _FakeProfileRepository([]),
+        authService: _FakeAuthService(),
+        joinRequestRepository: ShgJoinRequestRepository(),
+        notificationService: fakeNotifications,
+      );
+
+      await appState.signOut();
+
+      expect(fakeNotifications.cancelAllCalls, 1);
+    });
+
+    test('signOut still completes even if cancelAllScheduled throws', () async {
+      final appState = AppState(
+        profileRepository: _FakeProfileRepository([]),
+        authService: _FakeAuthService(),
+        joinRequestRepository: ShgJoinRequestRepository(),
+        notificationService: _FakeThrowingNotificationService(),
+      );
+
+      // Must not throw — a best-effort notification cleanup failure (no
+      // platform channel, e.g. web) must never block sign-out itself.
+      await appState.signOut();
+      expect(appState.hasSession, isFalse);
     });
   });
 

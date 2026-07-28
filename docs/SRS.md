@@ -704,6 +704,12 @@ entire purchase — not just the price-sensitive part — inside one function,
 so there is no longer a gap between "stock/price verified" and "order
 recorded" for a client to skip or forge.
 
+**Order history** is visible to both sides of a purchase: `MarketplaceOrdersPage`
+carries "My Purchases" and "My Sales" tabs, backed by
+`fetchOrdersForBuyer`/`fetchOrdersForSeller` respectively. Buyers can see their
+own order status; there is no buyer-initiated cancellation yet (would need a
+new `'cancelled'` status plus a stock-restore RPC).
+
 **Order status** (`new → packed → shipped → delivered`) is a free-form chip
 row the seller (or staff) can set to *any* value at *any* time, including
 backward — this is an intentional "correct a mistake" design, not a bug, and

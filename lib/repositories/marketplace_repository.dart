@@ -165,6 +165,20 @@ class MarketplaceRepository {
     if (!ok) throw StateError('This item is out of stock.');
   }
 
+  /// A buyer's own purchase history — was entirely missing (gap-hunt round
+  /// 184): `MarketplaceOrdersPage` only ever called `fetchOrdersForSeller`,
+  /// so a member who bought something had no way to see it again — the
+  /// "Orders" tile every role reaches showed only orders for products she
+  /// *sells*, never what she *bought*. `marketplace_orders_select_related`
+  /// (RLS) already permits `buyer_id = auth.uid()` reads — this was a pure
+  /// missing-UI/repository gap, not an RLS one.
+  Future<List<MarketOrder>> fetchOrdersForBuyer(String? buyerId) async {
+    if (!_live) return _locallyPlaced.reversed.toList();
+    if (buyerId == null) return [];
+    final rows = await _client.from('marketplace_orders').select('*, marketplace_products(name, seller_id)').eq('buyer_id', buyerId).order('created_at', ascending: false);
+    return (rows as List).map((r) => MarketOrder.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
   /// Orders for products this seller listed.
   Future<List<MarketOrder>> fetchOrdersForSeller(String? sellerId) async {
     if (!_live) return _locallyPlaced.reversed.toList();

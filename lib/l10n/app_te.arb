@@ -129,6 +129,7 @@
   "otpDidntReceive": "కోడ్ రాలేదా? మీ SMS ఇన్‌బాక్స్‌ను తనిఖీ చేయండి.",
   "otpVerifyError": "తప్పు లేదా గడువు ముగిసిన కోడ్. దయచేసి మళ్ళీ ప్రయత్నించండి.",
   "otpResendError": "కోడ్‌ను మళ్ళీ పంపలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+  "otpMissingPhoneError": "మీ ఫోన్ నంబర్ కనుగొనబడలేదు. దయచేసి మళ్ళీ సైన్ ఇన్ చేయండి.",
   "otpDigitLabel": "OTP అంకె {position}, 6లో",
 
   "profileSetupTitle": "మీ ప్రొఫైల్‌ను సృష్టించండి",
@@ -600,6 +601,10 @@
   "marketplaceOrdersTitle": "ఆర్డర్లు",
 
   "marketplaceOrdersEmpty": "ఇంకా ఆర్డర్లు లేవు",
+
+  "marketplaceOrdersMyPurchasesTab": "నా కొనుగోళ్లు",
+  "marketplaceOrdersMySalesTab": "నా అమ్మకాలు",
+  "marketplaceOrdersBuyerEmpty": "మీరు ఇంకా మార్కెట్‌ప్లేస్ నుండి ఏమీ కొనలేదు",
 
   "marketplaceReviewsTitle": "సమీక్షలు",
 

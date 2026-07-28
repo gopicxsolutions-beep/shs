@@ -129,6 +129,7 @@
   "otpDidntReceive": "Didn't receive the code? Check your SMS inbox.",
   "otpVerifyError": "Incorrect or expired code. Please try again.",
   "otpResendError": "Could not resend the code. Please try again.",
+  "otpMissingPhoneError": "Your phone number wasn't found. Please sign in again.",
   "otpDigitLabel": "OTP digit {position} of 6",
   "@otpDigitLabel": {
     "placeholders": {
@@ -826,6 +827,10 @@
   "marketplaceOrdersTitle": "Orders",
 
   "marketplaceOrdersEmpty": "No orders yet",
+
+  "marketplaceOrdersMyPurchasesTab": "My Purchases",
+  "marketplaceOrdersMySalesTab": "My Sales",
+  "marketplaceOrdersBuyerEmpty": "You haven't bought anything from the marketplace yet",
 
   "marketplaceReviewsTitle": "Reviews",
 

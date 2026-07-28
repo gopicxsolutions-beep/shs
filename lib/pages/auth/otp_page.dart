@@ -30,7 +30,18 @@ class _OtpPageState extends State<OtpPage> {
   bool _resending = false;
   String? _error;
 
-  String get _phone => widget.phone ?? '+91 98765 43210';
+  // Was `widget.phone ?? '+91 98765 43210'` — a silent hardcoded placeholder
+  // that fed straight into the REAL `verifyOtp(_phone, code)` call below.
+  // `widget.phone` comes from `state.extra` (router.dart), which only
+  // survives in-memory navigation — a Flutter-web page refresh, a
+  // bookmarked/reopened `/otp` tab, or a restored browser tab days later all
+  // reload this route with no `extra`. The placeholder then silently took
+  // over with no visual difference, verification was attempted against the
+  // wrong number, and the only feedback was the generic "incorrect or
+  // expired code" — misattributing an entirely different failure. Fixed
+  // (see initState below) by redirecting back to Login instead of ever
+  // reaching this getter with a null `widget.phone` in live mode.
+  String get _phone => widget.phone ?? '';
 
   bool get _filled => _digits.every((c) => c.text.isNotEmpty);
 
@@ -38,6 +49,17 @@ class _OtpPageState extends State<OtpPage> {
   void initState() {
     super.initState();
     _startResendTimer();
+    if (SupabaseService.isConfigured && widget.phone == null) {
+      // Post-frame: navigating away during initState (before this widget's
+      // own first frame) isn't safe — `context` isn't fully usable yet.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final l10n = AppLocalizations.of(context)!;
+        final messenger = ScaffoldMessenger.of(context);
+        context.go(Paths.login);
+        messenger.showSnackBar(SnackBar(content: Text(l10n.otpMissingPhoneError)));
+      });
+    }
   }
 
   void _startResendTimer() {

@@ -343,6 +343,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get otpResendError => 'Could not resend the code. Please try again.';
 
   @override
+  String get otpMissingPhoneError =>
+      'Your phone number wasn\'t found. Please sign in again.';
+
+  @override
   String otpDigitLabel(int position) {
     return 'OTP digit $position of 6';
   }
@@ -1257,6 +1261,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get marketplaceOrdersEmpty => 'No orders yet';
+
+  @override
+  String get marketplaceOrdersMyPurchasesTab => 'My Purchases';
+
+  @override
+  String get marketplaceOrdersMySalesTab => 'My Sales';
+
+  @override
+  String get marketplaceOrdersBuyerEmpty =>
+      'You haven\'t bought anything from the marketplace yet';
 
   @override
   String get marketplaceReviewsTitle => 'Reviews';

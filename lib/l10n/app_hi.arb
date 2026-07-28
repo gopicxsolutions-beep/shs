@@ -129,6 +129,7 @@
   "otpDidntReceive": "कोड नहीं मिला? अपना SMS इनबॉक्स जांचें।",
   "otpVerifyError": "गलत या समय-सीमा समाप्त कोड। कृपया फिर से कोशिश करें।",
   "otpResendError": "कोड फिर से नहीं भेजा जा सका। कृपया फिर से कोशिश करें।",
+  "otpMissingPhoneError": "आपका फ़ोन नंबर नहीं मिला। कृपया फिर से साइन इन करें।",
   "otpDigitLabel": "OTP अंक {position}, 6 में से",
 
   "profileSetupTitle": "अपनी प्रोफ़ाइल बनाएं",
@@ -600,6 +601,10 @@
   "marketplaceOrdersTitle": "ऑर्डर",
 
   "marketplaceOrdersEmpty": "अभी तक कोई ऑर्डर नहीं है",
+
+  "marketplaceOrdersMyPurchasesTab": "मेरी खरीदारी",
+  "marketplaceOrdersMySalesTab": "मेरी बिक्री",
+  "marketplaceOrdersBuyerEmpty": "आपने अभी तक मार्केटप्लेस से कुछ नहीं खरीदा है",
 
   "marketplaceReviewsTitle": "समीक्षाएं",
 

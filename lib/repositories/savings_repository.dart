@@ -120,9 +120,22 @@ class SavingsRepository {
     return true;
   }
 
+  /// Throws if no row matched — two leaders/staff tapping "Verify" on the
+  /// same entry within the same race window (or the member deleting her own
+  /// still-pending entry a moment before a leader verifies it) used to both
+  /// see a silent success: PostgREST's default `UPDATE ... eq(id)` with no
+  /// `.select()` returns success even when it matched 0 rows, so the loser
+  /// of the race got the exact same "verified" toast as the winner despite
+  /// nothing actually changing on their call. Chaining `.select('id')` gets
+  /// the matched rows back so that case can be told apart from a real
+  /// success (mirrors the `returning 1` / count-based convention this repo
+  /// already uses for live-DB RLS verification — see CLAUDE.md).
   Future<void> verifyEntry(String id) async {
     if (!_live) return;
-    await _client.from('savings_entries').update({'status': 'verified'}).eq('id', id);
+    final updated = await _client.from('savings_entries').update({'status': 'verified'}).eq('id', id).select('id');
+    if ((updated as List).isEmpty) {
+      throw StateError('This entry no longer exists or was already verified/removed.');
+    }
   }
 
   /// Deletes a still-`pending` entry — the owning member correcting her own
@@ -132,9 +145,17 @@ class SavingsRepository {
   /// (`savings_delete_staff`, 0014) exactly as that hardening intended —
   /// deleting a pending entry has no financial-integrity cost since it
   /// never contributed to any verified total.
+  /// Throws if no row matched — see [verifyEntry]'s doc comment for why an
+  /// affected-row check matters here: a leader verifying an entry at the
+  /// same moment its owner deletes it (or a second delete tap/tab racing the
+  /// first) would otherwise both report success though only one delete ever
+  /// actually happened.
   Future<void> deletePendingEntry(String id) async {
     if (!_live) return;
-    await _client.from('savings_entries').delete().eq('id', id);
+    final deleted = await _client.from('savings_entries').delete().eq('id', id).select('id');
+    if ((deleted as List).isEmpty) {
+      throw StateError('This entry no longer exists or was already removed/verified.');
+    }
   }
 
   /// Live updates for the shg's ledger (leader/staff screens). Ordered

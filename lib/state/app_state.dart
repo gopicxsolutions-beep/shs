@@ -7,6 +7,7 @@ import '../models/types.dart';
 import '../repositories/shg_join_request_repository.dart';
 import '../repositories/shg_repository.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import '../services/profile_repository.dart';
 import '../services/supabase_service.dart';
 import '../widgets/async_state.dart' show isNetworkError;
@@ -22,16 +23,18 @@ import '../widgets/async_state.dart' show isNetworkError;
 ///    [defaultUser]'s role, so the 5 dashboards stay explorable without a
 ///    backend (matches the previous `restore()`/`setRole()` behavior).
 class AppState extends ChangeNotifier {
-  AppState({AuthService? authService, ProfileRepository? profileRepository, ShgJoinRequestRepository? joinRequestRepository, ShgRepository? shgRepository})
+  AppState({AuthService? authService, ProfileRepository? profileRepository, ShgJoinRequestRepository? joinRequestRepository, ShgRepository? shgRepository, NotificationService? notificationService})
       : _authService = authService ?? AuthService(),
         _profileRepository = profileRepository ?? ProfileRepository(),
         _joinRequestRepository = joinRequestRepository ?? ShgJoinRequestRepository(),
-        _shgRepository = shgRepository ?? ShgRepository();
+        _shgRepository = shgRepository ?? ShgRepository(),
+        _notificationService = notificationService ?? LocalNotificationService.instance;
 
   final AuthService _authService;
   final ProfileRepository _profileRepository;
   final ShgJoinRequestRepository _joinRequestRepository;
   final ShgRepository _shgRepository;
+  final NotificationService _notificationService;
   StreamSubscription<AuthState>? _authSub;
 
   Language language = Language.en;
@@ -493,6 +496,18 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    // Scheduled meeting/loan-due reminders are OS-level state keyed only by
+    // a hash of meetingId/loanId (see NotificationService.cancelAllScheduled's
+    // doc comment) — not by which account scheduled them, so they otherwise
+    // survive a sign-out and can fire on whichever account signs in next on
+    // the same physical device, leaking this account's real meeting/loan
+    // details to them. Best-effort: a failure here (no platform channel,
+    // e.g. web) must never block sign-out itself.
+    try {
+      await _notificationService.cancelAllScheduled();
+    } catch (_) {
+      // Best-effort only.
+    }
     if (SupabaseService.isConfigured) {
       await _authService.signOut();
       _clearProfileState();
