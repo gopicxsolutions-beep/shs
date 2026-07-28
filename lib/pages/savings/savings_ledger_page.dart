@@ -150,6 +150,39 @@ class _LedgerList extends StatefulWidget {
 
 class _LedgerListState extends State<_LedgerList> {
   final _verifying = <String>{};
+  final _rejecting = <String>{};
+
+  /// Rejects (deletes) an obviously-wrong pending entry — `savings_delete_
+  /// self_or_leader_pending`/`savings_delete_staff` (migrations 0086/0014)
+  /// both scope this to `status = 'pending'` only, so a verified entry
+  /// can never be touched from here. The realtime stream backing this list
+  /// removes the row on its own once the DELETE lands — no manual reload
+  /// needed, unlike SavingsHistoryPage's one-shot fetch.
+  Future<void> _reject(SavingsEntry e) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.savingsLedgerRejectConfirmTitle),
+        content: Text(l10n.savingsLedgerRejectConfirmMessage),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.savingsLedgerRejectConfirmButton)),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _rejecting.add(e.id));
+    try {
+      await widget.repo.deletePendingEntry(e.id);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.savingsLedgerRejectError)));
+      }
+    } finally {
+      if (mounted) setState(() => _rejecting.remove(e.id));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -165,6 +198,7 @@ class _LedgerListState extends State<_LedgerList> {
       itemBuilder: (context, i) {
         final e = entries[i];
         final verifying = _verifying.contains(e.id);
+        final rejecting = _rejecting.contains(e.id);
         final memberName = widget.memberNames[e.memberId] ?? e.memberName;
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
@@ -176,27 +210,45 @@ class _LedgerListState extends State<_LedgerList> {
               subtitle: widget.isPlatformWide && e.shgName != null
                   ? '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.mode} · ${e.frequency} · ${l10n.savingsLedgerShgName(e.shgName!)}'
                   : '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.mode} · ${e.frequency}',
+              // A Column, not the bare AppButton beside a reject icon —
+              // stacking avoids the same trailing-slot overflow class
+              // already caught (and fixed the same way) elsewhere this
+              // round in `shg_members_page.dart`/`savings_history_page.dart`.
               trailing: e.status == 'pending'
-                  ? AppButton(
-                      size: ButtonSize.sm,
-                      variant: ButtonVariant.secondary,
-                      label: verifying ? l10n.savingsLedgerVerifying : l10n.savingsLedgerVerifyAction('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}'),
-                      onPressed: !SupabaseService.isConfigured || verifying
-                          ? null
-                          : () async {
-                              setState(() => _verifying.add(e.id));
-                              try {
-                                await repo.verifyEntry(e.id);
-                              } catch (_) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(l10n.savingsLedgerVerifyError)),
-                                  );
-                                }
-                              } finally {
-                                if (mounted) setState(() => _verifying.remove(e.id));
-                              }
-                            },
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        AppButton(
+                          size: ButtonSize.sm,
+                          variant: ButtonVariant.secondary,
+                          label: verifying ? l10n.savingsLedgerVerifying : l10n.savingsLedgerVerifyAction('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}'),
+                          onPressed: !SupabaseService.isConfigured || verifying || rejecting
+                              ? null
+                              : () async {
+                                  setState(() => _verifying.add(e.id));
+                                  try {
+                                    await repo.verifyEntry(e.id);
+                                  } catch (_) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(l10n.savingsLedgerVerifyError)),
+                                      );
+                                    }
+                                  } finally {
+                                    if (mounted) setState(() => _verifying.remove(e.id));
+                                  }
+                                },
+                        ),
+                        const SizedBox(height: 4),
+                        rejecting
+                            ? const Padding(padding: EdgeInsets.all(4), child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)))
+                            : TextButton(
+                                style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                                onPressed: !SupabaseService.isConfigured || verifying ? null : () => _reject(e),
+                                child: Text(l10n.savingsLedgerRejectAction, style: AppTheme.sans(11, weight: FontWeight.w600, color: Accent.red600)),
+                              ),
+                      ],
                     )
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.end,

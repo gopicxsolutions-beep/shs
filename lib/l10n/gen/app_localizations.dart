@@ -3040,6 +3040,36 @@ abstract class AppLocalizations {
   /// **'No savings history yet'**
   String get savingsHistoryEmpty;
 
+  /// No description provided for @savingsHistoryDeleteTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this pending entry'**
+  String get savingsHistoryDeleteTooltip;
+
+  /// No description provided for @savingsHistoryDeleteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this entry?'**
+  String get savingsHistoryDeleteConfirmTitle;
+
+  /// No description provided for @savingsHistoryDeleteConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This pending entry will be permanently removed. This cannot be undone.'**
+  String get savingsHistoryDeleteConfirmMessage;
+
+  /// No description provided for @savingsHistoryDeletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry deleted'**
+  String get savingsHistoryDeletedMessage;
+
+  /// No description provided for @savingsHistoryDeleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete this entry. Please try again.'**
+  String get savingsHistoryDeleteError;
+
   /// No description provided for @savingsFrequencyEntryTitle.
   ///
   /// In en, this message translates to:
@@ -3195,6 +3225,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not verify this entry. Please try again.'**
   String get savingsLedgerVerifyError;
+
+  /// No description provided for @savingsLedgerRejectAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get savingsLedgerRejectAction;
+
+  /// No description provided for @savingsLedgerRejectConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject this entry?'**
+  String get savingsLedgerRejectConfirmTitle;
+
+  /// No description provided for @savingsLedgerRejectConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This pending entry will be permanently removed. This cannot be undone.'**
+  String get savingsLedgerRejectConfirmMessage;
+
+  /// No description provided for @savingsLedgerRejectConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get savingsLedgerRejectConfirmButton;
+
+  /// No description provided for @savingsLedgerRejectError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reject this entry. Please try again.'**
+  String get savingsLedgerRejectError;
 
   /// No description provided for @savingsLedgerVerifying.
   ///
@@ -4401,6 +4461,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No documents uploaded yet'**
   String get shgDocumentsEmpty;
+
+  /// No description provided for @shgDocumentsLoadMoreError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load more documents. Please try again.'**
+  String get shgDocumentsLoadMoreError;
 
   /// No description provided for @shgDocumentsAddDialogTitle.
   ///

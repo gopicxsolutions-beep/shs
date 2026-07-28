@@ -79,7 +79,7 @@ void main() {
       final saved = await repo.addDocument(shgId: 'shg-1', name: 'Test Uploaded Doc', type: 'PDF', size: '245 KB');
       expect(saved, isTrue);
       final docs = await repo.fetchDocuments('shg-1');
-      final added = docs.firstWhere((d) => d.name == 'Test Uploaded Doc');
+      final added = docs.items.firstWhere((d) => d.name == 'Test Uploaded Doc');
       expect(added.size, '245 KB');
       // Demo mode never uploads to a real bucket, so there's genuinely no
       // storage path to attach — the download action correctly treats this

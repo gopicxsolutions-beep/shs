@@ -198,15 +198,22 @@ class AdminRepository {
     // no server-side way to verify completion in the first place, so
     // `progress` is still the only signal available there and is trusted
     // as before.
+    // `is_active` (migration 0083) — a deactivated member's own
+    // course_progress rows must be excluded from BOTH the numerator and
+    // the denominator, not just one: filtering only `totalMembers` while
+    // still summing every deactivated member's `progress`/`certified` into
+    // `progressSum` would inflate this stat instead of correcting it.
+    final activeMemberIds = (await _client.from('profiles').select('id').eq('role', 'member').eq('is_active', true) as List).map((r) => (r as Map<String, dynamic>)['id'] as String).toSet();
     final quizzedCourseRows = await _client.from('quiz_questions').select('course_id');
     final quizzedCourseIds = (quizzedCourseRows as List).map((r) => (r as Map<String, dynamic>)['course_id'] as String).toSet();
-    final progressRows = await _client.from('course_progress').select('course_id, progress, certified');
+    final progressRows = await _client.from('course_progress').select('member_id, course_id, progress, certified');
     final progressSum = (progressRows as List).fold<int>(0, (sum, r) {
       final map = r as Map<String, dynamic>;
+      if (!activeMemberIds.contains(map['member_id'] as String)) return sum;
       final hasQuiz = quizzedCourseIds.contains(map['course_id'] as String);
       return sum + (hasQuiz ? ((map['certified'] as bool) ? 100 : 0) : map['progress'] as int);
     });
-    final totalMembers = await _client.from('profiles').count().eq('role', 'member');
+    final totalMembers = activeMemberIds.length;
     final totalCourses = await _client.from('training_courses').count();
     return trainingCompletionPctFrom(progressSum: progressSum, totalMembers: totalMembers, totalCourses: totalCourses);
   }

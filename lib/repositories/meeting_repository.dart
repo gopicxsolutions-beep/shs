@@ -129,7 +129,11 @@ class MeetingRepository {
       return (debugMembersOverride ?? mock_members.members).map((m) => (m.id, m.name)).toList();
     }
     if (shgId == null) return [];
-    final rows = await _client.from('profiles').select('id, name').eq('shg_id', shgId).order('name');
+    // `is_active` (migration 0083) — this is the roster every attendance
+    // sheet is built from; without this filter a leader could keep marking
+    // a deactivated/departed member present or absent indefinitely, the
+    // one weekly workflow deactivation is most meant to affect.
+    final rows = await _client.from('profiles').select('id, name').eq('shg_id', shgId).eq('is_active', true).order('name');
     return (rows as List).map((r) => (r['id'] as String, r['name'] as String)).toList();
   }
 

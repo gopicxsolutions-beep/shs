@@ -5,8 +5,10 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/savings.dart';
 import '../../repositories/savings_repository.dart';
+import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
@@ -27,6 +29,43 @@ class SavingsHistoryPage extends StatefulWidget {
 class _SavingsHistoryPageState extends State<SavingsHistoryPage> {
   final _repo = SavingsRepository();
   final _key = GlobalKey<AppAsyncBuilderState<List<SavingsEntry>>>();
+  String? _deletingId;
+
+  /// A still-`pending` entry never contributed to any verified total (see
+  /// `savings_delete_self_or_leader_pending`, migration 0086's own doc
+  /// comment) — a member can now correct her own mistake (wrong amount,
+  /// accidental double-submit) instead of it being permanent from the
+  /// instant of submission. A verified entry stays staff-delete-only, so no
+  /// action is offered here once `status` moves past `pending`.
+  Future<void> _deleteEntry(SavingsEntry e) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.savingsHistoryDeleteConfirmTitle),
+        content: Text(l10n.savingsHistoryDeleteConfirmMessage),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.actionDelete)),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _deletingId = e.id);
+    try {
+      await _repo.deletePendingEntry(e.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(SupabaseService.isConfigured ? l10n.savingsHistoryDeletedMessage : l10n.profileUpdateDemoMode)));
+        _key.currentState?.reload();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.savingsHistoryDeleteError)));
+      }
+    } finally {
+      if (mounted) setState(() => _deletingId = null);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +105,13 @@ class _SavingsHistoryPageState extends State<SavingsHistoryPage> {
                     child: AppListRow(
                       title: l10n.savingsFrequencyEntryTitle(e.frequency),
                       subtitle: '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.mode}',
+                      // Column, not Row — stacking the delete icon below the
+                      // badge (rather than beside it) avoids the exact
+                      // trailing-slot overflow class already caught by the
+                      // stress-test suite on `shg_members_page.dart` this
+                      // same round (`AppListRow`'s `Flexible(fit: loose)`
+                      // bounds available width but doesn't force a
+                      // `mainAxisSize: min` Row's own children to shrink).
                       trailing: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         mainAxisSize: MainAxisSize.min,
@@ -73,6 +119,19 @@ class _SavingsHistoryPageState extends State<SavingsHistoryPage> {
                           Text('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                           const SizedBox(height: 4),
                           AppBadge(text: _savingsStatusLabel(l10n, e.status), tone: e.status == 'verified' ? BadgeTone.success : BadgeTone.warning),
+                          if (e.status == 'pending') ...[
+                            const SizedBox(height: 4),
+                            _deletingId == e.id
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                : IconButton(
+                                    icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                                    color: Accent.red600,
+                                    tooltip: l10n.savingsHistoryDeleteTooltip,
+                                    constraints: const BoxConstraints(),
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () => _deleteEntry(e),
+                                  ),
+                          ],
                         ],
                       ),
                       chevron: false,

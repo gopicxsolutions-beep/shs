@@ -1178,6 +1178,12 @@
 
   "savingsHistoryEmpty": "No savings history yet",
 
+  "savingsHistoryDeleteTooltip": "Delete this pending entry",
+  "savingsHistoryDeleteConfirmTitle": "Delete this entry?",
+  "savingsHistoryDeleteConfirmMessage": "This pending entry will be permanently removed. This cannot be undone.",
+  "savingsHistoryDeletedMessage": "Entry deleted",
+  "savingsHistoryDeleteError": "Could not delete this entry. Please try again.",
+
   "savingsFrequencyEntryTitle": "{frequency} savings",
   "@savingsFrequencyEntryTitle": {
     "placeholders": {
@@ -1251,6 +1257,12 @@
   },
 
   "savingsLedgerVerifyError": "Could not verify this entry. Please try again.",
+
+  "savingsLedgerRejectAction": "Reject",
+  "savingsLedgerRejectConfirmTitle": "Reject this entry?",
+  "savingsLedgerRejectConfirmMessage": "This pending entry will be permanently removed. This cannot be undone.",
+  "savingsLedgerRejectConfirmButton": "Reject",
+  "savingsLedgerRejectError": "Could not reject this entry. Please try again.",
 
   "savingsLedgerVerifying": "Verifying…",
 
@@ -1737,6 +1749,8 @@
   "shgDocumentsAddTooltip": "Add document",
 
   "shgDocumentsEmpty": "No documents uploaded yet",
+
+  "shgDocumentsLoadMoreError": "Could not load more documents. Please try again.",
 
   "shgDocumentsAddDialogTitle": "Add document",
 

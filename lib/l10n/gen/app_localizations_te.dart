@@ -1738,6 +1738,23 @@ class AppLocalizationsTe extends AppLocalizations {
   String get savingsHistoryEmpty => 'ఇంకా పొదుపు చరిత్ర లేదు';
 
   @override
+  String get savingsHistoryDeleteTooltip => 'ఈ పెండింగ్ ఎంట్రీని తొలగించండి';
+
+  @override
+  String get savingsHistoryDeleteConfirmTitle => 'ఈ ఎంట్రీని తొలగించాలా?';
+
+  @override
+  String get savingsHistoryDeleteConfirmMessage =>
+      'ఈ పెండింగ్ ఎంట్రీ శాశ్వతంగా తొలగించబడుతుంది. దీన్ని తిరిగి పొందలేరు.';
+
+  @override
+  String get savingsHistoryDeletedMessage => 'ఎంట్రీ తొలగించబడింది';
+
+  @override
+  String get savingsHistoryDeleteError =>
+      'ఈ ఎంట్రీని తొలగించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
   String savingsFrequencyEntryTitle(String frequency) {
     return '$frequency పొదుపు';
   }
@@ -1829,6 +1846,23 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get savingsLedgerVerifyError =>
       'ఈ ఎంట్రీని ధృవీకరించడం సాధ్యం కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get savingsLedgerRejectAction => 'తిరస్కరించండి';
+
+  @override
+  String get savingsLedgerRejectConfirmTitle => 'ఈ ఎంట్రీని తిరస్కరించాలా?';
+
+  @override
+  String get savingsLedgerRejectConfirmMessage =>
+      'ఈ పెండింగ్ ఎంట్రీ శాశ్వతంగా తొలగించబడుతుంది. దీన్ని తిరిగి పొందలేరు.';
+
+  @override
+  String get savingsLedgerRejectConfirmButton => 'తిరస్కరించండి';
+
+  @override
+  String get savingsLedgerRejectError =>
+      'ఈ ఎంట్రీని తిరస్కరించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
 
   @override
   String get savingsLedgerVerifying => 'ధృవీకరిస్తోంది…';
@@ -2513,6 +2547,10 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get shgDocumentsEmpty => 'ఇంకా ఏ పత్రాలు అప్‌లోడ్ చేయలేదు';
+
+  @override
+  String get shgDocumentsLoadMoreError =>
+      'మరిన్ని పత్రాలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
 
   @override
   String get shgDocumentsAddDialogTitle => 'పత్రం జోడించండి';

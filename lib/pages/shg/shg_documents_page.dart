@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
+import '../../models/paged_result.dart';
 import '../../models/shg.dart';
 import '../../models/types.dart';
 import '../../repositories/shg_repository.dart';
@@ -48,10 +49,43 @@ class ShgDocumentsPage extends StatefulWidget {
 
 class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
   final _repo = ShgRepository();
-  final GlobalKey<AppAsyncBuilderState<List<ShgDocument>>> _key = GlobalKey();
+  final GlobalKey<AppAsyncBuilderState<PagedResult<ShgDocument>>> _key = GlobalKey();
   final _nameController = TextEditingController();
   bool _busy = false;
   bool _opening = false;
+
+  // Same appendable-local-copy shape as AdminUsersPage/AdminShgsPage — see
+  // those pages' doc comments for why the builder below renders these
+  // instead of the AppAsyncBuilder's own snapshot.
+  List<ShgDocument> _docs = [];
+  bool _hasMore = false;
+  bool _loadingMore = false;
+
+  Future<PagedResult<ShgDocument>> _loadFirstPage(String? shgId) async {
+    final page = await _repo.fetchDocuments(shgId);
+    _docs = page.items;
+    _hasMore = page.hasMore;
+    return page;
+  }
+
+  Future<void> _loadMore(String? shgId) async {
+    if (_loadingMore || !_hasMore || _docs.isEmpty) return;
+    setState(() => _loadingMore = true);
+    try {
+      final last = _docs.last;
+      final page = await _repo.fetchDocuments(shgId, afterCreatedAt: last.createdAt, afterId: last.id);
+      setState(() {
+        _docs = [..._docs, ...page.items];
+        _hasMore = page.hasMore;
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.shgDocumentsLoadMoreError)));
+      }
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -193,18 +227,28 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
               )
             : null,
       ),
-      body: AppAsyncBuilder<List<ShgDocument>>(
+      body: AppAsyncBuilder<PagedResult<ShgDocument>>(
         key: _key,
-        future: () => _repo.fetchDocuments(shgId),
-        builder: (context, docs) {
-          if (docs.isEmpty) {
+        future: () => _loadFirstPage(shgId),
+        builder: (context, page) {
+          if (_docs.isEmpty) {
             return AppEmptyState(icon: Icons.folder_off_rounded, message: l10n.shgDocumentsEmpty);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: docs.length,
+            itemCount: _docs.length + (_hasMore ? 1 : 0),
             itemBuilder: (context, i) {
-              final d = docs[i];
+              if (i == _docs.length) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Center(
+                    child: _loadingMore
+                        ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                        : TextButton(onPressed: () => _loadMore(shgId), child: Text(l10n.actionLoadMore)),
+                  ),
+                );
+              }
+              final d = _docs[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: AppCard(

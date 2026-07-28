@@ -125,6 +125,18 @@ class SavingsRepository {
     await _client.from('savings_entries').update({'status': 'verified'}).eq('id', id);
   }
 
+  /// Deletes a still-`pending` entry — the owning member correcting her own
+  /// mistake, or the SHG's leader rejecting an obviously-wrong submission.
+  /// `savings_delete_self_or_leader_pending` (migration 0086) scopes this to
+  /// `status = 'pending'` only; a verified entry stays staff-delete-only
+  /// (`savings_delete_staff`, 0014) exactly as that hardening intended —
+  /// deleting a pending entry has no financial-integrity cost since it
+  /// never contributed to any verified total.
+  Future<void> deletePendingEntry(String id) async {
+    if (!_live) return;
+    await _client.from('savings_entries').delete().eq('id', id);
+  }
+
   /// Live updates for the shg's ledger (leader/staff screens). Ordered
   /// newest-first to match `fetchForShg` (the demo-mode fallback used on
   /// the same page) — this used to omit `ascending: false`, so the

@@ -258,16 +258,31 @@ class ShgRepository {
     return row == null ? null : Member.fromMap(row);
   }
 
-  Future<List<ShgDocument>> fetchDocuments(String? shgId) async {
+  // Was a single unbounded query — an SHG that accumulates documents over
+  // years (the exact anti-pattern already found and fixed for the
+  // financial ledger, CRP/CLF SHG list, and admin users/SHGs lists) had no
+  // cap at all. Same composite `(created_at desc, id desc)` keyset cursor
+  // as `AdminRepository.fetchAuditLog` — `id` is an arbitrary but stable
+  // tiebreaker for the rare case two documents share the same microsecond
+  // upload timestamp.
+  Future<PagedResult<ShgDocument>> fetchDocuments(String? shgId, {DateTime? afterCreatedAt, String? afterId, int pageSize = 50}) async {
     if (!_live) {
-      return [
+      final list = [
         ..._locallyAdded.reversed,
         ...mock.documents.map((d) => ShgDocument(id: d.id, name: d.name, type: d.type, size: d.size, createdAt: _parseMockDate(d.date))),
       ];
+      return PagedResult(items: list, hasMore: false);
     }
-    if (shgId == null) return [];
-    final rows = await _client.from('shg_documents').select().eq('shg_id', shgId).order('created_at', ascending: false);
-    return (rows as List).map((r) => ShgDocument.fromMap(r as Map<String, dynamic>)).toList();
+    if (shgId == null) return const PagedResult(items: [], hasMore: false);
+    var builder = _client.from('shg_documents').select().eq('shg_id', shgId);
+    if (afterCreatedAt != null && afterId != null) {
+      final c = afterCreatedAt.toIso8601String();
+      builder = builder.or('created_at.lt.$c,and(created_at.eq.$c,id.lt.$afterId)');
+    }
+    final rows = await builder.order('created_at', ascending: false).order('id', ascending: false).limit(pageSize + 1);
+    final list = (rows as List).map((r) => ShgDocument.fromMap(r as Map<String, dynamic>)).toList();
+    final hasMore = list.length > pageSize;
+    return PagedResult(items: hasMore ? list.sublist(0, pageSize) : list, hasMore: hasMore);
   }
 
   /// Records a document's metadata once its file has already been uploaded

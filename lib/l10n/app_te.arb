@@ -859,6 +859,12 @@
 
   "savingsHistoryEmpty": "ఇంకా పొదుపు చరిత్ర లేదు",
 
+  "savingsHistoryDeleteTooltip": "ఈ పెండింగ్ ఎంట్రీని తొలగించండి",
+  "savingsHistoryDeleteConfirmTitle": "ఈ ఎంట్రీని తొలగించాలా?",
+  "savingsHistoryDeleteConfirmMessage": "ఈ పెండింగ్ ఎంట్రీ శాశ్వతంగా తొలగించబడుతుంది. దీన్ని తిరిగి పొందలేరు.",
+  "savingsHistoryDeletedMessage": "ఎంట్రీ తొలగించబడింది",
+  "savingsHistoryDeleteError": "ఈ ఎంట్రీని తొలగించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+
   "savingsFrequencyEntryTitle": "{frequency} పొదుపు",
 
   "savingsHomeTitle": "పొదుపు",
@@ -910,6 +916,12 @@
   "savingsLedgerShgName": "SHG: {shg}",
 
   "savingsLedgerVerifyError": "ఈ ఎంట్రీని ధృవీకరించడం సాధ్యం కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.",
+
+  "savingsLedgerRejectAction": "తిరస్కరించండి",
+  "savingsLedgerRejectConfirmTitle": "ఈ ఎంట్రీని తిరస్కరించాలా?",
+  "savingsLedgerRejectConfirmMessage": "ఈ పెండింగ్ ఎంట్రీ శాశ్వతంగా తొలగించబడుతుంది. దీన్ని తిరిగి పొందలేరు.",
+  "savingsLedgerRejectConfirmButton": "తిరస్కరించండి",
+  "savingsLedgerRejectError": "ఈ ఎంట్రీని తిరస్కరించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
 
   "savingsLedgerVerifying": "ధృవీకరిస్తోంది…",
 
@@ -1345,6 +1357,8 @@
   "shgDocumentsAddTooltip": "పత్రం జోడించండి",
 
   "shgDocumentsEmpty": "ఇంకా ఏ పత్రాలు అప్‌లోడ్ చేయలేదు",
+
+  "shgDocumentsLoadMoreError": "మరిన్ని పత్రాలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
 
   "shgDocumentsAddDialogTitle": "పత్రం జోడించండి",
 

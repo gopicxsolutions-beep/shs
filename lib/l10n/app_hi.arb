@@ -859,6 +859,12 @@
 
   "savingsHistoryEmpty": "अभी तक कोई बचत इतिहास नहीं है",
 
+  "savingsHistoryDeleteTooltip": "इस लंबित प्रविष्टि को हटाएं",
+  "savingsHistoryDeleteConfirmTitle": "इस प्रविष्टि को हटाएं?",
+  "savingsHistoryDeleteConfirmMessage": "यह लंबित प्रविष्टि स्थायी रूप से हटा दी जाएगी। इसे वापस नहीं लाया जा सकता।",
+  "savingsHistoryDeletedMessage": "प्रविष्टि हटा दी गई",
+  "savingsHistoryDeleteError": "इस प्रविष्टि को हटाया नहीं जा सका। कृपया फिर से प्रयास करें।",
+
   "savingsFrequencyEntryTitle": "{frequency} बचत",
 
   "savingsHomeTitle": "बचत",
@@ -910,6 +916,12 @@
   "savingsLedgerShgName": "SHG: {shg}",
 
   "savingsLedgerVerifyError": "इस एंट्री को सत्यापित नहीं किया जा सका। कृपया पुनः प्रयास करें।",
+
+  "savingsLedgerRejectAction": "अस्वीकार करें",
+  "savingsLedgerRejectConfirmTitle": "इस प्रविष्टि को अस्वीकार करें?",
+  "savingsLedgerRejectConfirmMessage": "यह लंबित प्रविष्टि स्थायी रूप से हटा दी जाएगी। इसे वापस नहीं लाया जा सकता।",
+  "savingsLedgerRejectConfirmButton": "अस्वीकार करें",
+  "savingsLedgerRejectError": "इस प्रविष्टि को अस्वीकार नहीं किया जा सका। कृपया फिर से प्रयास करें।",
 
   "savingsLedgerVerifying": "सत्यापित हो रहा है…",
 
@@ -1345,6 +1357,8 @@
   "shgDocumentsAddTooltip": "दस्तावेज़ जोड़ें",
 
   "shgDocumentsEmpty": "अभी तक कोई दस्तावेज़ अपलोड नहीं किया गया",
+
+  "shgDocumentsLoadMoreError": "और दस्तावेज़ लोड नहीं हो सके। कृपया फिर से प्रयास करें।",
 
   "shgDocumentsAddDialogTitle": "दस्तावेज़ जोड़ें",
 

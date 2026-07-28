@@ -167,7 +167,11 @@ class TrendRepository {
   /// span many SHGs at once.
   Future<Map<String, int>> _rosterSizeByShg(Set<String> shgIds) async {
     if (shgIds.isEmpty) return const {};
-    final rows = await _client.from('profiles').select('shg_id').inFilter('shg_id', shgIds.toList());
+    // `is_active` (migration 0083) — a deactivated member can never be
+    // marked present again, so counting her in this denominator drags the
+    // computed attendance rate down forever for an SHG that's actually
+    // performing fine among its real, current roster.
+    final rows = await _client.from('profiles').select('shg_id').inFilter('shg_id', shgIds.toList()).eq('is_active', true);
     final counts = <String, int>{};
     for (final r in rows as List) {
       final id = (r as Map<String, dynamic>)['shg_id'] as String?;

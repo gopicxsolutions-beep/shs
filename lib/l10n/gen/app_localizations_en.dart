@@ -1738,6 +1738,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savingsHistoryEmpty => 'No savings history yet';
 
   @override
+  String get savingsHistoryDeleteTooltip => 'Delete this pending entry';
+
+  @override
+  String get savingsHistoryDeleteConfirmTitle => 'Delete this entry?';
+
+  @override
+  String get savingsHistoryDeleteConfirmMessage =>
+      'This pending entry will be permanently removed. This cannot be undone.';
+
+  @override
+  String get savingsHistoryDeletedMessage => 'Entry deleted';
+
+  @override
+  String get savingsHistoryDeleteError =>
+      'Could not delete this entry. Please try again.';
+
+  @override
   String savingsFrequencyEntryTitle(String frequency) {
     return '$frequency savings';
   }
@@ -1829,6 +1846,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get savingsLedgerVerifyError =>
       'Could not verify this entry. Please try again.';
+
+  @override
+  String get savingsLedgerRejectAction => 'Reject';
+
+  @override
+  String get savingsLedgerRejectConfirmTitle => 'Reject this entry?';
+
+  @override
+  String get savingsLedgerRejectConfirmMessage =>
+      'This pending entry will be permanently removed. This cannot be undone.';
+
+  @override
+  String get savingsLedgerRejectConfirmButton => 'Reject';
+
+  @override
+  String get savingsLedgerRejectError =>
+      'Could not reject this entry. Please try again.';
 
   @override
   String get savingsLedgerVerifying => 'Verifying…';
@@ -2517,6 +2551,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shgDocumentsEmpty => 'No documents uploaded yet';
+
+  @override
+  String get shgDocumentsLoadMoreError =>
+      'Could not load more documents. Please try again.';
 
   @override
   String get shgDocumentsAddDialogTitle => 'Add document';

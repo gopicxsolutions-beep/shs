@@ -1713,6 +1713,23 @@ class AppLocalizationsHi extends AppLocalizations {
   String get savingsHistoryEmpty => 'अभी तक कोई बचत इतिहास नहीं है';
 
   @override
+  String get savingsHistoryDeleteTooltip => 'इस लंबित प्रविष्टि को हटाएं';
+
+  @override
+  String get savingsHistoryDeleteConfirmTitle => 'इस प्रविष्टि को हटाएं?';
+
+  @override
+  String get savingsHistoryDeleteConfirmMessage =>
+      'यह लंबित प्रविष्टि स्थायी रूप से हटा दी जाएगी। इसे वापस नहीं लाया जा सकता।';
+
+  @override
+  String get savingsHistoryDeletedMessage => 'प्रविष्टि हटा दी गई';
+
+  @override
+  String get savingsHistoryDeleteError =>
+      'इस प्रविष्टि को हटाया नहीं जा सका। कृपया फिर से प्रयास करें।';
+
+  @override
   String savingsFrequencyEntryTitle(String frequency) {
     return '$frequency बचत';
   }
@@ -1798,6 +1815,24 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get savingsLedgerVerifyError =>
       'इस एंट्री को सत्यापित नहीं किया जा सका। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get savingsLedgerRejectAction => 'अस्वीकार करें';
+
+  @override
+  String get savingsLedgerRejectConfirmTitle =>
+      'इस प्रविष्टि को अस्वीकार करें?';
+
+  @override
+  String get savingsLedgerRejectConfirmMessage =>
+      'यह लंबित प्रविष्टि स्थायी रूप से हटा दी जाएगी। इसे वापस नहीं लाया जा सकता।';
+
+  @override
+  String get savingsLedgerRejectConfirmButton => 'अस्वीकार करें';
+
+  @override
+  String get savingsLedgerRejectError =>
+      'इस प्रविष्टि को अस्वीकार नहीं किया जा सका। कृपया फिर से प्रयास करें।';
 
   @override
   String get savingsLedgerVerifying => 'सत्यापित हो रहा है…';
@@ -2477,6 +2512,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get shgDocumentsEmpty => 'अभी तक कोई दस्तावेज़ अपलोड नहीं किया गया';
+
+  @override
+  String get shgDocumentsLoadMoreError =>
+      'और दस्तावेज़ लोड नहीं हो सके। कृपया फिर से प्रयास करें।';
 
   @override
   String get shgDocumentsAddDialogTitle => 'दस्तावेज़ जोड़ें';

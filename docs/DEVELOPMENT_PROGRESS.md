@@ -15101,3 +15101,133 @@ web` rebuilt cleanly. **Browser preview attempted again, still stuck** —
 fresh server + fresh tab, identical `flt-glass-pane`-never-paints symptom,
 zero console/server errors (the 8th consecutive such attempt across six
 rounds). Relied on live-DB verification for every fix above instead.
+
+## Update (round 183) — Gap-hunting loop, iteration 11: launched 4 fresh module audits (Livelihood/SHG documents, Support tickets/FAQ, Savings, dogfooding round 182's own features + a broader RLS admin-scope sweep), fixed 9 real gaps
+
+Four parallel background audits, one again turned on the immediately
+preceding round's own new code — and again found a critical gap in the
+exact same feature family: round 182's last-admin guard only closed one of
+three ways to strand the platform with zero working admins.
+
+**Fixed, live-verified against the real Supabase project:**
+
+1. **[CRITICAL] `guard_last_admin_deactivation` (round 182) only fired on
+   deactivation — role-change-away-from-admin and profile DELETE were both
+   completely unguarded**, with the identical "nobody can ever resolve
+   `current_role() = 'admin'` again" effect. `AdminRepository.updateUserRole()`
+   does a bare `update({'role': ...})` with no remaining-admin check, and
+   `profiles_delete_admin` lets any admin delete any profile — including the
+   last admin's own row — with no admin-count check at all (worse than
+   deactivation: irreversible). Fixed (migration `0085`) by broadening the
+   existing UPDATE guard's condition from "was active, deactivated" to "was
+   an active admin, no longer is" (covers both role-change-away-from-admin
+   AND deactivation in one check), and adding a new `BEFORE DELETE` trigger
+   closing the second path. **Live-verified**: with only one active admin
+   remaining, both a role-change-to-'member' attempt and a `DELETE`
+   attempt on that account now correctly raise a specific exception; with
+   two admins active, demoting one still succeeds normally, and re-querying
+   confirmed neither admin account was affected by any of the test
+   attempts.
+2. **Four more `is_active` exclusions missed by round 182's own sweep** —
+   found by deliberately re-auditing that round's changes rather than
+   assuming they were complete: `AdminRepository.fetchTrainingCompletionPct()`'s
+   member-count denominator (fixed carefully — the numerator's
+   `course_progress` rows needed the identical filter, or excluding only
+   the denominator would have *inflated* the stat instead of correcting
+   it); `MeetingRepository.fetchRoster()`, which backs every attendance
+   sheet (the one weekly workflow deactivation is most meant to affect —
+   a leader could otherwise keep marking a departed member present/absent
+   indefinitely); and `TrendRepository._rosterSizeByShg()`, the attendance-
+   rate/attendance-trend chart denominator (a deactivated member can never
+   be marked present again, so leaving her counted permanently drags the
+   computed rate down). `fetchSystemHealth()`'s `totalUsers` was reviewed
+   and deliberately left as-is — its literal "Total Users" label means
+   every account ever created, which deactivated accounts still are.
+3. **[HIGH] A member's own savings entry was permanent from the instant of
+   submission, and not even her leader could correct it.**
+   `savings_update_leader_or_staff` (round ~34) locks every column except
+   `status`, and `savings_delete_staff` (round ~14) deliberately restricts
+   DELETE to staff only — reasoning specifically about a *verified* entry
+   (deleting one silently corrupts a running total with no trace). That
+   risk doesn't exist for a still-`pending` entry, since it hasn't
+   contributed to any verified balance yet. Added a new permissive DELETE
+   policy (migration `0086`, `savings_delete_self_or_leader_pending`) —
+   Postgres OR's multiple permissive policies together, so `savings_delete_
+   staff` is untouched — letting the owning member delete her own pending
+   entry, or the SHG's leader reject one, both scoped to `status =
+   'pending'` only. Wired into `SavingsHistoryPage` (member self-delete,
+   with confirm) and `SavingsLedgerPage` (leader/staff reject action next
+   to Verify). **Live-verified**: a member deleting her own pending entry
+   succeeds; the same member attempting to delete her own *verified* entry
+   is rejected; the SHG's leader deleting a different member's pending
+   entry succeeds; the same leader attempting to delete a verified entry
+   is rejected — all four cases confirmed via real fixture rows in rolled-
+   back transactions, re-queried afterward to confirm zero rows were
+   actually removed.
+4. **`shg_documents` had no pagination** — an unbounded query, the same
+   anti-pattern already found and fixed repeatedly elsewhere (financial
+   ledger, CRP/CLF SHG list, admin users/SHGs, and now this table). Fixed
+   with the same composite `(created_at desc, id desc)` keyset cursor as
+   `AdminRepository.fetchAuditLog` (round 182) and a "Load more" footer on
+   `ShgDocumentsPage`, following the exact same `PagedResult` shape used
+   throughout this codebase. No live document rows existed for the usual
+   test SHG fixture to exercise the cursor against directly — relied on
+   this being the third independently-verified use of the identical
+   mechanism this session (financial ledger, audit log) rather than
+   manufacture synthetic rows for a fully mechanical repeat.
+
+**Documented, deliberately not fixed this round** (real findings, larger
+scope or already covered by an existing precedent):
+
+- **Support tickets**: no reopen path for a resolved ticket (blocked at
+  RLS, not just UI), reopened-by-message tickets never resurface for
+  staff (no `updated_at` bump), no category/priority field, no staff-queue
+  filter/search, `support_messages` has no length cap/rate limit (unlike
+  `support_tickets`, which already got this in round 179), and FAQ content
+  is a hardcoded Dart list with no admin CMS. A real, connected cluster of
+  gaps in one module — flagged for its own dedicated round rather than a
+  partial patch here.
+- **Livelihood activities have no delete path anywhere** (server-side
+  deliberately staff-only since round 39, but no UI/repo method was ever
+  built even for staff) **and no upper-bound validation** on investment/
+  revenue (the same cap pattern already applied to savings/loans/ledger,
+  missed here). Both real; the delete gap specifically needs the same
+  "safe to touch before it's counted" reasoning just applied to savings
+  (allow deletion only while `status = 'planned'`) — close enough to this
+  round's savings fix that it's tempting to bundle, but deserves its own
+  focused pass and verification rather than a rushed mirror.
+- **Livelihood income never rolls into any SHG/federation report** — a
+  real visibility gap, but a reporting-feature addition, not a bug fix.
+- **Buyers can't edit/delete their own marketplace review** — re-confirmed,
+  lower priority than this round's fixes.
+- **Reports/savings/loan/ledger have no CSV/PDF/share export** and
+  **marketplace seller listing management is still entirely missing** —
+  both re-confirmed unchanged from round 182's identical deferral; still
+  real, still larger multi-round projects.
+
+**Re-confirmed, not fresh findings:** `AdminAuditLogPage`'s pagination has
+no off-by-one/duplicate-row risk; the round-182 same-day meeting-duplicate
+dialog re-queries fresh on every submit (not a stale cached list); the
+broader RLS admin-scope sweep found no other UI-vs-RLS mismatch beyond the
+already-fixed `shgs` grade case; `admin_training_quiz_page.dart`/
+`admin_training_courses_page.dart`'s `is_staff()`-scoped RLS correctly
+matches their own staff-wide (not admin-only) route gate; savings amount
+validation, cross-SHG isolation, and statement/ledger total consistency
+are all solid; support-ticket resolution attribution is present at both
+ticket and message level; SHG-document upload validation (size/type) is
+already correct client-side.
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1033/1033) both clean — re-run after each fix, including once specifically
+for a `use_build_context_synchronously` lint in the new savings-reject
+flow (a `context.mounted` check where the codebase's own established
+`mounted` convention was needed — fixed, re-verified green). Migrations
+`0085`/`0086` both pushed to the linked live project cleanly. Every RLS
+claim above was independently live-verified via `set local role
+authenticated` sessions against real fixture rows, every mutating test
+wrapped in a transaction that was rolled back and re-queried afterward to
+confirm zero footprint. `flutter build web` rebuilt cleanly. **Browser
+preview attempted again, still stuck** — fresh server + fresh tab,
+identical `flt-glass-pane`-never-paints symptom, zero console/server
+errors (the 9th consecutive such attempt across seven rounds). Relied on
+live-DB verification for every fix above instead.
