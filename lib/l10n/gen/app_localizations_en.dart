@@ -1219,6 +1219,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get marketplaceHomeEmptyProducts => 'No products listed yet';
 
   @override
+  String get marketplaceHomeSearchHint => 'Search products';
+
+  @override
+  String get marketplaceHomeCategoryAll => 'All';
+
+  @override
+  String get marketplaceHomeNoSearchResults => 'No products match your search';
+
+  @override
   String get marketplaceOrdersTitle => 'Orders';
 
   @override
@@ -3729,6 +3738,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentsQrPaymentModeLabel => 'Payment mode';
+
+  @override
+  String get paymentsQrScannedAmountFilled => 'QR scanned — amount filled in';
+
+  @override
+  String get paymentsQrScannedEnterAmount =>
+      'QR scanned — enter the amount to pay';
+
+  @override
+  String get paymentsQrInvalidAmountError => 'Enter a valid amount';
+
+  @override
+  String get paymentsQrAmountTooLargeError =>
+      'Amount seems unusually large — please check and re-enter';
+
+  @override
+  String paymentsQrPaymentSuccess(String reference) {
+    return 'Payment successful · Ref $reference';
+  }
+
+  @override
+  String get paymentsQrPaymentFailed => 'Payment failed';
+
+  @override
+  String get paymentsQrProcessError =>
+      'Could not process this payment. Please try again.';
+
+  @override
+  String get paymentsQrProcessingButton => 'Processing…';
+
+  @override
+  String get paymentsQrPayNowButton => 'Pay Now';
+
+  @override
+  String get paymentStatusPending => 'Pending';
+
+  @override
+  String get paymentStatusSuccess => 'Success';
+
+  @override
+  String get paymentStatusFailed => 'Failed';
 
   @override
   String get financialLedgerBalancePrefix => 'Bal';

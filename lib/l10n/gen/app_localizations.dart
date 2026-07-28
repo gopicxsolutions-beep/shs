@@ -2188,6 +2188,24 @@ abstract class AppLocalizations {
   /// **'No products listed yet'**
   String get marketplaceHomeEmptyProducts;
 
+  /// No description provided for @marketplaceHomeSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search products'**
+  String get marketplaceHomeSearchHint;
+
+  /// No description provided for @marketplaceHomeCategoryAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get marketplaceHomeCategoryAll;
+
+  /// No description provided for @marketplaceHomeNoSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No products match your search'**
+  String get marketplaceHomeNoSearchResults;
+
   /// No description provided for @marketplaceOrdersTitle.
   ///
   /// In en, this message translates to:
@@ -6485,6 +6503,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payment mode'**
   String get paymentsQrPaymentModeLabel;
+
+  /// No description provided for @paymentsQrScannedAmountFilled.
+  ///
+  /// In en, this message translates to:
+  /// **'QR scanned — amount filled in'**
+  String get paymentsQrScannedAmountFilled;
+
+  /// No description provided for @paymentsQrScannedEnterAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'QR scanned — enter the amount to pay'**
+  String get paymentsQrScannedEnterAmount;
+
+  /// No description provided for @paymentsQrInvalidAmountError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid amount'**
+  String get paymentsQrInvalidAmountError;
+
+  /// No description provided for @paymentsQrAmountTooLargeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount seems unusually large — please check and re-enter'**
+  String get paymentsQrAmountTooLargeError;
+
+  /// No description provided for @paymentsQrPaymentSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment successful · Ref {reference}'**
+  String paymentsQrPaymentSuccess(String reference);
+
+  /// No description provided for @paymentsQrPaymentFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment failed'**
+  String get paymentsQrPaymentFailed;
+
+  /// No description provided for @paymentsQrProcessError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not process this payment. Please try again.'**
+  String get paymentsQrProcessError;
+
+  /// No description provided for @paymentsQrProcessingButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing…'**
+  String get paymentsQrProcessingButton;
+
+  /// No description provided for @paymentsQrPayNowButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay Now'**
+  String get paymentsQrPayNowButton;
+
+  /// No description provided for @paymentStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get paymentStatusPending;
+
+  /// No description provided for @paymentStatusSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get paymentStatusSuccess;
+
+  /// No description provided for @paymentStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get paymentStatusFailed;
 
   /// No description provided for @financialLedgerBalancePrefix.
   ///

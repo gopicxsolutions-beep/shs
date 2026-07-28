@@ -54,6 +54,7 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
       amount = code;
     }
 
+    final l10nAfterScan = AppLocalizations.of(context);
     setState(() {
       _mode = 'QR';
       _payeeName = payee;
@@ -61,18 +62,21 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
       _error = null;
     });
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(amount != null ? 'QR scanned — amount filled in' : 'QR scanned — enter the amount to pay'),
+      content: Text(amount != null
+          ? (l10nAfterScan?.paymentsQrScannedAmountFilled ?? 'QR scanned — amount filled in')
+          : (l10nAfterScan?.paymentsQrScannedEnterAmount ?? 'QR scanned — enter the amount to pay')),
     ));
   }
 
   Future<void> _pay() async {
+    final l10n = AppLocalizations.of(context);
     final amount = num.tryParse(_amount.text);
     if (amount == null || amount <= 0) {
-      setState(() => _error = 'Enter a valid amount');
+      setState(() => _error = l10n?.paymentsQrInvalidAmountError ?? 'Enter a valid amount');
       return;
     }
     if (amount > _maxAmount) {
-      setState(() => _error = 'Amount seems unusually large — please check and re-enter');
+      setState(() => _error = l10n?.paymentsQrAmountTooLargeError ?? 'Amount seems unusually large — please check and re-enter');
       return;
     }
     setState(() {
@@ -89,11 +93,11 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
         final messenger = ScaffoldMessenger.of(context);
         context.go(Paths.payments);
         messenger.showSnackBar(SnackBar(
-          content: Text(result.success ? 'Payment successful · Ref ${result.reference}' : 'Payment failed'),
+          content: Text(result.success ? (l10n?.paymentsQrPaymentSuccess(result.reference) ?? 'Payment successful · Ref ${result.reference}') : (l10n?.paymentsQrPaymentFailed ?? 'Payment failed')),
         ));
       }
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not process this payment. Please try again.');
+      if (mounted) setState(() => _error = l10n?.paymentsQrProcessError ?? 'Could not process this payment. Please try again.');
     } finally {
       if (mounted) setState(() => _paying = false);
     }
@@ -101,8 +105,12 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Reuses the same "Scan & Pay" text already shown on the payments home
+    // tile (paymentsHomeScanPay) rather than a second, separately-hardcoded
+    // English literal for the identical label.
+    final title = AppLocalizations.of(context)?.paymentsHomeScanPay ?? 'Scan & Pay';
     return Scaffold(
-      appBar: const PageHeader(title: 'Scan & Pay'),
+      appBar: PageHeader(title: title),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -189,7 +197,7 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
             ],
             const SizedBox(height: 24),
             AppButton(
-              label: _paying ? 'Processing…' : 'Pay Now',
+              label: _paying ? (AppLocalizations.of(context)?.paymentsQrProcessingButton ?? 'Processing…') : (AppLocalizations.of(context)?.paymentsQrPayNowButton ?? 'Pay Now'),
               fullWidth: true,
               size: ButtonSize.lg,
               onPressed: _paying ? null : _pay,

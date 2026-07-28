@@ -585,6 +585,9 @@
   "marketplaceHomeBrowseProducts": "उत्पाद देखें",
 
   "marketplaceHomeEmptyProducts": "अभी तक कोई उत्पाद सूचीबद्ध नहीं है",
+  "marketplaceHomeSearchHint": "उत्पाद खोजें",
+  "marketplaceHomeCategoryAll": "सभी",
+  "marketplaceHomeNoSearchResults": "आपकी खोज से कोई उत्पाद मेल नहीं खाता",
 
   "marketplaceOrdersTitle": "ऑर्डर",
 
@@ -2019,6 +2022,18 @@
   "paymentsQrPayingLabel": "{name} को भुगतान कर रहे हैं",
   "paymentsQrAmountLabel": "राशि",
   "paymentsQrPaymentModeLabel": "भुगतान का तरीका",
+  "paymentsQrScannedAmountFilled": "QR स्कैन हुआ — राशि भर दी गई",
+  "paymentsQrScannedEnterAmount": "QR स्कैन हुआ — भुगतान की राशि दर्ज करें",
+  "paymentsQrInvalidAmountError": "एक मान्य राशि दर्ज करें",
+  "paymentsQrAmountTooLargeError": "राशि असामान्य रूप से अधिक लग रही है — कृपया जांचकर फिर से दर्ज करें",
+  "paymentsQrPaymentSuccess": "भुगतान सफल · संदर्भ {reference}",
+  "paymentsQrPaymentFailed": "भुगतान विफल",
+  "paymentsQrProcessError": "यह भुगतान संसाधित नहीं हो सका। कृपया फिर से प्रयास करें।",
+  "paymentsQrProcessingButton": "संसाधित हो रहा है…",
+  "paymentsQrPayNowButton": "अभी भुगतान करें",
+  "paymentStatusPending": "लंबित",
+  "paymentStatusSuccess": "सफल",
+  "paymentStatusFailed": "विफल",
 
   "financialLedgerBalancePrefix": "शेष"
 }

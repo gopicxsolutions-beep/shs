@@ -808,6 +808,12 @@
 
   "marketplaceHomeEmptyProducts": "No products listed yet",
 
+  "marketplaceHomeSearchHint": "Search products",
+
+  "marketplaceHomeCategoryAll": "All",
+
+  "marketplaceHomeNoSearchResults": "No products match your search",
+
   "marketplaceOrdersTitle": "Orders",
 
   "marketplaceOrdersEmpty": "No orders yet",
@@ -2610,6 +2616,23 @@
   },
   "paymentsQrAmountLabel": "Amount",
   "paymentsQrPaymentModeLabel": "Payment mode",
+  "paymentsQrScannedAmountFilled": "QR scanned — amount filled in",
+  "paymentsQrScannedEnterAmount": "QR scanned — enter the amount to pay",
+  "paymentsQrInvalidAmountError": "Enter a valid amount",
+  "paymentsQrAmountTooLargeError": "Amount seems unusually large — please check and re-enter",
+  "paymentsQrPaymentSuccess": "Payment successful · Ref {reference}",
+  "@paymentsQrPaymentSuccess": {
+    "placeholders": {
+      "reference": {"type": "String"}
+    }
+  },
+  "paymentsQrPaymentFailed": "Payment failed",
+  "paymentsQrProcessError": "Could not process this payment. Please try again.",
+  "paymentsQrProcessingButton": "Processing…",
+  "paymentsQrPayNowButton": "Pay Now",
+  "paymentStatusPending": "Pending",
+  "paymentStatusSuccess": "Success",
+  "paymentStatusFailed": "Failed",
 
   "financialLedgerBalancePrefix": "Bal"
 }

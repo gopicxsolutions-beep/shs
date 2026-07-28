@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg.dart';
+import '../../models/types.dart';
 import '../../repositories/loan_repository.dart';
 import '../../repositories/savings_repository.dart';
 import '../../repositories/shg_repository.dart';
@@ -14,6 +15,16 @@ import '../../widgets/async_state.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stat_card.dart';
+
+// `Member.role` is the raw DB enum string ('leader'/'crp'/...) — was shown
+// directly via AppBadge, so a Hindi/Telugu viewer saw it in English
+// regardless of language setting, unlike profile_page.dart's own role
+// badge which already goes through `roleInfoFor`. Falls back to the raw
+// string for a value outside `Role`'s known set rather than crashing.
+String _roleLabel(String role) {
+  final parsed = Role.values.where((r) => r.name == role);
+  return parsed.isEmpty ? role : roleInfoFor(parsed.first).shortLabel;
+}
 
 class _MemberDetail {
   final Member? member;
@@ -59,7 +70,7 @@ class MemberDetailPage extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(member.name, style: AppTheme.display(18)),
                   const SizedBox(height: 4),
-                  if (member.role != 'member') AppBadge(text: member.role, tone: BadgeTone.brand),
+                  if (member.role != 'member') AppBadge(text: _roleLabel(member.role), tone: BadgeTone.brand),
                 ]),
               ),
               const SizedBox(height: 20),

@@ -10,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
+import '../../widgets/progress_bar.dart';
 import '../../widgets/stat_card.dart';
 
 class ShgFinancialSummaryPage extends StatelessWidget {
@@ -59,10 +60,7 @@ class ShgFinancialSummaryPage extends StatelessWidget {
                       Text('${r.avgAttendancePct.toStringAsFixed(0)}%', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600)),
                     ]),
                     const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(value: r.avgAttendancePct / 100, minHeight: 8, backgroundColor: Neutral.c100, color: Brand.c500),
-                    ),
+                    AppProgressBar(value: r.avgAttendancePct, tone: ProgressTone.brand),
                   ],
                 ),
               ),

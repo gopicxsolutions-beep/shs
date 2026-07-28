@@ -1198,6 +1198,16 @@ class AppLocalizationsHi extends AppLocalizations {
       'अभी तक कोई उत्पाद सूचीबद्ध नहीं है';
 
   @override
+  String get marketplaceHomeSearchHint => 'उत्पाद खोजें';
+
+  @override
+  String get marketplaceHomeCategoryAll => 'सभी';
+
+  @override
+  String get marketplaceHomeNoSearchResults =>
+      'आपकी खोज से कोई उत्पाद मेल नहीं खाता';
+
+  @override
   String get marketplaceOrdersTitle => 'ऑर्डर';
 
   @override
@@ -3660,6 +3670,47 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get paymentsQrPaymentModeLabel => 'भुगतान का तरीका';
+
+  @override
+  String get paymentsQrScannedAmountFilled => 'QR स्कैन हुआ — राशि भर दी गई';
+
+  @override
+  String get paymentsQrScannedEnterAmount =>
+      'QR स्कैन हुआ — भुगतान की राशि दर्ज करें';
+
+  @override
+  String get paymentsQrInvalidAmountError => 'एक मान्य राशि दर्ज करें';
+
+  @override
+  String get paymentsQrAmountTooLargeError =>
+      'राशि असामान्य रूप से अधिक लग रही है — कृपया जांचकर फिर से दर्ज करें';
+
+  @override
+  String paymentsQrPaymentSuccess(String reference) {
+    return 'भुगतान सफल · संदर्भ $reference';
+  }
+
+  @override
+  String get paymentsQrPaymentFailed => 'भुगतान विफल';
+
+  @override
+  String get paymentsQrProcessError =>
+      'यह भुगतान संसाधित नहीं हो सका। कृपया फिर से प्रयास करें।';
+
+  @override
+  String get paymentsQrProcessingButton => 'संसाधित हो रहा है…';
+
+  @override
+  String get paymentsQrPayNowButton => 'अभी भुगतान करें';
+
+  @override
+  String get paymentStatusPending => 'लंबित';
+
+  @override
+  String get paymentStatusSuccess => 'सफल';
+
+  @override
+  String get paymentStatusFailed => 'विफल';
 
   @override
   String get financialLedgerBalancePrefix => 'शेष';

@@ -22,6 +22,13 @@ const _roleTones = <String, BadgeTone>{
   'admin': BadgeTone.danger,
 };
 
+// Same fix as member_detail_page.dart's identical helper — the raw DB role
+// string was shown directly, un-localized.
+String _roleLabel(String role) {
+  final parsed = Role.values.where((r) => r.name == role);
+  return parsed.isEmpty ? role : roleInfoFor(parsed.first).shortLabel;
+}
+
 class ShgMembersPage extends StatelessWidget {
   // Overrides the viewer's own SHG when provided — reached from
   // `AnalyticsShgDetailPage` (crp/clf/admin only), which already resolves a
@@ -71,7 +78,7 @@ class ShgMembersPage extends StatelessWidget {
                     leading: AppAvatar(name: m.name, size: 36),
                     title: m.name,
                     subtitle: m.village ?? m.mobile ?? '',
-                    trailing: m.role != 'member' ? AppBadge(text: m.role, tone: _roleTones[m.role] ?? BadgeTone.neutral) : null,
+                    trailing: m.role != 'member' ? AppBadge(text: _roleLabel(m.role), tone: _roleTones[m.role] ?? BadgeTone.neutral) : null,
                     onTap: () => context.go(Paths.shgMember(m.id)),
                   ),
                 ),

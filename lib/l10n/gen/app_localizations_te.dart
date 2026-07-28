@@ -1224,6 +1224,16 @@ class AppLocalizationsTe extends AppLocalizations {
   String get marketplaceHomeEmptyProducts => 'ఇంకా ఉత్పత్తులు జాబితా చేయబడలేదు';
 
   @override
+  String get marketplaceHomeSearchHint => 'ఉత్పత్తులను శోధించండి';
+
+  @override
+  String get marketplaceHomeCategoryAll => 'అన్నీ';
+
+  @override
+  String get marketplaceHomeNoSearchResults =>
+      'మీ శోధనకు సరిపోలే ఉత్పత్తులు లేవు';
+
+  @override
   String get marketplaceOrdersTitle => 'ఆర్డర్లు';
 
   @override
@@ -3732,6 +3742,48 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get paymentsQrPaymentModeLabel => 'చెల్లింపు విధానం';
+
+  @override
+  String get paymentsQrScannedAmountFilled =>
+      'QR స్కాన్ చేయబడింది — మొత్తం నింపబడింది';
+
+  @override
+  String get paymentsQrScannedEnterAmount =>
+      'QR స్కాన్ చేయబడింది — చెల్లించాల్సిన మొత్తాన్ని నమోదు చేయండి';
+
+  @override
+  String get paymentsQrInvalidAmountError => 'సరైన మొత్తాన్ని నమోదు చేయండి';
+
+  @override
+  String get paymentsQrAmountTooLargeError =>
+      'మొత్తం అసాధారణంగా ఎక్కువగా ఉంది — దయచేసి సరిచూసి మళ్ళీ నమోదు చేయండి';
+
+  @override
+  String paymentsQrPaymentSuccess(String reference) {
+    return 'చెల్లింపు విజయవంతమైంది · సూచన $reference';
+  }
+
+  @override
+  String get paymentsQrPaymentFailed => 'చెల్లింపు విఫలమైంది';
+
+  @override
+  String get paymentsQrProcessError =>
+      'ఈ చెల్లింపును ప్రాసెస్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get paymentsQrProcessingButton => 'ప్రాసెస్ చేస్తోంది…';
+
+  @override
+  String get paymentsQrPayNowButton => 'ఇప్పుడు చెల్లించండి';
+
+  @override
+  String get paymentStatusPending => 'పెండింగ్';
+
+  @override
+  String get paymentStatusSuccess => 'విజయవంతమైంది';
+
+  @override
+  String get paymentStatusFailed => 'విఫలమైంది';
 
   @override
   String get financialLedgerBalancePrefix => 'మిగులు';

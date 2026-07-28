@@ -13,12 +13,43 @@ import '../../widgets/async_state.dart';
 import '../../widgets/icon_tile.dart';
 import '../../widgets/section_header.dart';
 
-class MarketplaceHomePage extends StatelessWidget {
+// Same vocabulary as add_product_page.dart's own `_categories` — the actual
+// stored values a product's `category` column can hold.
+const _categories = ['Handicrafts', 'Tailoring', 'Food', 'Agriculture', 'Other'];
+
+class MarketplaceHomePage extends StatefulWidget {
   const MarketplaceHomePage({super.key});
+  @override
+  State<MarketplaceHomePage> createState() => _MarketplaceHomePageState();
+}
+
+class _MarketplaceHomePageState extends State<MarketplaceHomePage> {
+  final _repo = MarketplaceRepository();
+  final _search = TextEditingController();
+  String? _category;
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  // Client-side filter over the already-fetched catalog — there was
+  // previously no way at all to narrow this cross-SHG product list beyond
+  // scrolling everything (the repository's own doc comment admitted this).
+  // Case-insensitive substring match on name, same convention as every
+  // other search box in this app.
+  List<Product> _filtered(List<Product> products) {
+    final query = _search.text.trim().toLowerCase();
+    return products.where((p) {
+      final matchesQuery = query.isEmpty || p.name.toLowerCase().contains(query);
+      final matchesCategory = _category == null || p.category == _category;
+      return matchesQuery && matchesCategory;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final repo = MarketplaceRepository();
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -27,8 +58,9 @@ class MarketplaceHomePage extends StatelessWidget {
         right: IconButton(icon: const Icon(Icons.add_circle_rounded, color: Brand.c600), onPressed: () => context.go(Paths.marketplaceAddProduct), tooltip: l10n.marketplaceHomeAddProductTooltip),
       ),
       body: AppAsyncBuilder<List<Product>>(
-        future: repo.fetchProducts,
-        builder: (context, products) {
+        future: _repo.fetchProducts,
+        builder: (context, allProducts) {
+          final products = _filtered(allProducts);
           // CustomScrollView/Sliver split so the product grid is genuinely
           // lazy (`SliverGrid.builder`). The previous `GridView.builder`
           // used `shrinkWrap: true` + `NeverScrollableScrollPhysics` to
@@ -58,7 +90,37 @@ class MarketplaceHomePage extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       SectionHeader(title: l10n.marketplaceHomeBrowseProducts),
-                      if (products.isEmpty) AppEmptyState(icon: Icons.storefront_rounded, message: l10n.marketplaceHomeEmptyProducts),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _search,
+                        onChanged: (_) => setState(() {}),
+                        decoration: InputDecoration(
+                          hintText: l10n.marketplaceHomeSearchHint,
+                          prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                          isDense: true,
+                          filled: true,
+                          fillColor: Neutral.c50,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 36,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            _CategoryChip(label: l10n.marketplaceHomeCategoryAll, selected: _category == null, onTap: () => setState(() => _category = null)),
+                            const SizedBox(width: 8),
+                            for (final c in _categories) ...[
+                              _CategoryChip(label: c, selected: _category == c, onTap: () => setState(() => _category = c)),
+                              const SizedBox(width: 8),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      if (allProducts.isEmpty) AppEmptyState(icon: Icons.storefront_rounded, message: l10n.marketplaceHomeEmptyProducts),
+                      if (allProducts.isNotEmpty && products.isEmpty) AppEmptyState(icon: Icons.search_off_rounded, message: l10n.marketplaceHomeNoSearchResults),
                     ],
                   ),
                 ),
@@ -140,6 +202,27 @@ class MarketplaceHomePage extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _CategoryChip({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      selectedColor: Brand.c50,
+      labelStyle: AppTheme.sans(12, weight: FontWeight.w600, color: selected ? Brand.c700 : Neutral.c600),
+      backgroundColor: Colors.white,
+      side: BorderSide(color: selected ? Brand.c500 : Neutral.c200),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
     );
   }
 }

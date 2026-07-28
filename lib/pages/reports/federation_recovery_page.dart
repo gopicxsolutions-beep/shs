@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
+import '../../widgets/progress_bar.dart';
 import '../../widgets/stat_card.dart';
 
 class FederationRecoveryPage extends StatelessWidget {
@@ -41,10 +42,7 @@ class FederationRecoveryPage extends StatelessWidget {
                       Flexible(child: Text('${k.recoveryRatePct.toStringAsFixed(1)}%', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600))),
                     ]),
                     const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(value: (k.recoveryRatePct / 100).clamp(0.0, 1.0), minHeight: 8, backgroundColor: Neutral.c100, color: Brand.c500),
-                    ),
+                    AppProgressBar(value: k.recoveryRatePct, tone: ProgressTone.brand),
                     const SizedBox(height: 6),
                     Text(l10n.federationRecoveryFootnote, style: AppTheme.sans(11, color: Neutral.c500)),
                   ],

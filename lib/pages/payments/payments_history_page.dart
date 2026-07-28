@@ -18,6 +18,13 @@ const _statusTones = <String, BadgeTone>{
   'failed': BadgeTone.danger,
 };
 
+String _paymentStatusLabel(AppLocalizations l10n, String status) => switch (status) {
+      'success' => l10n.paymentStatusSuccess,
+      'pending' => l10n.paymentStatusPending,
+      'failed' => l10n.paymentStatusFailed,
+      _ => status,
+    };
+
 class PaymentsHistoryPage extends StatelessWidget {
   const PaymentsHistoryPage({super.key});
 
@@ -54,7 +61,7 @@ class PaymentsHistoryPage extends StatelessWidget {
                       children: [
                         Text('₹${NumberFormat('#,##,##0', 'en_IN').format(p.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                         const SizedBox(height: 4),
-                        AppBadge(text: p.status, tone: _statusTones[p.status] ?? BadgeTone.neutral),
+                        AppBadge(text: _paymentStatusLabel(l10n, p.status), tone: _statusTones[p.status] ?? BadgeTone.neutral),
                       ],
                     ),
                     chevron: false,
