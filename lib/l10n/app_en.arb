@@ -217,7 +217,7 @@
     }
   },
 
-  "adminDashboardSystemUptimeLabel": "System Uptime",
+  "adminDashboardSystemUptimeLabel": "Scheduler Status",
 
   "adminDashboardHeartbeatHealthy": "Healthy",
 

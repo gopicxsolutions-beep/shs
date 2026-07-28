@@ -949,7 +949,7 @@ abstract class AppLocalizations {
   /// No description provided for @adminDashboardSystemUptimeLabel.
   ///
   /// In en, this message translates to:
-  /// **'System Uptime'**
+  /// **'Scheduler Status'**
   String get adminDashboardSystemUptimeLabel;
 
   /// No description provided for @adminDashboardHeartbeatHealthy.

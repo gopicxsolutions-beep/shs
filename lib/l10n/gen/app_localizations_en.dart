@@ -482,7 +482,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get adminDashboardSystemUptimeLabel => 'System Uptime';
+  String get adminDashboardSystemUptimeLabel => 'Scheduler Status';
 
   @override
   String get adminDashboardHeartbeatHealthy => 'Healthy';

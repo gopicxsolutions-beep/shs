@@ -161,7 +161,17 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: Text(ticket.description!, style: AppTheme.sans(13, color: Neutral.c600)),
                 ),
-              if (ticket.resolvedByName != null && ticket.resolvedAt != null)
+              // `resolvedByName`/`resolvedAt` are only ever CLEARED by a
+              // fresh resolution overwriting them — `SupportRepository.
+              // updateStatus()` omits `resolved_by` from the update payload
+              // entirely when reopening a ticket (status back to 'open'/
+              // 'in_progress'), by design, so the DB keeps its history of
+              // who last resolved it. Gating this banner on the ticket's
+              // CURRENT status (not just these fields being non-null) stops
+              // a reopened ticket from showing a stale "Resolved by ... on
+              // ..." banner directly under an "In Progress"/"Open" badge,
+              // which read as if it had already been handled.
+              if ((ticket.status == 'resolved' || ticket.status == 'closed') && ticket.resolvedByName != null && ticket.resolvedAt != null)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: Text(

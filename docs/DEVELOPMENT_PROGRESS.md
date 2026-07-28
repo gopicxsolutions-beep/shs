@@ -13790,3 +13790,105 @@ specific): marketplace order state-machine/reviewer_name spoofing, payment
 webhook monotonic-transition guard, AI advisor Llama Guard role-framing and
 PII-redaction-warning gaps, schemes/quiz brute-force and Training-Completion
 KPI gaming, loans' already-known `loan_payments` direct-insert bypass.
+
+## Update (round 175) — Gap-hunting loop, iteration 3: fixed 6 more findings (5 from round 174 plus one just-discovered savings cap), launched 2 more fresh audits, found 4 more real gaps
+
+**Why**: continuation of the same loop; user explicitly asked to stop
+pausing for confirmation between iterations and to commit all changes at
+the end of every iteration going forward.
+
+**Fixed and live-verified this iteration:**
+
+1. **`announcement_reads_self_or_staff` split into separate SELECT/INSERT/
+   UPDATE/DELETE policies** (migration `0065`) — the old single `FOR ALL`
+   policy's `is_staff()` branch let any crp/clf/admin write an arbitrary
+   `member_id`, not just their own, so a staff account could forge or erase
+   another member's read receipt. This exact policy had been reviewed
+   twice before (0038, 0039) and both times judged safe — but both reviews
+   only reasoned about the SELF branch. Staff keep full SELECT (useful for
+   engagement visibility); write access is now self-only, matching the
+   app's own `markRead()`, which never writes on another member's behalf.
+   Live-verified: the forge attempt now fails with `42501`; a member
+   marking her own read receipt still succeeds; staff SELECT still returns
+   all rows.
+2. **`livelihood_insert_self_leader_or_staff` now locks `status='planned'`,
+   `revenue=0`** (migration `0066`) — closes the same fabrication gap
+   already fixed for meetings, connecting `0039`'s own later "CLF/bank
+   review gaming" reasoning (applied to this table's DELETE side) back to
+   `0027`'s earlier, now-superseded "no other party's interests are at
+   stake" INSERT decision. Live-verified: a fabricated `revenue: 500000,
+   status: 'completed'` insert now fails with `42501`; the app's actual
+   `revenue: 0, status: 'planned'` creation pattern still succeeds.
+3. **Support ticket detail page no longer shows a stale "Resolved by …"
+   banner after reopen** — gated the existing banner on
+   `ticket.status` being `resolved`/`closed`, not just
+   `resolvedByName`/`resolvedAt` being non-null. Deliberately a display-only
+   fix (`SupportRepository.updateStatus()`'s choice to leave old
+   `resolved_by`/`resolved_at` in the DB on reopen is left as-is, preserving
+   history of who last resolved it) — `flutter analyze` clean, no dedicated
+   test existed for this page to extend within scope.
+4. **`AdminRepository.fetchSystemHealth` switched from unbounded
+   `select('id')` + `.length` to `.count()` HEAD requests** for
+   users/SHGs/savings/loans, matching the pattern `fetchTrainingCompletionPct`
+   already used correctly 30 lines below in the same file — closes an
+   unbounded-growth performance/cost concern for the two tables expected to
+   grow fastest, and a plausible silent-undercount risk if the project's
+   PostgREST `max-rows` is ever configured.
+5. **Admin Dashboard's misleadingly-named "System Uptime" stat renamed to
+   "Scheduler Status"** (all 3 languages) — it only ever measured whether
+   a pg_cron heartbeat fired in the last 20 minutes, not real infra
+   uptime/latency/error-rate; unlike the separate Monitoring page's
+   explicit "Placeholder metrics" banner, this one had zero on-screen
+   disclosure of the narrower scope, only a code comment. Renaming was
+   judged safer/lower-blast-radius than adding a new tooltip capability to
+   the shared `StatCard` widget (used across many other dashboards).
+6. **`savings_entries` given the same ₹10,00,000 amount cap as loans**
+   (migration `0067`, found by this iteration's own fresh savings/reports
+   audit within the same session) — identical gap shape to the loans fix
+   two iterations ago: the cap only ever existed in
+   `SavingsEntryPage`'s client-side validation. Live-verified: a
+   999,999,999 entry now fails with `23514`; a normal ₹500 entry still
+   succeeds.
+
+Full `flutter analyze` (0 issues) and full `flutter test` (1033/1033
+passing) both clean after every change above.
+
+**Fresh audits** (savings/reports, scheme-application approval + carried-
+over marketplace order state machine) found 4 more real gaps, plus
+confirmed scheme applications are already solidly hardened (only one
+low-severity dead-code fallback path, not fixed):
+
+- **`generate-report-snapshots` cron function reintroduces an already-fixed
+  bug**: computes SHG attendance rate over an all-time window instead of
+  the rolling last-6-months window three separate client-side call sites
+  were already corrected to use (with extensive doc comments explaining
+  why). Currently latent — nothing in `lib/` reads `report_snapshots` yet
+  — but it's actively `pg_cron`-scheduled nightly and writing wrong data
+  to a live prod table; `report_repository.dart`'s own header comment
+  claiming "no such function is wired yet" is now stale.
+- **Marketplace order `status` has no forward/backward transition guard**
+  (re-confirmed, not yet fixed) — a seller can jump a brand-new order
+  straight to `'delivered'` or revert an already-delivered one, and there's
+  no `updated_at`/status-history column at all. This directly compounds
+  with round 174's marketplace-reviews fix (`0061`, requires
+  `status = 'delivered'` before a review), since an ungated status jump
+  also unlocks premature reviews. A minimal fix was proposed (an atomic
+  `advance_marketplace_order_status()` RPC checking a small allowed-
+  transitions map, mirroring `decide_scheme_application()`) but this
+  directly conflicts with `0029`'s own documented judgment call that
+  free-form status changes are an intentional "correct a mistake" feature
+  for staff — needs that tension resolved explicitly when fixed, not
+  silently overridden.
+- **Per-SHG vs platform-wide reports define "member count" differently**
+  — `ShgReportData.memberCount` includes the SHG's own leader;
+  `FederationReportData.memberCount`/`AnalyticsRepository`'s
+  `activeMembers` both filter to `role = 'member'` only, excluding every
+  leader. Summing the per-SHG figures yields a total higher than the
+  platform aggregate for the same population, with no comment anywhere
+  explaining or justifying the difference.
+- Scheme-application approval re-confirmed solid: self-approval blocked,
+  race-guarded via an atomic RPC, decided_by/decided_at correctly locked.
+  One low-severity note: `SchemeRepository`'s `PGRST202` fallback reverts
+  to a blind non-atomic update if the RPC is ever missing from the schema
+  cache — dead code today, worth removing or hardening to fail loud
+  instead, not fixed this round.

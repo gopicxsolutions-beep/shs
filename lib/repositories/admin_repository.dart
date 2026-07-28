@@ -116,16 +116,22 @@ class AdminRepository {
       final totalShgs = mock_analytics.villageWiseSHGs.fold<int>(0, (s, v) => s + v.shgs);
       return SystemHealth(totalUsers: mock_analytics.Kpis.activeMembers, totalShgs: totalShgs, totalSavingsEntries: 48, totalLoans: 6, pendingLoans: 1, checkedAt: DateTime.now());
     }
-    final users = await _client.from('profiles').select('id');
-    final shgs = await _client.from('shgs').select('id');
-    final savings = await _client.from('savings_entries').select('id');
-    final loans = await _client.from('loans').select('id, status');
-    final pendingLoans = (loans as List).where((r) => (r as Map<String, dynamic>)['status'] == 'pending').length;
+    // `.count()` (a PostgREST HEAD request returning just a number, no
+    // rows) rather than `select('id')` + `.length` — the previous version
+    // pulled every row's id over the wire on every single page load, with
+    // no upper bound, for exactly the tables (`savings_entries`, `loans`)
+    // expected to grow fastest as the platform scales. Matches the pattern
+    // `fetchTrainingCompletionPct` (just above) already uses correctly.
+    final totalUsers = await _client.from('profiles').count();
+    final totalShgs = await _client.from('shgs').count();
+    final totalSavingsEntries = await _client.from('savings_entries').count();
+    final totalLoans = await _client.from('loans').count();
+    final pendingLoans = await _client.from('loans').count().eq('status', 'pending');
     return SystemHealth(
-      totalUsers: (users as List).length,
-      totalShgs: (shgs as List).length,
-      totalSavingsEntries: (savings as List).length,
-      totalLoans: loans.length,
+      totalUsers: totalUsers,
+      totalShgs: totalShgs,
+      totalSavingsEntries: totalSavingsEntries,
+      totalLoans: totalLoans,
       pendingLoans: pendingLoans,
       checkedAt: DateTime.now(),
     );

@@ -487,7 +487,7 @@ class AppLocalizationsTe extends AppLocalizations {
   }
 
   @override
-  String get adminDashboardSystemUptimeLabel => 'సిస్టమ్ అప్‌టైమ్';
+  String get adminDashboardSystemUptimeLabel => 'షెడ్యూలర్ స్థితి';
 
   @override
   String get adminDashboardHeartbeatHealthy => 'ఆరోగ్యంగా ఉంది';
