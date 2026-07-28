@@ -160,11 +160,22 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
       // both into one hardcoded English string. Uses `_language` (this
       // page's own selector), not `AppLocalizations.of(context)`'s system
       // display language — same reasoning as `_resolve`'s doc comment.
+      //
+      // `DeviceVoiceRecognitionService.listen()`'s two distinct failure
+      // modes (no usable recognizer at all vs. a session that just didn't
+      // catch anything) previously both collapsed into this same generic
+      // fallback, indistinguishable from any other failure — a member who
+      // denied mic permission once saw an identical "Something went wrong"
+      // on every later tap, with no way to learn the actual fix (enabling
+      // the permission in system Settings) short of leaving the app.
       final l10n = lookupAppLocalizations(_localeFor(_language));
       setState(() {
-        _answer = isNetworkError(e)
-            ? l10n.asyncErrorNetwork
-            : l10n.asyncErrorGeneric;
+        _answer = switch (e) {
+          VoiceRecognitionUnavailableException() => l10n.voiceAssistantMicUnavailableError,
+          VoiceRecognitionEmptyResultException() => l10n.voiceAssistantNoSpeechError,
+          _ when isNetworkError(e) => l10n.asyncErrorNetwork,
+          _ => l10n.asyncErrorGeneric,
+        };
         _state = _AssistantState.answered;
       });
     }

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/analytics.dart';
+import '../../models/paged_result.dart';
 import '../../repositories/analytics_repository.dart';
 import '../../routes/paths.dart';
 import '../../theme/app_theme.dart';
@@ -14,27 +15,76 @@ import '../../widgets/progress_bar.dart';
 
 const _gradeTone = <String, BadgeTone>{'A+': BadgeTone.success, 'A': BadgeTone.brand, 'B+': BadgeTone.brand, 'B': BadgeTone.warning, 'C': BadgeTone.danger};
 
-class AnalyticsShgListPage extends StatelessWidget {
+class AnalyticsShgListPage extends StatefulWidget {
   const AnalyticsShgListPage({super.key});
+  @override
+  State<AnalyticsShgListPage> createState() => _AnalyticsShgListPageState();
+}
+
+class _AnalyticsShgListPageState extends State<AnalyticsShgListPage> {
+  final _repo = AnalyticsRepository();
+  final GlobalKey<AppAsyncBuilderState<PagedResult<ShgHealth>>> _key = GlobalKey();
+
+  // Same appendable-local-copy shape as AdminUsersPage/AdminShgsPage — see
+  // those pages' doc comments for why the builder below renders these
+  // instead of the AppAsyncBuilder's own snapshot.
+  List<ShgHealth> _shgs = [];
+  bool _hasMore = false;
+  bool _loadingMore = false;
+
+  Future<PagedResult<ShgHealth>> _loadFirstPage() async {
+    final page = await _repo.fetchShgList();
+    _shgs = page.items;
+    _hasMore = page.hasMore;
+    return page;
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore || _shgs.isEmpty) return;
+    setState(() => _loadingMore = true);
+    try {
+      final page = await _repo.fetchShgList(afterName: _shgs.last.name);
+      setState(() {
+        _shgs = [..._shgs, ...page.items];
+        _hasMore = page.hasMore;
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.analyticsShgListLoadMoreError)));
+      }
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final repo = AnalyticsRepository();
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: PageHeader(title: l10n.analyticsShgListTitle),
-      body: AppAsyncBuilder<List<ShgHealth>>(
-        future: repo.fetchShgList,
-        builder: (context, shgs) {
-          if (shgs.isEmpty) {
+      body: AppAsyncBuilder<PagedResult<ShgHealth>>(
+        key: _key,
+        future: _loadFirstPage,
+        builder: (context, page) {
+          if (_shgs.isEmpty) {
             return AppEmptyState(icon: Icons.apartment_rounded, message: l10n.analyticsShgListEmptyState);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: shgs.length,
+            itemCount: _shgs.length + (_hasMore ? 1 : 0),
             itemBuilder: (context, i) {
-              final g = shgs[i];
+              if (i == _shgs.length) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Center(
+                    child: _loadingMore
+                        ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                        : TextButton(onPressed: _loadMore, child: Text(l10n.actionLoadMore)),
+                  ),
+                );
+              }
+              final g = _shgs[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: AppCard(

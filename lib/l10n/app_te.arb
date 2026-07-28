@@ -27,6 +27,8 @@
 
   "asyncErrorGeneric": "ఏదో తప్పు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి.",
   "asyncErrorNetwork": "మీ ఇంటర్నెట్ కనెక్షన్‌ని తనిఖీ చేసి మళ్ళీ ప్రయత్నించండి.",
+  "asyncErrorSessionExpired": "మీ సెషన్ గడువు ముగిసింది. దయచేసి మళ్లీ సైన్ ఇన్ చేయండి.",
+  "actionSignInAgain": "మళ్లీ సైన్ ఇన్ చేయండి",
 
   "discardChangesTitle": "మార్పులను వదిలివేయాలా?",
   "discardChangesMessage": "మీరు ఈ పేజీలో నమోదు చేసిన సమాచారం ఇంకా సేవ్ కాలేదు. ఇప్పుడు వెళ్తే అది పోతుంది.",
@@ -37,6 +39,9 @@
   "error404Title": "పేజీ కనుగొనబడలేదు",
   "error404Message": "మీరు వెతుకుతున్న పేజీ లేదు లేదా తరలించబడి ఉండవచ్చు.",
   "profileLoadErrorTitle": "మీ ప్రొఫైల్ లోడ్ కాలేదు",
+
+  "accountDeactivatedTitle": "ఖాతా నిష్క్రియం చేయబడింది",
+  "accountDeactivatedMessage": "మీ ఖాతా నిష్క్రియం చేయబడింది. ఇది పొరపాటు అని మీరు భావిస్తే మీ CRP లేదా SHG ఫెడరేషన్ అడ్మిన్‌ని సంప్రదించండి.",
 
   "qrPermissionDenied": "కెమెరా అనుమతి తిరస్కరించబడింది.",
   "qrUnsupported": "ఈ పరికరంలో స్కానింగ్‌కు మద్దతు లేదు.",
@@ -170,6 +175,8 @@
   "voiceAssistantYouSaid": "మీరు చెప్పింది",
   "voiceAssistantLabel": "అసిస్టెంట్",
   "voiceAssistantTrySaying": "ఇలా చెప్పి చూడండి",
+  "voiceAssistantMicUnavailableError": "ఈ పరికరంలో వాయిస్ గుర్తింపు అందుబాటులో లేదు. మీ ఫోన్ సెట్టింగ్‌లలో మైక్రోఫోన్ అనుమతిని తనిఖీ చేయండి.",
+  "voiceAssistantNoSpeechError": "క్షమించండి, నాకు ఏమీ వినిపించలేదు. దయచేసి మళ్ళీ ప్రయత్నించండి.",
 
   "aiDisclaimer": "ఈ సలహా AI ద్వారా రూపొందించబడింది మరియు తప్పుగా ఉండవచ్చు. ఇది వృత్తిపరమైన ఆర్థిక, న్యాయ లేదా వైద్య సలహా కాదు; ముఖ్యమైన నిర్ణయాలు తీసుకునే ముందు మీ SHG నాయకుడిని లేదా అర్హతగల సలహాదారుని సంప్రదించండి.",
 
@@ -961,6 +968,10 @@
 
   "schemeDetailDeadlinePassed": "దరఖాస్తులు మూసివేయబడ్డాయి — ఈ పథకానికి గడువు ముగిసింది.",
 
+  "schemeDetailIneligibleMessage": "మీరు ఇంకా దిగువ ఉన్న అన్ని అర్హత ప్రమాణాలను పూర్తి చేయలేదు, కాబట్టి ఈ దరఖాస్తు తిరస్కరించబడుతుంది.",
+
+  "schemeDetailViewEligibilityLink": "పూర్తి అర్హత తనిఖీని చూడండి",
+
   "schemeDetailSubmitting": "సమర్పిస్తోంది…",
 
   "schemeDetailApplyNow": "ఇప్పుడు దరఖాస్తు చేయండి",
@@ -1275,6 +1286,8 @@
   "supportVoiceTapToAskAgain": "మళ్ళీ అడగడానికి టాప్ చేయండి",
 
   "supportVoiceError": "క్షమించండి, ఏదో తప్పు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+  "supportVoiceMicUnavailableError": "ఈ పరికరంలో వాయిస్ గుర్తింపు అందుబాటులో లేదు. మీ ఫోన్ సెట్టింగ్‌లలో మైక్రోఫోన్ అనుమతిని తనిఖీ చేయండి.",
+  "supportVoiceNoSpeechError": "క్షమించండి, నాకు ఏమీ వినిపించలేదు. దయచేసి మళ్ళీ ప్రయత్నించండి.",
 
   "supportVoiceYouAsked": "మీరు అడిగారు",
 
@@ -1586,6 +1599,8 @@
 
   "loanDetailNextDueLabel": "తదుపరి గడువు",
 
+  "loanDetailDecidedByLabel": "{name} ద్వారా నిర్ణయించబడింది",
+
   "loanDetailRecordPaymentButton": "చెల్లింపు నమోదు చేయండి",
 
   "loanDetailPaymentHistoryTitle": "చెల్లింపు చరిత్ర",
@@ -1657,6 +1672,8 @@
   "analyticsShgListTitle": "SHG పర్యవేక్షణ",
 
   "analyticsShgListEmptyState": "పర్యవేక్షణ కోసం ఇంకా SHGలు లేవు",
+
+  "analyticsShgListLoadMoreError": "మరిన్ని SHGలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
 
   "analyticsShgListVillageMemberCount": "{village} · {count} {count, plural, =1{సభ్యురాలు} other{మంది సభ్యులు}}",
 
@@ -1863,6 +1880,8 @@
 
   "financialLedgerDemoMode": "డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
 
+  "financialLedgerLoadMoreError": "మరిన్ని ఎంట్రీలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+
   "financialLedgerEmpty": "ఇంకా {title} ఎంట్రీలు లేవు",
 
   "financialLedgerShgName": "SHG: {shg}",
@@ -1988,6 +2007,18 @@
   "adminUsersManageTitle": "వినియోగదారులను నిర్వహించండి",
   "adminUsersNoUsersFoundMessage": "వినియోగదారులు కనుగొనబడలేదు",
   "adminUsersAssignShgTooltip": "SHGని కేటాయించండి",
+  "adminUsersDeactivateTooltip": "ఖాతాను నిష్క్రియం చేయండి",
+  "adminUsersReactivateTooltip": "ఖాతాను తిరిగి సక్రియం చేయండి",
+  "adminUsersInactiveBadge": "నిష్క్రియం",
+  "adminUsersDeactivateConfirmTitle": "ఖాతాను నిష్క్రియం చేయాలా?",
+  "adminUsersDeactivateConfirmMessage": "{name} తిరిగి సక్రియం చేసే వరకు యాప్‌ను ఉపయోగించలేరు. వారి పాత రికార్డులు (పొదుపు, రుణాలు, సమావేశాలు) అలాగే ఉంటాయి.",
+  "adminUsersReactivateConfirmTitle": "ఖాతాను తిరిగి సక్రియం చేయాలా?",
+  "adminUsersReactivateConfirmMessage": "{name} మళ్లీ యాప్‌ను ఉపయోగించగలరు.",
+  "adminUsersDeactivateConfirmButton": "నిష్క్రియం చేయండి",
+  "adminUsersReactivateConfirmButton": "తిరిగి సక్రియం చేయండి",
+  "adminUsersToggleActiveError": "ఈ ఖాతాను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  "adminUsersDeactivatedMessage": "ఖాతా నిష్క్రియం చేయబడింది",
+  "adminUsersReactivatedMessage": "ఖాతా తిరిగి సక్రియం చేయబడింది",
 
   "adminShgsLoadMoreError": "మరిన్ని SHGలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
   "adminShgsFormationDateLabel": "ఏర్పాటు తేదీ (ఐచ్ఛికం)",

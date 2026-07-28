@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/analytics.dart';
+import '../../models/paged_result.dart';
 import '../../models/training.dart';
 import '../../repositories/admin_repository.dart';
 import '../../repositories/analytics_repository.dart';
@@ -40,7 +41,12 @@ class CRPDashboard extends StatelessWidget {
       TrainingRepository().fetchCourses(),
       AdminRepository().fetchTrainingCompletionPct(),
     ]);
-    return _CrpDashboardData(shgs: results[0] as List<ShgHealth>, courses: results[1] as List<Course>, trainingCompletionPct: results[2] as int);
+    // Dashboard landing preview — first page only (same 100-row default as
+    // AdminUsersPage's first page), same spirit as this page's own existing
+    // "Recent activity" 5-row caps elsewhere in the app. The dedicated "SHG
+    // list" screen (AnalyticsShgListPage) is where a CRP/CLF/Admin reaches
+    // every SHG via Load More.
+    return _CrpDashboardData(shgs: (results[0] as PagedResult<ShgHealth>).items, courses: results[1] as List<Course>, trainingCompletionPct: results[2] as int);
   }
 
   @override

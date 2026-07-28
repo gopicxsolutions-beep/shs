@@ -106,6 +106,10 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                 const SizedBox(width: 12),
                 Expanded(child: _infoTile(l10n.loanDetailNextDueLabel, loan.nextDueDate != null ? DateFormat('dd MMM yyyy').format(loan.nextDueDate!) : '—')),
               ]),
+              if (loan.decidedByName != null) ...[
+                const SizedBox(height: 12),
+                Text(l10n.loanDetailDecidedByLabel(loan.decidedByName!), style: AppTheme.sans(11, color: Neutral.c500)),
+              ],
               if (canRecordPayment && (loan.status == 'active' || loan.status == 'overdue')) ...[
                 const SizedBox(height: 20),
                 AppButton(

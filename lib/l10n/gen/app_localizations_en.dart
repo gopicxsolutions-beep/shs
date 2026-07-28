@@ -77,6 +77,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Check your internet connection and try again.';
 
   @override
+  String get asyncErrorSessionExpired =>
+      'Your session has expired. Please sign in again.';
+
+  @override
+  String get actionSignInAgain => 'Sign In Again';
+
+  @override
   String get discardChangesTitle => 'Discard changes?';
 
   @override
@@ -101,6 +108,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileLoadErrorTitle => 'Couldn\'t load your profile';
+
+  @override
+  String get accountDeactivatedTitle => 'Account deactivated';
+
+  @override
+  String get accountDeactivatedMessage =>
+      'Your account has been deactivated. Contact your CRP or SHG federation admin if you believe this is a mistake.';
 
   @override
   String get qrPermissionDenied => 'Camera permission was denied.';
@@ -471,6 +485,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voiceAssistantTrySaying => 'Try saying';
+
+  @override
+  String get voiceAssistantMicUnavailableError =>
+      'Speech recognition isn\'t available on this device. Check microphone permission in your phone\'s Settings.';
+
+  @override
+  String get voiceAssistantNoSpeechError =>
+      'Sorry, I couldn\'t hear anything. Please try again.';
 
   @override
   String get aiDisclaimer =>
@@ -1901,6 +1923,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Applications closed — the deadline for this scheme has passed.';
 
   @override
+  String get schemeDetailIneligibleMessage =>
+      'You don\'t meet all the eligibility criteria below yet, so this application would be rejected.';
+
+  @override
+  String get schemeDetailViewEligibilityLink => 'View full eligibility check';
+
+  @override
   String get schemeDetailSubmitting => 'Submitting…';
 
   @override
@@ -2385,6 +2414,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get supportVoiceError =>
       'Sorry, something went wrong. Please try again.';
+
+  @override
+  String get supportVoiceMicUnavailableError =>
+      'Speech recognition isn\'t available on this device. Check microphone permission in your phone\'s Settings.';
+
+  @override
+  String get supportVoiceNoSpeechError =>
+      'Sorry, I couldn\'t hear anything. Please try again.';
 
   @override
   String get supportVoiceYouAsked => 'You asked';
@@ -2933,6 +2970,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loanDetailNextDueLabel => 'Next Due';
 
   @override
+  String loanDetailDecidedByLabel(String name) {
+    return 'Decided by $name';
+  }
+
+  @override
   String get loanDetailRecordPaymentButton => 'Record Payment';
 
   @override
@@ -3045,6 +3087,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get analyticsShgListEmptyState => 'No SHGs to monitor yet';
+
+  @override
+  String get analyticsShgListLoadMoreError =>
+      'Could not load more SHGs. Please try again.';
 
   @override
   String analyticsShgListVillageMemberCount(String village, int count) {
@@ -3397,6 +3443,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Demo mode — not saved (connect Supabase to persist)';
 
   @override
+  String get financialLedgerLoadMoreError =>
+      'Could not load more entries. Please try again.';
+
+  @override
   String financialLedgerEmpty(String title) {
     return 'No $title entries yet';
   }
@@ -3652,6 +3702,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminUsersAssignShgTooltip => 'Assign SHG';
+
+  @override
+  String get adminUsersDeactivateTooltip => 'Deactivate account';
+
+  @override
+  String get adminUsersReactivateTooltip => 'Reactivate account';
+
+  @override
+  String get adminUsersInactiveBadge => 'Inactive';
+
+  @override
+  String get adminUsersDeactivateConfirmTitle => 'Deactivate account?';
+
+  @override
+  String adminUsersDeactivateConfirmMessage(String name) {
+    return '$name will lose access to the app until reactivated. Their historical records (savings, loans, meetings) are kept.';
+  }
+
+  @override
+  String get adminUsersReactivateConfirmTitle => 'Reactivate account?';
+
+  @override
+  String adminUsersReactivateConfirmMessage(String name) {
+    return '$name will regain access to the app.';
+  }
+
+  @override
+  String get adminUsersDeactivateConfirmButton => 'Deactivate';
+
+  @override
+  String get adminUsersReactivateConfirmButton => 'Reactivate';
+
+  @override
+  String get adminUsersToggleActiveError =>
+      'Could not update this account. Please try again.';
+
+  @override
+  String get adminUsersDeactivatedMessage => 'Account deactivated';
+
+  @override
+  String get adminUsersReactivatedMessage => 'Account reactivated';
 
   @override
   String get adminShgsLoadMoreError =>

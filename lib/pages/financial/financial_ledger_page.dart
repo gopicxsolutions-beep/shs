@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/financial_entry.dart';
+import '../../models/paged_result.dart';
 import '../../models/types.dart';
 import '../../repositories/financial_repository.dart';
 import '../../routes/paths.dart';
@@ -59,7 +60,44 @@ class FinancialLedgerPage extends StatefulWidget {
 
 class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
   late final FinancialRepository _repo = widget.repository ?? FinancialRepository();
-  final GlobalKey<AppAsyncBuilderState<List<FinancialEntry>>> _key = GlobalKey();
+  final GlobalKey<AppAsyncBuilderState<PagedResult<FinancialEntry>>> _key = GlobalKey();
+
+  // Same appendable-local-copy shape as AdminUsersPage/AdminShgsPage — the
+  // builder below renders these, not the AppAsyncBuilder's own snapshot,
+  // since `_loadMore` appends a second page without re-running `future`.
+  List<FinancialEntry> _entries = [];
+  bool _hasMore = false;
+  bool _loadingMore = false;
+  bool _platformWide = false;
+
+  Future<PagedResult<FinancialEntry>> _loadFirstPage(String? shgId, String entryType, bool platformWide) async {
+    _platformWide = platformWide;
+    final page = platformWide ? await _repo.fetchAllForStaff(entryType) : await _repo.fetchForShg(shgId, entryType);
+    _entries = page.items;
+    _hasMore = page.hasMore;
+    return page;
+  }
+
+  Future<void> _loadMore(String? shgId, String entryType) async {
+    if (_loadingMore || !_hasMore || _entries.isEmpty) return;
+    setState(() => _loadingMore = true);
+    try {
+      final last = _entries.last;
+      final page = _platformWide
+          ? await _repo.fetchAllForStaff(entryType, afterEntryDate: last.date, afterCreatedAt: last.createdAt)
+          : await _repo.fetchForShg(shgId, entryType, afterEntryDate: last.date, afterCreatedAt: last.createdAt);
+      setState(() {
+        _entries = [..._entries, ...page.items];
+        _hasMore = page.hasMore;
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.financialLedgerLoadMoreError)));
+      }
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,18 +150,28 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
             ),
           ),
           Expanded(
-            child: AppAsyncBuilder<List<FinancialEntry>>(
+            child: AppAsyncBuilder<PagedResult<FinancialEntry>>(
               key: _key,
-              future: () => isPlatformWideStaff ? _repo.fetchAllForStaff(widget.entryType) : _repo.fetchForShg(shgId, widget.entryType),
-              builder: (context, entries) {
-                if (entries.isEmpty) {
+              future: () => _loadFirstPage(shgId, widget.entryType, isPlatformWideStaff),
+              builder: (context, page) {
+                if (_entries.isEmpty) {
                   return AppEmptyState(icon: Icons.receipt_long_rounded, message: l10n.financialLedgerEmpty(title.toLowerCase()));
                 }
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: entries.length,
+                  itemCount: _entries.length + (_hasMore ? 1 : 0),
                   itemBuilder: (context, i) {
-                    final e = entries[i];
+                    if (i == _entries.length) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Center(
+                          child: _loadingMore
+                              ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                              : TextButton(onPressed: () => _loadMore(shgId, widget.entryType), child: Text(l10n.actionLoadMore)),
+                        ),
+                      );
+                    }
+                    final e = _entries[i];
                     final isCredit = e.credit > 0;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),

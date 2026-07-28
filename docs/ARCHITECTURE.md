@@ -109,11 +109,23 @@ verified independently table-by-table.
 
 | Function | Returns |
 |---|---|
-| `current_role()` | Caller's `profiles.role` |
-| `current_shg_id()` | Caller's `profiles.shg_id` |
-| `is_staff()` | `role in ('crp','clf','admin')` |
-| `is_leader_or_staff()` | `role in ('leader','crp','clf','admin')` |
-| `profile_shg_id(uuid)` | Another profile's `shg_id` (for staff/leader cross-member checks) |
+| `current_role()` | Caller's `profiles.role` — null if the caller's account is deactivated |
+| `current_shg_id()` | Caller's `profiles.shg_id` — null if deactivated |
+| `is_staff()` | `role in ('crp','clf','admin')` — false if deactivated |
+| `is_leader_or_staff()` | `role in ('leader','crp','clf','admin')` — false if deactivated |
+| `profile_shg_id(uuid)` | Another profile's `shg_id` (for staff/leader cross-member checks) — NOT gated by that profile's own `is_active`, since it's answering a question about a referenced member, not resolving the caller's own authorization |
+
+**Account deactivation (migration 0083, `profiles.is_active`/`deactivated_at`,
+admin-only writable):** the 4 caller-identity functions above all now
+additionally check `is_active`, so deactivating an account transitively
+blocks every RLS policy branch keyed on role or SHG membership — not a
+separate flag each policy has to remember to check. A handful of policies
+also have a bare `member_id = auth.uid()`/`created_by = auth.uid()` branch
+(e.g. a member reading their own `savings_entries` row) that this does
+**not** close — those branches don't route through any of the 4 functions
+above, so a deactivated member's own client is relied on (via
+`AppState.accountDeactivated` forcing a sign-out) as the practical
+mitigation for that specific gap, not the RLS layer alone.
 
 **Why these exist and must be reused, not reinlined**: a policy on table `T`
 that subqueries `T` itself to check the caller's own row re-triggers the same

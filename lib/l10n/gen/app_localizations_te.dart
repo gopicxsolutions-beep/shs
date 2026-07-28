@@ -78,6 +78,13 @@ class AppLocalizationsTe extends AppLocalizations {
       'మీ ఇంటర్నెట్ కనెక్షన్‌ని తనిఖీ చేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
+  String get asyncErrorSessionExpired =>
+      'మీ సెషన్ గడువు ముగిసింది. దయచేసి మళ్లీ సైన్ ఇన్ చేయండి.';
+
+  @override
+  String get actionSignInAgain => 'మళ్లీ సైన్ ఇన్ చేయండి';
+
+  @override
   String get discardChangesTitle => 'మార్పులను వదిలివేయాలా?';
 
   @override
@@ -102,6 +109,13 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get profileLoadErrorTitle => 'మీ ప్రొఫైల్ లోడ్ కాలేదు';
+
+  @override
+  String get accountDeactivatedTitle => 'ఖాతా నిష్క్రియం చేయబడింది';
+
+  @override
+  String get accountDeactivatedMessage =>
+      'మీ ఖాతా నిష్క్రియం చేయబడింది. ఇది పొరపాటు అని మీరు భావిస్తే మీ CRP లేదా SHG ఫెడరేషన్ అడ్మిన్‌ని సంప్రదించండి.';
 
   @override
   String get qrPermissionDenied => 'కెమెరా అనుమతి తిరస్కరించబడింది.';
@@ -477,6 +491,14 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get voiceAssistantTrySaying => 'ఇలా చెప్పి చూడండి';
+
+  @override
+  String get voiceAssistantMicUnavailableError =>
+      'ఈ పరికరంలో వాయిస్ గుర్తింపు అందుబాటులో లేదు. మీ ఫోన్ సెట్టింగ్‌లలో మైక్రోఫోన్ అనుమతిని తనిఖీ చేయండి.';
+
+  @override
+  String get voiceAssistantNoSpeechError =>
+      'క్షమించండి, నాకు ఏమీ వినిపించలేదు. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
   String get aiDisclaimer =>
@@ -1901,6 +1923,13 @@ class AppLocalizationsTe extends AppLocalizations {
       'దరఖాస్తులు మూసివేయబడ్డాయి — ఈ పథకానికి గడువు ముగిసింది.';
 
   @override
+  String get schemeDetailIneligibleMessage =>
+      'మీరు ఇంకా దిగువ ఉన్న అన్ని అర్హత ప్రమాణాలను పూర్తి చేయలేదు, కాబట్టి ఈ దరఖాస్తు తిరస్కరించబడుతుంది.';
+
+  @override
+  String get schemeDetailViewEligibilityLink => 'పూర్తి అర్హత తనిఖీని చూడండి';
+
+  @override
   String get schemeDetailSubmitting => 'సమర్పిస్తోంది…';
 
   @override
@@ -2381,6 +2410,14 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get supportVoiceError =>
       'క్షమించండి, ఏదో తప్పు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get supportVoiceMicUnavailableError =>
+      'ఈ పరికరంలో వాయిస్ గుర్తింపు అందుబాటులో లేదు. మీ ఫోన్ సెట్టింగ్‌లలో మైక్రోఫోన్ అనుమతిని తనిఖీ చేయండి.';
+
+  @override
+  String get supportVoiceNoSpeechError =>
+      'క్షమించండి, నాకు ఏమీ వినిపించలేదు. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
   String get supportVoiceYouAsked => 'మీరు అడిగారు';
@@ -2933,6 +2970,11 @@ class AppLocalizationsTe extends AppLocalizations {
   String get loanDetailNextDueLabel => 'తదుపరి గడువు';
 
   @override
+  String loanDetailDecidedByLabel(String name) {
+    return '$name ద్వారా నిర్ణయించబడింది';
+  }
+
+  @override
   String get loanDetailRecordPaymentButton => 'చెల్లింపు నమోదు చేయండి';
 
   @override
@@ -3046,6 +3088,10 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get analyticsShgListEmptyState => 'పర్యవేక్షణ కోసం ఇంకా SHGలు లేవు';
+
+  @override
+  String get analyticsShgListLoadMoreError =>
+      'మరిన్ని SHGలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
 
   @override
   String analyticsShgListVillageMemberCount(String village, int count) {
@@ -3399,6 +3445,10 @@ class AppLocalizationsTe extends AppLocalizations {
       'డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
 
   @override
+  String get financialLedgerLoadMoreError =>
+      'మరిన్ని ఎంట్రీలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
   String financialLedgerEmpty(String title) {
     return 'ఇంకా $title ఎంట్రీలు లేవు';
   }
@@ -3655,6 +3705,48 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get adminUsersAssignShgTooltip => 'SHGని కేటాయించండి';
+
+  @override
+  String get adminUsersDeactivateTooltip => 'ఖాతాను నిష్క్రియం చేయండి';
+
+  @override
+  String get adminUsersReactivateTooltip => 'ఖాతాను తిరిగి సక్రియం చేయండి';
+
+  @override
+  String get adminUsersInactiveBadge => 'నిష్క్రియం';
+
+  @override
+  String get adminUsersDeactivateConfirmTitle => 'ఖాతాను నిష్క్రియం చేయాలా?';
+
+  @override
+  String adminUsersDeactivateConfirmMessage(String name) {
+    return '$name తిరిగి సక్రియం చేసే వరకు యాప్‌ను ఉపయోగించలేరు. వారి పాత రికార్డులు (పొదుపు, రుణాలు, సమావేశాలు) అలాగే ఉంటాయి.';
+  }
+
+  @override
+  String get adminUsersReactivateConfirmTitle =>
+      'ఖాతాను తిరిగి సక్రియం చేయాలా?';
+
+  @override
+  String adminUsersReactivateConfirmMessage(String name) {
+    return '$name మళ్లీ యాప్‌ను ఉపయోగించగలరు.';
+  }
+
+  @override
+  String get adminUsersDeactivateConfirmButton => 'నిష్క్రియం చేయండి';
+
+  @override
+  String get adminUsersReactivateConfirmButton => 'తిరిగి సక్రియం చేయండి';
+
+  @override
+  String get adminUsersToggleActiveError =>
+      'ఈ ఖాతాను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get adminUsersDeactivatedMessage => 'ఖాతా నిష్క్రియం చేయబడింది';
+
+  @override
+  String get adminUsersReactivatedMessage => 'ఖాతా తిరిగి సక్రియం చేయబడింది';
 
   @override
   String get adminShgsLoadMoreError =>

@@ -15,6 +15,7 @@ import '../pages/ai/ai_voice_assistant_page.dart';
 import '../pages/analytics/analytics_dashboard_page.dart';
 import '../pages/analytics/analytics_shg_detail_page.dart';
 import '../pages/analytics/analytics_shg_list_page.dart';
+import '../pages/auth/account_deactivated_page.dart';
 import '../pages/auth/login_page.dart';
 import '../pages/auth/otp_page.dart';
 import '../pages/auth/profile_load_error_page.dart';
@@ -183,6 +184,16 @@ GoRouter buildRouter(AppState appState) {
         return onboarding ? null : Paths.profileSetup;
       }
 
+      // Admin deactivated this account (migration 0083) — the RLS layer
+      // already silently rejects almost everything this account tries;
+      // this stops it from continuing to navigate an app that no longer
+      // works for it instead of explaining why. Checked before
+      // needsRoleSelection/needsShgApproval since none of those matter once
+      // the account itself is deactivated.
+      if (appState.accountDeactivated) {
+        return state.matchedLocation == Paths.accountDeactivated ? null : Paths.accountDeactivated;
+      }
+
       // Profile just created (live mode) — Role Select hasn't run yet.
       if (appState.needsRoleSelection) {
         return state.matchedLocation == Paths.roleSelect ? null : Paths.roleSelect;
@@ -220,6 +231,7 @@ GoRouter buildRouter(AppState appState) {
       GoRoute(path: Paths.roleSelect, builder: (context, state) => const RoleSelectPage()),
       GoRoute(path: Paths.shgApprovalPending, builder: (context, state) => const ShgApprovalPendingPage()),
       GoRoute(path: Paths.profileLoadError, builder: (context, state) => const ProfileLoadErrorPage()),
+      GoRoute(path: Paths.accountDeactivated, builder: (context, state) => const AccountDeactivatedPage()),
       ShellRoute(
         builder: (context, state, child) => AppShell(location: state.matchedLocation, child: child),
         routes: [

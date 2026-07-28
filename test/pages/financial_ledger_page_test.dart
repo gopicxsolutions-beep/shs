@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shg_saathi/l10n/gen/app_localizations.dart';
 import 'package:shg_saathi/models/financial_entry.dart';
+import 'package:shg_saathi/models/paged_result.dart';
 import 'package:shg_saathi/models/profile.dart';
 import 'package:shg_saathi/pages/financial/financial_ledger_page.dart';
 import 'package:shg_saathi/repositories/financial_repository.dart';
@@ -39,12 +40,15 @@ class _FakeAuthServiceWithSession extends AuthService {
 /// `_FakePlatformWideLoanRepository`.
 class _FakePlatformWideFinancialRepository extends FinancialRepository {
   @override
-  Future<List<FinancialEntry>> fetchAllForStaff(String entryType) async => [
-        FinancialEntry(id: 'e-1', entryType: entryType, description: 'Meeting collection', debit: 0, credit: 5000, balance: 15000, date: DateTime(2026, 6, 1), shgName: 'Jyothi SHG'),
-        FinancialEntry(id: 'e-2', entryType: entryType, description: 'Stationery purchase', debit: 500, credit: 0, balance: 800, date: DateTime(2026, 6, 3), shgName: 'Sneha SHG'),
-      ];
+  Future<PagedResult<FinancialEntry>> fetchAllForStaff(String entryType, {DateTime? afterEntryDate, DateTime? afterCreatedAt, int pageSize = 100}) async => PagedResult(
+        items: [
+          FinancialEntry(id: 'e-1', entryType: entryType, description: 'Meeting collection', debit: 0, credit: 5000, balance: 15000, date: DateTime(2026, 6, 1), createdAt: DateTime(2026, 6, 1), shgName: 'Jyothi SHG'),
+          FinancialEntry(id: 'e-2', entryType: entryType, description: 'Stationery purchase', debit: 500, credit: 0, balance: 800, date: DateTime(2026, 6, 3), createdAt: DateTime(2026, 6, 3), shgName: 'Sneha SHG'),
+        ],
+        hasMore: false,
+      );
   @override
-  Future<List<FinancialEntry>> fetchForShg(String? shgId, String entryType) async => const [];
+  Future<PagedResult<FinancialEntry>> fetchForShg(String? shgId, String entryType, {DateTime? afterEntryDate, DateTime? afterCreatedAt, int pageSize = 100}) async => const PagedResult(items: [], hasMore: false);
 }
 
 /// Round 168 (Loans/Savings/Livelihood) fix template applied to the

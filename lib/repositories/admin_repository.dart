@@ -68,7 +68,7 @@ class AdminRepository {
       // Demo mode's mock roster is small and fixed — always one page, no
       // real pagination need.
       final list = (debugMembersOverride ?? mock.members)
-          .map((m) => Profile(id: m.id, name: m.name, mobile: m.mobile, role: _locallyUpdatedRoles[m.id] ?? _mockRoleMap[m.role] ?? 'member', shgId: _locallyAssignedShgs[m.id] ?? 'demo-shg', village: null))
+          .map((m) => Profile(id: m.id, name: m.name, mobile: m.mobile, role: _locallyUpdatedRoles[m.id] ?? _mockRoleMap[m.role] ?? 'member', shgId: _locallyAssignedShgs[m.id] ?? 'demo-shg', village: null, isActive: _locallyActive[m.id] ?? true))
           .toList();
       return PagedResult(items: list, hasMore: false);
     }
@@ -86,6 +86,23 @@ class AdminRepository {
       return;
     }
     await _client.from('profiles').update({'role': role}).eq('id', userId);
+  }
+
+  // Same demo-mode local-tracking shape as _locallyUpdatedRoles, above.
+  static final Map<String, bool> _locallyActive = {};
+
+  /// Admin-only (`profiles_update_self_or_admin`'s WITH CHECK, migration
+  /// 0083) — deactivating collapses the account's `current_role()`/
+  /// `current_shg_id()`/`is_staff()`/`is_leader_or_staff()` to null/false
+  /// server-side, blocking most further reads/writes regardless of what the
+  /// client does; see that migration's own doc comment for the documented
+  /// (non-silent) scope limit on bare `member_id = auth.uid()` branches.
+  Future<void> setActive(String userId, bool active) async {
+    if (!_live) {
+      _locallyActive[userId] = active;
+      return;
+    }
+    await _client.from('profiles').update({'is_active': active, 'deactivated_at': active ? null : DateTime.now().toIso8601String()}).eq('id', userId);
   }
 
   // Same demo-mode local-tracking shape as _locallyUpdatedRoles, above.

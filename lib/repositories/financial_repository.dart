@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/financial.dart' as mock;
 import '../models/financial_entry.dart';
+import '../models/paged_result.dart';
 import '../services/supabase_service.dart';
 
 /// Backed by `public.financial_ledger` (discriminated by `entry_type`) when
@@ -15,39 +16,42 @@ class FinancialRepository {
   // for the rest of the session, mirroring AnnouncementRepository._locallyRead.
   static final List<FinancialEntry> _locallyAdded = [];
 
-  Future<List<FinancialEntry>> fetchForShg(String? shgId, String entryType) async {
+  // One SHG's cashbook/ledger/bank/audit history accumulates indefinitely
+  // over the group's lifetime (years of meetings, each potentially adding
+  // entries) — previously hard-capped at a single `.limit(500)` with no
+  // pagination at all, silently and permanently hiding anything older than
+  // the 500th most-recent row for a long-running SHG (the exact gap
+  // AdminUsersPage/AdminShgsPage already fixed for their own lists — see
+  // [PagedResult]). Sort key is (`entry_date` desc, `created_at` desc) —
+  // entries can be legitimately backdated, so `entry_date` alone isn't a
+  // unique cursor; `created_at` is the tiebreaker for entries sharing the
+  // same `entry_date`. [afterEntryDate]/[afterCreatedAt] are the last-seen
+  // page's final row's own values; the first call omits both. Fetches one
+  // extra row beyond [pageSize] to detect `hasMore` without a separate
+  // COUNT query, same as AdminRepository.fetchAllUsers.
+  Future<PagedResult<FinancialEntry>> fetchForShg(String? shgId, String entryType, {DateTime? afterEntryDate, DateTime? afterCreatedAt, int pageSize = 100}) async {
     if (!_live) {
       final mockEntries = mock.financialLedgerEntries
           .where((e) => e.entryType == entryType)
-          .map((e) => FinancialEntry(id: e.id, entryType: e.entryType, description: e.description, debit: e.debit, credit: e.credit, balance: e.balance, date: _parseMockDate(e.date)));
+          .map((e) => FinancialEntry(id: e.id, entryType: e.entryType, description: e.description, debit: e.debit, credit: e.credit, balance: e.balance, date: _parseMockDate(e.date), createdAt: _parseMockDate(e.date)));
       final localEntries = _locallyAdded.where((e) => e.entryType == entryType).toList().reversed;
-      return [...localEntries, ...mockEntries];
+      return PagedResult(items: [...localEntries, ...mockEntries], hasMore: false);
     }
-    if (shgId == null) return [];
-    // One SHG's cashbook/ledger/bank/audit history accumulates indefinitely
-    // over the group's lifetime (years of meetings, each potentially adding
-    // entries) — previously had no `.limit()` at all. Safe to cap here
-    // (unlike SavingsRepository.fetchForMember, deliberately left uncapped
-    // after this session already caught and reverted that exact mistake —
-    // see docs/DEVELOPMENT_PROGRESS.md round 65): FinancialLedgerPage
-    // displays each row's own already-computed `balance` field rather than
-    // summing the fetched list client-side, so truncating the query cannot
-    // produce a wrong total. Capped at a generous 500; newest-first
-    // ordering means only very old entries (year+ history for a
-    // long-running SHG) would ever fall past the cap.
+    if (shgId == null) return const PagedResult(items: [], hasMore: false);
     // `created_by` is the only FK financial_ledger has into `profiles` (no
     // second FK on this table), so this embed is unambiguous to PostgREST —
     // unlike shg_join_requests' member_id/decided_by collision (round 90),
     // this doesn't need an explicit `profiles!created_by(name)` hint.
-    final rows = await _client
-        .from('financial_ledger')
-        .select('*, profiles(name)')
-        .eq('shg_id', shgId)
-        .eq('entry_type', entryType)
-        .order('entry_date', ascending: false)
-        .order('created_at', ascending: false)
-        .limit(500);
-    return (rows as List).map((r) => FinancialEntry.fromMap(r as Map<String, dynamic>)).toList();
+    var builder = _client.from('financial_ledger').select('*, profiles(name)').eq('shg_id', shgId).eq('entry_type', entryType);
+    if (afterEntryDate != null && afterCreatedAt != null) {
+      final d = afterEntryDate.toIso8601String().split('T').first;
+      final c = afterCreatedAt.toIso8601String();
+      builder = builder.or('entry_date.lt.$d,and(entry_date.eq.$d,created_at.lt.$c)');
+    }
+    final rows = await builder.order('entry_date', ascending: false).order('created_at', ascending: false).limit(pageSize + 1);
+    final list = (rows as List).map((r) => FinancialEntry.fromMap(r as Map<String, dynamic>)).toList();
+    final hasMore = list.length > pageSize;
+    return PagedResult(items: hasMore ? list.sublist(0, pageSize) : list, hasMore: hasMore);
   }
 
   /// Platform-wide feed for crp/clf/admin — every SHG's entries of this
@@ -57,17 +61,28 @@ class FinancialRepository {
   /// in addition to `profiles(name)`: each row's `balance` is a per-SHG
   /// running total (see `addEntry`'s doc comment), so a flat cross-SHG list
   /// needs the SHG tagged per row or the balance appears to jump around
-  /// arbitrarily between unrelated rows.
-  Future<List<FinancialEntry>> fetchAllForStaff(String entryType) async {
+  /// arbitrarily between unrelated rows. Same pagination shape as
+  /// [fetchForShg] above — this feed had the identical unpaginated-cap gap,
+  /// worse here since the 500-row cap was shared across every SHG in the
+  /// federation combined, not just one.
+  Future<PagedResult<FinancialEntry>> fetchAllForStaff(String entryType, {DateTime? afterEntryDate, DateTime? afterCreatedAt, int pageSize = 100}) async {
     if (!_live) {
       final mockEntries = mock.financialLedgerEntries
           .where((e) => e.entryType == entryType)
-          .map((e) => FinancialEntry(id: e.id, entryType: e.entryType, description: e.description, debit: e.debit, credit: e.credit, balance: e.balance, date: _parseMockDate(e.date)));
+          .map((e) => FinancialEntry(id: e.id, entryType: e.entryType, description: e.description, debit: e.debit, credit: e.credit, balance: e.balance, date: _parseMockDate(e.date), createdAt: _parseMockDate(e.date)));
       final localEntries = _locallyAdded.where((e) => e.entryType == entryType).toList().reversed;
-      return [...localEntries, ...mockEntries];
+      return PagedResult(items: [...localEntries, ...mockEntries], hasMore: false);
     }
-    final rows = await _client.from('financial_ledger').select('*, profiles(name), shgs(name)').eq('entry_type', entryType).order('entry_date', ascending: false).order('created_at', ascending: false).limit(500);
-    return (rows as List).map((r) => FinancialEntry.fromMap(r as Map<String, dynamic>)).toList();
+    var builder = _client.from('financial_ledger').select('*, profiles(name), shgs(name)').eq('entry_type', entryType);
+    if (afterEntryDate != null && afterCreatedAt != null) {
+      final d = afterEntryDate.toIso8601String().split('T').first;
+      final c = afterCreatedAt.toIso8601String();
+      builder = builder.or('entry_date.lt.$d,and(entry_date.eq.$d,created_at.lt.$c)');
+    }
+    final rows = await builder.order('entry_date', ascending: false).order('created_at', ascending: false).limit(pageSize + 1);
+    final list = (rows as List).map((r) => FinancialEntry.fromMap(r as Map<String, dynamic>)).toList();
+    final hasMore = list.length > pageSize;
+    return PagedResult(items: hasMore ? list.sublist(0, pageSize) : list, hasMore: hasMore);
   }
 
   /// Adds an entry, computing the running balance from the last entry of the
@@ -94,6 +109,7 @@ class FinancialRepository {
         credit: credit,
         balance: previousBalance + credit - debit,
         date: DateTime.now(),
+        createdAt: DateTime.now(),
       ));
       return true;
     }

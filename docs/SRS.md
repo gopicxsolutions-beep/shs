@@ -1110,6 +1110,20 @@ be permanently stuck unlinked). If an admin changes her *own* role or SHG, the
 app explicitly refreshes her cached profile afterward, so the UI doesn't keep
 offering now-server-rejected actions.
 
+Admin can also **deactivate/reactivate an account** (two-step confirm, same
+caution as role change) — this is the offboarding path for a member who
+leaves a real SHG, previously entirely missing (the only alternatives were a
+permanently stale account or a hard delete that this schema's own `on delete
+restrict` FKs would either block or use to destroy historical loan/savings
+records). Deactivation is enforced server-side: the 4 RLS identity-resolution
+helpers (`current_role()`/`current_shg_id()`/`is_staff()`/
+`is_leader_or_staff()`) resolve to null/false for a deactivated caller,
+blocking most further reads/writes regardless of client behavior, and the
+app itself detects its own deactivated profile on load and redirects to a
+dedicated explanation screen rather than continuing to navigate an app that
+silently rejects almost everything. Historical records (savings, loans,
+meetings) are untouched — this is a status flag, not a delete.
+
 Manage SHGs lets an admin create SHG records — this exists specifically
 because the underlying RLS policy (`shgs_insert_staff`) permits *any* staff
 role to create an SHG, but no other client anywhere called it, which was a
@@ -1126,7 +1140,7 @@ preserved in any future redesign of this screen.
 
 | ID | Requirement | Roles |
 |---|---|---|
-| FR-ADM-1 | Admin manages user accounts: role assignment (two-step confirmation), SHG assignment for unlinked staff | Admin |
+| FR-ADM-1 | Admin manages user accounts: role assignment (two-step confirmation), SHG assignment for unlinked staff, account deactivation/reactivation (server-enforced via RLS identity helpers, not just a hidden button) | Admin |
 | FR-ADM-2 | Admin (or, at the RLS layer, any staff role) creates SHG records | Admin |
 | FR-ADM-3 | Admin manages the scheme catalog (create/edit/delete), RLS-restricted to `admin` specifically | Admin |
 | FR-ADM-4 | Admin views system monitoring — real row counts, explicitly labeled in-UI as placeholder, not real infrastructure telemetry | Admin |

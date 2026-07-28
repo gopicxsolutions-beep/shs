@@ -1,5 +1,27 @@
 import '../models/types.dart';
 
+/// Thrown by [DeviceVoiceRecognitionService.listen] when the device has no
+/// usable speech recognizer — mic permission denied, no recognition service
+/// installed, or the requested language has none. Distinct from
+/// [VoiceRecognitionEmptyResultException] so the page can tell "nothing
+/// will ever work here" (needs a permission/settings fix) apart from "that
+/// one attempt didn't catch anything" (just try again) — collapsing both
+/// into one generic error previously left a member who denied mic
+/// permission once seeing an identical "Something went wrong" on every
+/// later tap, with no path to the actual fix.
+class VoiceRecognitionUnavailableException implements Exception {
+  const VoiceRecognitionUnavailableException();
+}
+
+/// Thrown by [DeviceVoiceRecognitionService.listen] when a recognition
+/// session completed with no usable transcript — silence, background
+/// noise, or a recognizer-side hiccup (see that class's `onError` handling).
+/// See [VoiceRecognitionUnavailableException]'s doc comment for why this is
+/// a distinct type rather than reusing a generic error.
+class VoiceRecognitionEmptyResultException implements Exception {
+  const VoiceRecognitionEmptyResultException();
+}
+
 /// What the AI Voice Assistant recognized from a spoken command — distinct
 /// from Support's generic Voice Support (`MockVoiceSupportService`), which
 /// answers free-form FAQ-style questions with a canned response. This

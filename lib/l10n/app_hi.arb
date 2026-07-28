@@ -27,6 +27,8 @@
 
   "asyncErrorGeneric": "कुछ गलत हो गया। कृपया फिर से कोशिश करें।",
   "asyncErrorNetwork": "अपना इंटरनेट कनेक्शन जांचें और फिर से कोशिश करें।",
+  "asyncErrorSessionExpired": "आपका सत्र समाप्त हो गया है। कृपया फिर से साइन इन करें।",
+  "actionSignInAgain": "फिर से साइन इन करें",
 
   "discardChangesTitle": "बदलाव छोड़ें?",
   "discardChangesMessage": "आपने इस पेज पर जो जानकारी भरी है वह अभी तक सेव नहीं हुई है। अभी जाने पर यह जानकारी खो जाएगी।",
@@ -37,6 +39,9 @@
   "error404Title": "पेज नहीं मिला",
   "error404Message": "आप जिस पेज को खोज रहे हैं वह मौजूद नहीं है या हट गया है।",
   "profileLoadErrorTitle": "आपकी प्रोफ़ाइल लोड नहीं हो सकी",
+
+  "accountDeactivatedTitle": "खाता निष्क्रिय कर दिया गया",
+  "accountDeactivatedMessage": "आपका खाता निष्क्रिय कर दिया गया है। यदि आपको लगता है कि यह गलती है, तो अपने CRP या SHG फेडरेशन एडमिन से संपर्क करें।",
 
   "qrPermissionDenied": "कैमरा अनुमति अस्वीकार कर दी गई।",
   "qrUnsupported": "इस डिवाइस पर स्कैनिंग समर्थित नहीं है।",
@@ -170,6 +175,8 @@
   "voiceAssistantYouSaid": "आपने कहा",
   "voiceAssistantLabel": "असिस्टेंट",
   "voiceAssistantTrySaying": "यह कहकर देखें",
+  "voiceAssistantMicUnavailableError": "इस डिवाइस पर वाक् पहचान उपलब्ध नहीं है। अपने फ़ोन की सेटिंग्स में माइक्रोफ़ोन की अनुमति जांचें।",
+  "voiceAssistantNoSpeechError": "माफ़ कीजिए, मुझे कुछ सुनाई नहीं दिया। कृपया फिर से कोशिश करें।",
 
   "aiDisclaimer": "यह सलाह AI द्वारा तैयार की गई है और गलत हो सकती है। यह पेशेवर वित्तीय, कानूनी या चिकित्सा सलाह नहीं है; महत्वपूर्ण निर्णय लेने से पहले अपने SHG लीडर या किसी योग्य सलाहकार से पुष्टि करें।",
 
@@ -961,6 +968,10 @@
 
   "schemeDetailDeadlinePassed": "आवेदन बंद हैं — इस योजना की अंतिम तिथि निकल चुकी है।",
 
+  "schemeDetailIneligibleMessage": "आप अभी नीचे दिए गए सभी पात्रता मानदंडों को पूरा नहीं करते हैं, इसलिए यह आवेदन अस्वीकार कर दिया जाएगा।",
+
+  "schemeDetailViewEligibilityLink": "पूर्ण पात्रता जांच देखें",
+
   "schemeDetailSubmitting": "सबमिट हो रहा है…",
 
   "schemeDetailApplyNow": "अभी आवेदन करें",
@@ -1275,6 +1286,8 @@
   "supportVoiceTapToAskAgain": "फिर से पूछने के लिए टैप करें",
 
   "supportVoiceError": "माफ़ कीजिए, कुछ गलत हो गया। कृपया फिर से कोशिश करें।",
+  "supportVoiceMicUnavailableError": "इस डिवाइस पर वाक् पहचान उपलब्ध नहीं है। अपने फ़ोन की सेटिंग्स में माइक्रोफ़ोन की अनुमति जांचें।",
+  "supportVoiceNoSpeechError": "माफ़ कीजिए, मुझे कुछ सुनाई नहीं दिया। कृपया फिर से कोशिश करें।",
 
   "supportVoiceYouAsked": "आपने पूछा",
 
@@ -1586,6 +1599,8 @@
 
   "loanDetailNextDueLabel": "अगली देय तिथि",
 
+  "loanDetailDecidedByLabel": "{name} द्वारा निर्णय लिया गया",
+
   "loanDetailRecordPaymentButton": "भुगतान दर्ज करें",
 
   "loanDetailPaymentHistoryTitle": "भुगतान इतिहास",
@@ -1657,6 +1672,8 @@
   "analyticsShgListTitle": "SHG निगरानी",
 
   "analyticsShgListEmptyState": "निगरानी के लिए अभी कोई SHG नहीं है",
+
+  "analyticsShgListLoadMoreError": "और SHG लोड नहीं हो सके। कृपया फिर से प्रयास करें।",
 
   "analyticsShgListVillageMemberCount": "{village} · {count} सदस्य",
 
@@ -1863,6 +1880,8 @@
 
   "financialLedgerDemoMode": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
 
+  "financialLedgerLoadMoreError": "अधिक एंट्री लोड नहीं हो सकीं। कृपया फिर से प्रयास करें।",
+
   "financialLedgerEmpty": "अभी तक कोई {title} एंट्री नहीं",
 
   "financialLedgerShgName": "SHG: {shg}",
@@ -1988,6 +2007,18 @@
   "adminUsersManageTitle": "उपयोगकर्ता प्रबंधित करें",
   "adminUsersNoUsersFoundMessage": "कोई उपयोगकर्ता नहीं मिला",
   "adminUsersAssignShgTooltip": "SHG असाइन करें",
+  "adminUsersDeactivateTooltip": "खाता निष्क्रिय करें",
+  "adminUsersReactivateTooltip": "खाता पुनः सक्रिय करें",
+  "adminUsersInactiveBadge": "निष्क्रिय",
+  "adminUsersDeactivateConfirmTitle": "खाता निष्क्रिय करें?",
+  "adminUsersDeactivateConfirmMessage": "{name} की ऐप तक पहुंच तब तक समाप्त हो जाएगी जब तक इसे पुनः सक्रिय न किया जाए। उनका पिछला रिकॉर्ड (बचत, ऋण, बैठकें) सुरक्षित रहेगा।",
+  "adminUsersReactivateConfirmTitle": "खाता पुनः सक्रिय करें?",
+  "adminUsersReactivateConfirmMessage": "{name} को फिर से ऐप तक पहुंच मिल जाएगी।",
+  "adminUsersDeactivateConfirmButton": "निष्क्रिय करें",
+  "adminUsersReactivateConfirmButton": "पुनः सक्रिय करें",
+  "adminUsersToggleActiveError": "यह खाता अपडेट नहीं हो सका। कृपया फिर से प्रयास करें।",
+  "adminUsersDeactivatedMessage": "खाता निष्क्रिय कर दिया गया",
+  "adminUsersReactivatedMessage": "खाता पुनः सक्रिय कर दिया गया",
 
   "adminShgsLoadMoreError": "और SHG लोड नहीं हो सके। कृपया फिर से प्रयास करें।",
   "adminShgsFormationDateLabel": "गठन तिथि (वैकल्पिक)",

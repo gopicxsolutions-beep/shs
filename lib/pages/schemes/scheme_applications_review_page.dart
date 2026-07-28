@@ -9,6 +9,7 @@ import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
+import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/avatar.dart';
@@ -109,22 +110,17 @@ class _SchemeApplicationsReviewPageState extends State<SchemeApplicationsReviewP
                       const SizedBox(height: 12),
                       Row(children: [
                         Expanded(
-                          child: OutlinedButton(
+                          child: AppButton(
+                            variant: ButtonVariant.danger,
+                            label: l10n.schemeApplicationsReviewReject,
                             onPressed: deciding ? null : () => _decide(app, false),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Accent.red100),
-                              foregroundColor: Accent.red600,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            child: Text(l10n.schemeApplicationsReviewReject),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: FilledButton(
+                          child: AppButton(
+                            label: deciding ? l10n.schemeApplicationsReviewSaving : l10n.schemeApplicationsReviewApprove,
                             onPressed: deciding ? null : () => _decide(app, true),
-                            style: FilledButton.styleFrom(backgroundColor: Brand.c600, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                            child: Text(deciding ? l10n.schemeApplicationsReviewSaving : l10n.schemeApplicationsReviewApprove),
                           ),
                         ),
                       ]),

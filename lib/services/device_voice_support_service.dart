@@ -31,7 +31,7 @@ class DeviceVoiceSupportService implements VoiceSupportService {
       );
     }
     if (!_sttAvailable) {
-      throw StateError('Speech recognition is not available on this device.');
+      throw const VoiceSupportUnavailableException();
     }
 
     final completer = Completer<String>();
@@ -61,7 +61,7 @@ class DeviceVoiceSupportService implements VoiceSupportService {
     }
 
     if (question.trim().isEmpty) {
-      throw StateError("Sorry, I couldn't hear anything. Please try again.");
+      throw const VoiceSupportEmptyResultException();
     }
     return question;
   }

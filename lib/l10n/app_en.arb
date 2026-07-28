@@ -27,6 +27,8 @@
 
   "asyncErrorGeneric": "Something went wrong. Please try again.",
   "asyncErrorNetwork": "Check your internet connection and try again.",
+  "asyncErrorSessionExpired": "Your session has expired. Please sign in again.",
+  "actionSignInAgain": "Sign In Again",
 
   "discardChangesTitle": "Discard changes?",
   "discardChangesMessage": "You've entered information on this page that hasn't been saved yet. Leaving now will lose it.",
@@ -37,6 +39,9 @@
   "error404Title": "Page not found",
   "error404Message": "The page you're looking for doesn't exist or may have moved.",
   "profileLoadErrorTitle": "Couldn't load your profile",
+
+  "accountDeactivatedTitle": "Account deactivated",
+  "accountDeactivatedMessage": "Your account has been deactivated. Contact your CRP or SHG federation admin if you believe this is a mistake.",
 
   "qrPermissionDenied": "Camera permission was denied.",
   "qrUnsupported": "Scanning isn't supported on this device.",
@@ -193,6 +198,8 @@
   "voiceAssistantYouSaid": "You said",
   "voiceAssistantLabel": "Assistant",
   "voiceAssistantTrySaying": "Try saying",
+  "voiceAssistantMicUnavailableError": "Speech recognition isn't available on this device. Check microphone permission in your phone's Settings.",
+  "voiceAssistantNoSpeechError": "Sorry, I couldn't hear anything. Please try again.",
 
   "aiDisclaimer": "AI-generated guidance — may be inaccurate. Not professional financial, legal, or medical advice; confirm important decisions with your SHG leader or a qualified advisor.",
 
@@ -1306,6 +1313,10 @@
 
   "schemeDetailDeadlinePassed": "Applications closed — the deadline for this scheme has passed.",
 
+  "schemeDetailIneligibleMessage": "You don't meet all the eligibility criteria below yet, so this application would be rejected.",
+
+  "schemeDetailViewEligibilityLink": "View full eligibility check",
+
   "schemeDetailSubmitting": "Submitting…",
 
   "schemeDetailApplyNow": "Apply Now",
@@ -1656,6 +1667,8 @@
   "supportVoiceTapToAskAgain": "Tap to ask again",
 
   "supportVoiceError": "Sorry, something went wrong. Please try again.",
+  "supportVoiceMicUnavailableError": "Speech recognition isn't available on this device. Check microphone permission in your phone's Settings.",
+  "supportVoiceNoSpeechError": "Sorry, I couldn't hear anything. Please try again.",
 
   "supportVoiceYouAsked": "You asked",
 
@@ -2057,6 +2070,13 @@
 
   "loanDetailNextDueLabel": "Next Due",
 
+  "loanDetailDecidedByLabel": "Decided by {name}",
+  "@loanDetailDecidedByLabel": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
   "loanDetailRecordPaymentButton": "Record Payment",
 
   "loanDetailPaymentHistoryTitle": "Payment History",
@@ -2133,6 +2153,8 @@
   "analyticsShgListTitle": "SHGs Monitoring",
 
   "analyticsShgListEmptyState": "No SHGs to monitor yet",
+
+  "analyticsShgListLoadMoreError": "Could not load more SHGs. Please try again.",
 
   "analyticsShgListVillageMemberCount": "{village} · {count} {count, plural, =1{member} other{members}}",
   "@analyticsShgListVillageMemberCount": {
@@ -2371,6 +2393,8 @@
 
   "financialLedgerDemoMode": "Demo mode — not saved (connect Supabase to persist)",
 
+  "financialLedgerLoadMoreError": "Could not load more entries. Please try again.",
+
   "financialLedgerEmpty": "No {title} entries yet",
   "@financialLedgerEmpty": {
     "placeholders": {
@@ -2577,6 +2601,28 @@
   "adminUsersManageTitle": "Manage Users",
   "adminUsersNoUsersFoundMessage": "No users found",
   "adminUsersAssignShgTooltip": "Assign SHG",
+  "adminUsersDeactivateTooltip": "Deactivate account",
+  "adminUsersReactivateTooltip": "Reactivate account",
+  "adminUsersInactiveBadge": "Inactive",
+  "adminUsersDeactivateConfirmTitle": "Deactivate account?",
+  "adminUsersDeactivateConfirmMessage": "{name} will lose access to the app until reactivated. Their historical records (savings, loans, meetings) are kept.",
+  "@adminUsersDeactivateConfirmMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "adminUsersReactivateConfirmTitle": "Reactivate account?",
+  "adminUsersReactivateConfirmMessage": "{name} will regain access to the app.",
+  "@adminUsersReactivateConfirmMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "adminUsersDeactivateConfirmButton": "Deactivate",
+  "adminUsersReactivateConfirmButton": "Reactivate",
+  "adminUsersToggleActiveError": "Could not update this account. Please try again.",
+  "adminUsersDeactivatedMessage": "Account deactivated",
+  "adminUsersReactivatedMessage": "Account reactivated",
 
   "adminShgsLoadMoreError": "Could not load more SHGs. Please try again.",
   "adminShgsFormationDateLabel": "Formation date (optional)",

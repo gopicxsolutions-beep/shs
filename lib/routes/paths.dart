@@ -6,6 +6,7 @@ class Paths {
   static const roleSelect = '/role-select';
   static const shgApprovalPending = '/shg-approval-pending';
   static const profileLoadError = '/profile-load-error';
+  static const accountDeactivated = '/account-deactivated';
 
   static const dashboard = '/app/dashboard';
   static const shg = '/app/shg';

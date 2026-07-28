@@ -35,6 +35,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
   final GlobalKey<AppAsyncBuilderState<PagedResult<Profile>>> _key = GlobalKey();
   String? _changingRoleFor;
   String? _assigningShgFor;
+  String? _togglingActiveFor;
 
   // Local, appendable copy of the loaded pages — kept separate from the
   // AppAsyncBuilder's own snapshot data (which only ever holds the single
@@ -174,6 +175,54 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     }
   }
 
+  /// Same two-step "propose then confirm" caution as `_changeRole` above —
+  /// deactivating a real account is high-stakes (they lose app access
+  /// immediately, server-side) and reactivating restores it, neither of
+  /// which should follow from a single misplaced tap.
+  Future<void> _toggleActive(Profile user) async {
+    final l10n = AppLocalizations.of(context)!;
+    final activating = !user.isActive;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(activating ? l10n.adminUsersReactivateConfirmTitle : l10n.adminUsersDeactivateConfirmTitle),
+        content: Text(activating ? l10n.adminUsersReactivateConfirmMessage(user.name) : l10n.adminUsersDeactivateConfirmMessage(user.name)),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(activating ? l10n.adminUsersReactivateConfirmButton : l10n.adminUsersDeactivateConfirmButton)),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _togglingActiveFor = user.id);
+    try {
+      await _repo.setActive(user.id, activating);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(activating ? l10n.adminUsersReactivatedMessage : l10n.adminUsersDeactivatedMessage)));
+        _key.currentState?.reload();
+        // Same self-write staleness risk `_changeRole`/`_assignShg` already
+        // guard against: an admin can appear in their own list and
+        // deactivate their own account (there's nothing here stopping that
+        // — an admin choosing to lock themselves out, e.g. handing off the
+        // role, is a legitimate use). Without this refresh, AppState's
+        // cached profile would keep reporting `isActive: true` until the
+        // next unrelated reload, so the router's `accountDeactivated`
+        // redirect wouldn't fire even though the server has already cut
+        // this account off.
+        final selfId = context.read<AppState>().profile?.id;
+        if (selfId != null && selfId == user.id) {
+          await context.read<AppState>().refreshProfile();
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminUsersToggleActiveError)));
+      }
+    } finally {
+      if (mounted) setState(() => _togglingActiveFor = null);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAdmin = context.watch<AppState>().user.role == Role.admin;
@@ -209,40 +258,71 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
               final u = _users[i];
               final busy = _changingRoleFor == u.id;
               final assigningShg = _assigningShgFor == u.id;
+              final togglingActive = _togglingActiveFor == u.id;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: AppCard(
-                  // Guard against both this row's own actions — not just
-                  // `busy` (role-change in flight): without also checking
-                  // `assigningShg`, an admin could tap the card to open the
-                  // role picker for a user WHILE that same user's "assign
-                  // SHG" write was still in flight, firing two concurrent
-                  // profile updates for the same row.
-                  onTap: isAdmin && !busy && !assigningShg ? () => _changeRole(u) : null,
-                  child: Row(children: [
-                    AppAvatar(name: u.name, size: 40),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  // Guard against every one of this row's own in-flight
+                  // actions — not just `busy` (role-change): without also
+                  // checking `assigningShg`/`togglingActive`, an admin could
+                  // open the role picker for a user WHILE that same user's
+                  // "assign SHG"/deactivate write was still in flight,
+                  // firing two concurrent profile updates for the same row.
+                  onTap: isAdmin && !busy && !assigningShg && !togglingActive ? () => _changeRole(u) : null,
+                  // Column, not one wide Row: the trailing badges + up-to-2
+                  // action icons + chevron previously all lived in the same
+                  // Row as the avatar/name — at 320px width + 2.0x text
+                  // scale (this app's stress-test floor) that overflowed the
+                  // card. Splitting the badges/actions onto their own
+                  // `Wrap` below the avatar/name row lets them wrap onto a
+                  // second line instead of forcing everything into one.
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        AppAvatar(name: u.name, size: 40),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(u.name, style: AppTheme.sans(13, weight: FontWeight.w700)),
+                              if (u.mobile != null) Text(u.mobile!, style: AppTheme.sans(11, color: Neutral.c500)),
+                            ],
+                          ),
+                        ),
+                        if (isAdmin) Icon(Icons.chevron_right_rounded, color: Neutral.c300),
+                      ]),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Text(u.name, style: AppTheme.sans(13, weight: FontWeight.w700)),
-                          if (u.mobile != null) Text(u.mobile!, style: AppTheme.sans(11, color: Neutral.c500)),
+                          if (!u.isActive) AppBadge(text: AppLocalizations.of(context)!.adminUsersInactiveBadge, tone: BadgeTone.danger),
+                          AppBadge(text: u.role, tone: _roleTone[u.role] ?? BadgeTone.neutral),
+                          if (isAdmin && u.shgId == null)
+                            IconButton(
+                              icon: assigningShg
+                                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                  : const Icon(Icons.add_link_rounded),
+                              tooltip: AppLocalizations.of(context)!.adminUsersAssignShgTooltip,
+                              color: Brand.c600,
+                              onPressed: assigningShg ? null : () => _assignShg(u),
+                            ),
+                          if (isAdmin)
+                            IconButton(
+                              icon: togglingActive
+                                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                  : Icon(u.isActive ? Icons.person_off_outlined : Icons.person_add_alt_1_outlined),
+                              tooltip: u.isActive ? AppLocalizations.of(context)!.adminUsersDeactivateTooltip : AppLocalizations.of(context)!.adminUsersReactivateTooltip,
+                              color: u.isActive ? Accent.red600 : Brand.c600,
+                              onPressed: togglingActive ? null : () => _toggleActive(u),
+                            ),
                         ],
                       ),
-                    ),
-                    AppBadge(text: u.role, tone: _roleTone[u.role] ?? BadgeTone.neutral),
-                    if (isAdmin && u.shgId == null)
-                      IconButton(
-                        icon: assigningShg
-                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.add_link_rounded),
-                        tooltip: AppLocalizations.of(context)!.adminUsersAssignShgTooltip,
-                        color: Brand.c600,
-                        onPressed: assigningShg ? null : () => _assignShg(u),
-                      ),
-                    if (isAdmin) ...[const SizedBox(width: 8), Icon(Icons.chevron_right_rounded, color: Neutral.c300)],
-                  ]),
+                    ],
+                  ),
                 ),
               );
             },

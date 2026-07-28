@@ -1,3 +1,19 @@
+/// Thrown by [DeviceVoiceSupportService.transcribe] when the device has no
+/// usable speech recognizer. See `voice_recognition_service.dart`'s
+/// identical [VoiceRecognitionUnavailableException] doc comment for why
+/// this is kept distinct from [VoiceSupportEmptyResultException] — same
+/// reasoning, duplicated per this app's per-module exception-type
+/// convention rather than a shared cross-service import.
+class VoiceSupportUnavailableException implements Exception {
+  const VoiceSupportUnavailableException();
+}
+
+/// Thrown by [DeviceVoiceSupportService.transcribe] when a recognition
+/// session completed with no usable transcript (silence/background noise).
+class VoiceSupportEmptyResultException implements Exception {
+  const VoiceSupportEmptyResultException();
+}
+
 /// Abstraction over a speech-to-text / text-to-speech provider.
 /// [DeviceVoiceSupportService] (`device_voice_support_service.dart`) is the
 /// live-mode implementation — real on-device recognition + synthesis via

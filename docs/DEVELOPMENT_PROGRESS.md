@@ -14653,3 +14653,272 @@ cleanly. **Browser preview attempted again, still stuck** — fresh server
 + fresh tab, same `flt-glass-pane`-never-paints symptom (now six
 independent attempts across four rounds). Relied on live-DB verification
 for every fix above instead.
+
+## Update (round 181) — Gap-hunting loop, iteration 9: launched 4 fresh module audits (CRP/CLF workflows, Marketplace/Payments integration, Financial ledger/session recovery, AI/Training/Schemes), fixed 18 real gaps
+
+Four parallel background audits, the deepest architectural round yet — this
+one closed a genuine, long-standing gap between what the schema was built
+to support (`audit_log`, documented in `docs/ARCHITECTURE.md` since round
+1) and what actually wrote to it (nothing, until now), plus the first
+account-lifecycle feature (deactivation) this app has ever had.
+
+**Fixed, live-verified against the real Supabase project:**
+
+1. **[HIGH] `audit_log` existed but nothing ever inserted into it.**
+   `public.audit_log` (0001) has had RLS and a documented purpose
+   ("Admin/privileged-action audit trail") since round 1 — a repo-wide grep
+   confirmed zero call sites, in Dart or SQL, ever wrote to it. Every
+   privilege-escalation-adjacent action (role grants, SHG grade edits, loan
+   decisions, livelihood staff corrections) was silently unlogged. Fixed
+   with four `AFTER UPDATE` triggers (migration `0082`):
+   `audit_profiles_role_change`, `audit_shg_grade_change`,
+   `audit_livelihood_staff_override` (staff-only, via `is_staff()`), and
+   `audit_loan_decision` (fires on the `pending → active/rejected`
+   transition). All four are plain `security invoker` functions —
+   `audit_log_insert_self`'s RLS (`actor_id = auth.uid()`) is satisfied
+   regardless of definer/invoker, so no elevated privilege was needed just
+   to write an audit row. **Live-verified**: an admin's SHG grade change, a
+   role change, a CRP's livelihood-revenue override, and an
+   `approve_loan()` call each produced exactly the expected `audit_log` row
+   (correct `actor_id`/`action`/`meta`), confirmed via a role-switch mid-
+   transaction (the writer often isn't `admin`, and only `admin` can read
+   `audit_log` back — the first read-back attempts as the acting CRP
+   correctly returned zero rows per `audit_log_select_admin`, which is what
+   sent me to re-verify as admin instead — not a bug, RLS working exactly
+   as designed).
+2. **[HIGH] Loans had zero decision attribution** — no `decided_by`/
+   `decided_at` at all, unlike `scheme_applications` (0050),
+   `shg_join_requests` (0004), and `support_tickets` (0052), which already
+   attribute their staff decision. Added both columns (migration `0082`),
+   wired into the existing lock-then-verify-then-transition RPCs
+   (`approve_loan`/`reject_loan`, 0029) so no new race window was
+   introduced. `Loan`/`LoanRepository` updated to embed
+   `profiles!decided_by(name)` alongside the existing
+   `profiles!member_id(name)` embed (both now explicitly FK-hinted and
+   aliased, since two FKs into `profiles` makes an unqualified `profiles()`
+   embed ambiguous to PostgREST — the same class of bug that already hit
+   `shg_join_requests`, round 90). `loan_detail_page.dart` now shows
+   "Decided by {name}" once a loan leaves `pending`, mirroring
+   `scheme_tracking_page.dart`'s identical pattern. **Live-verified**: an
+   `approve_loan()` call against a temporary `__TEST__`-prefixed loan (in a
+   rolled-back transaction) set `decided_by`/`decided_at` correctly.
+3. **[MEDIUM-HIGH] `shgs_update_leader_or_staff` let ANY `is_staff()`
+   account (crp/clf/admin) rewrite ANY SHG's grade/clf/vo/name/village/
+   district unconditionally** — but a grep confirmed the only app-code path
+   that ever calls `ShgRepository.updateShg()` is `AdminShgsPage`'s Edit
+   dialog, itself gated `isAdmin`-only in the UI. The RLS layer never
+   matched that UI-implied Admin-only scope, so a CRP/CLF account could
+   bypass the UI entirely via a direct REST `PATCH` and rewrite another
+   federation's SHG grade or affiliation — exactly the "client-side check
+   is UX only" gap CLAUDE.md warns about. Tightened the staff bypass in
+   both `USING`/`WITH CHECK` to `current_role() = 'admin'`; the leader
+   branch (still unused by any current UI, per 0013's own comment) is
+   untouched. **Live-verified**: a CRP's grade-write attempt now affects 0
+   rows; the same write as admin succeeds and fires the new audit trigger.
+4. **`shgs` had no `updated_at` column at all** — every other mutable table
+   has had one since round 6 (`set_updated_at()`); `shgs` was missed.
+   Added the column + trigger (migration `0082`). **Live-verified**: an
+   admin grade change bumped `updated_at`.
+5. **[HIGH] Financial ledger hard-capped at 500 rows with zero pagination
+   or export** — `fetchForShg`/`fetchAllForStaff` both ended in a bare
+   `.limit(500)`, silently and permanently hiding anything older than the
+   500th most-recent entry for a long-running SHG (worse for the
+   platform-wide staff feed: 500 total *combined across every SHG*).
+   `admin_users_page.dart`/`admin_shgs_page.dart` had already solved this
+   exact shape via keyset `PagedResult` pagination — this hadn't been
+   applied here. Fixed: both repository methods now take
+   `afterEntryDate`/`afterCreatedAt` cursor params and return
+   `PagedResult<FinancialEntry>`, using a composite `(entry_date desc,
+   created_at desc)` keyset (entries can be legitimately backdated, so
+   `entry_date` alone isn't a unique cursor — `created_at` is the
+   tiebreaker) via PostgREST's `.or('entry_date.lt.D,and(entry_date.eq.D,
+   created_at.lt.C)')`. `financial_ledger_page.dart` converted to render a
+   "Load more" footer, same shape as `AdminShgsPage`. **Live-verified**:
+   inserted 5 `__TEST__`-prefixed rows (as service-role, in a rolled-back
+   transaction — the RLS INSERT policy pins `entry_date = current_date`,
+   so a direct backdated insert as an authenticated role isn't possible;
+   this only needed to prove the pagination *query shape*, not RLS) and
+   confirmed page 2's cursor query correctly returned exactly rows B/C/D
+   with no gap or duplicate across the page-1/page-2 boundary.
+6. **CRP/CLF SHG list (`fetchShgList`) had no pagination cap at all** —
+   unlike the financial ledger/marketplace's documented (if imperfect) 500
+   caps, this ran 4+ full-table batch queries (`shgs`, `profiles`,
+   `savings_entries`, `meetings`+`attendance`) scoped to *every* SHG in the
+   federation, on every CRP/CLF/Admin dashboard load, with zero bound.
+   Converted to the same keyset `PagedResult` shape (`afterName` cursor,
+   mirroring `AdminRepository.fetchAllUsers`) — the batch queries are now
+   scoped to just the current page's `shgIds`, which also bounds *their*
+   `inFilter()` list sizes, not just the outer `shgs` query.
+   `AnalyticsShgListPage` ("View all") gained a "Load more" footer;
+   `CRPDashboard`'s landing preview intentionally stays first-page-only
+   (same spirit as its existing "recent activity" 5-row caps).
+7. **[HIGH] No account-deactivation/offboarding path existed anywhere** —
+   `profiles` had no `is_active`/`deactivated_at` column; the only
+   alternatives were leaving a stale live account forever, or hard-deleting
+   the row (which this schema's own `on delete restrict` FKs, added
+   specifically to prevent exactly this, would either block outright or
+   destroy historical loan/savings/ledger rows). Fixed (migration `0083`)
+   with `is_active`/`deactivated_at` columns, admin-only writable (extended
+   `profiles_locked_fields()`, same pattern as `mobile`/`created_at`,
+   0076), and — the actually load-bearing part — the 4 identity-resolution
+   helper functions every RLS policy in this schema calls
+   (`current_role()`, `current_shg_id()`, `is_staff()`,
+   `is_leader_or_staff()`) now resolve to null/false for a deactivated
+   caller, server-side, regardless of client behavior. Documented scope
+   limit (not silent): a handful of policies also have a bare `member_id =
+   auth.uid()` branch alongside the role/shg_id branches this closes (e.g.
+   a member reading their own `savings_entries` row) — those aren't gated
+   by `is_active` by this migration; closing every one of those
+   individually is a larger, separate pass. `AdminUsersPage` gained a
+   Deactivate/Reactivate action (two-step confirm, same caution as its
+   existing role-change flow) and an "Inactive" badge; the row layout was
+   restructured from one wide `Row` to a `Column` + `Wrap` to avoid a
+   320px/2x-text-scale overflow the two new action icons introduced (caught
+   by the stress-test suite, fixed before commit). **Live-verified**: a
+   deactivated test member's own `current_role()`/`current_shg_id()`
+   resolved to null and `is_staff()`/`is_leader_or_staff()` to false; the
+   same member's attempt to apply for a new loan (which needs `shg_id =
+   current_shg_id()`) was rejected (`42501`) even though the bare
+   `member_id = auth.uid()` half of that check still passed; a
+   self-deactivation attempt was correctly rejected by the locked-fields
+   `WITH CHECK`.
+8. **No client-side handling for a deactivated account at all** — even
+   with #7's RLS enforcement, the app itself would keep letting a
+   deactivated user navigate around, hitting silent RLS rejections on
+   almost everything with no explanation. Added `AppState.accountDeactivated`
+   (a pure derived getter off the already-loaded profile — no new fetch),
+   a router redirect check, and a new `AccountDeactivatedPage` (reuses
+   `AppErrorScreen`, same shape as the existing `ProfileLoadErrorPage`/
+   `ShgApprovalPendingPage` precedent), offering Sign Out (not Retry, since
+   only an admin reactivating the account can fix this).
+9. **[MEDIUM-HIGH] A mid-session expired/invalid JWT fell into a generic,
+   actively-useless retry loop** — every repository-backed page's
+   catch-all "Something went wrong. Please try again." + Retry button
+   treated an expired token identically to any other failure; tapping
+   Retry resends the same stale token and fails again, with no path back
+   to signing in short of GoTrue's own background refresh timer happening
+   to fire (which it can miss for hours after the app sits backgrounded).
+   Added `isAuthExpiredError()` (matches `PostgrestException` with `code ==
+   'PGRST301'` — PostgREST's "JWT expired" — or any `AuthException`) to
+   `AppAsyncBuilder`'s shared error branch: a session-expired failure now
+   shows a distinct message and a "Sign In Again" button (same
+   `signOut()` + `context.go(Paths.splash)` shape `ProfilePage`'s own Sign
+   Out button uses) instead of a Retry button that can't help.
+10. **[HIGH] Scheme eligibility was purely reactive, with an actively
+    wrong-advice error message.** `SchemeDetailPage`'s Apply button never
+    checked eligibility before allowing submit — only migration `0074`'s
+    server-side `scheme_eligibility_met()` check caught it, surfaced as
+    the generic `schemeDetailApplyError` ("Please try again"), which is
+    actively wrong advice since retrying fails identically. A fully
+    itemized, real-data-backed ✓/✗ breakdown already existed on the
+    separate `SchemeEligibilityPage` but wasn't linked from here at all.
+    Fixed by reusing that exact same evaluator (`evaluateSchemeEligibility`,
+    `lib/models/scheme.dart`) against the same member-context shape, so the
+    two screens can never disagree: when a member doesn't meet all
+    criteria, the Apply button is replaced with the specific failed
+    criteria (reusing the identical localized per-criterion labels) plus a
+    link to the full checker — closing the exact gap migration `0074`'s own
+    header comment flagged as a planned follow-up that had never landed.
+11. **[HIGH] Voice recognition (AI Advisor) collapsed two distinct failure
+    modes into one indistinguishable generic error.**
+    `DeviceVoiceRecognitionService.listen()` threw two different,
+    deliberately-worded `StateError`s (mic/recognizer unavailable vs. an
+    empty/silent transcript) but `AiVoiceAssistantPage._listen()`'s catch
+    block only ever checked `isNetworkError` (always false for a
+    `StateError`) and fell through to one hardcoded generic string — a
+    member who denied mic permission once saw an identical "Something went
+    wrong" on every later tap, with no path to the actual fix. Replaced
+    both `StateError`s with two typed exceptions
+    (`VoiceRecognitionUnavailableException`/
+    `VoiceRecognitionEmptyResultException`, `voice_recognition_service.dart`)
+    and branched on type in the page's catch block, each with its own
+    localized message (all 3 languages) — the unavailable case now
+    explicitly points at checking mic permission in Settings.
+12. **Support's Voice Support had the identical bug** —
+    `DeviceVoiceSupportService.transcribe()`'s two `StateError`s collapsed
+    into `supportVoicePage`'s one generic `supportVoiceError` string. Same
+    fix, same two-exception-type shape
+    (`VoiceSupportUnavailableException`/`VoiceSupportEmptyResultException`,
+    `voice_support_service.dart`).
+13. **`docs/AI_MODULES.md` §3.1 was now slightly stale** (its own claim
+    that a listen failure "surfaces as a friendly retry message" predated
+    #11/#12's actual two-message fix) — updated to name the two exception
+    types and describe the two distinct, actionable messages instead of
+    one generic retry prompt.
+14–16. **Three staff review queues hand-rolled bespoke buttons instead of
+    the shared `AppButton` widget** (`loan_approval_page.dart`,
+    `scheme_applications_review_page.dart` — both `OutlinedButton`/
+    `FilledButton` at a bespoke radius 10 vs. `AppButton`'s canonical
+    radius 12; `savings_ledger_page.dart` — a Verify button forced to a
+    30px height, off `AppButton`'s 32/44/52 scale). Documented and
+    deferred in rounds 179/180 pending a dedicated pass — fixed this round:
+    all three now use `AppButton` (`danger`/`secondary` variants for
+    reject/verify, default `primary` for approve). Fixing
+    `admin_users_page.dart`'s new deactivate/reactivate icons (finding #7)
+    surfaced a fresh 320px/2x-text-scale overflow from the same class of
+    "too many trailing widgets in one Row" issue — caught by the stress
+    test suite before commit, fixed by moving the row's badges/actions
+    onto their own `Wrap` below the avatar/name line instead of widening
+    the deferral list further.
+
+**Documented, deliberately not fixed this round** (real, larger-scope
+findings from this round's audits, appropriately scoped past a single
+iteration):
+
+- **Marketplace checkout and Payments are architecturally disconnected —
+  no `order_id`/payment link exists at all.** `place_marketplace_order`
+  creates an order from a stock check-and-decrement alone; `payments` has
+  no FK into `marketplace_orders`, and neither model carries a linking
+  field. A buyer who does pay via the QR flow has no way to tie that
+  specific payment to a specific order. This is a real architecture gap,
+  but closing it needs a product decision (is this COD-style local
+  commerce meant to gate on payment at all?) plus a genuinely new join
+  path across two previously-independent modules — not a same-iteration
+  fix alongside everything else above.
+- **The `payment-webhook-handler` Edge Function is well-built but
+  undeployed dead code** — its own header comment says so ("no payment
+  gateway is configured"). Confirmed still accurate; requires a real
+  payment gateway integration this project doesn't have, not a code fix.
+- **No seller-side edit/delist UI** — `MarketplaceRepository.fetchMyProducts()`
+  has zero call sites; the RESTRICT FK added in round 175 protects a
+  delete path the UI can never even reach. A real "My Listings" page is a
+  genuine missing-functionality gap, scoped as its own future round rather
+  than a rushed addition here.
+- **The AI Advisor's free-text "Scheme Recommender" chat and the
+  structured `SchemeEligibilityPage` can disagree** — the former has zero
+  access to the member's real SHG data (per `docs/AI_MODULES.md` §2.3);
+  the latter (now linked from `SchemeDetailPage`, finding #10) is the
+  accurate one. No easy surgical cross-link exists without touching the
+  AI's own prompt; documented as a known limitation.
+- **Scheme-application withdrawal** — re-confirmed still absent, but per
+  migration `0030`'s own comment this is a deliberate design choice (an
+  audit-trail-preserving one), not an oversight; not revisited.
+
+**Re-confirmed, not fresh findings:** loan/scheme/livelihood/marketplace-
+order status transition guards from earlier rounds all still hold; the
+payment amount cap and client-side mirror (round 180) still match exactly;
+no CRP-vs-CLF privilege asymmetry exists anywhere beyond finding #3 above —
+every other reviewed staff workflow deliberately treats crp/clf/admin
+identically via `is_staff()`, consistent with the platform-wide-staff
+design since round 168.
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1033/1033) both clean throughout — re-run after each fix, not just once
+at the end, and once more specifically after the button-standardization
+pass surfaced the 320px/2x-scale overflow in finding #16 (fixed, re-verified
+green). Migrations `0082`/`0083` both pushed to the linked live project
+cleanly. Every RLS/trigger/attribution claim above was independently
+live-verified via `set local role authenticated` + `request.jwt.claims`
+sessions against real (mostly pre-existing `__TEST__`-prefixed) fixture
+rows, every mutating test wrapped in a transaction that was rolled back —
+re-queried afterward to confirm zero footprint (grade/clf/vo, role,
+livelihood revenue, and the temporary test loan all reverted to their
+original values; the trigger function body was restored to exactly the
+migration's own text after an ad hoc debug variant was used mid-verification
+to diagnose an RLS-read-scoping false alarm, confirmed via
+`pg_get_functiondef`). `flutter build web` rebuilt cleanly.
+**Browser preview attempted again, still stuck** — fresh server + fresh
+tab, identical `flt-glass-pane`-never-paints symptom, zero console/server
+errors (the 7th consecutive such attempt across five rounds). Relied on
+live-DB verification for every fix above instead, per this file's own
+standing guidance not to keep looping on that same diagnostic.

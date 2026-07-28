@@ -232,6 +232,18 @@ abstract class AppLocalizations {
   /// **'Check your internet connection and try again.'**
   String get asyncErrorNetwork;
 
+  /// No description provided for @asyncErrorSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has expired. Please sign in again.'**
+  String get asyncErrorSessionExpired;
+
+  /// No description provided for @actionSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In Again'**
+  String get actionSignInAgain;
+
   /// No description provided for @discardChangesTitle.
   ///
   /// In en, this message translates to:
@@ -279,6 +291,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t load your profile'**
   String get profileLoadErrorTitle;
+
+  /// No description provided for @accountDeactivatedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deactivated'**
+  String get accountDeactivatedTitle;
+
+  /// No description provided for @accountDeactivatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has been deactivated. Contact your CRP or SHG federation admin if you believe this is a mistake.'**
+  String get accountDeactivatedMessage;
 
   /// No description provided for @qrPermissionDenied.
   ///
@@ -939,6 +963,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try saying'**
   String get voiceAssistantTrySaying;
+
+  /// No description provided for @voiceAssistantMicUnavailableError.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech recognition isn\'t available on this device. Check microphone permission in your phone\'s Settings.'**
+  String get voiceAssistantMicUnavailableError;
+
+  /// No description provided for @voiceAssistantNoSpeechError.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorry, I couldn\'t hear anything. Please try again.'**
+  String get voiceAssistantNoSpeechError;
 
   /// No description provided for @aiDisclaimer.
   ///
@@ -3322,6 +3358,18 @@ abstract class AppLocalizations {
   /// **'Applications closed — the deadline for this scheme has passed.'**
   String get schemeDetailDeadlinePassed;
 
+  /// No description provided for @schemeDetailIneligibleMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t meet all the eligibility criteria below yet, so this application would be rejected.'**
+  String get schemeDetailIneligibleMessage;
+
+  /// No description provided for @schemeDetailViewEligibilityLink.
+  ///
+  /// In en, this message translates to:
+  /// **'View full eligibility check'**
+  String get schemeDetailViewEligibilityLink;
+
   /// No description provided for @schemeDetailSubmitting.
   ///
   /// In en, this message translates to:
@@ -4161,6 +4209,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sorry, something went wrong. Please try again.'**
   String get supportVoiceError;
+
+  /// No description provided for @supportVoiceMicUnavailableError.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech recognition isn\'t available on this device. Check microphone permission in your phone\'s Settings.'**
+  String get supportVoiceMicUnavailableError;
+
+  /// No description provided for @supportVoiceNoSpeechError.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorry, I couldn\'t hear anything. Please try again.'**
+  String get supportVoiceNoSpeechError;
 
   /// No description provided for @supportVoiceYouAsked.
   ///
@@ -5092,6 +5152,12 @@ abstract class AppLocalizations {
   /// **'Next Due'**
   String get loanDetailNextDueLabel;
 
+  /// No description provided for @loanDetailDecidedByLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Decided by {name}'**
+  String loanDetailDecidedByLabel(String name);
+
   /// No description provided for @loanDetailRecordPaymentButton.
   ///
   /// In en, this message translates to:
@@ -5307,6 +5373,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No SHGs to monitor yet'**
   String get analyticsShgListEmptyState;
+
+  /// No description provided for @analyticsShgListLoadMoreError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load more SHGs. Please try again.'**
+  String get analyticsShgListLoadMoreError;
 
   /// No description provided for @analyticsShgListVillageMemberCount.
   ///
@@ -5926,6 +5998,12 @@ abstract class AppLocalizations {
   /// **'Demo mode — not saved (connect Supabase to persist)'**
   String get financialLedgerDemoMode;
 
+  /// No description provided for @financialLedgerLoadMoreError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load more entries. Please try again.'**
+  String get financialLedgerLoadMoreError;
+
   /// No description provided for @financialLedgerEmpty.
   ///
   /// In en, this message translates to:
@@ -6349,6 +6427,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Assign SHG'**
   String get adminUsersAssignShgTooltip;
+
+  /// No description provided for @adminUsersDeactivateTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate account'**
+  String get adminUsersDeactivateTooltip;
+
+  /// No description provided for @adminUsersReactivateTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactivate account'**
+  String get adminUsersReactivateTooltip;
+
+  /// No description provided for @adminUsersInactiveBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get adminUsersInactiveBadge;
+
+  /// No description provided for @adminUsersDeactivateConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate account?'**
+  String get adminUsersDeactivateConfirmTitle;
+
+  /// No description provided for @adminUsersDeactivateConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} will lose access to the app until reactivated. Their historical records (savings, loans, meetings) are kept.'**
+  String adminUsersDeactivateConfirmMessage(String name);
+
+  /// No description provided for @adminUsersReactivateConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactivate account?'**
+  String get adminUsersReactivateConfirmTitle;
+
+  /// No description provided for @adminUsersReactivateConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} will regain access to the app.'**
+  String adminUsersReactivateConfirmMessage(String name);
+
+  /// No description provided for @adminUsersDeactivateConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate'**
+  String get adminUsersDeactivateConfirmButton;
+
+  /// No description provided for @adminUsersReactivateConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactivate'**
+  String get adminUsersReactivateConfirmButton;
+
+  /// No description provided for @adminUsersToggleActiveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update this account. Please try again.'**
+  String get adminUsersToggleActiveError;
+
+  /// No description provided for @adminUsersDeactivatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deactivated'**
+  String get adminUsersDeactivatedMessage;
+
+  /// No description provided for @adminUsersReactivatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Account reactivated'**
+  String get adminUsersReactivatedMessage;
 
   /// No description provided for @adminShgsLoadMoreError.
   ///

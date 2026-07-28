@@ -131,6 +131,15 @@ class AppState extends ChangeNotifier {
 
   bool get isAuthenticated => hasSession && hasProfile;
 
+  /// Live mode only — the current session's own `profiles` row has been
+  /// deactivated by an admin (`profiles.is_active = false`, migration 0083).
+  /// The router routes this straight to a dedicated explanation screen
+  /// (`AccountDeactivatedPage`) instead of letting a deactivated account
+  /// keep navigating an app the backend now silently rejects almost
+  /// everything from — see that migration's own doc comment for exactly
+  /// what "almost" excludes.
+  bool get accountDeactivated => SupabaseService.isConfigured && (_profile?.isActive == false);
+
   /// Live mode only — a fresh profile exists but Role Select hasn't run
   /// yet this session.
   bool get needsRoleSelection => SupabaseService.isConfigured && _needsRoleSelection;

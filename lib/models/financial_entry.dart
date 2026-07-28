@@ -7,6 +7,11 @@ class FinancialEntry {
   final num credit;
   final num balance;
   final DateTime date;
+  // Real insert timestamp, distinct from [date] (`entry_date`, which can be
+  // backdated by whoever posts the entry) — used purely as the tiebreaker
+  // half of a composite keyset-pagination cursor (see
+  // FinancialRepository.fetchForShg/fetchAllForStaff), never displayed.
+  final DateTime createdAt;
   final String? createdByName;
   // Only populated when the query joins `shgs(name)` (today: only
   // FinancialRepository.fetchAllForStaff()'s platform-wide fetch) — null
@@ -24,6 +29,7 @@ class FinancialEntry {
     required this.credit,
     required this.balance,
     required this.date,
+    required this.createdAt,
     this.createdByName,
     this.shgName,
   });
@@ -36,6 +42,7 @@ class FinancialEntry {
         credit: map['credit'] as num? ?? 0,
         balance: map['balance'] as num? ?? 0,
         date: DateTime.parse(map['entry_date'] as String),
+        createdAt: map['created_at'] != null ? DateTime.parse(map['created_at'] as String) : DateTime.parse(map['entry_date'] as String),
         createdByName: (map['profiles'] as Map<String, dynamic>?)?['name'] as String?,
         shgName: (map['shgs'] as Map<String, dynamic>?)?['name'] as String?,
       );

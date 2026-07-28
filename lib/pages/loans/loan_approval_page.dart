@@ -9,6 +9,7 @@ import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
+import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/avatar.dart';
@@ -108,7 +109,9 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                       const SizedBox(height: 12),
                       Row(children: [
                         Expanded(
-                          child: OutlinedButton(
+                          child: AppButton(
+                            variant: ButtonVariant.danger,
+                            label: rejecting ? l10n.loanApprovalRejectingButton : l10n.loanApprovalRejectButton,
                             onPressed: rejecting
                                 ? null
                                 : () async {
@@ -143,17 +146,12 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                                       if (mounted) setState(() => _rejecting.remove(l.id));
                                     }
                                   },
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Accent.red100),
-                              foregroundColor: Accent.red600,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            child: Text(rejecting ? l10n.loanApprovalRejectingButton : l10n.loanApprovalRejectButton),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: FilledButton(
+                          child: AppButton(
+                            label: l10n.loanApprovalApproveButton,
                             // Mirrors Reject's `_rejecting` guard — without it, a
                             // fast double-tap could open two stacked Approve
                             // dialogs for the same loan before the first
@@ -163,8 +161,6 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                             // what was really just a double-tap, not a genuine
                             // race with another leader/staff account).
                             onPressed: _approving.contains(l.id) ? null : () => _approve(context, l),
-                            style: FilledButton.styleFrom(backgroundColor: Brand.c600, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                            child: Text(l10n.loanApprovalApproveButton),
                           ),
                         ),
                       ]),

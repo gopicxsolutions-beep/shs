@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/analytics.dart' as mock;
 import '../models/analytics.dart';
+import '../models/paged_result.dart';
 import '../services/supabase_service.dart';
 import 'report_repository.dart';
 
@@ -98,14 +99,26 @@ class AnalyticsRepository {
   /// about one SHG's health score, the same class of bug the detail path's
   /// own fix was originally meant to close everywhere, but hadn't reached
   /// this batch path.
-  Future<List<ShgHealth>> fetchShgList() async {
+  // Was a single unbounded query — every SHG in the federation, every login,
+  // on a screen (the CRP dashboard landing view / "SHG list") that grows
+  // linearly with the platform's own success. Same keyset `PagedResult`
+  // shape as AdminRepository.fetchAllUsers/ShgRepository.fetchAllShgs — the
+  // batched member/savings/meeting/attendance queries below are scoped to
+  // just this page's [shgIds], which also bounds THEIR `inFilter` list sizes
+  // (previously unbounded too, since they inherited the full shgIds list).
+  Future<PagedResult<ShgHealth>> fetchShgList({String? afterName, int pageSize = 100}) async {
     if (!_live) {
-      return mock.shgsForMonitoring.map((g) => ShgHealth(id: g.id, name: g.name, village: g.village, grade: g.grade, memberCount: g.members, totalSavings: g.savings, healthScore: g.health.toDouble())).toList();
+      final list = mock.shgsForMonitoring.map((g) => ShgHealth(id: g.id, name: g.name, village: g.village, grade: g.grade, memberCount: g.members, totalSavings: g.savings, healthScore: g.health.toDouble())).toList();
+      return PagedResult(items: list, hasMore: false);
     }
-    final shgs = await _client.from('shgs').select('id, name, village, grade').order('name');
-    final shgRows = (shgs as List).cast<Map<String, dynamic>>();
+    var builder = _client.from('shgs').select('id, name, village, grade');
+    if (afterName != null) builder = builder.gt('name', afterName);
+    final shgs = await builder.order('name').limit(pageSize + 1);
+    final allRows = (shgs as List).cast<Map<String, dynamic>>();
+    final hasMore = allRows.length > pageSize;
+    final shgRows = hasMore ? allRows.sublist(0, pageSize) : allRows;
     final shgIds = shgRows.map((r) => r['id'] as String).toList();
-    if (shgIds.isEmpty) return const [];
+    if (shgIds.isEmpty) return PagedResult(items: const [], hasMore: hasMore);
 
     final memberCountByShg = <String, int>{};
     final members = await _client.from('profiles').select('shg_id').inFilter('shg_id', shgIds);
@@ -170,7 +183,7 @@ class AnalyticsRepository {
       }
     }
 
-    return [
+    final items = [
       for (final row in shgRows)
         () {
           final id = row['id'] as String;
@@ -188,6 +201,7 @@ class AnalyticsRepository {
           );
         }(),
     ];
+    return PagedResult(items: items, hasMore: hasMore);
   }
 
   Future<ShgHealth?> fetchShgDetail(String shgId) async {

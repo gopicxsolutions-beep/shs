@@ -7,6 +7,15 @@ class Profile {
   final String? shgId;
   final String? village;
   final String? avatarColor;
+  // Admin-only writable (migration 0083) — once false, the 4 RLS identity
+  // helpers (current_role/current_shg_id/is_staff/is_leader_or_staff) every
+  // policy in this schema keys off resolve to null/false for this account,
+  // server-side, regardless of what the client does. `AppState.
+  // accountDeactivated` uses this to force a sign-out on the client too,
+  // rather than leaving the account able to keep calling an app that the
+  // backend now silently rejects almost everything from.
+  final bool isActive;
+  final DateTime? deactivatedAt;
 
   const Profile({
     required this.id,
@@ -16,6 +25,8 @@ class Profile {
     this.shgId,
     this.village,
     this.avatarColor,
+    this.isActive = true,
+    this.deactivatedAt,
   });
 
   factory Profile.fromMap(Map<String, dynamic> map) => Profile(
@@ -26,6 +37,8 @@ class Profile {
         shgId: map['shg_id'] as String?,
         village: map['village'] as String?,
         avatarColor: map['avatar_color'] as String?,
+        isActive: map['is_active'] as bool? ?? true,
+        deactivatedAt: map['deactivated_at'] != null ? DateTime.parse(map['deactivated_at'] as String) : null,
       );
 
   Profile copyWith({String? role, String? shgId}) => Profile(
@@ -36,6 +49,8 @@ class Profile {
         shgId: shgId ?? this.shgId,
         village: village,
         avatarColor: avatarColor,
+        isActive: isActive,
+        deactivatedAt: deactivatedAt,
       );
 }
 

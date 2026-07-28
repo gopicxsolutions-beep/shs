@@ -57,10 +57,19 @@ class _SupportVoicePageState extends State<SupportVoicePage> {
         _answer = answer;
         _state = _VoiceState.answered;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
+      // Same distinguish-the-actual-failure fix as AiVoiceAssistantPage's
+      // identical catch block — a mic-permission/no-recognizer failure and
+      // a "just didn't catch anything" empty result used to both show this
+      // one generic string, with no path to the real fix (enabling mic
+      // permission in system Settings) for the former.
       setState(() {
-        _answer = l10n.supportVoiceError;
+        _answer = switch (e) {
+          VoiceSupportUnavailableException() => l10n.supportVoiceMicUnavailableError,
+          VoiceSupportEmptyResultException() => l10n.supportVoiceNoSpeechError,
+          _ => l10n.supportVoiceError,
+        };
         _state = _VoiceState.answered;
       });
     }

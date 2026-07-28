@@ -187,9 +187,13 @@ transcript. The transcript is then classified into a `VoiceIntent`
 (`loanDetails`, `savingsThisMonth`, `readAnnouncements`, `addSavings`,
 `unknown`) by `VoiceIntentClassifier` — a small per-language keyword matcher
 (`lib/services/voice_intent_classifier.dart`), since a real STT engine returns
-arbitrary free text rather than one of a fixed canned set. An empty/silent
-transcript or a device with no available recognizer throws, which the page
-surfaces as a friendly retry message rather than crashing.
+arbitrary free text rather than one of a fixed canned set. An empty/silent transcript throws `VoiceRecognitionEmptyResultException`
+and a device with no available recognizer (permission denied, no engine
+installed) throws `VoiceRecognitionUnavailableException` — two distinct
+types (gap-hunt round 181) so `AiVoiceAssistantPage`/`SupportVoicePage` show
+a different, actionable message for each instead of one generic retry
+prompt that couldn't tell a member how to actually fix a denied mic
+permission.
 `DeviceVoiceSupportService` follows the same listen-and-transcribe shape for
 Support's free-form question, then matches the question against the same FAQ
 content shown on the (text) FAQ page by keyword overlap — not a separate

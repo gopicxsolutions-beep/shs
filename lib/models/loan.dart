@@ -17,6 +17,13 @@ class Loan {
   // cross-SHG list/approval queue tell loans from different SHGs apart,
   // which a plain member-name/purpose row can't.
   final String? shgName;
+  // Only populated when the query embeds `profiles!decided_by(name)` (see
+  // migration 0082 — decided_by/decided_at added to mirror the same
+  // attribution `scheme_applications`/`support_tickets`/`shg_join_requests`
+  // already had). Null for a still-pending loan, or when the query doesn't
+  // embed it.
+  final String? decidedByName;
+  final DateTime? decidedAt;
 
   const Loan({
     required this.id,
@@ -31,12 +38,14 @@ class Loan {
     required this.status,
     this.nextDueDate,
     this.shgName,
+    this.decidedByName,
+    this.decidedAt,
   });
 
   factory Loan.fromMap(Map<String, dynamic> map) => Loan(
         id: map['id'] as String,
         memberId: map['member_id'] as String,
-        memberName: (map['profiles'] as Map<String, dynamic>?)?['name'] as String? ?? 'Member',
+        memberName: (map['member_profile'] as Map<String, dynamic>?)?['name'] as String? ?? 'Member',
         purpose: map['purpose'] as String,
         amount: map['amount'] as num,
         outstanding: map['outstanding'] as num,
@@ -46,6 +55,8 @@ class Loan {
         status: map['status'] as String,
         nextDueDate: map['next_due_date'] != null ? DateTime.parse(map['next_due_date'] as String) : null,
         shgName: (map['shgs'] as Map<String, dynamic>?)?['name'] as String?,
+        decidedByName: (map['decided_by_profile'] as Map<String, dynamic>?)?['name'] as String?,
+        decidedAt: map['decided_at'] != null ? DateTime.parse(map['decided_at'] as String) : null,
       );
 }
 

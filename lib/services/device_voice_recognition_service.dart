@@ -51,7 +51,7 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
       );
     }
     if (!_available) {
-      throw StateError('Speech recognition is not available on this device.');
+      throw const VoiceRecognitionUnavailableException();
     }
 
     final localeId = await _resolveLocaleId(language);
@@ -87,7 +87,7 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
     }
 
     if (transcript.trim().isEmpty) {
-      throw StateError("Sorry, I couldn't hear anything. Please try again.");
+      throw const VoiceRecognitionEmptyResultException();
     }
     return RecognizedCommand(transcript: transcript, intent: VoiceIntentClassifier.classify(transcript, language));
   }

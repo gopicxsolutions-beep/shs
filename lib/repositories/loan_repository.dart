@@ -46,10 +46,17 @@ class LoanRepository {
         ..._locallyApplied.map((l) => _locallyUpdated[l.id] ?? l),
       ];
 
+  // `loans` now has two FKs into `profiles` (`member_id`, `decided_by`,
+  // migration 0082) — an unqualified `profiles(name)` embed is ambiguous to
+  // PostgREST (the same class of bug already hit `shg_join_requests`, round
+  // 90, and `scheme_applications`). Explicit FK hints + aliases keep both
+  // unambiguous; `Loan.fromMap` reads `member_profile`/`decided_by_profile`.
+  static const _loanSelect = '*, member_profile:profiles!member_id(name), decided_by_profile:profiles!decided_by(name)';
+
   Future<List<Loan>> fetchForShg(String? shgId) async {
     if (!_live) return _demoLoans();
     if (shgId == null) return [];
-    final rows = await _client.from('loans').select('*, profiles(name)').eq('shg_id', shgId).order('created_at', ascending: false);
+    final rows = await _client.from('loans').select(_loanSelect).eq('shg_id', shgId).order('created_at', ascending: false);
     return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -63,7 +70,7 @@ class LoanRepository {
   /// from different SHGs apart in one flat list.
   Future<List<Loan>> fetchAllForStaff() async {
     if (!_live) return _demoLoans();
-    final rows = await _client.from('loans').select('*, profiles(name), shgs(name)').order('created_at', ascending: false);
+    final rows = await _client.from('loans').select('$_loanSelect, shgs(name)').order('created_at', ascending: false);
     return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -76,7 +83,7 @@ class LoanRepository {
     // total for every member.
     if (!_live) return _demoLoans().where((l) => l.memberName == _demoMemberName(memberId)).toList();
     if (memberId == null) return [];
-    final rows = await _client.from('loans').select('*, profiles(name)').eq('member_id', memberId).order('created_at', ascending: false);
+    final rows = await _client.from('loans').select(_loanSelect).eq('member_id', memberId).order('created_at', ascending: false);
     return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -91,7 +98,7 @@ class LoanRepository {
       final matches = _demoLoans().where((l) => l.id == id);
       return matches.isEmpty ? null : matches.first;
     }
-    final row = await _client.from('loans').select('*, profiles(name)').eq('id', id).maybeSingle();
+    final row = await _client.from('loans').select(_loanSelect).eq('id', id).maybeSingle();
     return row == null ? null : Loan.fromMap(row);
   }
 

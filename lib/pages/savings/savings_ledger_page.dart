@@ -13,6 +13,7 @@ import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
+import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/avatar.dart';
@@ -176,35 +177,26 @@ class _LedgerListState extends State<_LedgerList> {
                   ? '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.mode} · ${e.frequency} · ${l10n.savingsLedgerShgName(e.shgName!)}'
                   : '${DateFormat('dd MMM yyyy').format(e.date)} · ${e.mode} · ${e.frequency}',
               trailing: e.status == 'pending'
-                  ? SizedBox(
-                      height: 30,
-                      child: OutlinedButton(
-                        onPressed: !SupabaseService.isConfigured || verifying
-                            ? null
-                            : () async {
-                                setState(() => _verifying.add(e.id));
-                                try {
-                                  await repo.verifyEntry(e.id);
-                                } catch (_) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(l10n.savingsLedgerVerifyError)),
-                                    );
-                                  }
-                                } finally {
-                                  if (mounted) setState(() => _verifying.remove(e.id));
+                  ? AppButton(
+                      size: ButtonSize.sm,
+                      variant: ButtonVariant.secondary,
+                      label: verifying ? l10n.savingsLedgerVerifying : l10n.savingsLedgerVerifyAction('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}'),
+                      onPressed: !SupabaseService.isConfigured || verifying
+                          ? null
+                          : () async {
+                              setState(() => _verifying.add(e.id));
+                              try {
+                                await repo.verifyEntry(e.id);
+                              } catch (_) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(l10n.savingsLedgerVerifyError)),
+                                  );
                                 }
-                              },
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          side: BorderSide(color: Brand.c500),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: Text(
-                          verifying ? l10n.savingsLedgerVerifying : l10n.savingsLedgerVerifyAction('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}'),
-                          style: AppTheme.sans(11, weight: FontWeight.w700, color: Brand.c600),
-                        ),
-                      ),
+                              } finally {
+                                if (mounted) setState(() => _verifying.remove(e.id));
+                              }
+                            },
                     )
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.end,

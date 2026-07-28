@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -6,6 +7,8 @@ import '../../layout/page_header.dart';
 import '../../models/scheme.dart';
 import '../../models/types.dart';
 import '../../repositories/scheme_repository.dart';
+import '../../repositories/shg_repository.dart';
+import '../../routes/paths.dart';
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -15,6 +18,17 @@ import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/section_header.dart';
+
+class _SchemeWithEligibility {
+  final Scheme? scheme;
+  // Null when the scheme has no structured criteria at all
+  // (SchemeEligibilityResult.checks would be empty) — same "nothing to
+  // proactively check" case SchemeEligibilityPage already treats as
+  // `!hasCriteria` (falls back to "see full details", not a false "eligible"
+  // claim).
+  final SchemeEligibilityResult? eligibility;
+  const _SchemeWithEligibility(this.scheme, this.eligibility);
+}
 
 class SchemeDetailPage extends StatefulWidget {
   final String schemeId;
@@ -27,6 +41,42 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
   final _repo = SchemeRepository();
   final GlobalKey<AppAsyncBuilderState<SchemeApplication?>> _appKey = GlobalKey();
   bool _applying = false;
+
+  // Mirrors SchemeEligibilityPage's identical helper — kept as a separate
+  // copy per this codebase's established per-file-duplicated-helper
+  // convention (see e.g. _loanStatusLabel across loans/*.dart) rather than a
+  // shared import for one small pure function.
+  int? _monthsSince(DateTime? date) {
+    if (date == null) return null;
+    final now = DateTime.now();
+    var months = (now.year - date.year) * 12 + (now.month - date.month);
+    if (now.day < date.day) months -= 1;
+    return months < 0 ? 0 : months;
+  }
+
+  /// Real, proactive eligibility check — was previously purely reactive:
+  /// a member below a scheme's minimum grade/age could tap "Apply Now" and
+  /// only find out via the RLS rejection's generic, actively-wrong-advice
+  /// error ("Please try again" when retrying fails identically), with no
+  /// way to learn WHICH criterion she failed short of separately opening
+  /// the standalone Eligibility Checker. Reuses that exact same evaluator
+  /// (`evaluateSchemeEligibility`, `lib/models/scheme.dart`) against the
+  /// same member-context shape `SchemeEligibilityPage` already resolves, so
+  /// the two screens can never disagree about the same scheme/member pair.
+  Future<_SchemeWithEligibility> _load(String? shgId, AppLocalizations l10n) async {
+    final scheme = await _repo.fetchSchemeById(widget.schemeId);
+    if (scheme == null) return const _SchemeWithEligibility(null, null);
+    final hasShg = SupabaseService.isConfigured ? shgId != null : true;
+    final shg = hasShg ? await ShgRepository().fetchShg(shgId) : null;
+    final result = evaluateSchemeEligibility(
+      scheme,
+      l10n: l10n,
+      hasShgMembership: hasShg,
+      shgAgeMonths: _monthsSince(shg?.formationDate),
+      shgGrade: shg?.grade,
+    );
+    return _SchemeWithEligibility(scheme, result.checks.isEmpty ? null : result);
+  }
 
   Future<void> _apply(String? memberId) async {
     setState(() => _applying = true);
@@ -66,9 +116,11 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
 
     return Scaffold(
       appBar: PageHeader(title: l10n.schemeDetailTitle),
-      body: AppAsyncBuilder<Scheme?>(
-        future: () => _repo.fetchSchemeById(widget.schemeId),
-        builder: (context, scheme) {
+      body: AppAsyncBuilder<_SchemeWithEligibility>(
+        future: () => _load(appState.profile?.shgId, l10n),
+        builder: (context, data) {
+          final scheme = data.scheme;
+          final eligibility = data.eligibility;
           if (scheme == null) {
             return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.schemeDetailNotFound);
           }
@@ -152,6 +204,34 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
                         const SizedBox(width: 10),
                         Expanded(child: Text(l10n.schemeDetailDeadlinePassed, style: AppTheme.sans(12, color: Neutral.c500))),
                       ]));
+                    }
+                    if (eligibility != null && !eligibility.isEligible) {
+                      return AppCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Icon(Icons.block_rounded, size: 18, color: Accent.red500),
+                              const SizedBox(width: 10),
+                              Expanded(child: Text(l10n.schemeDetailIneligibleMessage, style: AppTheme.sans(12, color: Neutral.c500))),
+                            ]),
+                            const SizedBox(height: 10),
+                            ...eligibility.checks.where((c) => !c.met).map((c) => Padding(
+                                  padding: const EdgeInsets.only(top: 4, left: 28),
+                                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                    Icon(Icons.cancel_rounded, size: 14, color: Accent.red500),
+                                    const SizedBox(width: 6),
+                                    Expanded(child: Text(c.label, style: AppTheme.sans(11, color: Neutral.c500))),
+                                  ]),
+                                )),
+                            const SizedBox(height: 10),
+                            GestureDetector(
+                              onTap: () => context.go(Paths.schemeEligibility),
+                              child: Text(l10n.schemeDetailViewEligibilityLink, style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
+                            ),
+                          ],
+                        ),
+                      );
                     }
                     return AppButton(
                       label: _applying ? l10n.schemeDetailSubmitting : l10n.schemeDetailApplyNow,

@@ -77,6 +77,13 @@ class AppLocalizationsHi extends AppLocalizations {
       'अपना इंटरनेट कनेक्शन जांचें और फिर से कोशिश करें।';
 
   @override
+  String get asyncErrorSessionExpired =>
+      'आपका सत्र समाप्त हो गया है। कृपया फिर से साइन इन करें।';
+
+  @override
+  String get actionSignInAgain => 'फिर से साइन इन करें';
+
+  @override
   String get discardChangesTitle => 'बदलाव छोड़ें?';
 
   @override
@@ -101,6 +108,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get profileLoadErrorTitle => 'आपकी प्रोफ़ाइल लोड नहीं हो सकी';
+
+  @override
+  String get accountDeactivatedTitle => 'खाता निष्क्रिय कर दिया गया';
+
+  @override
+  String get accountDeactivatedMessage =>
+      'आपका खाता निष्क्रिय कर दिया गया है। यदि आपको लगता है कि यह गलती है, तो अपने CRP या SHG फेडरेशन एडमिन से संपर्क करें।';
 
   @override
   String get qrPermissionDenied => 'कैमरा अनुमति अस्वीकार कर दी गई।';
@@ -467,6 +481,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get voiceAssistantTrySaying => 'यह कहकर देखें';
+
+  @override
+  String get voiceAssistantMicUnavailableError =>
+      'इस डिवाइस पर वाक् पहचान उपलब्ध नहीं है। अपने फ़ोन की सेटिंग्स में माइक्रोफ़ोन की अनुमति जांचें।';
+
+  @override
+  String get voiceAssistantNoSpeechError =>
+      'माफ़ कीजिए, मुझे कुछ सुनाई नहीं दिया। कृपया फिर से कोशिश करें।';
 
   @override
   String get aiDisclaimer =>
@@ -1865,6 +1887,13 @@ class AppLocalizationsHi extends AppLocalizations {
       'आवेदन बंद हैं — इस योजना की अंतिम तिथि निकल चुकी है।';
 
   @override
+  String get schemeDetailIneligibleMessage =>
+      'आप अभी नीचे दिए गए सभी पात्रता मानदंडों को पूरा नहीं करते हैं, इसलिए यह आवेदन अस्वीकार कर दिया जाएगा।';
+
+  @override
+  String get schemeDetailViewEligibilityLink => 'पूर्ण पात्रता जांच देखें';
+
+  @override
   String get schemeDetailSubmitting => 'सबमिट हो रहा है…';
 
   @override
@@ -2345,6 +2374,14 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get supportVoiceError =>
       'माफ़ कीजिए, कुछ गलत हो गया। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get supportVoiceMicUnavailableError =>
+      'इस डिवाइस पर वाक् पहचान उपलब्ध नहीं है। अपने फ़ोन की सेटिंग्स में माइक्रोफ़ोन की अनुमति जांचें।';
+
+  @override
+  String get supportVoiceNoSpeechError =>
+      'माफ़ कीजिए, मुझे कुछ सुनाई नहीं दिया। कृपया फिर से कोशिश करें।';
 
   @override
   String get supportVoiceYouAsked => 'आपने पूछा';
@@ -2872,6 +2909,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get loanDetailNextDueLabel => 'अगली देय तिथि';
 
   @override
+  String loanDetailDecidedByLabel(String name) {
+    return '$name द्वारा निर्णय लिया गया';
+  }
+
+  @override
   String get loanDetailRecordPaymentButton => 'भुगतान दर्ज करें';
 
   @override
@@ -2985,6 +3027,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get analyticsShgListEmptyState => 'निगरानी के लिए अभी कोई SHG नहीं है';
+
+  @override
+  String get analyticsShgListLoadMoreError =>
+      'और SHG लोड नहीं हो सके। कृपया फिर से प्रयास करें।';
 
   @override
   String analyticsShgListVillageMemberCount(String village, int count) {
@@ -3327,6 +3373,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
 
   @override
+  String get financialLedgerLoadMoreError =>
+      'अधिक एंट्री लोड नहीं हो सकीं। कृपया फिर से प्रयास करें।';
+
+  @override
   String financialLedgerEmpty(String title) {
     return 'अभी तक कोई $title एंट्री नहीं';
   }
@@ -3583,6 +3633,47 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get adminUsersAssignShgTooltip => 'SHG असाइन करें';
+
+  @override
+  String get adminUsersDeactivateTooltip => 'खाता निष्क्रिय करें';
+
+  @override
+  String get adminUsersReactivateTooltip => 'खाता पुनः सक्रिय करें';
+
+  @override
+  String get adminUsersInactiveBadge => 'निष्क्रिय';
+
+  @override
+  String get adminUsersDeactivateConfirmTitle => 'खाता निष्क्रिय करें?';
+
+  @override
+  String adminUsersDeactivateConfirmMessage(String name) {
+    return '$name की ऐप तक पहुंच तब तक समाप्त हो जाएगी जब तक इसे पुनः सक्रिय न किया जाए। उनका पिछला रिकॉर्ड (बचत, ऋण, बैठकें) सुरक्षित रहेगा।';
+  }
+
+  @override
+  String get adminUsersReactivateConfirmTitle => 'खाता पुनः सक्रिय करें?';
+
+  @override
+  String adminUsersReactivateConfirmMessage(String name) {
+    return '$name को फिर से ऐप तक पहुंच मिल जाएगी।';
+  }
+
+  @override
+  String get adminUsersDeactivateConfirmButton => 'निष्क्रिय करें';
+
+  @override
+  String get adminUsersReactivateConfirmButton => 'पुनः सक्रिय करें';
+
+  @override
+  String get adminUsersToggleActiveError =>
+      'यह खाता अपडेट नहीं हो सका। कृपया फिर से प्रयास करें।';
+
+  @override
+  String get adminUsersDeactivatedMessage => 'खाता निष्क्रिय कर दिया गया';
+
+  @override
+  String get adminUsersReactivatedMessage => 'खाता पुनः सक्रिय कर दिया गया';
 
   @override
   String get adminShgsLoadMoreError =>
