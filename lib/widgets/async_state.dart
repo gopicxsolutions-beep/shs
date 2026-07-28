@@ -60,6 +60,7 @@ class AppAsyncBuilder<T> extends StatefulWidget {
 
 class AppAsyncBuilderState<T> extends State<AppAsyncBuilder<T>> {
   late Future<T> _future;
+  bool _signingOut = false;
 
   @override
   void initState() {
@@ -131,15 +132,28 @@ class AppAsyncBuilderState<T> extends State<AppAsyncBuilder<T>> {
                   // already uses.
                   isAuthExpired
                       ? TextButton(
-                          onPressed: () async {
-                            try {
-                              await context.read<AppState>().signOut();
-                            } catch (_) {
-                              // fall through — still navigate to splash below
-                            }
-                            if (context.mounted) context.go(Paths.splash);
-                          },
-                          child: Text(l10n?.actionSignInAgain ?? 'Sign In Again'),
+                          // Was tappable indefinitely with no feedback — this
+                          // is the token-expiry recovery path reached from
+                          // nearly every data-driven page in the app (this
+                          // widget backs almost all of them), so the same
+                          // AppState.signOut() hang risk ProfilePage's Sign
+                          // Out button now guards against was wired into a
+                          // much more frequently hit path. signOut() itself
+                          // now bounds the risky call with a timeout; this
+                          // just stops a repeat tap from firing a second
+                          // concurrent signOut() while the first is in flight.
+                          onPressed: _signingOut
+                              ? null
+                              : () async {
+                                  setState(() => _signingOut = true);
+                                  try {
+                                    await context.read<AppState>().signOut();
+                                  } catch (_) {
+                                    // fall through — still navigate to splash below
+                                  }
+                                  if (context.mounted) context.go(Paths.splash);
+                                },
+                          child: Text(_signingOut ? (l10n?.profileSigningOut ?? 'Signing out…') : (l10n?.actionSignInAgain ?? 'Sign In Again')),
                         )
                       : TextButton(onPressed: reload, child: Text(l10n?.actionRetry ?? 'Retry')),
                 ]),

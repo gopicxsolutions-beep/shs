@@ -190,6 +190,12 @@ abstract class AppLocalizations {
   /// **'Sign Out'**
   String get actionSignOut;
 
+  /// No description provided for @profileSigningOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing out…'**
+  String get profileSigningOut;
+
   /// No description provided for @actionCheckStatus.
   ///
   /// In en, this message translates to:
@@ -4983,6 +4989,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rejected'**
   String get loanStatusRejected;
+
+  /// No description provided for @schemeStatusApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied'**
+  String get schemeStatusApplied;
+
+  /// No description provided for @schemeStatusUnderReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Under Review'**
+  String get schemeStatusUnderReview;
+
+  /// No description provided for @schemeStatusApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get schemeStatusApproved;
+
+  /// No description provided for @schemeStatusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get schemeStatusRejected;
 
   /// No description provided for @savingsStatusPending.
   ///

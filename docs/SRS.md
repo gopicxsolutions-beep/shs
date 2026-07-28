@@ -766,6 +766,15 @@ need manual/documentary verification. This is a real evaluation over real
 stored facts, not a connection to any government eligibility API (none
 exists or is reachable from this project).
 
+**Eligibility is enforced, not just displayed.** `SchemeDetailPage`'s Apply
+button itself is disabled with the itemized failing reasons shown inline
+when criteria aren't met — a member can't reach the apply flow at all on a
+scheme she doesn't qualify for. This is independently re-verified at the
+database layer too: `scheme_applications_insert_self`'s `WITH CHECK` calls
+the same `scheme_eligibility_met()` function the UI evaluates against, so a
+direct API call bypassing the UI is rejected identically — mirroring the
+deadline check's own already-documented RLS re-verification above.
+
 Staff review pending applications from a shared, platform-wide queue (not
 scoped to their own SHG); Approve/Reject goes through an atomic RPC
 (`decide_scheme_application`) that row-locks the application and rejects a
@@ -800,7 +809,11 @@ written from that course's own real title/topic, not generic filler) —
 replacing the old single fixed 3-question set shared by every course
 regardless of topic. Passing requires a proportional ≥2/3 correct (a
 generalization of the old fixed rule to a variable question count per
-course), with no attempt limit or cooldown on retrying. Passing upserts
+course), capped at 5 attempts per course per calendar day (server-enforced,
+`submit_quiz_attempt`/`quiz_attempt_counters`, migration 0070 — a retry
+beyond the cap raises rather than silently succeeding; the UI surfaces this
+as a specific "try again tomorrow" message, not the generic quiz-submit
+error). Passing upserts
 `certified:true` and a completion date — this is the *only* path to
 certification; reaching 100% progress via the Continue button does not by
 itself certify a course. This seeded content is a genuine starting set, not
@@ -881,7 +894,7 @@ existing repository calls.
 |---|---|---|
 | FR-TRN-1 | Any user browses the course catalog and course detail | All |
 | FR-TRN-2 | Progress advances via a flat increment per "Continue" tap — not real content-consumption tracking | All |
-| FR-TRN-3 | A real per-course quiz (`quiz_questions` table) is the sole path to certification, proportional ≥2/3 pass threshold, unlimited retries | All |
+| FR-TRN-3 | A real per-course quiz (`quiz_questions` table) is the sole path to certification, proportional ≥2/3 pass threshold, capped at 5 retries per course per day | All |
 | FR-TRN-4 | A certificate/completion date is issued on quiz pass | All |
 | FR-TRN-5 | Aggregate training-completion view, now a real standalone stat on each of the three staff dashboards (since round 168) | CRP, CLF, Admin |
 | FR-TRN-6 | Staff/admin author courses and quiz questions via `admin_training_courses_page.dart`/`admin_training_quiz_page.dart` (since round 167) | CRP, CLF, Admin |

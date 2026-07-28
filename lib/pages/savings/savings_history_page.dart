@@ -61,6 +61,15 @@ class _SavingsHistoryPageState extends State<SavingsHistoryPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.savingsHistoryDeleteError)));
+        // SavingsRepository.deletePendingEntry now throws on a 0-row race
+        // (e.g. a leader verified this exact entry a moment before this
+        // delete landed) instead of silently reporting success — but this
+        // page is a one-shot AppAsyncBuilder fetch with no realtime stream
+        // to self-correct, so without reloading here the now-stale entry
+        // stayed visible with its Delete button still enabled, and tapping
+        // it again just repeated the identical failure until a manual
+        // pull-to-refresh.
+        _key.currentState?.reload();
       }
     } finally {
       if (mounted) setState(() => _deletingId = null);

@@ -18,6 +18,7 @@
   "actionSubmit": "సమర్పించండి",
   "actionRetry": "మళ్ళీ ప్రయత్నించండి",
   "actionSignOut": "సైన్ అవుట్",
+  "profileSigningOut": "సైన్ అవుట్ అవుతోంది…",
   "actionCheckStatus": "స్థితిని తనిఖీ చేయండి",
 
   "commonLoading": "లోడ్ అవుతోంది…",
@@ -1528,6 +1529,14 @@
   "loanStatusClosed": "ముగిసింది",
 
   "loanStatusRejected": "తిరస్కరించబడింది",
+
+  "schemeStatusApplied": "దరఖాస్తు చేసారు",
+
+  "schemeStatusUnderReview": "సమీక్షలో ఉంది",
+
+  "schemeStatusApproved": "ఆమోదించబడింది",
+
+  "schemeStatusRejected": "తిరస్కరించబడింది",
 
   "savingsStatusPending": "పెండింగ్",
 

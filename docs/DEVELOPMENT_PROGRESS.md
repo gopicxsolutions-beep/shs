@@ -15357,3 +15357,192 @@ time), zero console errors (the 10th consecutive such attempt across eight
 rounds). Relied on live-DB verification for every RLS-relevant fix above
 instead, exactly as this repo's own testing guidance directs when the
 preview is stuck.
+
+## Update (round 185) — Gap-hunting loop, iteration 13: launched 4 fresh module audits (dogfooding round 184's own features, Loans full lifecycle, Reports/CRP-CLF monitoring, Schemes/Training), fixed 15 real gaps
+
+Four parallel background audits surfaced 24 distinct genuine findings.
+Fixed the CRITICAL/HIGH majority plus several well-scoped mediums;
+deferred 9 lower-severity or larger-scope items with documented rationale
+below, per this session's established practice of never silently dropping
+a real finding.
+
+**Fixed, live-verified against the real Supabase project:**
+
+1. **[CRITICAL] `loans_update_leader_or_staff` (last touched in round ~59's
+   `0023`) never locked a single state-machine column** — `status`,
+   `outstanding`, `emi`, `disbursed_on`, `next_due_date`, `decided_by`,
+   `decided_at` were all freely writable by direct client PATCH, and the
+   `is_staff()` branch had ZERO restriction at all — not even the leader
+   branch's own self-exclusion. `approve_loan`/`reject_loan`/
+   `record_loan_payment` (rounds ~29/73/82) are `security invoker`, so
+   their own internal UPDATE relied entirely on this same policy for
+   authorization — meaning a direct `PATCH /rest/v1/loans` was exactly as
+   capable as the RPCs, with none of their checks: re-approving an
+   already-active loan with a different EMI, silently resetting
+   `outstanding` back to `amount` (erasing every real repayment with zero
+   audit trail — the decision trigger only fires on `pending ->
+   active/rejected`), reopening a closed loan, fabricating `decided_by`, or
+   — the sharpest edge — any crp/clf/admin account self-approving/
+   rejecting/repaying HER OWN loan outright (reachable because
+   `AdminRepository.updateUserRole()` never clears `shg_id` when promoting
+   an existing SHG member to staff). This is the exact self-decision-lock
+   gap already closed for `scheme_applications` in round ~52
+   (`0049`/`0050`), never back-ported to loans. Fixed (migration `0088`) by
+   converting all three RPCs to `security definer` with their own explicit
+   internal authorization checks (SHG/staff scope + universal self-
+   exclusion, since RLS no longer does it for their writes) and locking
+   every state-machine column at the RLS layer for any other, direct
+   update path — after this, a raw PATCH can only ever be a true no-op.
+   Also folds in **Loans audit finding #2**: `approve_loan` now checks the
+   borrowing member is still active before disbursing (reuses
+   `profile_is_active()`, round 184). **Live-verified**, 5 scenarios in
+   rolled-back transactions: a direct PATCH resetting a real test loan's
+   `outstanding`/`status` now raises `new row violates row-level security
+   policy` (previously would have silently succeeded); the legitimate
+   `approve_loan`/`record_loan_payment` RPC calls still work end-to-end
+   with correct values; an admin attempting `approve_loan` on a loan where
+   she's the borrower raises `cannot approve your own loan`; approving a
+   loan for a member flipped `is_active = false` raises `cannot approve a
+   loan for a deactivated member`; re-queried afterward to confirm the real
+   test loan's data and every test fixture were untouched.
+2. **[HIGH] Round 184's own `profile_is_active()` fix (migration `0087`)
+   only gated the LEADER branch of `savings_insert_self_leader_or_staff` /
+   `livelihood_insert_self_leader_or_staff` — the `is_staff()` branch in
+   both was a bare, unconditional OR, so a crp/clf/admin account could
+   still create a savings entry or livelihood activity for an already-
+   deactivated member**, the exact gap that migration's own header claimed
+   to close. Found by this round's dogfooding audit specifically re-
+   scrutinizing round 184's own work — the same pattern that caught
+   critical gaps in rounds 182/183/184 in a row. Fixed (migration `0089`)
+   by requiring `profile_is_active(member_id)` on the staff branch too,
+   without touching the status/date lock that branch deliberately sits
+   outside of. **Live-verified**: staff inserting a `verified` savings
+   entry for a member flipped inactive now raises the RLS violation
+   (previously would have silently succeeded).
+3. **[HIGH] `scheme_applications_insert_self` (round 178's `0074`) never
+   checked `is_active`** — a deactivated member's still-valid session
+   could submit a fresh government-scheme application. Fixed in the same
+   migration. **Live-verified** with an A/B pair on the same real test
+   member: the identical INSERT succeeds while active (count=1, confirming
+   no regression) and is denied with the RLS violation once flipped
+   inactive — isolating `is_active` as the specific variable, not an
+   unrelated eligibility failure.
+4. **[MEDIUM-HIGH] `submit_quiz_attempt` (round 176's `0070`) is `security
+   definer` — bypasses RLS entirely — and never checked `is_active` in its
+   own body**, so a deactivated member's still-valid session could keep
+   certifying courses after deactivation. Fixed in the same migration,
+   checked first (before even incrementing the daily attempt counter, so a
+   blocked call doesn't burn one of the 5 daily attempts). **Live-
+   verified**: raises `your account has been deactivated` for a flipped-
+   inactive test member.
+5. **[MEDIUM] `quiz_questions.order_index` was never sent by
+   `TrainingRepository.createQuizQuestion`, so every admin-added question
+   defaulted to 0** — a course with multiple questions had every row tied.
+   Both the client's display fetch and `submit_quiz_attempt`'s independent
+   grading re-query sort by this same non-unique key with no tiebreaker,
+   so the two separately-executed queries had no guaranteed agreement on
+   tie order — a real risk of grading a member's answer against the wrong
+   question. Fixed at the Dart layer (computes the next value from the
+   course's current max) plus a migration (`0089`) backfilling every
+   existing row to a stable, deterministic order and adding a `unique
+   (course_id, order_index)` constraint so a future collision fails loudly
+   instead of silently reintroducing a tie. No live quiz-question rows
+   existed to backfill, so this was a clean, no-op-on-data schema change,
+   confirmed by the migration applying with no constraint violation.
+6. **[MEDIUM-HIGH, live-verified via widget test] `AnalyticsShgDetailPage`'s
+   "SHG Health" row overflowed** at 320px/2.0x text scale (`RenderFlex
+   overflowed by 140 pixels`) — the identical label+value pattern already
+   fixed in two sibling pages in this same module was missed here. Fixed
+   with the same `Flexible`+ellipsis wrap `shg_financial_summary_page.dart`
+   already uses.
+7. **[MEDIUM] CLF dashboard's "Loans Disbursed"/"Recovery Rate" tiles were
+   dead ends** — no `onTap`, unlike every other tile on the page, despite
+   `FederationRecoveryPage` already existing and already being linked from
+   elsewhere. Wired both to it.
+8. **[MEDIUM] Demo mode: "My Purchases" and "My Sales" (round 184) showed
+   the exact same unfiltered list** — every `_locallyPlaced` order is
+   created by `placeOrder()`, i.e. always something the demo user bought,
+   so it genuinely only belongs on the purchases tab; sales now returns an
+   honestly-empty list in demo mode (no simulated other-buyer data exists
+   to source from) instead of a misleadingly duplicated one. Also added
+   `.limit(200)` to both `fetchOrdersForBuyer`/`fetchOrdersForSeller`,
+   matching this file's own `fetchProducts()` precedent for exactly this
+   unbounded-query shape.
+9. **[MEDIUM] `SavingsHistoryPage`'s new race-exception path (round 184:
+   `deletePendingEntry` now throws on a 0-row race) left a stale, still-
+   clickable entry in the UI** — this page is a one-shot fetch with no
+   realtime self-correction, and the catch block never called `reload()`.
+   Fixed by reloading on the error path.
+10. **[MEDIUM-HIGH] `AppState.signOut()`'s new `cancelAllScheduled()` call
+    (round 184) had no timeout, and neither call site (ProfilePage's Sign
+    Out button, `AppAsyncBuilder`'s much more frequently hit "Sign In
+    Again" recovery action) showed any busy state** — a stalled platform-
+    channel call (a real, documented failure mode on some Android OEM
+    builds) would hang sign-out forever with an inertly-tappable button
+    and no feedback, and a repeat tap could fire a second concurrent
+    `signOut()`. Fixed with a 3-second timeout on the call itself plus a
+    disable-while-in-flight guard on both buttons (new
+    `profileSigningOut` string, all 3 languages).
+11. **[MEDIUM] Scheme application status shown as raw, untranslated
+    English enum text** (`schemes_home_page.dart`, `scheme_tracking_page.dart`,
+    `scheme_detail_page.dart`) despite Loans already solving this identical
+    shape with a per-file status-label helper. Added the same pattern here
+    (4 new `schemeStatus*` keys, all 3 languages) across all three pages.
+12. **[LOW/LOW-MEDIUM] `docs/SRS.md` had gone stale on two points**: §3.10
+    still said the quiz had "no attempt limit... unlimited retries",
+    contradicting the correctly-working 5-per-day cap shipped in round 176
+    (`0070`) and never reflected in the doc; §3.9 described the Eligibility
+    Checker as display-only, never mentioning that `SchemeDetailPage`'s
+    Apply button is actually disabled on failed criteria or that the
+    database independently re-verifies the same criteria
+    (`scheme_eligibility_met()`) inside the INSERT policy. Both corrected.
+
+**Documented, deliberately not fixed this round** (real findings, larger
+scope or lower severity):
+
+- **Unbounded platform-wide full-table scans on every staff dashboard
+  load** (`AnalyticsRepository.fetchPlatformKpis`, `TrendRepository`'s 4
+  federation-wide trend methods, `AdminRepository.fetchTrainingCompletionPct`,
+  `LoanRepository.fetchAllForStaff`) — these compute a client-side SUM/
+  COUNT over every row, so the usual `.limit()` fix would silently corrupt
+  the aggregate itself rather than just cap payload size; the correct fix
+  is a server-side aggregate RPC (this codebase's own established pattern
+  for exactly this shape), which is a bigger, multi-call-site redesign
+  deserving its own dedicated, carefully-tested pass rather than a rushed
+  addition here.
+- **`generate-report-snapshots` edge function never received two client-
+  side fixes** (missing `is_active` filter, the already-corrected-elsewhere
+  wrong `avgAttendancePct` formula) — currently harmless (nothing in
+  `lib/` reads `report_snapshots` yet) but the function is cron-scheduled
+  nightly against the live table; flagged for whenever that table actually
+  gets wired up to the UI.
+- **No cap on a member's aggregate/concurrent loan exposure**, **EMI has no
+  upper-bound sanity check**, **`tenure_months` has no upper bound** — all
+  real, all LOW severity (each individual loan is still capped at
+  ₹10,00,000, and a nonsensical EMI/tenure is self-correcting since the
+  very next payment attempt is still bounded by outstanding balance).
+- **A rejected scheme application permanently blocks reapplication** — no
+  admin override/reset path exists in the schema at all; a real, asymmetric
+  UX gap but needs a new RPC design, not a quick patch.
+- **`StatCard` has no tap affordance anywhere** (app-wide convention, not a
+  regression) and **the parameterized analytics drill-down/CRP/CLF
+  dashboard routes have no dedicated text-scale/narrow-width stress test**
+  (exactly how finding #6 above went uncaught) — both real but minor;
+  flagged for a future test-coverage pass.
+- **Demo mode never plumbs `lib/data/members.dart`'s existing `status`
+  field through to `Member.isActive`** — re-confirmed from round 184's own
+  deferral, still outstanding, still flagged as a standalone follow-up
+  (also spawned as a background task suggestion in that round).
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1038/1038, unchanged — no new Dart-level test surface for the pure-RLS
+fixes, which this repo's own convention verifies live instead; no existing
+test depended on any of the touched demo-mode/UI behavior) both clean.
+Migrations `0088`/`0089` pushed to the linked live project cleanly and
+every RLS/RPC claim above independently live-verified with real `__TEST__`
+fixture rows in rolled-back transactions, each re-queried afterward to
+confirm zero footprint. `flutter build web` rebuilt cleanly. **Browser
+preview attempted again, still stuck** — fresh `preview_start` + re-
+navigate, identical `flt-glass-pane`-never-mounts symptom, zero console
+errors (the 11th consecutive such attempt across nine rounds). Relied on
+live-DB verification for every fix above instead.

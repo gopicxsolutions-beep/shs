@@ -314,28 +314,40 @@ its own row.
 
 | RPC | Locking | Guarantees | Errors raised |
 |---|---|---|---|
-| `record_loan_payment(loan_id, amount)` | `SELECT ... FOR UPDATE` row lock on `loans` | Payment + balance decrement + close-on-zero happen atomically; rejects overpayment; rolls back the whole transaction (including the `loan_payments` insert) if the underlying `UPDATE` is silently filtered to 0 rows by RLS | `payment amount must be positive`; `loan not found`; `payment amount (%) exceeds outstanding balance (%)`; `not authorized to update this loan, or loan not found` |
+| `record_loan_payment(loan_id, amount)` | `SELECT ... FOR UPDATE` row lock on `loans` | Payment + balance decrement + close-on-zero happen atomically; rejects overpayment; explicit internal SHG/staff-scope + self-exclusion check (see below) | `payment amount must be positive`; `loan not found`; `cannot record a payment on your own loan`; `not authorized to record a payment on this loan`; `payment amount (%) exceeds outstanding balance (%)` |
 | `add_financial_ledger_entry(shg_id, entry_type, ...)` | Transaction-scoped `pg_advisory_xact_lock` keyed on `(shg_id, entry_type)` | Running-balance read + insert happen atomically per ledger key, even for the very first entry of a key (no row yet to lock) | Table CHECK constraints catch invalid inputs |
 | `place_marketplace_order(product_id)` (migration `0057`, replaced `decrement_product_stock`) | Single atomic `UPDATE ... WHERE stock > 0` | Stock check-and-decrement AND the `marketplace_orders` INSERT happen in one `security definer` transaction — not just the stock/price part. `decrement_product_stock` (0008) only verified price and handed it back for the client to insert with in a *separate* round trip; nothing forced a client to actually do that honestly. A direct REST insert could set `amount` to anything with stock never touched (live-confirmed round 125: a real ₹5,000 test product ordered at `amount: 1`), and the old RPC was independently callable with no order at all — any authenticated user could silently zero out any seller's stock as a pure DoS, live-confirmed the same round. `buyer_id`/`buyer_name` are derived from `auth.uid()`/`profiles.name` inside the function, never accepted as parameters | Returns `success:false` rather than raising, for the ordinary "already sold out" case |
-| `approve_loan` / `reject_loan` | Implicit via status re-check | Rejects a second decision on an already-decided loan | `LoanAlreadyDecidedException` surfaced to the UI as "already decided by someone else" |
+| `approve_loan` / `reject_loan` | `SELECT ... FOR UPDATE` row lock on `loans` | Rejects a second decision on an already-decided loan; explicit internal SHG/staff-scope + self-exclusion check; `approve_loan` additionally requires the borrower still be `is_active` | `loan not found`; `loan is no longer pending (current status: %)`; `cannot approve/reject your own loan`; `not authorized to approve/reject this loan`; `cannot approve a loan for a deactivated member` (`approve_loan` only) — surfaced to the UI as `LoanAlreadyDecidedException` ("already decided by someone else") for the status case |
 | `decide_scheme_application(id, approve)` | `SELECT ... FOR UPDATE` row lock on `scheme_applications` | Same already-decided race guard, for a shared, non-SHG-scoped staff review queue | `application not found`; `application already decided (current status: %)`; `not authorized to decide this application, or application not found` |
 
-Four of the five (`record_loan_payment`, `add_financial_ledger_entry`,
-`approve_loan`/`reject_loan`, `decide_scheme_application`) are `security
-invoker`, not `definer` — each RPC's own internal write is still subject to
-the underlying table's RLS, so the function provides atomicity, not a
-privilege bypass. `record_loan_payment` explicitly checks Postgres's `FOUND`
-after its `UPDATE` and rolls back the transaction if RLS silently filtered
-it to zero rows, rather than leaving an orphaned payment insert with no
-corresponding balance change.
+`add_financial_ledger_entry` and `decide_scheme_application` are `security
+invoker` — each RPC's own internal write is still subject to the underlying
+table's RLS, so the function provides atomicity, not a privilege bypass.
 
-`place_marketplace_order` is the one deliberate exception — it must be
-`security definer`, because an ordinary buyer has no RLS grant to update a
-product she doesn't sell (`marketplace_products_update_seller_or_staff` is
-seller-or-staff-only) and the whole point of the function is to cross that
-boundary safely for exactly one narrow, self-contained operation. Precisely
-*because* it's a privilege bypass, it derives every identity-bearing value
-(`buyer_id`, `buyer_name`) from the session itself rather than trusting a
+`record_loan_payment`/`approve_loan`/`reject_loan` were `security invoker`
+too until round 185's finding that this left a critical gap: since RLS was
+the only authorization boundary these RPCs' writes went through, and
+`loans_update_leader_or_staff` (round ~59) never actually locked any of the
+state-machine columns (`status`/`outstanding`/`emi`/`disbursed_on`/
+`next_due_date`/`decided_by`/`decided_at`) or applied self-exclusion to the
+`is_staff()` branch, a direct `PATCH /rest/v1/loans` was exactly as capable
+as these RPCs, with none of their checks — including any crp/clf/admin
+account self-approving her own loan outright. Migration `0088` converted
+all three to `security definer` with their own explicit internal
+authorization checks (mirroring the RLS scope they used to rely on, plus
+universal self-exclusion), and correspondingly locked down
+`loans_update_leader_or_staff` so a direct update can now only ever be a
+true no-op — every legitimate state-machine transition must go through
+these RPCs.
+
+`place_marketplace_order` is the original, longest-standing example of the
+same principle — it must be `security definer`, because an ordinary buyer
+has no RLS grant to update a product she doesn't sell
+(`marketplace_products_update_seller_or_staff` is seller-or-staff-only) and
+the whole point of the function is to cross that boundary safely for
+exactly one narrow, self-contained operation. Precisely *because* it's a
+privilege bypass, it derives every identity-bearing value (`buyer_id`,
+`buyer_name`) from the session itself rather than trusting a
 parameter, and performs the entire purchase — not just the part that needed
 elevated privilege — inside the one function, so there's no gap afterward
 for an uncooperative client to exploit.

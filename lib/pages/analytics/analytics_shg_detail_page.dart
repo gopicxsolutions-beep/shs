@@ -63,7 +63,8 @@ class AnalyticsShgDetailPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text(l10n.analyticsShgDetailHealthScore, style: AppTheme.sans(13, weight: FontWeight.w700)),
+                      Flexible(child: Text(l10n.analyticsShgDetailHealthScore, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700))),
+                      const SizedBox(width: 8),
                       Text('${g.healthScore.toStringAsFixed(0)}%', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600)),
                     ]),
                     const SizedBox(height: 8),

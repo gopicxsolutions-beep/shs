@@ -173,21 +173,33 @@ class MarketplaceRepository {
   /// (RLS) already permits `buyer_id = auth.uid()` reads — this was a pure
   /// missing-UI/repository gap, not an RLS one.
   Future<List<MarketOrder>> fetchOrdersForBuyer(String? buyerId) async {
+    // Every `_locallyPlaced` order was created by placeOrder() below — i.e.
+    // always a purchase the demo user herself made — so it genuinely
+    // belongs on this tab only, no filtering needed.
     if (!_live) return _locallyPlaced.reversed.toList();
     if (buyerId == null) return [];
-    final rows = await _client.from('marketplace_orders').select('*, marketplace_products(name, seller_id)').eq('buyer_id', buyerId).order('created_at', ascending: false);
+    final rows = await _client.from('marketplace_orders').select('*, marketplace_products(name, seller_id)').eq('buyer_id', buyerId).order('created_at', ascending: false).limit(200);
     return (rows as List).map((r) => MarketOrder.fromMap(r as Map<String, dynamic>)).toList();
   }
 
   /// Orders for products this seller listed.
   Future<List<MarketOrder>> fetchOrdersForSeller(String? sellerId) async {
-    if (!_live) return _locallyPlaced.reversed.toList();
+    // Was `_locallyPlaced.reversed.toList()` — the exact same list
+    // `fetchOrdersForBuyer` returns. Before round 184 gave Orders separate
+    // "My Purchases"/"My Sales" tabs, that ambiguity was harmless (there
+    // was only one generic Orders screen); presenting the identical list
+    // under two now-distinct tab labels made every demo purchase look like
+    // a sale too. Demo mode has no other simulated buyer to have ever
+    // bought from this user, so there's no real data to show here — an
+    // honestly-empty list, not a fabricated one.
+    if (!_live) return [];
     if (sellerId == null) return [];
     final rows = await _client
         .from('marketplace_orders')
         .select('*, marketplace_products!inner(name, seller_id)')
         .eq('marketplace_products.seller_id', sellerId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .limit(200);
     return (rows as List).map((r) => MarketOrder.fromMap(r as Map<String, dynamic>)).toList();
   }
 

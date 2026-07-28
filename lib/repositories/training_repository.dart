@@ -171,7 +171,21 @@ class TrainingRepository {
       (_locallyAddedQuizQuestions[courseId] ??= []).add(q);
       return q;
     }
-    final row = await _client.from('quiz_questions').insert({'course_id': courseId, 'question': question, 'options': options, 'correct_index': correctIndex}).select().single();
+    // Was never sent, so every admin-added question defaulted to the same
+    // order_index (0, migration 0041's column default) — a course with
+    // multiple questions had them all tied. Both the display fetch (this
+    // file's `.order('order_index')`) and the server's independent grading
+    // re-query (`submit_quiz_attempt`'s `array_agg(... order by
+    // order_index)`) sort by this same non-unique key with no tiebreaker,
+    // so the two separately-executed queries have no guaranteed agreement
+    // on tie order — a real risk of a member's answer being graded against
+    // the wrong question. Migration 0089 added a `unique (course_id,
+    // order_index)` constraint precisely so a collision here fails loudly
+    // (a legitimate concurrent-add race) rather than silently creating a
+    // new tie.
+    final existing = await _client.from('quiz_questions').select('order_index').eq('course_id', courseId).order('order_index', ascending: false).limit(1);
+    final nextOrderIndex = existing.isEmpty ? 0 : (existing.first['order_index'] as int) + 1;
+    final row = await _client.from('quiz_questions').insert({'course_id': courseId, 'question': question, 'options': options, 'correct_index': correctIndex, 'order_index': nextOrderIndex}).select().single();
     return QuizQuestion.fromMap(row);
   }
 

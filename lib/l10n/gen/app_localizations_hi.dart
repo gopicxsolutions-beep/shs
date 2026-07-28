@@ -54,6 +54,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get actionSignOut => 'साइन आउट';
 
   @override
+  String get profileSigningOut => 'साइन आउट हो रहा है…';
+
+  @override
   String get actionCheckStatus => 'स्थिति जांचें';
 
   @override
@@ -2808,6 +2811,18 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get loanStatusRejected => 'अस्वीकृत';
+
+  @override
+  String get schemeStatusApplied => 'आवेदन किया';
+
+  @override
+  String get schemeStatusUnderReview => 'समीक्षा में';
+
+  @override
+  String get schemeStatusApproved => 'स्वीकृत';
+
+  @override
+  String get schemeStatusRejected => 'अस्वीकृत';
 
   @override
   String get savingsStatusPending => 'लंबित';

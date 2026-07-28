@@ -19,6 +19,14 @@ const _statusTones = <String, BadgeTone>{
   'rejected': BadgeTone.danger,
 };
 
+String _schemeStatusLabel(AppLocalizations l10n, String status) => switch (status) {
+      'applied' => l10n.schemeStatusApplied,
+      'under_review' => l10n.schemeStatusUnderReview,
+      'approved' => l10n.schemeStatusApproved,
+      'rejected' => l10n.schemeStatusRejected,
+      _ => status,
+    };
+
 class _TrackingRow {
   final Scheme scheme;
   final SchemeApplication application;
@@ -59,7 +67,7 @@ class SchemeTrackingPage extends StatelessWidget {
                   child: AppListRow(
                     title: row.scheme.name,
                     subtitle: row.application.decidedByName != null ? l10n.schemeTrackingDecidedBy(row.application.decidedByName!) : (row.scheme.agency ?? ''),
-                    trailing: AppBadge(text: row.application.status, tone: _statusTones[row.application.status] ?? BadgeTone.neutral),
+                    trailing: AppBadge(text: _schemeStatusLabel(l10n, row.application.status), tone: _statusTones[row.application.status] ?? BadgeTone.neutral),
                     onTap: () => context.go(Paths.schemeDetail(row.scheme.id)),
                   ),
                 ),

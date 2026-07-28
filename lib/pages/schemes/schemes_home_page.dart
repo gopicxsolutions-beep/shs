@@ -23,6 +23,14 @@ const _statusTones = <String, BadgeTone>{
   'rejected': BadgeTone.danger,
 };
 
+String _schemeStatusLabel(AppLocalizations l10n, String status) => switch (status) {
+      'applied' => l10n.schemeStatusApplied,
+      'under_review' => l10n.schemeStatusUnderReview,
+      'approved' => l10n.schemeStatusApproved,
+      'rejected' => l10n.schemeStatusRejected,
+      _ => status,
+    };
+
 class _SchemesData {
   final List<Scheme> schemes;
   final Map<String, SchemeApplication> applications;
@@ -83,7 +91,7 @@ class SchemesHomePage extends StatelessWidget {
                             ],
                           ),
                         ),
-                        Flexible(child: AppBadge(text: app?.status ?? l10n.schemesHomeNotApplied, tone: app != null ? (_statusTones[app.status] ?? BadgeTone.neutral) : BadgeTone.neutral)),
+                        Flexible(child: AppBadge(text: app != null ? _schemeStatusLabel(l10n, app.status) : l10n.schemesHomeNotApplied, tone: app != null ? (_statusTones[app.status] ?? BadgeTone.neutral) : BadgeTone.neutral)),
                       ]),
                     ),
                   );

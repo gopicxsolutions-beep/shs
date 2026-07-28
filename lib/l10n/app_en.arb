@@ -18,6 +18,7 @@
   "actionSubmit": "Submit",
   "actionRetry": "Retry",
   "actionSignOut": "Sign Out",
+  "profileSigningOut": "Signing out…",
   "actionCheckStatus": "Check Status",
 
   "commonLoading": "Loading…",
@@ -1952,6 +1953,14 @@
   "loanStatusClosed": "Closed",
 
   "loanStatusRejected": "Rejected",
+
+  "schemeStatusApplied": "Applied",
+
+  "schemeStatusUnderReview": "Under Review",
+
+  "schemeStatusApproved": "Approved",
+
+  "schemeStatusRejected": "Rejected",
 
   "savingsStatusPending": "Pending",
 

@@ -19,6 +19,14 @@ import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/section_header.dart';
 
+String _schemeStatusLabel(AppLocalizations l10n, String status) => switch (status) {
+      'applied' => l10n.schemeStatusApplied,
+      'under_review' => l10n.schemeStatusUnderReview,
+      'approved' => l10n.schemeStatusApproved,
+      'rejected' => l10n.schemeStatusRejected,
+      _ => status,
+    };
+
 class _SchemeWithEligibility {
   final Scheme? scheme;
   // Null when the scheme has no structured criteria at all
@@ -181,7 +189,7 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
                       // badge fix in loan_tracking_page.dart.
                       return AppCard(child: Row(children: [
                         Text(l10n.schemeDetailApplicationStatusLabel, style: AppTheme.sans(13)),
-                        Flexible(child: AppBadge(text: app.status, tone: BadgeTone.brand)),
+                        Flexible(child: AppBadge(text: _schemeStatusLabel(l10n, app.status), tone: BadgeTone.brand)),
                       ]));
                     }
                     // `scheme.deadline` was, until now, purely decorative —

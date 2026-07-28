@@ -37,6 +37,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final _profileRepo = ProfileRepository();
   final _shgRepo = ShgRepository();
   final GlobalKey<AppAsyncBuilderState<ShgProfile?>> _key = GlobalKey();
+  bool _signingOut = false;
 
   Future<void> _editProfile(Profile? profile) async {
     if (profile == null) return;
@@ -143,17 +144,28 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 24),
               AppButton(
-                label: l10n.actionSignOut,
+                label: _signingOut ? l10n.profileSigningOut : l10n.actionSignOut,
                 variant: ButtonVariant.outline,
                 fullWidth: true,
-                onPressed: () async {
-                  try {
-                    await context.read<AppState>().signOut();
-                  } catch (_) {
-                    // fall through — still navigate to splash below
-                  }
-                  if (context.mounted) context.go(Paths.splash);
-                },
+                // Was tappable indefinitely with zero feedback: AppState.
+                // signOut() awaits NotificationService.cancelAllScheduled(),
+                // a real platform-channel call with a documented hang risk
+                // on some Android OEM builds — a 3s timeout now bounds that
+                // (see signOut()'s own comment), but nothing here disabled
+                // the button or showed any progress while it ran, so a slow
+                // device left this inertly tappable and let a repeat tap
+                // start a second concurrent signOut().
+                onPressed: _signingOut
+                    ? null
+                    : () async {
+                        setState(() => _signingOut = true);
+                        try {
+                          await context.read<AppState>().signOut();
+                        } catch (_) {
+                          // fall through — still navigate to splash below
+                        }
+                        if (context.mounted) context.go(Paths.splash);
+                      },
               ),
             ],
           );

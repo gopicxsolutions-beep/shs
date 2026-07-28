@@ -54,6 +54,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get actionSignOut => 'సైన్ అవుట్';
 
   @override
+  String get profileSigningOut => 'సైన్ అవుట్ అవుతోంది…';
+
+  @override
   String get actionCheckStatus => 'స్థితిని తనిఖీ చేయండి';
 
   @override
@@ -2856,6 +2859,18 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get loanStatusRejected => 'తిరస్కరించబడింది';
+
+  @override
+  String get schemeStatusApplied => 'దరఖాస్తు చేసారు';
+
+  @override
+  String get schemeStatusUnderReview => 'సమీక్షలో ఉంది';
+
+  @override
+  String get schemeStatusApproved => 'ఆమోదించబడింది';
+
+  @override
+  String get schemeStatusRejected => 'తిరస్కరించబడింది';
 
   @override
   String get savingsStatusPending => 'పెండింగ్';

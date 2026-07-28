@@ -502,9 +502,16 @@ class AppState extends ChangeNotifier {
     // survive a sign-out and can fire on whichever account signs in next on
     // the same physical device, leaking this account's real meeting/loan
     // details to them. Best-effort: a failure here (no platform channel,
-    // e.g. web) must never block sign-out itself.
+    // e.g. web) must never block sign-out itself. The `.timeout()` matters
+    // just as much as the `catch` — a platform-channel call that never
+    // resolves (a real, documented failure mode on some Android OEM builds)
+    // would otherwise hang sign-out forever with no caller anywhere
+    // guarding against exactly that (neither ProfilePage's Sign Out button
+    // nor AppAsyncBuilder's much more frequently hit "Sign In Again"
+    // recovery action disable themselves or show a spinner while this
+    // awaits).
     try {
-      await _notificationService.cancelAllScheduled();
+      await _notificationService.cancelAllScheduled().timeout(const Duration(seconds: 3));
     } catch (_) {
       // Best-effort only.
     }

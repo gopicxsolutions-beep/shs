@@ -130,6 +130,10 @@ class _ClfDashboardBody extends StatelessWidget {
             Row(children: [
               Expanded(
                 child: AppCard(
+                  // Was a dead-end tile — FederationRecoveryPage already
+                  // exists and is already linked from elsewhere, just never
+                  // from the two tiles showing exactly its content.
+                  onTap: () => context.go(Paths.reportsFederationRecovery),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(l10n.clfDashboardLoansDisbursedLabel, style: AppTheme.sans(12, color: Neutral.c500)),
                     const SizedBox(height: 4),
@@ -140,6 +144,7 @@ class _ClfDashboardBody extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: AppCard(
+                  onTap: () => context.go(Paths.reportsFederationRecovery),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(l10n.clfDashboardRecoveryRateLabel, style: AppTheme.sans(12, color: Neutral.c500)),
                     const SizedBox(height: 4),
