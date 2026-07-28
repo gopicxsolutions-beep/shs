@@ -2221,6 +2221,12 @@
 
   "livelihoodEntryTypeOther": "Other",
 
+  "livelihoodStatusPlanned": "Planned",
+
+  "livelihoodStatusActive": "Active",
+
+  "livelihoodStatusCompleted": "Completed",
+
   "livelihoodEntryDescriptionLabel": "Description",
 
   "livelihoodEntryDescriptionHint": "e.g. Milch cow rearing — 2 cows",
@@ -2391,6 +2397,14 @@
   "announcementDetailTitle": "Announcement",
 
   "announcementDetailNotFound": "This announcement could not be found",
+
+  "announcementCategoryCircular": "Circular",
+
+  "announcementCategoryMeeting": "Meeting",
+
+  "announcementCategoryTraining": "Training",
+
+  "announcementCategoryScheme": "Scheme",
 
   "announcementsHomeTitle": "Announcements",
 

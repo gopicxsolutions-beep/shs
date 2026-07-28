@@ -3148,6 +3148,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get livelihoodEntryTypeOther => 'अन्य';
 
   @override
+  String get livelihoodStatusPlanned => 'योजनाबद्ध';
+
+  @override
+  String get livelihoodStatusActive => 'सक्रिय';
+
+  @override
+  String get livelihoodStatusCompleted => 'पूर्ण';
+
+  @override
   String get livelihoodEntryDescriptionLabel => 'विवरण';
 
   @override
@@ -3394,6 +3403,18 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get announcementDetailNotFound => 'यह घोषणा नहीं मिली';
+
+  @override
+  String get announcementCategoryCircular => 'परिपत्र';
+
+  @override
+  String get announcementCategoryMeeting => 'बैठक';
+
+  @override
+  String get announcementCategoryTraining => 'प्रशिक्षण';
+
+  @override
+  String get announcementCategoryScheme => 'योजना';
 
   @override
   String get announcementsHomeTitle => 'घोषणाएं';

@@ -3213,6 +3213,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get livelihoodEntryTypeOther => 'Other';
 
   @override
+  String get livelihoodStatusPlanned => 'Planned';
+
+  @override
+  String get livelihoodStatusActive => 'Active';
+
+  @override
+  String get livelihoodStatusCompleted => 'Completed';
+
+  @override
   String get livelihoodEntryDescriptionLabel => 'Description';
 
   @override
@@ -3463,6 +3472,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get announcementDetailNotFound =>
       'This announcement could not be found';
+
+  @override
+  String get announcementCategoryCircular => 'Circular';
+
+  @override
+  String get announcementCategoryMeeting => 'Meeting';
+
+  @override
+  String get announcementCategoryTraining => 'Training';
+
+  @override
+  String get announcementCategoryScheme => 'Scheme';
 
   @override
   String get announcementsHomeTitle => 'Announcements';

@@ -1728,6 +1728,12 @@
 
   "livelihoodEntryTypeOther": "अन्य",
 
+  "livelihoodStatusPlanned": "योजनाबद्ध",
+
+  "livelihoodStatusActive": "सक्रिय",
+
+  "livelihoodStatusCompleted": "पूर्ण",
+
   "livelihoodEntryDescriptionLabel": "विवरण",
 
   "livelihoodEntryDescriptionHint": "जैसे, दुधारू गाय पालन — 2 गायें",
@@ -1866,6 +1872,14 @@
   "announcementDetailTitle": "घोषणा",
 
   "announcementDetailNotFound": "यह घोषणा नहीं मिली",
+
+  "announcementCategoryCircular": "परिपत्र",
+
+  "announcementCategoryMeeting": "बैठक",
+
+  "announcementCategoryTraining": "प्रशिक्षण",
+
+  "announcementCategoryScheme": "योजना",
 
   "announcementsHomeTitle": "घोषणाएं",
 

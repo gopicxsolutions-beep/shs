@@ -11,6 +11,17 @@ const livelihoodStatusTones = <String, BadgeTone>{
   'completed': BadgeTone.success,
 };
 
+/// Was shown as the raw English enum value everywhere (home list, detail
+/// card, the status-change dropdown) despite every sibling module — loans,
+/// savings, payments, schemes, support tickets — already having its own
+/// localized status-label helper.
+String livelihoodStatusLabel(String status, AppLocalizations l10n) => switch (status) {
+      'planned' => l10n.livelihoodStatusPlanned,
+      'active' => l10n.livelihoodStatusActive,
+      'completed' => l10n.livelihoodStatusCompleted,
+      _ => status,
+    };
+
 /// Canonical `activity_type` values stored on `public.livelihood_activities`
 /// — used both by `LivelihoodEntryPage`'s type picker and by every page that
 /// displays an already-saved activity, so a translated label is never

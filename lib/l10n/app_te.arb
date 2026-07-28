@@ -1728,6 +1728,12 @@
 
   "livelihoodEntryTypeOther": "ఇతర",
 
+  "livelihoodStatusPlanned": "ప్రణాళిక చేయబడింది",
+
+  "livelihoodStatusActive": "క్రియాశీలం",
+
+  "livelihoodStatusCompleted": "పూర్తయింది",
+
   "livelihoodEntryDescriptionLabel": "వివరణ",
 
   "livelihoodEntryDescriptionHint": "ఉదా. పాడి ఆవుల పెంపకం — 2 ఆవులు",
@@ -1866,6 +1872,14 @@
   "announcementDetailTitle": "ప్రకటన",
 
   "announcementDetailNotFound": "ఈ ప్రకటన కనుగొనబడలేదు",
+
+  "announcementCategoryCircular": "సర్క్యులర్",
+
+  "announcementCategoryMeeting": "సమావేశం",
+
+  "announcementCategoryTraining": "శిక్షణ",
+
+  "announcementCategoryScheme": "పథకం",
 
   "announcementsHomeTitle": "ప్రకటనలు",
 

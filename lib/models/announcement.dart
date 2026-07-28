@@ -1,3 +1,17 @@
+import '../l10n/gen/app_localizations.dart';
+
+/// `Circular`/`Meeting`/`Training`/`Scheme` were shown as raw English
+/// strings on both the home list and the detail page regardless of app
+/// language — unlike every sibling module's status labels, which all go
+/// through a dedicated localized helper.
+String announcementCategoryLabel(String category, AppLocalizations l10n) => switch (category) {
+      'Circular' => l10n.announcementCategoryCircular,
+      'Meeting' => l10n.announcementCategoryMeeting,
+      'Training' => l10n.announcementCategoryTraining,
+      'Scheme' => l10n.announcementCategoryScheme,
+      _ => category,
+    };
+
 /// Mirrors a row in `public.announcements`, merged with whether the current
 /// member has read it (from `public.announcement_reads`).
 class Announcement {

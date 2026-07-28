@@ -91,7 +91,7 @@ class LivelihoodHomePage extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                AppBadge(text: a.status, tone: livelihoodStatusTones[a.status] ?? BadgeTone.neutral),
+                                AppBadge(text: livelihoodStatusLabel(a.status, l10n), tone: livelihoodStatusTones[a.status] ?? BadgeTone.neutral),
                                 const SizedBox(height: 4),
                                 Text(
                                   l10n.livelihoodHomeNetAmount('${a.profit < 0 ? '-' : ''}₹${NumberFormat('#,##,##0', 'en_IN').format(a.profit.abs())}'),

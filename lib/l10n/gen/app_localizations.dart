@@ -5584,6 +5584,24 @@ abstract class AppLocalizations {
   /// **'Other'**
   String get livelihoodEntryTypeOther;
 
+  /// No description provided for @livelihoodStatusPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned'**
+  String get livelihoodStatusPlanned;
+
+  /// No description provided for @livelihoodStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get livelihoodStatusActive;
+
+  /// No description provided for @livelihoodStatusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get livelihoodStatusCompleted;
+
   /// No description provided for @livelihoodEntryDescriptionLabel.
   ///
   /// In en, this message translates to:
@@ -6027,6 +6045,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This announcement could not be found'**
   String get announcementDetailNotFound;
+
+  /// No description provided for @announcementCategoryCircular.
+  ///
+  /// In en, this message translates to:
+  /// **'Circular'**
+  String get announcementCategoryCircular;
+
+  /// No description provided for @announcementCategoryMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting'**
+  String get announcementCategoryMeeting;
+
+  /// No description provided for @announcementCategoryTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get announcementCategoryTraining;
+
+  /// No description provided for @announcementCategoryScheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheme'**
+  String get announcementCategoryScheme;
 
   /// No description provided for @announcementsHomeTitle.
   ///

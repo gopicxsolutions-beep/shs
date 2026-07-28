@@ -15546,3 +15546,196 @@ preview attempted again, still stuck** — fresh `preview_start` + re-
 navigate, identical `flt-glass-pane`-never-mounts symptom, zero console
 errors (the 11th consecutive such attempt across nine rounds). Relied on
 live-DB verification for every fix above instead.
+
+## Update (round 186) — Gap-hunting loop, iteration 14: launched 4 fresh module audits (dogfooding round 185's own features, Meetings/Attendance, Livelihood/Financial Ledger, Support/Announcements/Payments), fixed 19 real gaps
+
+Four audits converged on the same two shapes this loop keeps re-discovering
+piecemeal: a "leader/staff acts on behalf of a target row" policy missing
+`profile_is_active()` on that target, and a `security invoker` RPC riding
+on an under-locked RLS policy (the exact pre-`0088` loans bug, found again
+on `marketplace_orders`). One comprehensive migration (`0090`) closed every
+instance of both shapes across the whole schema in one pass, rather than
+fixing them table-by-table across more rounds.
+
+**Fixed, live-verified against the real Supabase project:**
+
+1. **[CRITICAL/HIGH] `meeting_attendance`'s leader-on-behalf-of AND
+   `is_staff()` branches never checked the target member's `is_active`** —
+   round 185's own migration (`0089`) explicitly flagged this table as
+   having the identical shape already closed for `savings_entries`/
+   `livelihood_activities`, but deliberately deferred it since the policy
+   had already been revised 5 times for unrelated lifecycle reasons. This
+   round's dogfooding-style audit confirmed the gap and delivered the
+   exact fix. **Live-verified**: a leader marking a deactivated test
+   member present now raises the RLS violation.
+2. **[HIGH] A member could self-flip her own past attendance via UPDATE
+   with no time-window restriction at all** — independent of #1. The
+   UPDATE policy's self-branch `with check` never required
+   `meeting_date = current_date` the way the INSERT policy's self-branch
+   already does, so once ANY attendance row existed for a (meeting,
+   member) pair, the member could directly PATCH its `present` value
+   months later, silently overriding a leader's real record with nothing
+   distinguishing it from a legitimate same-day correction — directly
+   feeding `avg_attendance_pct` everywhere it's computed. **Live-verified**:
+   a member attempting to flip her own attendance for a meeting from
+   11 days ago now raises the RLS violation; the exact same session
+   already successfully has a same-day self-correction path untouched.
+3. **[HIGH] `loans_update_leader_or_staff` (round 185's own `0088`) never
+   re-locked `shg_id` for the `is_staff()` branch** — a leader's is
+   incidentally pinned (their own `current_shg_id()` is fixed), but
+   nothing constrained it for staff. A malicious crp/clf/admin session
+   could `PATCH` a loan's `shg_id` to move it to a different SHG entirely,
+   breaking cross-tenant isolation. **Live-verified**: staff attempting to
+   reassign a real test loan to a different SHG now raises the RLS
+   violation.
+4. **[HIGH] `marketplace_orders_update_seller_or_staff`'s `is_staff()`
+   branch had ZERO column lock** — not `status`, not `buyer_id`, not
+   `amount`, not `product_id`, not `created_at`/`order_date` — the exact
+   "`is_staff()` branch left completely open" shape round 185's loans fix
+   closed, found again here by dogfooding that very round. Since
+   `advance_marketplace_order_status()` (round ~150) is `security invoker`
+   and this policy is the only enforcement that actually exists, a direct
+   PATCH also bypassed that RPC's sequencing guard entirely. Fixed by
+   locking every column staff shouldn't touch, same as the seller branch
+   already did — `status` is deliberately still left open for both (the
+   RPC's own intended scope, a separate, larger piece of work). **Live-
+   verified**: staff rewriting a real order's `amount` now raises the RLS
+   violation; staff legitimately advancing `status` still succeeds (no
+   regression).
+5. **[HIGH] `loans_insert_self` never got the `profile_is_active` check**
+   this session added to every sibling self-insert table — a deactivated
+   member's still-valid session could still land a fresh loan application
+   in a leader's pending queue (partially mitigated already: `approve_loan`
+   checks this before disbursement, so funds couldn't reach her, but the
+   application itself was never blocked at entry). Fixed in the same
+   migration as #3.
+6. **[HIGH] `livelihood_update_self_leader_or_staff` never checked the
+   target member's `is_active`** — round 185's fix only covered the
+   livelihood INSERT policy. A leader/staff could keep calling
+   `updateProgress` on a deactivated member's activity indefinitely,
+   advancing status to `'completed'` with arbitrary revenue, permanently
+   feeding fabricated numbers attributed to someone no longer in the group
+   into SHG-wide/platform-wide dashboard totals. Fixed with the same
+   `profile_is_active(member_id)` pattern.
+7. **[MEDIUM ×5, one migration] Five more bare self-insert/self-write
+   branches with the identical missing-`profile_is_active` shape**,
+   confirming `0083`'s own comment that this was "a known, larger,
+   not-yet-finished sweep": `support_tickets_insert_self`,
+   `marketplace_reviews_insert_authenticated`, `payments_insert_self_or_
+   staff`, and all three `announcement_reads` self-write policies
+   (insert/update/delete). Closed together.
+8. **[MEDIUM] `announcements_select_scope_or_staff`'s platform-wide
+   (`shg_id is null`) branch was completely unconditional** — not gated by
+   role, SHG match, or active status, unlike the other two branches. A
+   deactivated member's still-valid session could read every platform-wide
+   announcement forever. The one read-gap (not write-gap) in this round's
+   sweep. **Live-verified**: an active test member sees the one seeded
+   platform-wide announcement (baseline, count=1); the same member flipped
+   inactive sees zero (count=0).
+9. **[LOW] `meeting_action_items`'s owner assignment has the same shape
+   gap** — a leader could assign a to-do to a deactivated member. Low
+   stakes (nullable, no financial/attendance/audit-trail weight, per prior
+   rounds' own judgment on this table) but closed for completeness of the
+   sweep.
+10. **[LOW] No upper bound on `meeting_date` at INSERT** — the round-2
+    backdating fix only ever added a lower bound; a leader/staff could
+    schedule a meeting arbitrarily far in the future via direct REST.
+    Added a 365-day upper bound.
+11. **[MEDIUM] No upper-bound sanity cap on `livelihood_activities.
+    investment`/`revenue`** — every sibling monetary field (loans, savings,
+    financial ledger, payments) already has the same ₹10,00,000
+    fat-finger guard; livelihood was the one outlier that never got one.
+12. **[MEDIUM] `financial_ledger` had no constraint preventing a single row
+    from having both `debit` and `credit` nonzero simultaneously** —
+    mathematically satisfiable against the existing running-balance check,
+    but nonsensical for a single-purpose ledger entry, and the ledger
+    page's display (`isCredit = e.credit > 0`) would silently hide a
+    simultaneous debit that nonetheless moved the shown balance. Confirmed
+    zero live rows would violate the new constraint before adding it.
+13. **[MEDIUM] `AnnouncementRepository.fetchForShg` was a fully unbounded
+    query** — every SHG-scoped announcement plus every platform-wide one
+    ever posted, fetched on every page load. The exact anti-pattern
+    already found and fixed repeatedly elsewhere (`shg_documents`,
+    financial ledger, audit log, CRP/CLF SHG list, admin users/SHGs) but
+    missed here. Added `.limit(300)`.
+14. **[MEDIUM, i18n] Livelihood activity status was never translated
+    anywhere** (home list, detail card, the status-change dropdown) —
+    every sibling module (loans, savings, payments, schemes, support
+    tickets) already has its own localized status-label helper; livelihood
+    was the one outlier. Added `livelihoodStatusLabel()` (mirroring the
+    existing `livelihoodActivityTypeLabel()` pattern in the same file) and
+    wired it into all three display spots, all 3 languages.
+15. **[LOW, i18n] Announcement categories (`Circular`/`Meeting`/`Training`/
+    `Scheme`) were shown as raw English strings** on both the home list
+    (including its screen-reader semantics label) and the detail page.
+    Added `announcementCategoryLabel()`, all 3 languages.
+16. **[MEDIUM] `AppState.signOut()`'s `_authService.signOut()` call had no
+    timeout** — only bounded by the global 30-second `TimeoutHttpClient`,
+    10x looser than the 3-second bound round 185 chose for the
+    notification-cancel call in the same method, despite this being the
+    more realistic hang source on the patchy mobile connections this app
+    is built for. Added a 10-second timeout; propagates to the caller
+    exactly like any other `signOut()` failure already does, so this only
+    tightens the bound without changing behavior on trigger.
+
+**Documented, deliberately not fixed this round** (real findings, larger
+scope or lower severity):
+
+- **Livelihood's "revenue frozen once completed" guard can be defeated by
+  two ordinary in-app calls** — move status back one step (unlocks the
+  freeze, which only checks the *pre-update* status), then forward again
+  with a new revenue figure. Reachable purely through the shipped "Update
+  Progress" dialog, no direct REST needed. Needs a new tracking column
+  (e.g. `revenue_locked`, set permanently once status first reaches
+  `'completed'`) plus a trigger — a real schema change deserving its own
+  careful pass, not a rushed addition alongside 15 other fixes.
+- **`meeting_detail_page.dart`'s historical attendance display silently
+  loses a member from a past meeting's count once she's later
+  deactivated** — `fetchAttendance()` is shared between the write UI
+  (correctly filtered to active members) and this read-only historical
+  view (which shouldn't be). Display-only; the SHG's actual aggregate
+  attendance stats are unaffected (they query the table directly, not
+  through this method).
+- **Support Tickets cluster** (no reopen path, reopened-by-message tickets
+  never resurface for staff, no category/priority field, no staff-queue
+  filter/search, `support_messages` has no length cap/rate limit unlike
+  its sibling table, FAQ is a hardcoded list) — re-verified still all
+  present, unchanged since round 184's identical deferral; still flagged
+  for its own dedicated round.
+- **No notification when a support ticket is resolved or gets a staff
+  reply** — announcements already have this wiring (`showAnnouncementNotification`),
+  support tickets don't; a real integration gap, needs its own scoping
+  pass.
+- **`LoanRepository.recordPayment()`'s PGRST202 dead-code fallback could
+  leave a genuinely inconsistent ledger in a narrow, unlikely window** (DB
+  migration and PostgREST's schema-cache refresh aren't strictly coupled)
+  — very low real-world probability, flagged rather than acted on.
+- **`TrainingRepository.createQuizQuestion`'s new `order_index` computation
+  has an unguarded read-then-insert race** between two admins adding a
+  question to the same course concurrently — the unique constraint
+  correctly prevents silent corruption (the insert just fails), but the
+  admin UI shows the same generic error as any other failure with no
+  "just retry" signal. A messaging-quality gap, not a correctness one.
+- **`marketplace_orders`'s new `.limit(200)` has no pagination affordance
+  anywhere in the UI** — a buyer/seller who ever exceeds 200 lifetime
+  orders would have older history silently and permanently invisible with
+  no indication more exist. Needs a "load more" UI addition.
+- **Sign-out busy-state buttons (round 185) show only static "Signing
+  out…" text, no spinner** — hard to distinguish from the exact "tappable
+  indefinitely with zero feedback" bug that round's fix targeted, for up
+  to the new 10-second timeout window. A UI-polish follow-up.
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1038/1038, unchanged — no new Dart-level test surface for the pure-RLS
+fixes; the i18n/unbounded-query/timeout Dart changes didn't touch any
+existing test's assumptions) both clean. Migration `0090` pushed to the
+linked live project cleanly. Every RLS claim above independently live-
+verified with real `__TEST__` fixture rows in rolled-back transactions,
+including baseline "still works for the legitimate case" checks alongside
+each denial check, each re-queried afterward to confirm zero footprint
+(no leftover mutations, no member left deactivated, no order/loan left
+altered). `flutter build web` rebuilt cleanly. **Browser preview attempted
+again, still stuck** — fresh `preview_start` + re-navigate, identical
+`flt-glass-pane`-never-mounts symptom, zero console errors (the 12th
+consecutive such attempt across ten rounds). Relied on live-DB
+verification for every fix above instead.

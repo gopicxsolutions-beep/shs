@@ -516,7 +516,15 @@ class AppState extends ChangeNotifier {
       // Best-effort only.
     }
     if (SupabaseService.isConfigured) {
-      await _authService.signOut();
+      // Only bounded by the global 30s TimeoutHttpClient before this — 10x
+      // looser than the bound just chosen for the notification-cancel call
+      // above, despite this being the more realistic hang source on the
+      // patchy mobile connections this app is built for. A timeout here
+      // still propagates to the caller exactly like any other signOut
+      // failure already does (ProfilePage/AppAsyncBuilder both already
+      // catch-and-navigate-to-splash regardless), so this only tightens
+      // the bound — it doesn't change what happens when it's hit.
+      await _authService.signOut().timeout(const Duration(seconds: 10));
       _clearProfileState();
     } else {
       _legacySessionStarted = false;

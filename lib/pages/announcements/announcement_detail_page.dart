@@ -62,7 +62,7 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                       Expanded(child: Text(a.title, style: AppTheme.display(17))),
-                      AppBadge(text: a.category, tone: _categoryTones[a.category] ?? BadgeTone.neutral),
+                      AppBadge(text: announcementCategoryLabel(a.category, l10n), tone: _categoryTones[a.category] ?? BadgeTone.neutral),
                     ]),
                     const SizedBox(height: 6),
                     Text(DateFormat('dd MMM yyyy').format(a.createdAt), style: AppTheme.sans(11, color: Neutral.c500)),

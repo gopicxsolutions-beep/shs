@@ -3214,6 +3214,15 @@ class AppLocalizationsTe extends AppLocalizations {
   String get livelihoodEntryTypeOther => 'ఇతర';
 
   @override
+  String get livelihoodStatusPlanned => 'ప్రణాళిక చేయబడింది';
+
+  @override
+  String get livelihoodStatusActive => 'క్రియాశీలం';
+
+  @override
+  String get livelihoodStatusCompleted => 'పూర్తయింది';
+
+  @override
   String get livelihoodEntryDescriptionLabel => 'వివరణ';
 
   @override
@@ -3465,6 +3474,18 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get announcementDetailNotFound => 'ఈ ప్రకటన కనుగొనబడలేదు';
+
+  @override
+  String get announcementCategoryCircular => 'సర్క్యులర్';
+
+  @override
+  String get announcementCategoryMeeting => 'సమావేశం';
+
+  @override
+  String get announcementCategoryTraining => 'శిక్షణ';
+
+  @override
+  String get announcementCategoryScheme => 'పథకం';
 
   @override
   String get announcementsHomeTitle => 'ప్రకటనలు';

@@ -62,7 +62,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                       Flexible(child: Text(livelihoodActivityTypeLabel(activity.activityType, l10n), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white))),
                       const SizedBox(width: 8),
-                      AppBadge(text: activity.status, tone: livelihoodStatusTones[activity.status] ?? BadgeTone.neutral),
+                      AppBadge(text: livelihoodStatusLabel(activity.status, l10n), tone: livelihoodStatusTones[activity.status] ?? BadgeTone.neutral),
                     ]),
                     const SizedBox(height: 6),
                     Text(activity.description ?? '', style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.9))),
@@ -131,7 +131,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
               DropdownButton<String>(
                 value: status,
                 isExpanded: true,
-                items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(livelihoodStatusLabel(s, l10n)))).toList(),
                 onChanged: (v) => setState(() => status = v ?? status),
               ),
               if (error != null) ...[
