@@ -70,7 +70,11 @@ class MemberDetailPage extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(member.name, style: AppTheme.display(18)),
                   const SizedBox(height: 4),
-                  if (member.role != 'member') AppBadge(text: _roleLabel(member.role), tone: BadgeTone.brand),
+                  if (!member.isActive || member.role != 'member')
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      if (!member.isActive) ...[AppBadge(text: l10n.shgMemberInactiveBadge, tone: BadgeTone.danger), const SizedBox(width: 6)],
+                      if (member.role != 'member') AppBadge(text: _roleLabel(member.role), tone: BadgeTone.brand),
+                    ]),
                 ]),
               ),
               const SizedBox(height: 20),

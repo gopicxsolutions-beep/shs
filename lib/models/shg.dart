@@ -57,8 +57,14 @@ class Member {
   final String? mobile;
   final String role;
   final String? village;
+  // Was missing entirely (gap-hunt round 182) — `fetchMembers`/`fetchMember`
+  // already `select()` every column, including `is_active` (migration 0083),
+  // but this model never read it, so a deactivated member showed identically
+  // to an active one in her own SHG's roster with no visual cue at all,
+  // unlike AdminUsersPage's `Profile` model, which already surfaces this.
+  final bool isActive;
 
-  const Member({required this.id, required this.name, this.mobile, required this.role, this.village});
+  const Member({required this.id, required this.name, this.mobile, required this.role, this.village, this.isActive = true});
 
   factory Member.fromMap(Map<String, dynamic> map) => Member(
         id: map['id'] as String,
@@ -66,6 +72,7 @@ class Member {
         mobile: map['mobile'] as String?,
         role: map['role'] as String? ?? 'member',
         village: map['village'] as String?,
+        isActive: map['is_active'] as bool? ?? true,
       );
 }
 

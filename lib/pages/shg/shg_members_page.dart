@@ -78,7 +78,21 @@ class ShgMembersPage extends StatelessWidget {
                     leading: AppAvatar(name: m.name, size: 36),
                     title: m.name,
                     subtitle: m.village ?? m.mobile ?? '',
-                    trailing: m.role != 'member' ? AppBadge(text: _roleLabel(m.role), tone: _roleTones[m.role] ?? BadgeTone.neutral) : null,
+                    // A Column, not a Row: `AppListRow`'s trailing slot is
+                    // `Flexible(fit: loose)`, which bounds the AVAILABLE
+                    // width but doesn't force a `mainAxisSize: min` Row's own
+                    // children to shrink to fit — showing both badges side
+                    // by side overflowed the row at 320px + 2.0x text scale
+                    // (caught by the stress-test suite). Stacking them
+                    // vertically only ever needs the width of the WIDER
+                    // single badge, not the sum of both.
+                    trailing: !m.isActive || m.role != 'member'
+                        ? Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+                            if (!m.isActive) AppBadge(text: l10n.shgMemberInactiveBadge, tone: BadgeTone.danger),
+                            if (!m.isActive && m.role != 'member') const SizedBox(height: 4),
+                            if (m.role != 'member') AppBadge(text: _roleLabel(m.role), tone: _roleTones[m.role] ?? BadgeTone.neutral),
+                          ])
+                        : null,
                     onTap: () => context.go(Paths.shgMember(m.id)),
                   ),
                 ),

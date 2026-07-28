@@ -118,6 +118,7 @@ class Paths {
   static const adminUsers = '/app/admin/users';
   static const adminSchemes = '/app/admin/schemes';
   static const adminMonitoring = '/app/admin/monitoring';
+  static const adminAuditLog = '/app/admin/audit-log';
   static const adminShgs = '/app/admin/shgs';
   // Deliberately NOT under `/app/admin/...`: RLS already permits crp/clf
   // (not just admin) to write training content (`training_courses_write_staff`/

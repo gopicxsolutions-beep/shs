@@ -60,6 +60,7 @@ class ServicesPage extends StatelessWidget {
         _Service(Icons.people_rounded, l10n.servicesManageUsersLabel, TileTone.rose, Paths.adminUsers),
         _Service(Icons.settings_suggest_rounded, l10n.servicesManageSchemesLabel, TileTone.gold, Paths.adminSchemes),
         _Service(Icons.dns_rounded, l10n.servicesSystemMonitoringLabel, TileTone.sky, Paths.adminMonitoring),
+        _Service(Icons.receipt_long_rounded, l10n.servicesAuditLogLabel, TileTone.rose, Paths.adminAuditLog),
       ];
 
   // Separate from _adminTools: RLS (`training_courses_write_staff`/

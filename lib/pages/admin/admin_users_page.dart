@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/paged_result.dart';
@@ -204,19 +205,26 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
         // guard against: an admin can appear in their own list and
         // deactivate their own account (there's nothing here stopping that
         // — an admin choosing to lock themselves out, e.g. handing off the
-        // role, is a legitimate use). Without this refresh, AppState's
-        // cached profile would keep reporting `isActive: true` until the
-        // next unrelated reload, so the router's `accountDeactivated`
-        // redirect wouldn't fire even though the server has already cut
-        // this account off.
+        // role, is a legitimate use as long as another active admin still
+        // exists — see `guard_last_admin_deactivation`, migration 0084).
+        // Without this refresh, AppState's cached profile would keep
+        // reporting `isActive: true` until the next unrelated reload, so
+        // the router's `accountDeactivated` redirect wouldn't fire even
+        // though the server has already cut this account off.
         final selfId = context.read<AppState>().profile?.id;
         if (selfId != null && selfId == user.id) {
           await context.read<AppState>().refreshProfile();
         }
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminUsersToggleActiveError)));
+        // `guard_last_admin_deactivation` (migration 0084) raises a specific,
+        // readable exception rather than silently no-opping — surface its
+        // actual reason instead of the generic fallback, so an admin who
+        // tries to deactivate the platform's last admin account learns why,
+        // not just that "something went wrong."
+        final isLastAdmin = e is PostgrestException && e.message.contains('last active admin');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isLastAdmin ? l10n.adminUsersLastAdminError : l10n.adminUsersToggleActiveError)));
       }
     } finally {
       if (mounted) setState(() => _togglingActiveFor = null);

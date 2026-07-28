@@ -1138,6 +1138,13 @@ visibly labeled in its own UI as placeholder metrics — "not real
 infrastructure metrics (uptime, latency, error rate)." This label must be
 preserved in any future redesign of this screen.
 
+**Audit Log** (`AdminAuditLogPage`, `/app/admin/audit-log`) is the read
+side of `public.audit_log` — role changes, SHG grade changes, livelihood
+staff overrides, and loan decisions are all written there by real database
+triggers, but until this screen existed nothing in the app ever read it
+back. Keyset-paginated ("Load more"), admin-only per RLS
+(`audit_log_select_admin`).
+
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-ADM-1 | Admin manages user accounts: role assignment (two-step confirmation), SHG assignment for unlinked staff, account deactivation/reactivation (server-enforced via RLS identity helpers, not just a hidden button) | Admin |

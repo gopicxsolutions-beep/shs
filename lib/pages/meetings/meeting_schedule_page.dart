@@ -75,16 +75,51 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
       setState(() => _error = l10n.meetingScheduleEnterVenueError);
       return;
     }
+    final appState = context.read<AppState>();
+    final shgId = appState.profile?.shgId;
+    // Resolved before any `await` below (not inline at the call site) —
+    // `_time.format(context)` used `context` after the duplicate-meeting
+    // confirm dialog's own async gap, which `flutter analyze`'s
+    // `use_build_context_synchronously` correctly flagged: the combined
+    // `if (proceed != true || !mounted) return;` guard further down isn't
+    // narrow enough for the analyzer to trust a context use several lines
+    // later still. Same fix shape as the two identical bugs already found
+    // this session in settings_page.dart.
+    final timeStr = _time.format(context);
+    // A leader had no warning at all if she scheduled two meetings for the
+    // same SHG on the same calendar day — nothing client- or server-side
+    // checked for it, and both then show up independently in the Upcoming
+    // list and the attendance picker with no reconciliation between them.
+    // A soft confirm (not a hard block) since a genuine second meeting on
+    // the same day — an emergency session alongside the regular one — is a
+    // real, if unusual, need.
+    if (shgId != null) {
+      final existing = await _repo.fetchForShg(shgId);
+      final sameDayMatch = existing.where((m) => m.status != 'cancelled' && m.date.year == _date.year && m.date.month == _date.month && m.date.day == _date.day);
+      if (sameDayMatch.isNotEmpty && mounted) {
+        final proceed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(l10n.meetingScheduleDuplicateConfirmTitle),
+            content: Text(l10n.meetingScheduleDuplicateConfirmMessage(DateFormat('dd MMM yyyy').format(_date))),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+              FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.meetingScheduleDuplicateConfirmButton)),
+            ],
+          ),
+        );
+        if (proceed != true || !mounted) return;
+      }
+    }
     setState(() {
       _saving = true;
       _error = null;
     });
-    final appState = context.read<AppState>();
     try {
       final saved = await _repo.schedule(
-        shgId: appState.profile?.shgId,
+        shgId: shgId,
         date: _date,
-        time: _time.format(context),
+        time: timeStr,
         venue: _venue.text.trim(),
         agenda: _agenda.text.trim(),
       );

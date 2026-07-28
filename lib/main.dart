@@ -81,7 +81,7 @@ class ShgSaathiApp extends StatefulWidget {
   State<ShgSaathiApp> createState() => _ShgSaathiAppState();
 }
 
-class _ShgSaathiAppState extends State<ShgSaathiApp> {
+class _ShgSaathiAppState extends State<ShgSaathiApp> with WidgetsBindingObserver {
   final _appState = AppState();
   late final GoRouter _router;
   bool _ready = false;
@@ -89,6 +89,7 @@ class _ShgSaathiAppState extends State<ShgSaathiApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _router = buildRouter(_appState);
     // A failure here (e.g. SharedPreferences unavailable) must still flip
     // `_ready` — otherwise the app is stuck on the splash spinner forever
@@ -98,6 +99,33 @@ class _ShgSaathiAppState extends State<ShgSaathiApp> {
     }).catchError((_) {
       if (mounted) setState(() => _ready = true);
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Gap-hunt round 182: `AppState.accountDeactivated` is derived from a
+  // cached `_profile` that previously only ever refreshed from 5 narrow
+  // call sites — a session that's been open for a while never re-checked
+  // whether an ADMIN elsewhere had deactivated it (unlike a genuinely
+  // expired JWT, which at least surfaces as a real query error). Every
+  // RLS policy gated on `current_role()`/`current_shg_id()`/`is_staff()`/
+  // `is_leader_or_staff()` silently returns zero rows for a deactivated
+  // caller, so the member just saw legitimate-looking empty screens with
+  // no error and no explanation, indefinitely, until she happened to hit
+  // one of those 5 refresh triggers. Re-checking on every app resume is
+  // the same "cheap, safe to call, no-ops off session" precedent this
+  // page already uses for `refreshProfile()` elsewhere; `AppState` compares
+  // the fetched profile before overwriting so an offline resume that fails
+  // simply doesn't change anything.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _ready && _appState.hasSession) {
+      _appState.refreshProfile();
+    }
   }
 
   @override

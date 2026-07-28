@@ -213,6 +213,7 @@
   "adminDashboardMonitoringTile": "పర్యవేక్షణ",
 
   "adminDashboardReportsTile": "నివేదికలు",
+  "adminDashboardAuditLogTile": "ఆడిట్ లాగ్",
 
   "adminDashboardPendingReviewCount": "{count} పథక దరఖాస్తులు సమీక్ష కోసం పెండింగ్‌లో ఉన్నాయి",
 
@@ -769,6 +770,10 @@
   "meetingScheduleSuccess": "సమావేశం షెడ్యూల్ చేయబడింది",
 
   "meetingScheduleDemoMode": "డెమో మోడ్ — సమావేశం సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
+
+  "meetingScheduleDuplicateConfirmTitle": "ఇప్పటికే సమావేశం షెడ్యూల్ చేయబడిందా?",
+  "meetingScheduleDuplicateConfirmMessage": "మీ SHGకి {date} న ఇప్పటికే ఒక సమావేశం షెడ్యూల్ చేయబడింది. అదే రోజుకు మరొకటి షెడ్యూల్ చేయాలా?",
+  "meetingScheduleDuplicateConfirmButton": "అయినా షెడ్యూల్ చేయండి",
 
   "meetingScheduleError": "సమావేశాన్ని షెడ్యూల్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
 
@@ -1429,7 +1434,7 @@
 
   "courseQuizSaveError": "మీ సర్టిఫికెట్‌ను సేవ్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
 
-  "courseQuizAttemptLimitError": "ఈ క్విజ్ కోసం ఈరోజు మీ ప్రయత్న పరిమితి పూర్తయింది. దయచేసి రేపు మళ్ళీ ప్రయత్నించండి.",
+  "courseQuizAttemptLimitError": "మీరు ఈరోజు మొత్తం 5 ప్రయత్నాలు ఉపయోగించారు. ఉదయం 5:30 తర్వాత మళ్ళీ ప్రయత్నించండి.",
 
   "courseQuizNotFound": "ఈ కోర్సు కనుగొనబడలేదు",
 
@@ -1782,6 +1787,16 @@
   "adminMonitoringTitle": "సిస్టమ్ మానిటరింగ్",
   "adminMonitoringRefreshTooltip": "రిఫ్రెష్ చేయండి",
 
+  "adminAuditLogTitle": "ఆడిట్ లాగ్",
+  "adminAuditLogEmpty": "ఇంకా ఆడిట్ లాగ్ ఎంట్రీలు లేవు",
+  "adminAuditLogLoadMoreError": "మరిన్ని ఎంట్రీలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  "adminAuditLogActionRoleChange": "పాత్ర మార్పు",
+  "adminAuditLogActionShgGradeChange": "SHG గ్రేడ్ మార్పు",
+  "adminAuditLogActionLivelihoodOverride": "జీవనోపాధి సిబ్బంది ఓవర్‌రైడ్",
+  "adminAuditLogActionLoanDecision": "రుణ నిర్ణయం",
+  "adminAuditLogUnknownActor": "తెలియదు",
+  "adminAuditLogByAt": "{name} ద్వారా · {date}",
+
   "adminMonitoringTotalUsers": "మొత్తం వినియోగదారులు",
 
   "adminMonitoringTotalShgs": "మొత్తం SHGలు",
@@ -1951,6 +1966,7 @@
   "servicesManageSchemesLabel": "పథకాల నిర్వహణ",
 
   "servicesSystemMonitoringLabel": "సిస్టమ్ మానిటరింగ్",
+  "servicesAuditLogLabel": "ఆడిట్ లాగ్",
 
   "servicesShgManagementSection": "SHG నిర్వహణ",
 
@@ -2010,6 +2026,7 @@
   "adminUsersDeactivateTooltip": "ఖాతాను నిష్క్రియం చేయండి",
   "adminUsersReactivateTooltip": "ఖాతాను తిరిగి సక్రియం చేయండి",
   "adminUsersInactiveBadge": "నిష్క్రియం",
+  "shgMemberInactiveBadge": "నిష్క్రియం",
   "adminUsersDeactivateConfirmTitle": "ఖాతాను నిష్క్రియం చేయాలా?",
   "adminUsersDeactivateConfirmMessage": "{name} తిరిగి సక్రియం చేసే వరకు యాప్‌ను ఉపయోగించలేరు. వారి పాత రికార్డులు (పొదుపు, రుణాలు, సమావేశాలు) అలాగే ఉంటాయి.",
   "adminUsersReactivateConfirmTitle": "ఖాతాను తిరిగి సక్రియం చేయాలా?",
@@ -2017,6 +2034,7 @@
   "adminUsersDeactivateConfirmButton": "నిష్క్రియం చేయండి",
   "adminUsersReactivateConfirmButton": "తిరిగి సక్రియం చేయండి",
   "adminUsersToggleActiveError": "ఈ ఖాతాను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  "adminUsersLastAdminError": "చివరి యాక్టివ్ అడ్మిన్ ఖాతాను నిష్క్రియం చేయలేరు. ముందుగా మరొక ఖాతాను అడ్మిన్‌గా చేయండి.",
   "adminUsersDeactivatedMessage": "ఖాతా నిష్క్రియం చేయబడింది",
   "adminUsersReactivatedMessage": "ఖాతా తిరిగి సక్రియం చేయబడింది",
 

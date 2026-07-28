@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../layout/app_shell.dart';
 import '../models/types.dart';
+import '../pages/admin/admin_audit_log_page.dart';
 import '../pages/admin/admin_monitoring_page.dart';
 import '../pages/admin/admin_schemes_page.dart';
 import '../pages/admin/admin_training_courses_page.dart';
@@ -317,6 +318,7 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.adminUsers, builder: (context, state) => const AdminUsersPage()),
           GoRoute(path: Paths.adminSchemes, builder: (context, state) => const AdminSchemesPage()),
           GoRoute(path: Paths.adminMonitoring, builder: (context, state) => const AdminMonitoringPage()),
+          GoRoute(path: Paths.adminAuditLog, builder: (context, state) => const AdminAuditLogPage()),
           GoRoute(path: Paths.adminShgs, builder: (context, state) => const AdminShgsPage()),
           GoRoute(path: Paths.adminTrainingCourses, builder: (context, state) => const AdminTrainingCoursesPage()),
           // Each of the routes below is keyed on its :id path parameter.

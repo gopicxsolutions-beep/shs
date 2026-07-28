@@ -43,7 +43,11 @@ class AnalyticsRepository {
     // every profile seated in an SHG (leader included), not just
     // `role = 'member'` — otherwise this platform KPI undercounts by one
     // leader per SHG relative to summing each SHG's own member count.
-    final members = await _client.from('profiles').select('id').not('shg_id', 'is', null);
+    // `is_active` (migration 0083) excludes deactivated accounts — this
+    // stat is literally named "active members", so counting a deactivated
+    // one would be a direct contradiction of its own label, not just an
+    // approximation.
+    final members = await _client.from('profiles').select('id').not('shg_id', 'is', null).eq('is_active', true);
     final activeMembers = (members as List).length;
 
     // Only verified entries count as real group funds — a pending entry is
@@ -120,8 +124,12 @@ class AnalyticsRepository {
     final shgIds = shgRows.map((r) => r['id'] as String).toList();
     if (shgIds.isEmpty) return PagedResult(items: const [], hasMore: hasMore);
 
+    // `is_active` (migration 0083) — memberCount also doubles as the
+    // attendance-rate denominator below, so counting a deactivated member
+    // would both overstate roster size and understate every SHG's
+    // health-score attendance percentage.
     final memberCountByShg = <String, int>{};
-    final members = await _client.from('profiles').select('shg_id').inFilter('shg_id', shgIds);
+    final members = await _client.from('profiles').select('shg_id').inFilter('shg_id', shgIds).eq('is_active', true);
     for (final r in members as List) {
       final shgId = (r as Map<String, dynamic>)['shg_id'] as String;
       memberCountByShg[shgId] = (memberCountByShg[shgId] ?? 0) + 1;

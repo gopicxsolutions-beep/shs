@@ -568,6 +568,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get adminDashboardReportsTile => 'నివేదికలు';
 
   @override
+  String get adminDashboardAuditLogTile => 'ఆడిట్ లాగ్';
+
+  @override
   String adminDashboardPendingReviewCount(int count) {
     return '$count పథక దరఖాస్తులు సమీక్ష కోసం పెండింగ్‌లో ఉన్నాయి';
   }
@@ -1573,6 +1576,18 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get meetingScheduleDemoMode =>
       'డెమో మోడ్ — సమావేశం సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)';
+
+  @override
+  String get meetingScheduleDuplicateConfirmTitle =>
+      'ఇప్పటికే సమావేశం షెడ్యూల్ చేయబడిందా?';
+
+  @override
+  String meetingScheduleDuplicateConfirmMessage(String date) {
+    return 'మీ SHGకి $date న ఇప్పటికే ఒక సమావేశం షెడ్యూల్ చేయబడింది. అదే రోజుకు మరొకటి షెడ్యూల్ చేయాలా?';
+  }
+
+  @override
+  String get meetingScheduleDuplicateConfirmButton => 'అయినా షెడ్యూల్ చేయండి';
 
   @override
   String get meetingScheduleError =>
@@ -2654,7 +2669,7 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get courseQuizAttemptLimitError =>
-      'ఈ క్విజ్ కోసం ఈరోజు మీ ప్రయత్న పరిమితి పూర్తయింది. దయచేసి రేపు మళ్ళీ ప్రయత్నించండి.';
+      'మీరు ఈరోజు మొత్తం 5 ప్రయత్నాలు ఉపయోగించారు. ఉదయం 5:30 తర్వాత మళ్ళీ ప్రయత్నించండి.';
 
   @override
   String get courseQuizNotFound => 'ఈ కోర్సు కనుగొనబడలేదు';
@@ -3282,6 +3297,37 @@ class AppLocalizationsTe extends AppLocalizations {
   String get adminMonitoringRefreshTooltip => 'రిఫ్రెష్ చేయండి';
 
   @override
+  String get adminAuditLogTitle => 'ఆడిట్ లాగ్';
+
+  @override
+  String get adminAuditLogEmpty => 'ఇంకా ఆడిట్ లాగ్ ఎంట్రీలు లేవు';
+
+  @override
+  String get adminAuditLogLoadMoreError =>
+      'మరిన్ని ఎంట్రీలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get adminAuditLogActionRoleChange => 'పాత్ర మార్పు';
+
+  @override
+  String get adminAuditLogActionShgGradeChange => 'SHG గ్రేడ్ మార్పు';
+
+  @override
+  String get adminAuditLogActionLivelihoodOverride =>
+      'జీవనోపాధి సిబ్బంది ఓవర్‌రైడ్';
+
+  @override
+  String get adminAuditLogActionLoanDecision => 'రుణ నిర్ణయం';
+
+  @override
+  String get adminAuditLogUnknownActor => 'తెలియదు';
+
+  @override
+  String adminAuditLogByAt(String name, String date) {
+    return '$name ద్వారా · $date';
+  }
+
+  @override
   String get adminMonitoringTotalUsers => 'మొత్తం వినియోగదారులు';
 
   @override
@@ -3563,6 +3609,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get servicesSystemMonitoringLabel => 'సిస్టమ్ మానిటరింగ్';
 
   @override
+  String get servicesAuditLogLabel => 'ఆడిట్ లాగ్';
+
+  @override
   String get servicesShgManagementSection => 'SHG నిర్వహణ';
 
   @override
@@ -3716,6 +3765,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get adminUsersInactiveBadge => 'నిష్క్రియం';
 
   @override
+  String get shgMemberInactiveBadge => 'నిష్క్రియం';
+
+  @override
   String get adminUsersDeactivateConfirmTitle => 'ఖాతాను నిష్క్రియం చేయాలా?';
 
   @override
@@ -3741,6 +3793,10 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get adminUsersToggleActiveError =>
       'ఈ ఖాతాను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get adminUsersLastAdminError =>
+      'చివరి యాక్టివ్ అడ్మిన్ ఖాతాను నిష్క్రియం చేయలేరు. ముందుగా మరొక ఖాతాను అడ్మిన్‌గా చేయండి.';
 
   @override
   String get adminUsersDeactivatedMessage => 'ఖాతా నిష్క్రియం చేయబడింది';

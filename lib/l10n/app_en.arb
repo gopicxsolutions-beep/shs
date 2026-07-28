@@ -267,6 +267,8 @@
 
   "adminDashboardReportsTile": "Reports",
 
+  "adminDashboardAuditLogTile": "Audit Log",
+
   "adminDashboardPendingReviewCount": "{count} scheme applications pending review",
   "@adminDashboardPendingReviewCount": {
     "placeholders": {
@@ -1072,6 +1074,15 @@
 
   "meetingScheduleDemoMode": "Demo mode — meeting not saved (connect Supabase to persist)",
 
+  "meetingScheduleDuplicateConfirmTitle": "Meeting already scheduled?",
+  "meetingScheduleDuplicateConfirmMessage": "Your SHG already has a meeting scheduled on {date}. Schedule another one for the same day?",
+  "@meetingScheduleDuplicateConfirmMessage": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "meetingScheduleDuplicateConfirmButton": "Schedule Anyway",
+
   "meetingScheduleError": "Could not schedule this meeting. Please try again.",
 
   "meetingScheduleDateLabel": "Date",
@@ -1837,7 +1848,7 @@
 
   "courseQuizSaveError": "Could not save your certificate. Please try again.",
 
-  "courseQuizAttemptLimitError": "You've reached today's attempt limit for this quiz. Please try again tomorrow.",
+  "courseQuizAttemptLimitError": "You've used all 5 attempts for today. Try again after 5:30 AM.",
 
   "courseQuizNotFound": "This course could not be found",
 
@@ -2290,6 +2301,22 @@
   "adminMonitoringTitle": "System Monitoring",
   "adminMonitoringRefreshTooltip": "Refresh",
 
+  "adminAuditLogTitle": "Audit Log",
+  "adminAuditLogEmpty": "No audit log entries yet",
+  "adminAuditLogLoadMoreError": "Could not load more entries. Please try again.",
+  "adminAuditLogActionRoleChange": "Role change",
+  "adminAuditLogActionShgGradeChange": "SHG grade change",
+  "adminAuditLogActionLivelihoodOverride": "Livelihood staff override",
+  "adminAuditLogActionLoanDecision": "Loan decision",
+  "adminAuditLogUnknownActor": "Unknown",
+  "adminAuditLogByAt": "By {name} · {date}",
+  "@adminAuditLogByAt": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+
   "adminMonitoringTotalUsers": "Total Users",
 
   "adminMonitoringTotalShgs": "Total SHGs",
@@ -2475,6 +2502,8 @@
 
   "servicesSystemMonitoringLabel": "System Monitoring",
 
+  "servicesAuditLogLabel": "Audit Log",
+
   "servicesShgManagementSection": "SHG Management",
 
   "servicesCommerceSection": "Commerce",
@@ -2604,6 +2633,7 @@
   "adminUsersDeactivateTooltip": "Deactivate account",
   "adminUsersReactivateTooltip": "Reactivate account",
   "adminUsersInactiveBadge": "Inactive",
+  "shgMemberInactiveBadge": "Inactive",
   "adminUsersDeactivateConfirmTitle": "Deactivate account?",
   "adminUsersDeactivateConfirmMessage": "{name} will lose access to the app until reactivated. Their historical records (savings, loans, meetings) are kept.",
   "@adminUsersDeactivateConfirmMessage": {
@@ -2621,6 +2651,7 @@
   "adminUsersDeactivateConfirmButton": "Deactivate",
   "adminUsersReactivateConfirmButton": "Reactivate",
   "adminUsersToggleActiveError": "Could not update this account. Please try again.",
+  "adminUsersLastAdminError": "Cannot deactivate the last active admin account. Promote another account to admin first.",
   "adminUsersDeactivatedMessage": "Account deactivated",
   "adminUsersReactivatedMessage": "Account reactivated",
 

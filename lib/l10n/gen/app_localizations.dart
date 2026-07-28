@@ -1084,6 +1084,12 @@ abstract class AppLocalizations {
   /// **'Reports'**
   String get adminDashboardReportsTile;
 
+  /// No description provided for @adminDashboardAuditLogTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit Log'**
+  String get adminDashboardAuditLogTile;
+
   /// No description provided for @adminDashboardPendingReviewCount.
   ///
   /// In en, this message translates to:
@@ -2763,6 +2769,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Demo mode — meeting not saved (connect Supabase to persist)'**
   String get meetingScheduleDemoMode;
+
+  /// No description provided for @meetingScheduleDuplicateConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting already scheduled?'**
+  String get meetingScheduleDuplicateConfirmTitle;
+
+  /// No description provided for @meetingScheduleDuplicateConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SHG already has a meeting scheduled on {date}. Schedule another one for the same day?'**
+  String meetingScheduleDuplicateConfirmMessage(String date);
+
+  /// No description provided for @meetingScheduleDuplicateConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule Anyway'**
+  String get meetingScheduleDuplicateConfirmButton;
 
   /// No description provided for @meetingScheduleError.
   ///
@@ -4645,7 +4669,7 @@ abstract class AppLocalizations {
   /// No description provided for @courseQuizAttemptLimitError.
   ///
   /// In en, this message translates to:
-  /// **'You\'ve reached today\'s attempt limit for this quiz. Please try again tomorrow.'**
+  /// **'You\'ve used all 5 attempts for today. Try again after 5:30 AM.'**
   String get courseQuizAttemptLimitError;
 
   /// No description provided for @courseQuizNotFound.
@@ -5704,6 +5728,60 @@ abstract class AppLocalizations {
   /// **'Refresh'**
   String get adminMonitoringRefreshTooltip;
 
+  /// No description provided for @adminAuditLogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit Log'**
+  String get adminAuditLogTitle;
+
+  /// No description provided for @adminAuditLogEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No audit log entries yet'**
+  String get adminAuditLogEmpty;
+
+  /// No description provided for @adminAuditLogLoadMoreError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load more entries. Please try again.'**
+  String get adminAuditLogLoadMoreError;
+
+  /// No description provided for @adminAuditLogActionRoleChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Role change'**
+  String get adminAuditLogActionRoleChange;
+
+  /// No description provided for @adminAuditLogActionShgGradeChange.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG grade change'**
+  String get adminAuditLogActionShgGradeChange;
+
+  /// No description provided for @adminAuditLogActionLivelihoodOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Livelihood staff override'**
+  String get adminAuditLogActionLivelihoodOverride;
+
+  /// No description provided for @adminAuditLogActionLoanDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Loan decision'**
+  String get adminAuditLogActionLoanDecision;
+
+  /// No description provided for @adminAuditLogUnknownActor.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get adminAuditLogUnknownActor;
+
+  /// No description provided for @adminAuditLogByAt.
+  ///
+  /// In en, this message translates to:
+  /// **'By {name} · {date}'**
+  String adminAuditLogByAt(String name, String date);
+
   /// No description provided for @adminMonitoringTotalUsers.
   ///
   /// In en, this message translates to:
@@ -6214,6 +6292,12 @@ abstract class AppLocalizations {
   /// **'System Monitoring'**
   String get servicesSystemMonitoringLabel;
 
+  /// No description provided for @servicesAuditLogLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit Log'**
+  String get servicesAuditLogLabel;
+
   /// No description provided for @servicesShgManagementSection.
   ///
   /// In en, this message translates to:
@@ -6446,6 +6530,12 @@ abstract class AppLocalizations {
   /// **'Inactive'**
   String get adminUsersInactiveBadge;
 
+  /// No description provided for @shgMemberInactiveBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get shgMemberInactiveBadge;
+
   /// No description provided for @adminUsersDeactivateConfirmTitle.
   ///
   /// In en, this message translates to:
@@ -6487,6 +6577,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not update this account. Please try again.'**
   String get adminUsersToggleActiveError;
+
+  /// No description provided for @adminUsersLastAdminError.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot deactivate the last active admin account. Promote another account to admin first.'**
+  String get adminUsersLastAdminError;
 
   /// No description provided for @adminUsersDeactivatedMessage.
   ///

@@ -562,6 +562,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminDashboardReportsTile => 'Reports';
 
   @override
+  String get adminDashboardAuditLogTile => 'Audit Log';
+
+  @override
   String adminDashboardPendingReviewCount(int count) {
     return '$count scheme applications pending review';
   }
@@ -1567,6 +1570,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get meetingScheduleDemoMode =>
       'Demo mode — meeting not saved (connect Supabase to persist)';
+
+  @override
+  String get meetingScheduleDuplicateConfirmTitle =>
+      'Meeting already scheduled?';
+
+  @override
+  String meetingScheduleDuplicateConfirmMessage(String date) {
+    return 'Your SHG already has a meeting scheduled on $date. Schedule another one for the same day?';
+  }
+
+  @override
+  String get meetingScheduleDuplicateConfirmButton => 'Schedule Anyway';
 
   @override
   String get meetingScheduleError =>
@@ -2657,7 +2672,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get courseQuizAttemptLimitError =>
-      'You\'ve reached today\'s attempt limit for this quiz. Please try again tomorrow.';
+      'You\'ve used all 5 attempts for today. Try again after 5:30 AM.';
 
   @override
   String get courseQuizNotFound => 'This course could not be found';
@@ -3280,6 +3295,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminMonitoringRefreshTooltip => 'Refresh';
 
   @override
+  String get adminAuditLogTitle => 'Audit Log';
+
+  @override
+  String get adminAuditLogEmpty => 'No audit log entries yet';
+
+  @override
+  String get adminAuditLogLoadMoreError =>
+      'Could not load more entries. Please try again.';
+
+  @override
+  String get adminAuditLogActionRoleChange => 'Role change';
+
+  @override
+  String get adminAuditLogActionShgGradeChange => 'SHG grade change';
+
+  @override
+  String get adminAuditLogActionLivelihoodOverride =>
+      'Livelihood staff override';
+
+  @override
+  String get adminAuditLogActionLoanDecision => 'Loan decision';
+
+  @override
+  String get adminAuditLogUnknownActor => 'Unknown';
+
+  @override
+  String adminAuditLogByAt(String name, String date) {
+    return 'By $name · $date';
+  }
+
+  @override
   String get adminMonitoringTotalUsers => 'Total Users';
 
   @override
@@ -3560,6 +3606,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get servicesSystemMonitoringLabel => 'System Monitoring';
 
   @override
+  String get servicesAuditLogLabel => 'Audit Log';
+
+  @override
   String get servicesShgManagementSection => 'SHG Management';
 
   @override
@@ -3713,6 +3762,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminUsersInactiveBadge => 'Inactive';
 
   @override
+  String get shgMemberInactiveBadge => 'Inactive';
+
+  @override
   String get adminUsersDeactivateConfirmTitle => 'Deactivate account?';
 
   @override
@@ -3737,6 +3789,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get adminUsersToggleActiveError =>
       'Could not update this account. Please try again.';
+
+  @override
+  String get adminUsersLastAdminError =>
+      'Cannot deactivate the last active admin account. Promote another account to admin first.';
 
   @override
   String get adminUsersDeactivatedMessage => 'Account deactivated';

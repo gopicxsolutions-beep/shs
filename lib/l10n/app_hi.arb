@@ -213,6 +213,7 @@
   "adminDashboardMonitoringTile": "निगरानी",
 
   "adminDashboardReportsTile": "रिपोर्ट",
+  "adminDashboardAuditLogTile": "ऑडिट लॉग",
 
   "adminDashboardPendingReviewCount": "{count} योजना आवेदन समीक्षा हेतु लंबित हैं",
 
@@ -769,6 +770,10 @@
   "meetingScheduleSuccess": "बैठक शेड्यूल हो गई",
 
   "meetingScheduleDemoMode": "डेमो मोड — बैठक सेव नहीं हुई (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
+
+  "meetingScheduleDuplicateConfirmTitle": "पहले से बैठक निर्धारित है?",
+  "meetingScheduleDuplicateConfirmMessage": "आपके SHG की {date} को पहले से ही एक बैठक निर्धारित है। क्या उसी दिन के लिए एक और बैठक निर्धारित करें?",
+  "meetingScheduleDuplicateConfirmButton": "फिर भी निर्धारित करें",
 
   "meetingScheduleError": "बैठक शेड्यूल नहीं हो सकी। कृपया फिर से कोशिश करें।",
 
@@ -1429,7 +1434,7 @@
 
   "courseQuizSaveError": "आपका सर्टिफिकेट सेव नहीं हो सका। कृपया फिर से कोशिश करें।",
 
-  "courseQuizAttemptLimitError": "आपने इस क्विज़ के लिए आज की प्रयास सीमा पूरी कर ली है। कृपया कल फिर से कोशिश करें।",
+  "courseQuizAttemptLimitError": "आपने आज के सभी 5 प्रयास कर लिए हैं। सुबह 5:30 बजे के बाद फिर से कोशिश करें।",
 
   "courseQuizNotFound": "यह कोर्स नहीं मिल सका",
 
@@ -1782,6 +1787,16 @@
   "adminMonitoringTitle": "सिस्टम मॉनिटरिंग",
   "adminMonitoringRefreshTooltip": "ताज़ा करें",
 
+  "adminAuditLogTitle": "ऑडिट लॉग",
+  "adminAuditLogEmpty": "अभी तक कोई ऑडिट लॉग प्रविष्टि नहीं",
+  "adminAuditLogLoadMoreError": "और प्रविष्टियाँ लोड नहीं हो सकीं। कृपया फिर से प्रयास करें।",
+  "adminAuditLogActionRoleChange": "भूमिका परिवर्तन",
+  "adminAuditLogActionShgGradeChange": "SHG ग्रेड परिवर्तन",
+  "adminAuditLogActionLivelihoodOverride": "आजीविका स्टाफ ओवरराइड",
+  "adminAuditLogActionLoanDecision": "ऋण निर्णय",
+  "adminAuditLogUnknownActor": "अज्ञात",
+  "adminAuditLogByAt": "{name} द्वारा · {date}",
+
   "adminMonitoringTotalUsers": "कुल उपयोगकर्ता",
 
   "adminMonitoringTotalShgs": "कुल SHGs",
@@ -1951,6 +1966,7 @@
   "servicesManageSchemesLabel": "योजना प्रबंधन",
 
   "servicesSystemMonitoringLabel": "सिस्टम मॉनिटरिंग",
+  "servicesAuditLogLabel": "ऑडिट लॉग",
 
   "servicesShgManagementSection": "SHG प्रबंधन",
 
@@ -2010,6 +2026,7 @@
   "adminUsersDeactivateTooltip": "खाता निष्क्रिय करें",
   "adminUsersReactivateTooltip": "खाता पुनः सक्रिय करें",
   "adminUsersInactiveBadge": "निष्क्रिय",
+  "shgMemberInactiveBadge": "निष्क्रिय",
   "adminUsersDeactivateConfirmTitle": "खाता निष्क्रिय करें?",
   "adminUsersDeactivateConfirmMessage": "{name} की ऐप तक पहुंच तब तक समाप्त हो जाएगी जब तक इसे पुनः सक्रिय न किया जाए। उनका पिछला रिकॉर्ड (बचत, ऋण, बैठकें) सुरक्षित रहेगा।",
   "adminUsersReactivateConfirmTitle": "खाता पुनः सक्रिय करें?",
@@ -2017,6 +2034,7 @@
   "adminUsersDeactivateConfirmButton": "निष्क्रिय करें",
   "adminUsersReactivateConfirmButton": "पुनः सक्रिय करें",
   "adminUsersToggleActiveError": "यह खाता अपडेट नहीं हो सका। कृपया फिर से प्रयास करें।",
+  "adminUsersLastAdminError": "अंतिम सक्रिय एडमिन खाते को निष्क्रिय नहीं किया जा सकता। पहले किसी अन्य खाते को एडमिन बनाएं।",
   "adminUsersDeactivatedMessage": "खाता निष्क्रिय कर दिया गया",
   "adminUsersReactivatedMessage": "खाता पुनः सक्रिय कर दिया गया",
 

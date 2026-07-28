@@ -131,6 +131,8 @@ class _AdminDashboardBody extends StatelessWidget {
                 IconTile(onTap: () => context.go(Paths.adminMonitoring), icon: Icons.dns_rounded, label: l10n.adminDashboardMonitoringTile, tone: TileTone.sky),
                 const SizedBox(width: 12),
                 IconTile(onTap: () => context.go(Paths.reportsFederation), icon: Icons.bar_chart_rounded, label: l10n.adminDashboardReportsTile, tone: TileTone.violet),
+                const SizedBox(width: 12),
+                IconTile(onTap: () => context.go(Paths.adminAuditLog), icon: Icons.receipt_long_rounded, label: l10n.adminDashboardAuditLogTile, tone: TileTone.rose),
               ],
             ),
           ),

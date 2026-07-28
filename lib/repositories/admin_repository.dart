@@ -322,6 +322,28 @@ class AdminRepository {
     return AiAdvisorModerationStats(blockedCount7d: list.length, distinctMembersFlagged7d: distinctMembers);
   }
 
+  /// Backs `AdminAuditLogPage` — the read side of the triggers migration
+  /// 0082 wired up (role/SHG-grade/livelihood-override/loan-decision
+  /// changes). Demo mode has no real audit trail to show (nothing in this
+  /// app's mock data model represents a privileged-action log), so it
+  /// returns empty rather than fabricating illustrative rows. Keyset
+  /// paginated on `(created_at desc, id desc)` — `id` is an arbitrary but
+  /// stable tiebreaker for the rare case two rows share the same
+  /// microsecond timestamp, same composite-cursor shape as
+  /// FinancialRepository's ledger pagination.
+  Future<PagedResult<AuditLogEntry>> fetchAuditLog({DateTime? afterCreatedAt, String? afterId, int pageSize = 50}) async {
+    if (!_live) return const PagedResult(items: [], hasMore: false);
+    var builder = _client.from('audit_log').select('*, actor:profiles!actor_id(name)');
+    if (afterCreatedAt != null && afterId != null) {
+      final c = afterCreatedAt.toIso8601String();
+      builder = builder.or('created_at.lt.$c,and(created_at.eq.$c,id.lt.$afterId)');
+    }
+    final rows = await builder.order('created_at', ascending: false).order('id', ascending: false).limit(pageSize + 1);
+    final list = (rows as List).map((r) => AuditLogEntry.fromMap(r as Map<String, dynamic>)).toList();
+    final hasMore = list.length > pageSize;
+    return PagedResult(items: hasMore ? list.sublist(0, pageSize) : list, hasMore: hasMore);
+  }
+
   /// Pure arithmetic for the live-mode training-completion percentage,
   /// factored out of [fetchDashboardStats] so it's directly unit-testable
   /// without a live Supabase project (no live DB is reachable from this

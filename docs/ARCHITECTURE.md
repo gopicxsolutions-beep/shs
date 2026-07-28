@@ -127,6 +127,15 @@ above, so a deactivated member's own client is relied on (via
 `AppState.accountDeactivated` forcing a sign-out) as the practical
 mitigation for that specific gap, not the RLS layer alone.
 
+**Last-admin guard (migration 0084, `guard_last_admin_deactivation`):**
+since deactivation now collapses `current_role()` to null, deactivating the
+platform's only remaining active admin would permanently lock every account
+out of `current_role() = 'admin'` forever — a `BEFORE UPDATE` trigger on
+`profiles` blocks exactly that transition (raises a specific exception
+rather than silently no-opping), leaving every other deactivation
+(including an admin deactivating themselves, as long as another active
+admin still exists) unaffected.
+
 **Why these exist and must be reused, not reinlined**: a policy on table `T`
 that subqueries `T` itself to check the caller's own row re-triggers the same
 policy, causing Postgres error `42P17` (infinite recursion). This happened in

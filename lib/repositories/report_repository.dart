@@ -135,7 +135,11 @@ class ReportRepository {
     if (shgId == null) {
       return const ShgReportData(memberCount: 0, totalSavings: 0, totalOutstanding: 0, activeLoanCount: 0, avgAttendancePct: 0, period: 'All time');
     }
-    final members = await _client.from('profiles').select('id').eq('shg_id', shgId);
+    // `is_active` (migration 0083) — excludes deactivated members from this
+    // headline "X members" stat, matching `fetchFederationReport`'s
+    // identical filter below (these two figures must stay consistent with
+    // each other — see that method's own doc comment on why).
+    final members = await _client.from('profiles').select('id').eq('shg_id', shgId).eq('is_active', true);
     final memberCount = (members as List).length;
 
     final savings = await _client.from('savings_entries').select('amount').eq('shg_id', shgId).eq('status', 'verified');
@@ -204,7 +208,11 @@ class ReportRepository {
     // platform-wide total, so the sum of every SHG's own member count could
     // exceed this rollup for the same population. Match the per-SHG
     // definition: any profile actually seated in an SHG.
-    final members = await _client.from('profiles').select('id').not('shg_id', 'is', null);
+    // `is_active` (migration 0083) — see the fix note on `fetchShgReport`'s
+    // matching query above; both must exclude deactivated accounts or this
+    // rollup and the sum of every SHG's own `memberCount` drift apart again,
+    // the exact class of bug this method's own comment already documents.
+    final members = await _client.from('profiles').select('id').not('shg_id', 'is', null).eq('is_active', true);
     final memberCount = (members as List).length;
 
     final savings = await _client.from('savings_entries').select('amount').eq('status', 'verified');

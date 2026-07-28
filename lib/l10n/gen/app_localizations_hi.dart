@@ -559,6 +559,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminDashboardReportsTile => 'रिपोर्ट';
 
   @override
+  String get adminDashboardAuditLogTile => 'ऑडिट लॉग';
+
+  @override
   String adminDashboardPendingReviewCount(int count) {
     return '$count योजना आवेदन समीक्षा हेतु लंबित हैं';
   }
@@ -1549,6 +1552,18 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get meetingScheduleDemoMode =>
       'डेमो मोड — बैठक सेव नहीं हुई (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)';
+
+  @override
+  String get meetingScheduleDuplicateConfirmTitle =>
+      'पहले से बैठक निर्धारित है?';
+
+  @override
+  String meetingScheduleDuplicateConfirmMessage(String date) {
+    return 'आपके SHG की $date को पहले से ही एक बैठक निर्धारित है। क्या उसी दिन के लिए एक और बैठक निर्धारित करें?';
+  }
+
+  @override
+  String get meetingScheduleDuplicateConfirmButton => 'फिर भी निर्धारित करें';
 
   @override
   String get meetingScheduleError =>
@@ -2619,7 +2634,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get courseQuizAttemptLimitError =>
-      'आपने इस क्विज़ के लिए आज की प्रयास सीमा पूरी कर ली है। कृपया कल फिर से कोशिश करें।';
+      'आपने आज के सभी 5 प्रयास कर लिए हैं। सुबह 5:30 बजे के बाद फिर से कोशिश करें।';
 
   @override
   String get courseQuizNotFound => 'यह कोर्स नहीं मिल सका';
@@ -3212,6 +3227,36 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminMonitoringRefreshTooltip => 'ताज़ा करें';
 
   @override
+  String get adminAuditLogTitle => 'ऑडिट लॉग';
+
+  @override
+  String get adminAuditLogEmpty => 'अभी तक कोई ऑडिट लॉग प्रविष्टि नहीं';
+
+  @override
+  String get adminAuditLogLoadMoreError =>
+      'और प्रविष्टियाँ लोड नहीं हो सकीं। कृपया फिर से प्रयास करें।';
+
+  @override
+  String get adminAuditLogActionRoleChange => 'भूमिका परिवर्तन';
+
+  @override
+  String get adminAuditLogActionShgGradeChange => 'SHG ग्रेड परिवर्तन';
+
+  @override
+  String get adminAuditLogActionLivelihoodOverride => 'आजीविका स्टाफ ओवरराइड';
+
+  @override
+  String get adminAuditLogActionLoanDecision => 'ऋण निर्णय';
+
+  @override
+  String get adminAuditLogUnknownActor => 'अज्ञात';
+
+  @override
+  String adminAuditLogByAt(String name, String date) {
+    return '$name द्वारा · $date';
+  }
+
+  @override
   String get adminMonitoringTotalUsers => 'कुल उपयोगकर्ता';
 
   @override
@@ -3491,6 +3536,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get servicesSystemMonitoringLabel => 'सिस्टम मॉनिटरिंग';
 
   @override
+  String get servicesAuditLogLabel => 'ऑडिट लॉग';
+
+  @override
   String get servicesShgManagementSection => 'SHG प्रबंधन';
 
   @override
@@ -3644,6 +3692,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminUsersInactiveBadge => 'निष्क्रिय';
 
   @override
+  String get shgMemberInactiveBadge => 'निष्क्रिय';
+
+  @override
   String get adminUsersDeactivateConfirmTitle => 'खाता निष्क्रिय करें?';
 
   @override
@@ -3668,6 +3719,10 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get adminUsersToggleActiveError =>
       'यह खाता अपडेट नहीं हो सका। कृपया फिर से प्रयास करें।';
+
+  @override
+  String get adminUsersLastAdminError =>
+      'अंतिम सक्रिय एडमिन खाते को निष्क्रिय नहीं किया जा सकता। पहले किसी अन्य खाते को एडमिन बनाएं।';
 
   @override
   String get adminUsersDeactivatedMessage => 'खाता निष्क्रिय कर दिया गया';

@@ -100,3 +100,39 @@ class AdminDashboardStats {
     required this.recentActivity,
   });
 }
+
+/// Mirrors a row in `public.audit_log` (migration 0001, real triggers wired
+/// in migration 0082 — role changes, SHG grade changes, livelihood staff
+/// overrides, loan decisions). Until `AdminAuditLogPage` (gap-hunt round
+/// 182), nothing in the app ever read this table back despite it having
+/// been written to since 0082 — the feature existed but was invisible to
+/// the one role (`admin`, per `audit_log_select_admin`) meant to review it.
+class AuditLogEntry {
+  final String id;
+  final String? actorName;
+  final String action;
+  final String entity;
+  final String? entityId;
+  final Map<String, dynamic> meta;
+  final DateTime createdAt;
+
+  const AuditLogEntry({
+    required this.id,
+    this.actorName,
+    required this.action,
+    required this.entity,
+    this.entityId,
+    required this.meta,
+    required this.createdAt,
+  });
+
+  factory AuditLogEntry.fromMap(Map<String, dynamic> map) => AuditLogEntry(
+        id: map['id'] as String,
+        actorName: (map['actor'] as Map<String, dynamic>?)?['name'] as String?,
+        action: map['action'] as String,
+        entity: map['entity'] as String,
+        entityId: map['entity_id'] as String?,
+        meta: (map['meta'] as Map<String, dynamic>?) ?? const {},
+        createdAt: DateTime.parse(map['created_at'] as String),
+      );
+}
