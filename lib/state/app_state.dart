@@ -242,9 +242,16 @@ class AppState extends ChangeNotifier {
     _authSub = _authService.onAuthStateChange.listen((state) async {
       _session = state.session;
       if (_session == null) {
-        _profileLoadGeneration++;
-        _profile = null;
-        _profileLoadFailedNetwork = false;
+        // Same reset `signOut()` does below — this branch also fires for a
+        // session ending OUTSIDE the in-app Sign Out button (an externally
+        // revoked refresh token, a forced server-side sign-out, or a
+        // refresh-token expiry after a long absence), which previously left
+        // `_pendingDeepLink`/`_pendingShg`/`_shgName`/`_needsRoleSelection`
+        // stale. Concretely: account A's session gets invalidated this way
+        // while a deep link is pending, account B signs in on the same
+        // device — without this, `otp_page.dart` would replay account A's
+        // captured destination for account B.
+        _clearProfileState();
       } else if (state.event != AuthChangeEvent.tokenRefreshed) {
         // GoTrue's auto-refresh timer fires this listener roughly hourly
         // (see gotrue's `_autoRefreshTokenTick`) purely to rotate the JWT —
@@ -460,19 +467,26 @@ class AppState extends ChangeNotifier {
     await prefs.setString(_langKey, lang.name);
   }
 
+  // Shared by signOut() and the auth-state listener's session-ended branch
+  // (see that listener's doc comment for why both need it, not just the
+  // explicit Sign Out button).
+  void _clearProfileState() {
+    _profileLoadGeneration++;
+    _profile = null;
+    _pendingShg = null;
+    _shgName = null;
+    _needsRoleSelection = false;
+    _profileLoadFailedNetwork = false;
+    // A pending deep link belongs to whoever is about to sign in next —
+    // without this, signing out and back in as a different account could
+    // replay the previous account's captured destination.
+    _pendingDeepLink = null;
+  }
+
   Future<void> signOut() async {
     if (SupabaseService.isConfigured) {
       await _authService.signOut();
-      _profileLoadGeneration++;
-      _profile = null;
-      _pendingShg = null;
-      _shgName = null;
-      _needsRoleSelection = false;
-      _profileLoadFailedNetwork = false;
-      // A pending deep link belongs to whoever is about to sign in next —
-      // without this, signing out and back in as a different account could
-      // replay the previous account's captured destination.
-      _pendingDeepLink = null;
+      _clearProfileState();
     } else {
       _legacySessionStarted = false;
       _legacyOnboarded = false;

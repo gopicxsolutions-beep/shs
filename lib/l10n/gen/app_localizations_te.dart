@@ -3223,6 +3223,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get adminMonitoringTitle => 'సిస్టమ్ మానిటరింగ్';
 
   @override
+  String get adminMonitoringRefreshTooltip => 'రిఫ్రెష్ చేయండి';
+
+  @override
   String get adminMonitoringTotalUsers => 'మొత్తం వినియోగదారులు';
 
   @override

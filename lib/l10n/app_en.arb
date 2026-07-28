@@ -2260,6 +2260,7 @@
   "paymentsHomeEmpty": "No payments yet",
 
   "adminMonitoringTitle": "System Monitoring",
+  "adminMonitoringRefreshTooltip": "Refresh",
 
   "adminMonitoringTotalUsers": "Total Users",
 

@@ -1760,6 +1760,7 @@
   "paymentsHomeEmpty": "अभी तक कोई भुगतान नहीं",
 
   "adminMonitoringTitle": "सिस्टम मॉनिटरिंग",
+  "adminMonitoringRefreshTooltip": "ताज़ा करें",
 
   "adminMonitoringTotalUsers": "कुल उपयोगकर्ता",
 

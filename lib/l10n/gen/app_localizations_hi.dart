@@ -3153,6 +3153,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminMonitoringTitle => 'सिस्टम मॉनिटरिंग';
 
   @override
+  String get adminMonitoringRefreshTooltip => 'ताज़ा करें';
+
+  @override
   String get adminMonitoringTotalUsers => 'कुल उपयोगकर्ता';
 
   @override

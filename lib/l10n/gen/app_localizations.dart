@@ -5608,6 +5608,12 @@ abstract class AppLocalizations {
   /// **'System Monitoring'**
   String get adminMonitoringTitle;
 
+  /// No description provided for @adminMonitoringRefreshTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get adminMonitoringRefreshTooltip;
+
   /// No description provided for @adminMonitoringTotalUsers.
   ///
   /// In en, this message translates to:

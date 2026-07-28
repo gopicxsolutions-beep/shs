@@ -3222,6 +3222,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminMonitoringTitle => 'System Monitoring';
 
   @override
+  String get adminMonitoringRefreshTooltip => 'Refresh';
+
+  @override
   String get adminMonitoringTotalUsers => 'Total Users';
 
   @override

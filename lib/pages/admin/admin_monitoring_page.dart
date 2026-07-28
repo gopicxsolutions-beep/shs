@@ -16,8 +16,15 @@ class _MonitoringData {
   const _MonitoringData({required this.health, required this.moderation});
 }
 
-class AdminMonitoringPage extends StatelessWidget {
+class AdminMonitoringPage extends StatefulWidget {
   const AdminMonitoringPage({super.key});
+  @override
+  State<AdminMonitoringPage> createState() => _AdminMonitoringPageState();
+}
+
+class _AdminMonitoringPageState extends State<AdminMonitoringPage> {
+  final _repo = AdminRepository();
+  final GlobalKey<AppAsyncBuilderState<_MonitoringData>> _key = GlobalKey();
 
   Future<_MonitoringData> _load(AdminRepository repo) async {
     final results = await Future.wait([repo.fetchSystemHealth(), repo.fetchAiAdvisorModerationStats()]);
@@ -26,13 +33,20 @@ class AdminMonitoringPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repo = AdminRepository();
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: PageHeader(title: l10n.adminMonitoringTitle),
+      appBar: PageHeader(
+        title: l10n.adminMonitoringTitle,
+        // Before this fix, the only way to see updated counts was to
+        // navigate away and back — no pull-to-refresh, no reload button,
+        // unlike FinancialLedgerPage's identical GlobalKey+IconButton
+        // pattern this mirrors.
+        right: IconButton(icon: const Icon(Icons.refresh_rounded), tooltip: l10n.adminMonitoringRefreshTooltip, onPressed: () => _key.currentState?.reload()),
+      ),
       body: AppAsyncBuilder<_MonitoringData>(
-        future: () => _load(repo),
+        key: _key,
+        future: () => _load(_repo),
         builder: (context, data) {
           final h = data.health;
           final moderation = data.moderation;

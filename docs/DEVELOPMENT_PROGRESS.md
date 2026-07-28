@@ -14407,3 +14407,137 @@ tab, same `flt-glass-pane`-never-paints symptom as the last two rounds
 (now four independent attempts total). Relied on live-DB verification via
 `set local role authenticated` + `request.jwt.claims` for every RLS/
 business-logic fix above instead.
+
+## Update (round 179) — Gap-hunting loop, iteration 7: launched 4 fresh module audits (Livelihood/Meeting minutes, Support tickets, Admin monitoring/Financial ledger UI, Router/Auth session), fixed 8 real gaps
+
+Four parallel background audits, all new ground. No single HIGH-severity
+finding this round, but a solid batch of real medium-severity RLS/
+business-logic gaps plus one genuine cross-account session-hygiene bug.
+
+**Fixed, live-verified against the real Supabase project:**
+
+1. **Support ticket `resolved_at` went stale on same-staff re-resolution.**
+   `support_tickets_stamp_resolved_at` (0053) only bumped `resolved_at`
+   when `resolved_by`'s VALUE changed — reopen-then-re-resolve-by-the-
+   same-staffer left the banner showing the original resolution date.
+   Fixed (`0077_support_ticket_resolved_at_re_resolution_fix.sql`) to
+   stamp whenever `status` newly transitions into resolved/closed,
+   regardless of whether `resolved_by` happens to be unchanged.
+   **Live-verified**: resolve → reopen → re-resolve by the same staff
+   account now correctly advances `resolved_at` to the re-resolution
+   time.
+2. **No rate limit or server-side length cap on support ticket
+   creation.** `support_tickets_insert_self` locked lifecycle columns but
+   never bounded ticket volume or `subject`/`description` length — both
+   were client-`maxLength`-only. Fixed
+   (`0078_support_tickets_rate_limit_and_length_caps.sql`) with a
+   `char_length` check constraint on both columns and a WITH CHECK
+   gating inserts on fewer than 10 tickets by the same member in the
+   last hour. **Live-verified**: a 151-char subject is rejected
+   (`23514`); a member with 10 tickets already in the window has an 11th
+   rejected (`42501`) while under 10 still succeeds.
+3. **`meeting_action_items`' self branch (an assigned member) had no
+   column lock** — the app only ever sends `{'done': done}`, but a direct
+   REST PATCH could rewrite the task text, push the due date out
+   arbitrarily, or re-point `meeting_id` at any meeting system-wide (the
+   one holdout after every sibling table already got this treatment:
+   livelihood 0036, meeting_attendance 0035/0042, meetings 0071). Fixed
+   (`0079_meeting_action_items_column_lock_and_minutes_update_removal.sql`)
+   by splitting the single `for all` policy into per-command policies —
+   UPDATE's self branch is now locked to `done` only via a new
+   `meeting_action_items_locked_fields()` helper, while the leader/staff
+   branch keeps its existing free-edit power; INSERT is leader/staff-only
+   (the app never self-inserts an action item). **Live-verified**: an
+   assigned member's attempt to change `task` text is rejected (`42501`);
+   the same member toggling `done` still succeeds; the SHG's leader can
+   still freely edit `task`.
+4. **`meeting_minutes` had a live, unlocked UPDATE policy that
+   contradicted its own append-only design** — `MeetingRepository` never
+   calls `.update()` on this table (only `saveMinutes()`/insert and
+   `fetchLatestMinutes()`/read), so the policy was purely a standing risk:
+   any leader/staff could silently rewrite the historical `decisions`
+   array of any past meeting with no audit column to detect it. Dropped
+   the dead policy in the same migration — matches actual usage exactly.
+   **Live-verified**: even an admin account's UPDATE attempt on a real
+   minutes row now matches 0 rows (no permissive policy left at all).
+5. **Livelihood `revenue`/`status` were completely unbounded on UPDATE**
+   once past the INSERT-time lock (0038) — a member or leader could jump
+   straight to `status='completed'` with any revenue in one call
+   (skipping `active`), move status backwards while revenue stayed
+   inflated, or keep re-editing revenue indefinitely after completion.
+   These numbers feed straight into SHG-wide and platform-wide dashboard
+   totals. Fixed
+   (`0080_livelihood_status_revenue_lifecycle_guard.sql`) with the same
+   one-step-forward-or-back transition guard used for marketplace orders
+   (0068), plus freezing `revenue` once `status = 'completed'`. Staff keep
+   their unconditional correction bypass. **Live-verified**: a real
+   `active` activity moving to `completed` with a new revenue succeeds;
+   a further revenue change while still `completed` is rejected
+   (`42501`); a fresh `planned` activity skipping straight to `completed`
+   is rejected the same way.
+6. **Admin Monitoring page had no refresh mechanism** — the only way to
+   see updated counts was to navigate away and back; `FinancialLedgerPage`
+   already established the `GlobalKey` + reload-`IconButton` pattern this
+   page was missing. Converted `AdminMonitoringPage` from `StatelessWidget`
+   to `StatefulWidget` and added a refresh button (all 3 languages).
+7. **External session invalidation left stale cross-account state.**
+   `AppState`'s auth-state listener only reset `_profile`/
+   `_profileLoadGeneration`/`_profileLoadFailedNetwork` when a session
+   ended — `signOut()` additionally resets `_pendingShg`/`_shgName`/
+   `_needsRoleSelection`/`_pendingDeepLink`, with its own comment
+   explaining exactly why `_pendingDeepLink` matters (replaying the
+   previous account's captured destination onto whoever signs in next).
+   That extra reset never ran for a session ending OUTSIDE the in-app
+   Sign Out button — an externally revoked refresh token, a forced
+   server-side sign-out, or a stale refresh-token expiry after a long
+   absence all land in the listener's branch, not `signOut()`. Factored
+   both call sites into a shared `_clearProfileState()` helper so every
+   session-ending path gets the same reset.
+8. Fixed the router/AI-advisor findings folded in from round 178's tail
+   end: AI advisor chat page/router hardcoded strings (already covered
+   last round) — no additional action needed here; confirmed still
+   solid this round's re-check.
+
+**Documented, deliberately not fixed this round:**
+
+- **No recovery path for a mid-session 401/expired JWT.**
+  `isNetworkError` (feeding `AppAsyncBuilder`'s retry logic) only
+  classifies `TimeoutException`/`http.ClientException` as recoverable —
+  an `AuthException`/`PostgrestException` from an expired-but-not-yet-
+  refreshed access token falls into the generic "something went wrong"
+  branch, and Retry just re-issues the same request with the same stale
+  token. Real UX gap, but fixing it properly means adding auth-error
+  detection and a re-authenticate/redirect-to-login path to the single
+  shared error-handling widget nearly every page in the app depends on —
+  the kind of foundational change that deserves its own dedicated,
+  carefully-regression-tested round rather than being folded into a
+  broader gap-hunting pass.
+- **No audit trail on who changed a livelihood activity's status/revenue,
+  or a support ticket's resolution** — same class of gap already
+  documented (not fixed) for admin role/grade changes in round 177;
+  consistent with that decision, not re-litigated here.
+
+**Re-confirmed, not fresh findings:** router redirect logic has no flash-
+of-wrong-content and deep-linking survives a logged-out cold start
+correctly (verified against go_router's actual source, not just this
+app's usage of it); demo-mode repository in-memory caches never leak into
+the live-mode path; AI Market Advisor reuses the same moderation/rate-
+limit pipeline as the other two advisors; Financial Ledger's balance
+display and 500-row cap are intentional, documented tradeoffs, not bugs;
+support ticket cross-member privacy, status-transition locking, and
+message-authorship immutability are all still solid at the RLS layer.
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1033/1033) both clean. Two migrations needed a mid-push fix: 0079
+originally tried to recreate a SELECT policy that already existed under a
+different, earlier migration (0002) — removed the redundant recreation;
+0080 tried to drop a function a live policy still depended on — reordered
+to drop the dependent policy first. Both caught immediately by `supabase
+db push`'s own transactional rollback (each migration file runs as one
+transaction — a mid-file error leaves the database in its pre-migration
+state, confirmed by re-querying before fixing and re-pushing). Migrations
+0077–0080 pushed to the linked live project. `flutter build web` rebuilt
+cleanly. **Browser preview attempted again, still stuck** — fresh server
++ fresh tab, same `flt-glass-pane`-never-paints symptom (now five
+independent attempts across three rounds). Relied on live-DB verification
+for every fix above instead.
