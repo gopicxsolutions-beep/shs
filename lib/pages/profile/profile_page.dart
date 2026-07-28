@@ -127,7 +127,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const Divider(height: 20),
                     _row(Icons.location_on_rounded, l10n.profileVillage, user.village),
                     const Divider(height: 20),
-                    _row(Icons.groups_rounded, l10n.profileSHG, shg?.name ?? (SupabaseService.isConfigured ? 'Not yet approved' : user.shgName)),
+                    _row(Icons.groups_rounded, l10n.profileSHG, shg?.name ?? (SupabaseService.isConfigured ? l10n.profileShgNotYetApproved : user.shgName)),
                   ],
                 ),
               ),

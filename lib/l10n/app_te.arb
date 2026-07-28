@@ -63,6 +63,8 @@
   "profileMobile": "మొబైల్",
   "profileVillage": "గ్రామం",
   "profileSHG": "SHG",
+
+  "profileShgNotYetApproved": "ఇంకా ఆమోదించబడలేదు",
   "profileName": "పేరు",
   "profileUpdated": "ప్రొఫైల్ నవీకరించబడింది",
   "profileUpdateDemoMode": "డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
@@ -1538,6 +1540,14 @@
 
   "schemeStatusRejected": "తిరస్కరించబడింది",
 
+  "marketplaceOrderStatusNew": "కొత్తది",
+
+  "marketplaceOrderStatusPacked": "ప్యాక్ చేయబడింది",
+
+  "marketplaceOrderStatusShipped": "పంపబడింది",
+
+  "marketplaceOrderStatusDelivered": "డెలివరీ చేయబడింది",
+
   "savingsStatusPending": "పెండింగ్",
 
   "savingsStatusVerified": "ధృవీకరించబడింది",
@@ -1744,6 +1754,8 @@
 
   "livelihoodEntryInvalidInvestment": "చెల్లుబాటు అయ్యే పెట్టుబడి మొత్తాన్ని నమోదు చేయండి",
 
+  "livelihoodEntryInvestmentTooLarge": "ఈ మొత్తం అసాధారణంగా ఎక్కువగా ఉంది — దయచేసి తనిఖీ చేసి మళ్ళీ నమోదు చేయండి",
+
   "livelihoodEntryNoShg": "మీరు ఏ SHGకి లింక్ చేయబడలేదు, కాబట్టి ఈ కార్యాచరణను నమోదు చేయడానికి ఏమీ లేదు.",
 
   "livelihoodEntryAdded": "కార్యాచరణ జోడించబడింది",
@@ -1828,6 +1840,14 @@
   "adminAuditLogActionShgGradeChange": "SHG గ్రేడ్ మార్పు",
   "adminAuditLogActionLivelihoodOverride": "జీవనోపాధి సిబ్బంది ఓవర్‌రైడ్",
   "adminAuditLogActionLoanDecision": "రుణ నిర్ణయం",
+  "adminAuditLogActionDeactivation": "ఖాతా స్థితి మార్పు",
+  "adminAuditLogActionShgReassignment": "SHG తిరిగి కేటాయింపు",
+  "adminAuditLogDecisionLabel": "నిర్ణయం: {decision}",
+  "@adminAuditLogDecisionLabel": {
+    "placeholders": {
+      "decision": {"type": "String"}
+    }
+  },
   "adminAuditLogUnknownActor": "తెలియదు",
   "adminAuditLogByAt": "{name} ద్వారా · {date}",
 
@@ -2090,6 +2110,17 @@
   "adminShgsEditTitle": "SHGని సవరించండి",
   "adminShgsUpdateError": "ఈ SHGని అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
   "adminShgsManageTitle": "SHGలను నిర్వహించండి",
+
+  "adminShgsAddTooltip": "SHG జోడించండి",
+
+  "adminShgsEmptyState": "ఇంకా SHGలు నమోదు కాలేదు",
+
+  "adminShgsEditTooltip": "{name} సవరించండి",
+  "@adminShgsEditTooltip": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
   "adminShgsNameHint": "SHG పేరు",
   "adminShgsVillageHint": "గ్రామం",
   "adminShgsDistrictHint": "జిల్లా",

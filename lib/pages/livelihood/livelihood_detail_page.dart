@@ -151,6 +151,13 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
                         setState(() => error = l10n.livelihoodDetailInvalidRevenueError);
                         return;
                       }
+                      // Mirrors the same DB-level cap (migration 0090) the
+                      // entry page now also checks — this field was only
+                      // bounded to 9 characters (~999,999,999), not by value.
+                      if (revenue > 1000000) {
+                        setState(() => error = l10n.livelihoodEntryInvestmentTooLarge);
+                        return;
+                      }
                       setState(() {
                         error = null;
                         submitting = true;

@@ -176,6 +176,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSHG => 'SHG';
 
   @override
+  String get profileShgNotYetApproved => 'Not yet approved';
+
+  @override
   String get profileName => 'Name';
 
   @override
@@ -2874,6 +2877,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get schemeStatusRejected => 'Rejected';
 
   @override
+  String get marketplaceOrderStatusNew => 'New';
+
+  @override
+  String get marketplaceOrderStatusPacked => 'Packed';
+
+  @override
+  String get marketplaceOrderStatusShipped => 'Shipped';
+
+  @override
+  String get marketplaceOrderStatusDelivered => 'Delivered';
+
+  @override
   String get savingsStatusPending => 'Pending';
 
   @override
@@ -3239,6 +3254,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter a valid investment amount';
 
   @override
+  String get livelihoodEntryInvestmentTooLarge =>
+      'Amount seems unusually large — please check and re-enter';
+
+  @override
   String get livelihoodEntryNoShg =>
       'You\'re not linked to an SHG, so there\'s nothing to record this activity against.';
 
@@ -3392,6 +3411,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminAuditLogActionLoanDecision => 'Loan decision';
+
+  @override
+  String get adminAuditLogActionDeactivation => 'Account status change';
+
+  @override
+  String get adminAuditLogActionShgReassignment => 'SHG reassignment';
+
+  @override
+  String adminAuditLogDecisionLabel(String decision) {
+    return 'decision: $decision';
+  }
 
   @override
   String get adminAuditLogUnknownActor => 'Unknown';
@@ -3919,6 +3949,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminShgsManageTitle => 'Manage SHGs';
+
+  @override
+  String get adminShgsAddTooltip => 'Add SHG';
+
+  @override
+  String get adminShgsEmptyState => 'No SHGs registered yet';
+
+  @override
+  String adminShgsEditTooltip(String name) {
+    return 'Edit $name';
+  }
 
   @override
   String get adminShgsNameHint => 'SHG name';

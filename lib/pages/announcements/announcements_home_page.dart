@@ -115,7 +115,7 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
                 spacing: 8,
                 children: _categories.map((c) {
                   final selected = c == _category;
-                  return ChoiceChip(label: Text(c), selected: selected, onSelected: (_) => setState(() => _category = c));
+                  return ChoiceChip(label: Text(announcementCategoryLabel(c, l10n)), selected: selected, onSelected: (_) => setState(() => _category = c));
                 }).toList(),
               ),
               const SizedBox(height: 8),

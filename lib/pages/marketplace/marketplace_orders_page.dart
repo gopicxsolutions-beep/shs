@@ -85,6 +85,7 @@ class _OrderList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AppAsyncBuilder<List<MarketOrder>>(
       future: future,
       builder: (context, orders) {
@@ -115,7 +116,7 @@ class _OrderList extends StatelessWidget {
                     children: [
                       Text('₹${NumberFormat('#,##,##0', 'en_IN').format(o.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                       const SizedBox(height: 4),
-                      AppBadge(text: o.status, tone: _statusTones[o.status] ?? BadgeTone.neutral),
+                      AppBadge(text: marketplaceOrderStatusLabel(o.status, l10n), tone: _statusTones[o.status] ?? BadgeTone.neutral),
                     ],
                   ),
                   onTap: () => context.go(Paths.marketplaceOrderDetail(o.id)),

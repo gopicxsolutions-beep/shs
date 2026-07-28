@@ -106,7 +106,11 @@ class _SupportVoicePageState extends State<SupportVoicePage> {
             ),
           ),
           const SizedBox(height: 16),
-          Center(child: Text(label, style: AppTheme.sans(13, weight: FontWeight.w600, color: Neutral.c500))),
+          // liveRegion: true — matches AppAsyncBuilder's own established
+          // pattern for this shape, so a screen-reader user hears each
+          // state transition the instant it happens instead of only if
+          // already focused on this label.
+          Center(child: Semantics(liveRegion: true, child: Text(label, style: AppTheme.sans(13, weight: FontWeight.w600, color: Neutral.c500)))),
           if (_question != null) ...[
             const SizedBox(height: 24),
             AppCard(

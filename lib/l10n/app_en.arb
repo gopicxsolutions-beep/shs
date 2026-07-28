@@ -63,6 +63,8 @@
   "profileMobile": "Mobile",
   "profileVillage": "Village",
   "profileSHG": "SHG",
+
+  "profileShgNotYetApproved": "Not yet approved",
   "profileName": "Name",
   "profileUpdated": "Profile updated",
   "profileUpdateDemoMode": "Demo mode — not saved (connect Supabase to persist)",
@@ -1962,6 +1964,14 @@
 
   "schemeStatusRejected": "Rejected",
 
+  "marketplaceOrderStatusNew": "New",
+
+  "marketplaceOrderStatusPacked": "Packed",
+
+  "marketplaceOrderStatusShipped": "Shipped",
+
+  "marketplaceOrderStatusDelivered": "Delivered",
+
   "savingsStatusPending": "Pending",
 
   "savingsStatusVerified": "Verified",
@@ -2237,6 +2247,8 @@
 
   "livelihoodEntryInvalidInvestment": "Enter a valid investment amount",
 
+  "livelihoodEntryInvestmentTooLarge": "Amount seems unusually large — please check and re-enter",
+
   "livelihoodEntryNoShg": "You're not linked to an SHG, so there's nothing to record this activity against.",
 
   "livelihoodEntryAdded": "Activity added",
@@ -2342,6 +2354,14 @@
   "adminAuditLogActionShgGradeChange": "SHG grade change",
   "adminAuditLogActionLivelihoodOverride": "Livelihood staff override",
   "adminAuditLogActionLoanDecision": "Loan decision",
+  "adminAuditLogActionDeactivation": "Account status change",
+  "adminAuditLogActionShgReassignment": "SHG reassignment",
+  "adminAuditLogDecisionLabel": "decision: {decision}",
+  "@adminAuditLogDecisionLabel": {
+    "placeholders": {
+      "decision": {"type": "String"}
+    }
+  },
   "adminAuditLogUnknownActor": "Unknown",
   "adminAuditLogByAt": "By {name} · {date}",
   "@adminAuditLogByAt": {
@@ -2707,6 +2727,17 @@
   "adminShgsEditTitle": "Edit SHG",
   "adminShgsUpdateError": "Could not update this SHG. Please try again.",
   "adminShgsManageTitle": "Manage SHGs",
+
+  "adminShgsAddTooltip": "Add SHG",
+
+  "adminShgsEmptyState": "No SHGs registered yet",
+
+  "adminShgsEditTooltip": "Edit {name}",
+  "@adminShgsEditTooltip": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
   "adminShgsNameHint": "SHG name",
   "adminShgsVillageHint": "Village",
   "adminShgsDistrictHint": "District",

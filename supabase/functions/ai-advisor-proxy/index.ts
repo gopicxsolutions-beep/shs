@@ -57,6 +57,7 @@ import {
   LLAMA_GUARD_MAX_TOKENS,
   LLAMA_GUARD_MODEL,
   looksLikeSystemPromptLeak,
+  MALFORMED_COMPLETION_FALLBACK,
   normalizeLanguage,
   parseLlamaGuardVerdict,
   reasonForLlamaGuardVerdict,
@@ -328,7 +329,7 @@ serve(async (req) => {
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        messages: buildMessagesWithHistory(buildSystemPrompt(systemPrompt), history, query),
+        messages: buildMessagesWithHistory(buildSystemPrompt(systemPrompt, language), history, query),
         max_tokens: 150,
       }),
     });
@@ -339,7 +340,7 @@ serve(async (req) => {
       throw new HttpError(502, 'The advisor service is temporarily unavailable. Please try again.');
     }
     const completion = await response.json();
-    let answer: string = completion.choices?.[0]?.message?.content ?? 'Sorry, I could not find an answer.';
+    let answer: string = completion.choices?.[0]?.message?.content ?? MALFORMED_COMPLETION_FALLBACK[language];
 
     // Output-side sanity check: a cheap heuristic, not a real classifier
     // (see ./moderation.ts) — if the completion looks like it echoed back a
@@ -348,7 +349,7 @@ serve(async (req) => {
     // attempt, so swap in a safe generic answer instead of returning it.
     if (looksLikeSystemPromptLeak(answer, systemPrompt)) {
       console.warn(`ai-advisor-proxy: completion for advisor_type=${advisor_type} looked like a system-prompt echo; substituting safe fallback.`);
-      answer = SAFE_FALLBACK_ON_SUSPECTED_LEAK;
+      answer = SAFE_FALLBACK_ON_SUSPECTED_LEAK[language];
     } else {
       // Real ML classification of the model's own OUTPUT too, not just the
       // input — closes docs/AI_MODULES.md §6's other disclosed gap ("No
@@ -358,7 +359,7 @@ serve(async (req) => {
       const answerVerdict = await classifyContentSafety(apiKey, answer);
       if (answerVerdict.flagged) {
         console.warn(`ai-advisor-proxy: completion for advisor_type=${advisor_type} flagged unsafe by Llama Guard (${answerVerdict.categories.join(',')}); substituting safe fallback.`);
-        answer = SAFE_FALLBACK_ON_UNSAFE_OUTPUT;
+        answer = SAFE_FALLBACK_ON_UNSAFE_OUTPUT[language];
       }
     }
 

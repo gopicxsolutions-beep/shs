@@ -15739,3 +15739,203 @@ again, still stuck** — fresh `preview_start` + re-navigate, identical
 `flt-glass-pane`-never-mounts symptom, zero console errors (the 12th
 consecutive such attempt across ten rounds). Relied on live-DB
 verification for every fix above instead.
+
+## Update (round 187) — Gap-hunting loop, iteration 15: launched 4 fresh module audits (dogfooding round 186's own features, AI Advisor modules, Admin/Profile/Notifications, Marketplace seller tools/Reports export), fixed 19 real gaps
+
+The dogfooding audit caught a real bug in round 186's own migration
+(`0090`): its comment claimed the `meeting_attendance` INSERT self-branch
+already required same-day attendance ("unlike INSERT's self-branch, which
+already requires `meeting_date = current_date`") — it did not, and `0090`
+never actually added that check despite fixing the sibling UPDATE policy.
+Fixed first; everything else below is new findings from this round's four
+audits.
+
+**Fixed, live-verified against the real Supabase project:**
+
+1. **[CRITICAL — correcting round 186's own false claim]
+   `meeting_attendance_insert_self_or_leader`'s self-branch had no date
+   restriction at all** — `MeetingRepository.markAttendance()` upserts, so
+   any member never explicitly toggled by a leader for a given past
+   meeting (the common case — `fetchAttendance()` defaults an untouched
+   member to `present: false` client-side, no row exists yet) could `POST`
+   a fabricated "present" row for ANY past, non-cancelled meeting in her
+   own SHG via direct REST — exactly the backdating gap round 186's
+   UPDATE-side fix was supposed to close but never actually closed on the
+   INSERT side. Fixed (migration `0091`) by adding the same
+   `meeting_date = current_date` condition already present on the UPDATE
+   self-branch. **Live-verified**: the exact backdating attempt now raises
+   the RLS violation; a legitimate same-day self-check-in (tested against
+   a real `__TEST__` same-day meeting) still succeeds.
+2. **[HIGH] `place_marketplace_order` (round ~125's `0057`) — the only
+   path to create a real order, `security definer` — never got the
+   `profile_is_active()` check every sibling self-action RPC/policy has
+   across rounds 185-186.** A deactivated member's still-valid session
+   could keep placing real orders, decrementing a real seller's stock
+   indefinitely. Checked before the stock decrement so a blocked call
+   never touches a seller's inventory. **Live-verified**: raises the
+   deactivation exception for a flipped-inactive test member; confirmed
+   the target product's stock was never touched.
+3. **[MEDIUM] `marketplace_products_update_seller_or_staff`'s `is_staff()`
+   branch had zero column lock** — not `seller_id`, not `created_at` —
+   any crp/clf/admin account could hijack a listing's ownership
+   attribution or fabricate its creation date via direct REST (no edit-
+   listing UI exists at all yet, confirmed by this round's audit, so this
+   cost zero functionality to close). Also added the one monetary-cap
+   outlier this round's audit found: `marketplace_products.price` never
+   got the ₹10,00,000 fat-finger cap every sibling monetary column
+   already has. **Live-verified**: staff hijacking a real product's
+   `seller_id` now raises the RLS violation; staff legitimately updating
+   stock still succeeds (no regression).
+4. **[MEDIUM] Two more missed tables in the `profile_is_active()` sweep —
+   the 4th and 5th rounds in a row this exact pattern has surfaced one
+   more table each time**: `course_progress_write_self_or_staff` (the
+   `is_staff()` branch had zero restriction at all, and the self branch
+   never checked the caller's own active status — reachable directly via
+   `TrainingRepository.updateProgress()`'s client upsert, no RPC) and
+   `support_messages_insert_related` (a deactivated member could still
+   post new messages onto her own existing ticket). **Live-verified**: a
+   deactivated test member's `course_progress` upsert now raises the RLS
+   violation.
+5. **[HIGH] `training_courses -> course_progress` was still `on delete
+   cascade`** — the identical shape already fixed with `on delete
+   restrict` for loans/financial_ledger/scheme_applications/marketplace_
+   orders, never extended to Training. Deleting a course (reachable by
+   crp/clf, not just admin) silently destroyed every member's earned
+   certification/progress history, with only a generic confirm dialog
+   that never mentioned this. `quiz_questions`/`quiz_attempt_counters`
+   deliberately stay `cascade` — deleting a course's own question bank/
+   rate-limit rows alongside it is expected, unlike erasing a member's
+   real certification record. `AdminTrainingCoursesPage._deleteCourse()`
+   already has a generic `catch (_)` error message, so this now fails
+   loudly with existing UI, not a crash. **Live-verified**: deleting a
+   test course with a real `course_progress` row attached now raises a
+   foreign-key-violation instead of silently cascading.
+6. **[MEDIUM] The last-admin-lockout guards (rounds 182-183) had an
+   unresolved TOCTOU race** — neither guard's `select count(*) ...` ever
+   locked the rows it counted, so two concurrent transactions each acting
+   on a different one of exactly 2 remaining active admins (e.g. two admin
+   sessions demoting/deactivating each other at the same moment) could
+   each see the other as still active under READ COMMITTED, both pass,
+   both commit — zero active admins, exactly the state these triggers
+   exist to prevent. Fixed by adding `for update` to both guards' count
+   query, the same row-locking pattern this codebase already uses for
+   `record_loan_payment`/`approve_loan`.
+7. **[HIGH] Account deactivation and SHG (re)assignment were invisible to
+   the audit trail, unlike role changes** — `AdminRepository.setActive()`/
+   `assignShg()` write straight to `profiles.is_active`/`shg_id` with no
+   corresponding trigger, despite deactivation being arguably the single
+   most consequential thing the admin users page does. Extended the
+   existing role-change trigger (round 182's `0082`) to also log these two
+   as new `deactivation`/`shg_reassignment` action types (existing
+   `role_change` consumers/rendering untouched), with matching labels and
+   an `old_X → new_X` summary added to `AdminAuditLogPage`. **Live-
+   verified**: deactivating a real test profile produces a matching
+   `audit_log` row with the correct before/after values.
+8. **[MEDIUM] "Assign SHG" was completely non-functional in demo mode,
+   with no explanation** — `AdminRepository.searchShgs()` unconditionally
+   returned `[]` when not live, unlike `ProfileSetupPage._pickShg()` which
+   already special-cases demo mode with a fixed SHG. Fixed to return the
+   same fixed demo SHG (filtered by query), so a demo admin's "Assign SHG"
+   flow actually has something to select.
+9. **[HIGH, edge function] The AI advisor's actual answer was never
+   instructed to respond in the member's selected app language, despite
+   the surrounding chat UI (title, hint, disclaimer, placeholder) being
+   fully localized.** `language` was already threaded end-to-end from the
+   Flutter client through to the edge function — it was used only to pick
+   which localized *rejection* string comes back (rate-limit/self-harm/
+   generic-blocked), never reaching the actual prompt sent to Groq. A
+   Telugu- or Hindi-app-language member opens a fully-translated chat
+   screen inviting her to ask a question and gets back an English-only
+   answer regardless of what language she asked in — for the exact target
+   demographic this app is built for. Fixed by extending `buildSystemPrompt()`
+   (`supabase/functions/ai-advisor-proxy/moderation.ts`) to append a
+   language directive ("respond only in Hindi/Devanagari" / "...Telugu
+   script") for `hi`/`te`, deliberately kept separate from the injection-
+   hardening suffix so the system-prompt-leak heuristic's word-overlap
+   check stays unaffected. Also localized the three remaining hardcoded-
+   English fallback messages in the same file (suspected-leak, unsafe-
+   output, malformed-completion), matching the existing `RATE_LIMIT_
+   REASON`/`SELF_HARM_REASON` pattern. **Verified via real Deno test
+   execution** (`deno test moderation.test.ts`, 32/32 passing, including
+   3 new/updated tests asserting the actual built prompt text for `en`/
+   `hi`/`te`) and a successful `supabase functions deploy`.
+10. **[MEDIUM, accessibility] Voice/chat state transitions (Listening ->
+    Thinking -> Answered) weren't announced to screen readers** — a real
+    regression relative to this codebase's own established `liveRegion:
+    true` pattern (`AppAsyncBuilder` and others) used everywhere else a
+    state changes asynchronously. Fixed in both `AiVoiceAssistantPage` and
+    `SupportVoicePage`.
+11. **[MEDIUM] The AI safety disclaimer is visual-only and was never
+    spoken, undermining its purpose specifically on the voice-first
+    surface** — `AiVoiceAssistantPage._speak()` only ever passed the
+    resolved answer to TTS; the one safety caveat that exists ("AI-
+    generated guidance... confirm with a qualified advisor") was only
+    available as small (11px) printed text a member using voice — plausibly
+    because reading is a barrier — may never see. Now spoken after the
+    answer, in the member's selected voice language.
+12. **[MEDIUM, i18n] Livelihood entry/revenue amounts had no client-side
+    upper-bound validation** matching the new DB-level cap (round 186's
+    `0090`) — a value above ₹10,00,000 used to fail only with a generic
+    "failed to save" error. Added the same check + friendly message to
+    both the entry page and the revenue-update dialog.
+13. **[LOW, i18n] Marketplace order status (`new`/`packed`/`shipped`/
+    `delivered`) was shown as raw DB strings everywhere** — the one
+    remaining status-bearing module without a localized label helper.
+    Added `marketplaceOrderStatusLabel()`, wired into both order pages.
+14. **[LOW, i18n] Announcement categories were localized on the home/
+    detail pages (round 186) but not in the "post announcement" composer's
+    own category picker** — a leader/staff composing a new announcement
+    still saw the choice chips in raw English. Fixed.
+15. **[LOW] `MarketplaceRepository.fetchReviewsForSeller` had no
+    `.limit()`**, unlike its siblings in the same file. Added `.limit(300)`.
+16. **[LOW, i18n ×3] Three more hardcoded-English strings on otherwise
+    fully-localized admin pages**: `ProfilePage`'s "Not yet approved" SHG
+    fallback; `AdminShgsPage`'s Add-SHG tooltip, empty-state message, and
+    per-row Edit tooltip; and `AdminAuditLogPage`'s `loan_decision` meta
+    fallback (`'decision: ${meta['decision']}'`), the one audit-log action
+    type whose meta shape doesn't match the page's generic old→new
+    renderer.
+
+**Documented, deliberately not fixed this round** (real findings, larger
+scope or lower severity):
+
+- **Livelihood's "revenue frozen once completed" bypass** (round 186's own
+  deferral) — still open, still needs a schema change.
+- **Client-side 30s AI-advisor timeout doesn't cancel the in-flight edge
+  function call** — a slow Groq response can still complete and consume a
+  rate-limit slot with zero trace in `ai_advisor_logs`, since the repo only
+  logs on a successful client-side return. Needs a cancellable-request
+  redesign, not a quick patch.
+- **Fabricated `assistant`-role history turns get the least scrutiny in
+  the moderation pipeline** — only the narrow regex pre-filter, never
+  Llama Guard (which does still run on the final live completion). A real
+  defense-in-depth gap in the two-layer moderation design, needs its own
+  careful pass given how central the injection-hardening design is.
+- **`MockAiAdvisorService` (demo mode) is English-only** and ignores its
+  own `language` param — masks finding #9 above during demo-mode-only QA.
+- **Marketplace seller listing management (edit/delete a posted product)
+  and Reports CSV/PDF/export are both still entirely missing** —
+  re-confirmed fresh by this round's dedicated audit (RLS has permitted
+  seller self-edit since round ~75 with zero UI ever built to reach it);
+  both large, standalone feature gaps unchanged across many rounds now.
+- **No seller performance dashboard** — My Sales is a raw order list with
+  no revenue total or per-product review breakdown even where "My Sales"/
+  "Reviews" tabs already exist.
+- **Language switch doesn't retroactively re-localize already-scheduled
+  notifications** — confirmed real and narrow (self-heals on next visit to
+  the relevant tab, per existing sync logic) rather than assumed already
+  handled.
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1038/1038, unchanged — the RLS/schema/edge-function fixes have no Dart-
+level test surface beyond what already existed) both clean. `deno test`
+on the edge function's own suite: 32/32 passing. Migration `0091` pushed
+to the linked live project cleanly; every RLS/trigger claim above
+independently live-verified with real `__TEST__` fixture rows in rolled-
+back transactions, each re-queried afterward to confirm zero footprint.
+`ai-advisor-proxy` redeployed successfully via `supabase functions
+deploy`. `flutter build web` rebuilt cleanly. **Browser preview attempted
+again, still stuck** — fresh `preview_start` + re-navigate, identical
+`flt-glass-pane`-never-mounts symptom, zero console errors (the 13th
+consecutive such attempt across eleven rounds). Relied on live-DB/edge-
+function-test verification for every fix above instead.

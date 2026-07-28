@@ -178,6 +178,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get profileSHG => 'SHG';
 
   @override
+  String get profileShgNotYetApproved => 'ఇంకా ఆమోదించబడలేదు';
+
+  @override
   String get profileName => 'పేరు';
 
   @override
@@ -2873,6 +2876,18 @@ class AppLocalizationsTe extends AppLocalizations {
   String get schemeStatusRejected => 'తిరస్కరించబడింది';
 
   @override
+  String get marketplaceOrderStatusNew => 'కొత్తది';
+
+  @override
+  String get marketplaceOrderStatusPacked => 'ప్యాక్ చేయబడింది';
+
+  @override
+  String get marketplaceOrderStatusShipped => 'పంపబడింది';
+
+  @override
+  String get marketplaceOrderStatusDelivered => 'డెలివరీ చేయబడింది';
+
+  @override
   String get savingsStatusPending => 'పెండింగ్';
 
   @override
@@ -3240,6 +3255,10 @@ class AppLocalizationsTe extends AppLocalizations {
       'చెల్లుబాటు అయ్యే పెట్టుబడి మొత్తాన్ని నమోదు చేయండి';
 
   @override
+  String get livelihoodEntryInvestmentTooLarge =>
+      'ఈ మొత్తం అసాధారణంగా ఎక్కువగా ఉంది — దయచేసి తనిఖీ చేసి మళ్ళీ నమోదు చేయండి';
+
+  @override
   String get livelihoodEntryNoShg =>
       'మీరు ఏ SHGకి లింక్ చేయబడలేదు, కాబట్టి ఈ కార్యాచరణను నమోదు చేయడానికి ఏమీ లేదు.';
 
@@ -3394,6 +3413,17 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get adminAuditLogActionLoanDecision => 'రుణ నిర్ణయం';
+
+  @override
+  String get adminAuditLogActionDeactivation => 'ఖాతా స్థితి మార్పు';
+
+  @override
+  String get adminAuditLogActionShgReassignment => 'SHG తిరిగి కేటాయింపు';
+
+  @override
+  String adminAuditLogDecisionLabel(String decision) {
+    return 'నిర్ణయం: $decision';
+  }
 
   @override
   String get adminAuditLogUnknownActor => 'తెలియదు';
@@ -3924,6 +3954,17 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get adminShgsManageTitle => 'SHGలను నిర్వహించండి';
+
+  @override
+  String get adminShgsAddTooltip => 'SHG జోడించండి';
+
+  @override
+  String get adminShgsEmptyState => 'ఇంకా SHGలు నమోదు కాలేదు';
+
+  @override
+  String adminShgsEditTooltip(String name) {
+    return '$name సవరించండి';
+  }
 
   @override
   String get adminShgsNameHint => 'SHG పేరు';

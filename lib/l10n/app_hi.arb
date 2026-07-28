@@ -63,6 +63,8 @@
   "profileMobile": "मोबाइल",
   "profileVillage": "गांव",
   "profileSHG": "SHG",
+
+  "profileShgNotYetApproved": "अभी स्वीकृत नहीं हुआ",
   "profileName": "नाम",
   "profileUpdated": "प्रोफ़ाइल अपडेट हो गई",
   "profileUpdateDemoMode": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
@@ -1538,6 +1540,14 @@
 
   "schemeStatusRejected": "अस्वीकृत",
 
+  "marketplaceOrderStatusNew": "नया",
+
+  "marketplaceOrderStatusPacked": "पैक किया गया",
+
+  "marketplaceOrderStatusShipped": "भेजा गया",
+
+  "marketplaceOrderStatusDelivered": "डिलीवर किया गया",
+
   "savingsStatusPending": "लंबित",
 
   "savingsStatusVerified": "सत्यापित",
@@ -1744,6 +1754,8 @@
 
   "livelihoodEntryInvalidInvestment": "मान्य निवेश राशि दर्ज करें",
 
+  "livelihoodEntryInvestmentTooLarge": "यह राशि असामान्य रूप से बड़ी लग रही है — कृपया जांचें और फिर से दर्ज करें",
+
   "livelihoodEntryNoShg": "आप किसी SHG से जुड़े नहीं हैं, इसलिए इस गतिविधि को दर्ज करने के लिए कुछ नहीं है।",
 
   "livelihoodEntryAdded": "गतिविधि जोड़ी गई",
@@ -1828,6 +1840,14 @@
   "adminAuditLogActionShgGradeChange": "SHG ग्रेड परिवर्तन",
   "adminAuditLogActionLivelihoodOverride": "आजीविका स्टाफ ओवरराइड",
   "adminAuditLogActionLoanDecision": "ऋण निर्णय",
+  "adminAuditLogActionDeactivation": "खाता स्थिति परिवर्तन",
+  "adminAuditLogActionShgReassignment": "SHG पुनः असाइनमेंट",
+  "adminAuditLogDecisionLabel": "निर्णय: {decision}",
+  "@adminAuditLogDecisionLabel": {
+    "placeholders": {
+      "decision": {"type": "String"}
+    }
+  },
   "adminAuditLogUnknownActor": "अज्ञात",
   "adminAuditLogByAt": "{name} द्वारा · {date}",
 
@@ -2090,6 +2110,17 @@
   "adminShgsEditTitle": "SHG संपादित करें",
   "adminShgsUpdateError": "यह SHG अपडेट नहीं हो सका। कृपया फिर से प्रयास करें।",
   "adminShgsManageTitle": "SHG प्रबंधित करें",
+
+  "adminShgsAddTooltip": "SHG जोड़ें",
+
+  "adminShgsEmptyState": "अभी तक कोई SHG पंजीकृत नहीं है",
+
+  "adminShgsEditTooltip": "{name} संपादित करें",
+  "@adminShgsEditTooltip": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
   "adminShgsNameHint": "SHG का नाम",
   "adminShgsVillageHint": "गांव",
   "adminShgsDistrictHint": "जिला",

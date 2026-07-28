@@ -16,6 +16,8 @@ String _actionLabel(AppLocalizations l10n, String action) => switch (action) {
       'shg_grade_change' => l10n.adminAuditLogActionShgGradeChange,
       'livelihood_staff_override' => l10n.adminAuditLogActionLivelihoodOverride,
       'loan_decision' => l10n.adminAuditLogActionLoanDecision,
+      'deactivation' => l10n.adminAuditLogActionDeactivation,
+      'shg_reassignment' => l10n.adminAuditLogActionShgReassignment,
       _ => action,
     };
 
@@ -24,13 +26,15 @@ String _actionLabel(AppLocalizations l10n, String action) => switch (action) {
 // shares, falling back to a generic key: value join for anything else
 // rather than showing nothing for a meta shape this page doesn't
 // specifically recognize.
-String _metaSummary(Map<String, dynamic> meta) {
+String _metaSummary(AppLocalizations l10n, Map<String, dynamic> meta) {
   final pairs = <String>[];
   const knownPairs = [
     ('old_role', 'new_role'),
     ('old_grade', 'new_grade'),
     ('old_status', 'new_status'),
     ('old_revenue', 'new_revenue'),
+    ('old_is_active', 'new_is_active'),
+    ('old_shg_id', 'new_shg_id'),
   ];
   for (final (oldKey, newKey) in knownPairs) {
     if (meta.containsKey(oldKey) && meta[oldKey] != meta[newKey]) {
@@ -38,7 +42,10 @@ String _metaSummary(Map<String, dynamic> meta) {
     }
   }
   if (pairs.isNotEmpty) return pairs.join(' · ');
-  if (meta.containsKey('decision')) return 'decision: ${meta['decision']}';
+  // `loan_decision`'s meta shape (`decision`, `emi`) doesn't match any of
+  // the old->new pairs above — every entry of this action type used to hit
+  // this exact hardcoded-English fallback regardless of app language.
+  if (meta.containsKey('decision')) return l10n.adminAuditLogDecisionLabel(meta['decision']);
   return meta.entries.map((e) => '${e.key}: ${e.value}').join(' · ');
 }
 
@@ -124,7 +131,7 @@ class _AdminAuditLogPageState extends State<AdminAuditLogPage> {
                         AppBadge(text: e.entity, tone: BadgeTone.neutral),
                       ]),
                       const SizedBox(height: 6),
-                      Text(_metaSummary(e.meta), style: AppTheme.sans(12, color: Neutral.c600)),
+                      Text(_metaSummary(l10n, e.meta), style: AppTheme.sans(12, color: Neutral.c600)),
                       const SizedBox(height: 6),
                       Text(
                         l10n.adminAuditLogByAt(e.actorName ?? l10n.adminAuditLogUnknownActor, DateFormat('dd MMM yyyy, hh:mm a').format(e.createdAt)),

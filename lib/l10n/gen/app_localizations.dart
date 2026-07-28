@@ -418,6 +418,12 @@ abstract class AppLocalizations {
   /// **'SHG'**
   String get profileSHG;
 
+  /// No description provided for @profileShgNotYetApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Not yet approved'**
+  String get profileShgNotYetApproved;
+
   /// No description provided for @profileName.
   ///
   /// In en, this message translates to:
@@ -5014,6 +5020,30 @@ abstract class AppLocalizations {
   /// **'Rejected'**
   String get schemeStatusRejected;
 
+  /// No description provided for @marketplaceOrderStatusNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get marketplaceOrderStatusNew;
+
+  /// No description provided for @marketplaceOrderStatusPacked.
+  ///
+  /// In en, this message translates to:
+  /// **'Packed'**
+  String get marketplaceOrderStatusPacked;
+
+  /// No description provided for @marketplaceOrderStatusShipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Shipped'**
+  String get marketplaceOrderStatusShipped;
+
+  /// No description provided for @marketplaceOrderStatusDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get marketplaceOrderStatusDelivered;
+
   /// No description provided for @savingsStatusPending.
   ///
   /// In en, this message translates to:
@@ -5632,6 +5662,12 @@ abstract class AppLocalizations {
   /// **'Enter a valid investment amount'**
   String get livelihoodEntryInvalidInvestment;
 
+  /// No description provided for @livelihoodEntryInvestmentTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount seems unusually large — please check and re-enter'**
+  String get livelihoodEntryInvestmentTooLarge;
+
   /// No description provided for @livelihoodEntryNoShg.
   ///
   /// In en, this message translates to:
@@ -5907,6 +5943,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loan decision'**
   String get adminAuditLogActionLoanDecision;
+
+  /// No description provided for @adminAuditLogActionDeactivation.
+  ///
+  /// In en, this message translates to:
+  /// **'Account status change'**
+  String get adminAuditLogActionDeactivation;
+
+  /// No description provided for @adminAuditLogActionShgReassignment.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG reassignment'**
+  String get adminAuditLogActionShgReassignment;
+
+  /// No description provided for @adminAuditLogDecisionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'decision: {decision}'**
+  String adminAuditLogDecisionLabel(String decision);
 
   /// No description provided for @adminAuditLogUnknownActor.
   ///
@@ -6817,6 +6871,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manage SHGs'**
   String get adminShgsManageTitle;
+
+  /// No description provided for @adminShgsAddTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add SHG'**
+  String get adminShgsAddTooltip;
+
+  /// No description provided for @adminShgsEmptyState.
+  ///
+  /// In en, this message translates to:
+  /// **'No SHGs registered yet'**
+  String get adminShgsEmptyState;
+
+  /// No description provided for @adminShgsEditTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit {name}'**
+  String adminShgsEditTooltip(String name);
 
   /// No description provided for @adminShgsNameHint.
   ///

@@ -312,16 +312,17 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isAdmin = context.watch<AppState>().user.role == Role.admin;
 
     return Scaffold(
       appBar: PageHeader(
-        title: AppLocalizations.of(context)!.adminShgsManageTitle,
+        title: l10n.adminShgsManageTitle,
         right: isAdmin
             ? IconButton(
                 icon: Icon(Icons.add_circle_rounded, color: !_busy ? Brand.c600 : Neutral.c300),
                 onPressed: !_busy ? _addShg : null,
-                tooltip: 'Add SHG',
+                tooltip: l10n.adminShgsAddTooltip,
               )
             : null,
       ),
@@ -333,7 +334,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
         // pattern for why.
         builder: (context, data) {
           if (_shgs.isEmpty) {
-            return const AppEmptyState(icon: Icons.groups_rounded, message: 'No SHGs registered yet');
+            return AppEmptyState(icon: Icons.groups_rounded, message: l10n.adminShgsEmptyState);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -370,7 +371,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
                         IconButton(
                           icon: Icon(Icons.edit_outlined, color: !_busy ? Brand.c600 : Neutral.c300),
                           onPressed: !_busy ? () => _editShg(s) : null,
-                          tooltip: 'Edit ${s.name}',
+                          tooltip: l10n.adminShgsEditTooltip(s.name),
                         ),
                     ],
                   ),

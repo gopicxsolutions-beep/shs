@@ -46,6 +46,14 @@ class _LivelihoodEntryPageState extends State<LivelihoodEntryPage> {
       setState(() => _error = l10n.livelihoodEntryInvalidInvestment);
       return;
     }
+    // Was unbounded client-side while the DB itself (migration 0090) caps
+    // investment/revenue at the same ₹10,00,000 fat-finger guard every
+    // sibling monetary field already has — a value above that used to
+    // fail only with a generic "failed to save" error, no indication why.
+    if (investment > 1000000) {
+      setState(() => _error = l10n.livelihoodEntryInvestmentTooLarge);
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;

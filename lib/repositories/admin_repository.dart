@@ -117,7 +117,24 @@ class AdminRepository {
   }
 
   Future<List<ShgSearchResult>> searchShgs(String query) async {
-    if (!_live) return const [];
+    // Was an unconditional `[]` — unlike `ProfileSetupPage._pickShg()`
+    // (which special-cases demo mode with a fixed SHG before ever
+    // reaching a search sheet), this method had no demo-mode branch at
+    // all, so "Assign SHG" on any unlinked demo user always showed an
+    // empty "No SHGs found" sheet regardless of query, with zero
+    // explanation, even though `_locallyAssignedShgs` demo-tracking is
+    // otherwise fully wired to receive a selection.
+    if (!_live) {
+      const demoShg = ShgSearchResult(
+        id: 'demo-shg',
+        name: mock_shg.ShgInfo.name,
+        village: mock_shg.ShgInfo.village,
+        mandal: mock_shg.ShgInfo.mandal,
+        district: mock_shg.ShgInfo.district,
+        grade: mock_shg.ShgInfo.grade,
+      );
+      return query.trim().isEmpty || demoShg.name.toLowerCase().contains(query.trim().toLowerCase()) ? [demoShg] : const [];
+    }
     final builder = _client.from('shg_directory').select();
     final rows = await (query.trim().isEmpty ? builder.limit(20) : builder.ilike('name', '%${query.trim()}%').limit(20));
     return (rows as List).map((r) => ShgSearchResult.fromMap(r as Map<String, dynamic>)).toList();

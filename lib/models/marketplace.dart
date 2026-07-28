@@ -1,3 +1,17 @@
+import '../l10n/gen/app_localizations.dart';
+
+/// `new`/`packed`/`shipped`/`delivered` were shown as raw DB strings
+/// everywhere an order's status appears — unlike every sibling status-
+/// bearing module (loans, savings, payments, schemes, support tickets),
+/// which all already have a dedicated localized status-label helper.
+String marketplaceOrderStatusLabel(String status, AppLocalizations l10n) => switch (status) {
+      'new' => l10n.marketplaceOrderStatusNew,
+      'packed' => l10n.marketplaceOrderStatusPacked,
+      'shipped' => l10n.marketplaceOrderStatusShipped,
+      'delivered' => l10n.marketplaceOrderStatusDelivered,
+      _ => status,
+    };
+
 /// Mirrors a row in `public.marketplace_products` (joined with seller name).
 class Product {
   final String id;

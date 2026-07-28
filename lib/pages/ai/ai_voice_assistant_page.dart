@@ -140,7 +140,15 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
         _answer = answer;
         _state = _AssistantState.answered;
       });
-      unawaited(_speak(answer));
+      // The visual disclaimer banner is deliberately present on every AI
+      // screen, every time (see its own doc comment) — but on this
+      // voice-first surface it was never actually spoken, only printed as
+      // small (11px) text, undermining the one safety caveat that exists
+      // for the exact interaction mode (voice, plausibly because reading
+      // is a barrier) where it matters most. Spoken after the answer, not
+      // before, so the member hears her actual answer first.
+      final disclaimer = lookupAppLocalizations(_localeFor(_language)).aiDisclaimer;
+      unawaited(_speak('$answer. $disclaimer'));
 
       if (command.intent == VoiceIntent.addSavings) {
         await Future.delayed(const Duration(milliseconds: 900));
@@ -319,12 +327,22 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
                 ),
                 const SizedBox(height: 16),
                 Center(
-                  child: Text(
-                    label,
-                    style: AppTheme.sans(
-                      13,
-                      weight: FontWeight.w600,
-                      color: Neutral.c500,
+                  // Was a plain Text with no live-region — this codebase's
+                  // own established pattern for exactly this shape (see
+                  // AppAsyncBuilder's doc comment) is `liveRegion: true` so
+                  // a screen-reader user hears each state transition
+                  // (Listening -> Thinking -> Answered) the instant it
+                  // happens, not only if she happens to already be focused
+                  // on this label.
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      label,
+                      style: AppTheme.sans(
+                        13,
+                        weight: FontWeight.w600,
+                        color: Neutral.c500,
+                      ),
                     ),
                   ),
                 ),

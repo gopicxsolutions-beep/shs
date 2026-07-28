@@ -176,6 +176,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get profileSHG => 'SHG';
 
   @override
+  String get profileShgNotYetApproved => 'अभी स्वीकृत नहीं हुआ';
+
+  @override
   String get profileName => 'नाम';
 
   @override
@@ -2825,6 +2828,18 @@ class AppLocalizationsHi extends AppLocalizations {
   String get schemeStatusRejected => 'अस्वीकृत';
 
   @override
+  String get marketplaceOrderStatusNew => 'नया';
+
+  @override
+  String get marketplaceOrderStatusPacked => 'पैक किया गया';
+
+  @override
+  String get marketplaceOrderStatusShipped => 'भेजा गया';
+
+  @override
+  String get marketplaceOrderStatusDelivered => 'डिलीवर किया गया';
+
+  @override
   String get savingsStatusPending => 'लंबित';
 
   @override
@@ -3173,6 +3188,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get livelihoodEntryInvalidInvestment => 'मान्य निवेश राशि दर्ज करें';
 
   @override
+  String get livelihoodEntryInvestmentTooLarge =>
+      'यह राशि असामान्य रूप से बड़ी लग रही है — कृपया जांचें और फिर से दर्ज करें';
+
+  @override
   String get livelihoodEntryNoShg =>
       'आप किसी SHG से जुड़े नहीं हैं, इसलिए इस गतिविधि को दर्ज करने के लिए कुछ नहीं है।';
 
@@ -3324,6 +3343,17 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get adminAuditLogActionLoanDecision => 'ऋण निर्णय';
+
+  @override
+  String get adminAuditLogActionDeactivation => 'खाता स्थिति परिवर्तन';
+
+  @override
+  String get adminAuditLogActionShgReassignment => 'SHG पुनः असाइनमेंट';
+
+  @override
+  String adminAuditLogDecisionLabel(String decision) {
+    return 'निर्णय: $decision';
+  }
 
   @override
   String get adminAuditLogUnknownActor => 'अज्ञात';
@@ -3851,6 +3881,17 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get adminShgsManageTitle => 'SHG प्रबंधित करें';
+
+  @override
+  String get adminShgsAddTooltip => 'SHG जोड़ें';
+
+  @override
+  String get adminShgsEmptyState => 'अभी तक कोई SHG पंजीकृत नहीं है';
+
+  @override
+  String adminShgsEditTooltip(String name) {
+    return '$name संपादित करें';
+  }
 
   @override
   String get adminShgsNameHint => 'SHG का नाम';

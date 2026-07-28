@@ -88,7 +88,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                       Expanded(child: Text(order.productName, style: AppTheme.sans(15, weight: FontWeight.w700))),
-                      AppBadge(text: order.status, tone: BadgeTone.brand),
+                      AppBadge(text: marketplaceOrderStatusLabel(order.status, l10n), tone: BadgeTone.brand),
                     ]),
                     const SizedBox(height: 6),
                     Text(l10n.orderDetailBuyerLabel(order.buyerName), style: AppTheme.sans(12, color: Neutral.c500)),
@@ -113,7 +113,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     // letting the tap fail with a server-side exception.
                     final reachable = !_updating && (isStaff || selected || (currentIndex != -1 && (e.key - currentIndex).abs() == 1));
                     return ChoiceChip(
-                      label: Text(e.value),
+                      label: Text(marketplaceOrderStatusLabel(e.value, l10n)),
                       selected: selected,
                       onSelected: !reachable ? null : (_) => _updateStatus(order, e.value),
                       selectedColor: Brand.c50,

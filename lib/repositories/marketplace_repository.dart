@@ -232,7 +232,8 @@ class MarketplaceRepository {
         .from('marketplace_reviews')
         .select('*, marketplace_products!inner(seller_id)')
         .eq('marketplace_products.seller_id', sellerId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .limit(300);
     return (rows as List).map((r) => Review.fromMap(r as Map<String, dynamic>)).toList();
   }
 

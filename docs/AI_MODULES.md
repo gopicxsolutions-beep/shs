@@ -422,7 +422,12 @@ before it spends a paid Groq call.
   professional financial, legal, or medical advice; confirm important
   decisions with your SHG leader or a qualified advisor." — on the AI hub,
   the shared chat page (all 3 advisors), and the Voice Assistant
-  independently, localized in all three languages (`aiDisclaimer` key).
+  independently, localized in all three languages (`aiDisclaimer` key). On
+  the Voice Assistant specifically (round 187), it's also **spoken**, after
+  the answer, in the member's selected voice language — previously only the
+  answer was passed to TTS, so the one safety caveat that exists was only
+  ever available as small (11px) printed text, unreachable in an
+  otherwise-voice-only interaction.
 
 **A basic first line of defense now exists** (`supabase/functions/ai-advisor-proxy/moderation.ts`),
 using only the already-provisioned Groq key — no new paid moderation vendor:
@@ -435,6 +440,16 @@ using only the already-provisioned Groq key — no new paid moderation vendor:
   (`buildSystemPrompt()`). This is the well-known "sandwich defense" pattern —
   a real, honest improvement over zero mitigation, not a guarantee against a
   determined, creatively-worded attacker.
+  - Round 187: `buildSystemPrompt(baseSystemPrompt, language)` also appends a
+    language directive ("respond only in Hindi, Devanagari script" /
+    "...Telugu script") for `hi`/`te`, kept as a *third*, separately-appended
+    piece (base prompt + injection-hardening suffix + language directive) so
+    the `looksLikeSystemPromptLeak()` word-overlap check — which still
+    compares only against the raw, undecorated base prompt — is unaffected.
+    Before this, `language` was threaded end-to-end from the client but only
+    ever selected which localized *rejection* string came back; the actual
+    advisor answer was English-only regardless of the member's app language,
+    despite the surrounding chat UI being fully localized.
 - **A server-side content pre-filter** (`checkQueryForDisallowedContent()`)
   rejects obvious self-harm, hate-speech, and jailbreak/prompt-extraction
   attempts with a 400 *before* a paid Groq call or rate-limit consumption is
@@ -460,8 +475,8 @@ using only the already-provisioned Groq key — no new paid moderation vendor:
 - **An output-side heuristic** (`looksLikeSystemPromptLeak()`) swaps in a
   safe fallback if a completion echoes a long run of the base system prompt
   verbatim (a system-prompt-extraction tell).
-- Covered by 20 Deno unit tests across `moderation.test.ts` and
-  `history.test.ts` (including a dedicated regression test asserting a
+- Covered by 51 Deno unit tests across `moderation.test.ts` (32) and
+  `history.test.ts` (19) (including a dedicated regression test asserting a
   disallowed history *response* — not just query — is blocked), independent
   of the Edge Function runtime.
 
