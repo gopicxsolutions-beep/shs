@@ -13892,3 +13892,211 @@ low-severity dead-code fallback path, not fixed):
   to a blind non-atomic update if the RPC is ever missing from the schema
   cache — dead code today, worth removing or hardening to fail loud
   instead, not fixed this round.
+
+## Update (round 176) — Gap-hunting loop, iteration 4: resolved all 3 of round 175's carried-over findings, launched 4 fresh module audits (Voice Assistant, Reports, Training/Quiz, Payments+Marketplace), fixed 12 more real gaps
+
+Per the user's standing instruction, this iteration ran without pausing for
+confirmation and commits at the end. First cleared round 175's three
+documented-but-unfixed items, then launched fresh audits of Voice Assistant,
+Reports/Analytics, Training/Quiz, and Payments+Marketplace (four parallel
+background agents), fixing everything genuine they found.
+
+**Round 175's carried-over findings, resolved:**
+
+1. **Marketplace order status transition guard** (`0068_marketplace_order_
+   status_transition_guard.sql`) — the tension flagged last round (a
+   forward/backward guard vs. `0013`'s deliberate "staff can freely correct
+   status" design) is resolved by NOT choosing one over the other: a new
+   `advance_marketplace_order_status(p_order_id, p_new_status)` RPC
+   (`security invoker`, same lock-check-update shape as
+   `decide_scheme_application`) keeps staff's existing free-form power
+   untouched, but restricts a non-staff seller to moving exactly one step
+   forward or back along `['new','packed','shipped','delivered']` per call.
+   `MarketplaceRepository.updateOrderStatus` now calls this RPC instead of
+   a raw `update`; `OrderDetailPage` disables unreachable status chips for
+   non-staff sellers instead of letting the tap fail server-side. **Live-
+   verified** as the real seller (a `__TEST__` leader fixture) via `set
+   local role authenticated` + `request.jwt.claims`: a `new → delivered`
+   jump correctly raises `P0001: sellers can only move an order one step
+   forward or back`; the full `new → packed → shipped → delivered` walk
+   succeeds one step at a time; a staff account (admin fixture) can still
+   jump `new → delivered` directly in one call, confirming the correction
+   capability survived. All three tests wrapped in `begin;...rollback;`,
+   confirmed the test order's status was still `'new'` afterward.
+2. **`generate-report-snapshots` stale attendance window** — added the
+   same rolling last-6-months `gte(windowStart)` bound
+   `TrendRepository.attendanceRate()` already uses client-side (the
+   denominator was already correctly roster-size-based, `meetingIds.length
+   × memberCount` — only the missing lower time bound was the bug).
+   Corrected `ReportRepository`'s header comment, which still claimed "no
+   such function is wired yet" after the function had shipped. **Not**
+   fully live-triggerable this round — `CRON_SECRET` isn't configured in
+   this project (`supabase secrets list` confirms it's absent, matching
+   `PAYMENT_WEBHOOK_SECRET` also being absent below), so the deployed
+   function 500s on its own missing-secret guard rather than running; the
+   fix is verified by code-level equivalence to the already live-verified
+   client formula, not by an end-to-end HTTP trigger. Documented honestly
+   rather than claimed as fully exercised.
+3. **Per-SHG vs platform-wide member-count inconsistency** — both
+   `ReportRepository.fetchFederationReport()` and
+   `AnalyticsRepository.fetchPlatformKpis()` switched from `.eq('role',
+   'member')` to `.not('shg_id', 'is', null)`, matching the per-SHG
+   definition every roster-size calculation already uses (a leader is
+   still one of the SHG's members, not a separate entity). **Live-
+   verified**: platform-wide count went from 4 (old, role-filtered) to 7
+   (new, roster-based) against the real accounts created earlier this
+   session — a leader_count of 4 accounts for essentially all of the gap.
+4. **`SchemeRepository`'s `PGRST202` dead-code fallback** — re-scoped
+   after discovering (via grep) this is a deliberate, repeated
+   architectural pattern across `scheme_repository.dart`,
+   `loan_repository.dart` (×2), and `financial_repository.dart`, not a
+   one-off oversight — "gracefully degrade instead of hard-failing every
+   approval while a migration hasn't deployed yet" is a legitimate design
+   the audit shouldn't silently override. Instead of removing the
+   fallback, hardened the two structurally-identical "decision race guard"
+   fallbacks (`scheme_repository.decideApplication`,
+   `loan_repository.approve`/`reject`) to gate their raw fallback `update`
+   on the row still being in its pre-decision status
+   (`.eq('status','pending')` / `.inFilter('status', ['applied',
+   'under_review'])`), throwing the same `AlreadyDecidedException` on 0
+   rows affected — closing the "fallback silently reintroduces the exact
+   race the RPC exists to prevent" gap without abandoning the graceful-
+   degrade architecture. `financial_repository.dart`'s ledger-balance
+   fallback left alone — it's a different risk shape (amount drift, not a
+   status race) with no comparable single-column guard available.
+
+**Fresh audit findings, fixed (12):**
+
+5. **Payments webhook has no monotonic-transition guard** — confirmed
+   real by the audit (the file's own header comment already named the
+   exact scenario). Fixed with the same lock-check-update pattern as
+   0068: `update payments set status=$1 where reference=$2 and
+   status='pending'` (was: unconditional). A late/stale/replayed webhook
+   for an already-terminal payment is now logged and ignored, not applied.
+   **Live-verified** via direct SQL: created a `__TEST__` payment row at
+   `status='success'`, ran the exact conditional-update statement with a
+   `'pending'` target status, confirmed 0 rows matched and the stored
+   status was still `'success'` afterward. Test row deleted, re-queried
+   zero rows remain. (Signature verification/replay-timestamp handling
+   were independently re-verified sound by the audit, not touched.)
+6. **Marketplace review `reviewer_name` spoofing** — `0061` correctly
+   locks down WHO can review (real buyer, delivered order, no self-
+   review), but never constrained `reviewer_name` itself; a direct
+   authenticated REST call could set it to any string while `reviewer_id`
+   stayed correctly attributed. Fixed with a `before insert` trigger
+   (`0069_marketplace_reviews_reviewer_name_pin.sql`, mirrors
+   `support_tickets_stamp_resolved_at`'s established shape) that
+   overwrites `reviewer_name` from the reviewer's own `profiles.name`,
+   ignoring whatever the client sent. **Live-verified**: inserted a review
+   as a real test buyer with `reviewer_name: 'FAKE IMPERSONATED NAME'`;
+   the stored row came back with the real profile name instead. Rolled
+   back, no lasting change.
+7. **Quiz has no attempt cap — brute-forceable / answer-key extraction
+   oracle** — `submit_quiz_attempt` (0051) could be called unlimited
+   times, returning exact score every time; a scripted caller could flip
+   one answer at a time to reconstruct the full answer key, or just
+   brute-force a short quiz into a guaranteed pass. Fixed
+   (`0070_quiz_attempt_cap.sql`) with a daily per-(course,member) attempt
+   counter (same insert/on-conflict/update/returning atomic shape as
+   `check_and_increment_ai_advisor_rate_limit`), capped at 5/day, raising
+   a clear exception once exceeded. `TrainingRepository.submitQuiz` maps
+   the specific Postgres exception to a new
+   `QuizAttemptLimitExceededException`; `CourseQuizPage` shows a distinct,
+   actionable message (new `courseQuizAttemptLimitError` l10n key, all 3
+   languages) instead of the generic save-error text. **Live-verified**:
+   created a temporary test course + quiz question, called the RPC 6
+   times as a test member — the 6th call raised exactly `"too many quiz
+   attempts today for this course"`; a separate run confirmed the counter
+   reached exactly 3 after 3 calls. Test course/questions/counters deleted
+   afterward (cascade), re-queried zero rows remain.
+8. **Training-completion KPI keyed to self-reported `progress`, not the
+   RLS-locked `certified` flag** — `AdminRepository.
+   fetchTrainingCompletionPct()` summed `course_progress.progress`, which
+   any member can set to 100 unconditionally with zero quiz involvement
+   (`course_progress_write_self_or_staff`, 0037); `certified` (0051) is
+   the only value that actually proves a passed quiz. Fixed to use
+   `certified` for any course that has quiz questions, while still
+   trusting `progress` for a course with none at all (there's no server-
+   side verification mechanism to fall back to for those) — avoids
+   regressing legitimate no-quiz courses while closing the "self-mark 100%
+   without passing" gap for quizzed ones. Feeds the CRP/CLF/Admin
+   dashboard "Training Completion" stat.
+9. **Voice Assistant/Support leak a live microphone session on
+   navigation-away mid-listen** — neither `VoiceRecognitionService` nor
+   `VoiceSupportService` exposed a `stop()`, and neither page's (or
+   missing) `dispose()` called one; leaving the page mid-listen kept the
+   native `speech_to_text` session running in the background for up to
+   its own 15s timeout with no owning widget. Added `stop()` to both
+   service interfaces (real cleanup in the two `Device*` implementations,
+   no-op in the two `Mock*` ones — updated the one test double that
+   implements the interface directly); wired into `AiVoiceAssistantPage.
+   dispose()` and a newly-added `SupportVoicePage.dispose()`.
+10. **Recognizer/completer never cleaned up if `_stt.listen()` itself
+    throws** — in both `DeviceVoiceRecognitionService.listen()` and
+    `DeviceVoiceSupportService.transcribe()`, the try/finally only wrapped
+    the result-await, not the preceding `listen()` call — a throw there
+    (plausible right after #9's leaked session, or any platform-channel
+    error) skipped cleanup entirely, leaving `_pendingCompleter` pointing
+    at a completer that would never complete. Moved `_stt.listen()` inside
+    the same try/finally in both files.
+11. **Leader dashboard "Recovery" tile measures something different from
+    the platform "Recovery Rate" tile under the same label** — the leader
+    tile is a loan-COUNT ratio over this SHG's active+overdue loans only;
+    the platform tile (`AnalyticsRepository.fetchPlatformKpis`,
+    `federation_recovery_page.dart`) is amount-weighted
+    (repaid/disbursed) over active+overdue+closed loans. A SHG with 9
+    small on-time loans and 1 large overdue one could show ~90% on the
+    leader tile while its true amount-weighted recovery is far lower, with
+    no per-SHG amount-based figure to reconcile against. Relabeled to
+    "On-time Loans" (all 3 languages) rather than computing the amount-
+    weighted formula here, since that would need this SHG's total
+    disbursed amount newly plumbed through just for one tile.
+12. **`ShgFinancialSummaryPage`'s blanket "All time" caption is wrong for
+    its attendance tile** — the page-level `r.period` caption ("All time")
+    sits above 4 stats, 3 of which genuinely are all-time, but
+    `avgAttendancePct` is always the rolling last-6-months figure
+    (`TrendRepository.attendanceRate()`). Fixed by appending "(last 6
+    months)" directly to the `shgFinancialSummaryAvgAttendanceLabel` string
+    (all 3 languages) rather than restructuring the page's single caption.
+13. **`ReportRepository.fetchFederationReport()` is dead code** — computes
+    a real, now-correct (see #3) shgCount/memberCount/totalSavings/
+    totalOutstanding aggregate, but `FederationReportPage` is a pure
+    3-tile navigation hub that never calls it. Left implemented (not
+    deleted — the obvious data source if a federation summary header is
+    ever added) but flagged with a doc comment so it doesn't read as "this
+    is live and displayed somewhere."
+14. **Hardcoded English string in the admin quiz editor** —
+    `admin_training_quiz_page.dart`'s `'${q.options.length} options'` was
+    the one string on that page not routed through `AppLocalizations`.
+    Added `adminTrainingQuizOptionCount` (ICU, all 3 languages).
+
+**Other findings from this round's audits, documented but not fixed**
+(genuine, lower-priority, or needing a larger design decision than this
+iteration's scope):
+
+- Voice Assistant: no `Semantics`/live-region announcements as
+  listening→thinking→answered state changes (unlike the AI chat advisors'
+  bubbles); a permanently-denied mic permission gets the same generic
+  error text as any other failure instead of an actionable "enable
+  microphone in Settings" message; `DeviceVoiceSupportService`'s "I don't
+  have an answer for that yet..." fallback string is hardcoded English
+  with no `BuildContext` available to localize it from the service layer.
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1033/1033 passing) both clean after every change. All new/changed SQL
+(migrations 0068–0070) pushed to the linked live project via `supabase db
+push`; `generate-report-snapshots` and `payment-webhook-handler` redeployed
+via `supabase functions deploy`. `flutter build web` rebuilt cleanly.
+**Browser preview verification was attempted but blocked this round**: the
+Flutter web release build's `flt-glass-pane` never gained children (stuck
+at the CanvasKit-init stage) across two independent attempts — a fresh
+tab + single navigate on the existing server, then a fully fresh server +
+fresh tab — matching this repo's own documented flakiness
+(`CLAUDE.md`'s "Browser pane's Flutter web tab gets stuck" section); no
+server-side or console errors were present either time. Did not fall back
+to a diagnostic loop per that same guidance; relied instead on direct
+live-DB verification (as real non-privileged users via `set local role
+authenticated` + `request.jwt.claims`, per this project's RLS-testing
+convention) for every backend behavior change, which is the authoritative
+check for RLS/RPC correctness regardless of UI rendering. Stating this
+explicitly rather than claiming a visual click-through that didn't happen.

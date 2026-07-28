@@ -94,6 +94,18 @@ class _LeaderDashboardBody extends StatelessWidget {
     final pendingLoans = data.pendingLoans;
     final overdueLoans = data.overdueLoans;
     final upcomingMeeting = data.upcomingMeeting;
+    // A loan-COUNT ratio over this SHG's active+overdue loans only — NOT
+    // the same figure as the platform "Recovery Rate" tile elsewhere
+    // (AnalyticsRepository.fetchPlatformKpis/federation_recovery_page.dart),
+    // which is amount-weighted (repaid/disbursed) over active+overdue+
+    // closed loans. The two used to share the "Recovery" label despite
+    // measuring genuinely different things — a SHG with 9 small on-time
+    // loans and 1 large overdue one could show ~90% here while its true
+    // amount-weighted recovery is far lower, with no per-SHG amount-based
+    // figure to reconcile against. Labeled "On-time Loans" instead of
+    // computing the amount-weighted formula here, since that would need
+    // this SHG's total disbursed amount (not currently in ShgReportData)
+    // plumbed through just for this one tile.
     final recoveryPct = report.activeLoanCount > 0 ? ((1 - (overdueLoans.length / report.activeLoanCount)) * 100).round() : 100;
 
     return Column(

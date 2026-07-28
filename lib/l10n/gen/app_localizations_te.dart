@@ -747,7 +747,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get leaderDashboardAttendanceLabel => 'హాజరు';
 
   @override
-  String get leaderDashboardRecoveryLabel => 'రికవరీ';
+  String get leaderDashboardRecoveryLabel => 'సమయానికి రుణాలు';
 
   @override
   String get memberDashboardMySavingsLabel => 'నా పొదుపు';
@@ -1073,7 +1073,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get shgFinancialSummaryLoanOutstandingLabel => 'బాకీ రుణం';
 
   @override
-  String get shgFinancialSummaryAvgAttendanceLabel => 'సగటు హాజరు';
+  String get shgFinancialSummaryAvgAttendanceLabel => 'సగటు హాజరు (గత 6 నెలలు)';
 
   @override
   String get shgPerformanceReportTitle => 'పనితీరు నివేదిక';
@@ -2130,6 +2130,11 @@ class AppLocalizationsTe extends AppLocalizations {
   }
 
   @override
+  String adminTrainingQuizOptionCount(int count) {
+    return '$count ఎంపికలు';
+  }
+
+  @override
   String get adminTrainingQuizAddOptionTooltip => 'మరో ఎంపిక జోడించండి';
 
   @override
@@ -2569,6 +2574,10 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get courseQuizSaveError =>
       'మీ సర్టిఫికెట్‌ను సేవ్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get courseQuizAttemptLimitError =>
+      'ఈ క్విజ్ కోసం ఈరోజు మీ ప్రయత్న పరిమితి పూర్తయింది. దయచేసి రేపు మళ్ళీ ప్రయత్నించండి.';
 
   @override
   String get courseQuizNotFound => 'ఈ కోర్సు కనుగొనబడలేదు';

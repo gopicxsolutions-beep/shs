@@ -740,7 +740,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leaderDashboardAttendanceLabel => 'Attendance';
 
   @override
-  String get leaderDashboardRecoveryLabel => 'Recovery';
+  String get leaderDashboardRecoveryLabel => 'On-time Loans';
 
   @override
   String get memberDashboardMySavingsLabel => 'My Savings';
@@ -1069,7 +1069,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shgFinancialSummaryLoanOutstandingLabel => 'Loan Outstanding';
 
   @override
-  String get shgFinancialSummaryAvgAttendanceLabel => 'Average Attendance';
+  String get shgFinancialSummaryAvgAttendanceLabel =>
+      'Average Attendance (last 6 months)';
 
   @override
   String get shgPerformanceReportTitle => 'Performance Report';
@@ -2134,6 +2135,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String adminTrainingQuizOptionCount(int count) {
+    return '$count options';
+  }
+
+  @override
   String get adminTrainingQuizAddOptionTooltip => 'Add another option';
 
   @override
@@ -2573,6 +2579,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get courseQuizSaveError =>
       'Could not save your certificate. Please try again.';
+
+  @override
+  String get courseQuizAttemptLimitError =>
+      'You\'ve reached today\'s attempt limit for this quiz. Please try again tomorrow.';
 
   @override
   String get courseQuizNotFound => 'This course could not be found';

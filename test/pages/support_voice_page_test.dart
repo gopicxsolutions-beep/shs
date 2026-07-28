@@ -11,6 +11,9 @@ class _ThrowingVoiceService implements VoiceSupportService {
 
   @override
   Future<String> answer(String question) async => throw Exception('unreachable');
+
+  @override
+  Future<void> stop() async {}
 }
 
 /// Regression test for the fire-and-forget `_ask()` fix on SupportVoicePage.

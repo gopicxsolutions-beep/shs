@@ -21,6 +21,13 @@ class RecognizedCommand {
 /// is used in demo mode so the app stays fully explorable with no microphone.
 abstract class VoiceRecognitionService {
   Future<RecognizedCommand> listen(Language language);
+
+  /// Stops any in-flight recognition session immediately. Call this from a
+  /// page's `dispose()` if the member navigates away mid-listen — without
+  /// it, [DeviceVoiceRecognitionService]'s native session keeps the
+  /// microphone open in the background for up to its own timeout with no
+  /// owning widget left to receive the result.
+  Future<void> stop();
 }
 
 /// Cycles through the spec's example commands (and their Hindi/English
@@ -58,4 +65,7 @@ class MockVoiceRecognitionService implements VoiceRecognitionService {
     _i++;
     return RecognizedCommand(transcript: transcript, intent: intent);
   }
+
+  @override
+  Future<void> stop() async {}
 }

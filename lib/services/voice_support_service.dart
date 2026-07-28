@@ -11,6 +11,11 @@ abstract class VoiceSupportService {
   /// Answers a transcribed question, speaking the reply aloud as a
   /// side effect where the implementation supports it.
   Future<String> answer(String question);
+
+  /// Stops any in-flight recognition/speech session immediately — see
+  /// [VoiceRecognitionService.stop]'s doc comment for why a page must call
+  /// this from `dispose()`.
+  Future<void> stop();
 }
 
 /// Cycles through a small set of canned SHG questions/answers so the voice
@@ -48,4 +53,7 @@ class MockVoiceSupportService implements VoiceSupportService {
     _i++;
     return match.$2;
   }
+
+  @override
+  Future<void> stop() async {}
 }

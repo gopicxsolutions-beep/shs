@@ -109,6 +109,19 @@ serve(async (req) => {
     // `ReportRepository`'s attendance queries — without this, every
     // snapshot's `avg_attendance_pct` was permanently written as 0.
     const todayStr = new Date().toISOString().split('T')[0];
+    // Same rolling last-6-months window `TrendRepository.attendanceRate()`
+    // (client-side) already uses, re-derived independently for this
+    // function's own attendance figure below — without a lower bound, this
+    // averages in every meeting the SHG has EVER held, so a young, currently
+    // struggling SHG that met well in its first few months keeps reporting
+    // a falsely healthy lifetime average long after attendance has dropped
+    // off. Found because report_snapshots itself is dormant (no live `lib/`
+    // reader yet — see `ReportRepository`'s header comment, corrected
+    // below), but this function is still `pg_cron`-scheduled nightly against
+    // the live table, so it was silently writing a stale figure every night.
+    const now = new Date();
+    const windowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1));
+    const windowStartStr = windowStart.toISOString().split('T')[0];
 
     for (const shg of shgs ?? []) {
       try {
@@ -121,7 +134,7 @@ serve(async (req) => {
           supabase.from('profiles').select('id').eq('shg_id', shg.id),
           supabase.from('savings_entries').select('amount').eq('shg_id', shg.id).eq('status', 'verified'),
           supabase.from('loans').select('outstanding, status').eq('shg_id', shg.id),
-          supabase.from('meetings').select('id').eq('shg_id', shg.id).neq('status', 'cancelled').lt('meeting_date', todayStr),
+          supabase.from('meetings').select('id').eq('shg_id', shg.id).neq('status', 'cancelled').gte('meeting_date', windowStartStr).lt('meeting_date', todayStr),
         ]);
         // Surface a failed select as a thrown error (caught below, isolated
         // to this SHG) instead of letting `?? []` silently turn it into a

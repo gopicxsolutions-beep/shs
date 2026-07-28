@@ -82,6 +82,11 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
   @override
   void dispose() {
     _tts.stop();
+    // Without this, navigating away mid-listen (back button, bottom-nav tap)
+    // left DeviceVoiceRecognitionService's native session running in the
+    // background for up to its own 15s timeout with no owning widget left —
+    // a real microphone/privacy leak, not just a wasted resource.
+    _service.stop();
     super.dispose();
   }
 

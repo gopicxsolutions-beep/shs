@@ -27,16 +27,26 @@
 // timestamp bound into the signed content, a single captured valid
 // (payload, signature) pair (from a proxy log, a browser network panel, a
 // misconfigured logging integration, etc.) could be replayed at any point
-// in the future to re-apply a stale status (e.g. resending an old
-// 'PENDING'/'FAILED' webhook after the payment has since legitimately
-// reached 'success', silently reverting it — this handler has no
-// state-transition check, so any validly-signed status blindly overwrites
-// the current one). Real gateways using this exact scheme guard against
-// this the same way: Stripe's `Stripe-Signature: t=<ts>,v1=<sig>` signs
-// `${timestamp}.${payload}`, not the payload alone, and rejects timestamps
-// outside a tolerance window. Mirrored here via `x-webhook-timestamp` +
-// `MAX_WEBHOOK_AGE_SECONDS` — adjust the header name to match whichever
-// real gateway is wired in, same as the signature header above.
+// in the future to re-apply a stale status. Real gateways using this exact
+// scheme guard against this the same way: Stripe's
+// `Stripe-Signature: t=<ts>,v1=<sig>` signs `${timestamp}.${payload}`, not
+// the payload alone, and rejects timestamps outside a tolerance window.
+// Mirrored here via `x-webhook-timestamp` + `MAX_WEBHOOK_AGE_SECONDS` —
+// adjust the header name to match whichever real gateway is wired in, same
+// as the signature header above.
+//
+// Monotonic transition guard: the freshness window above still leaves a
+// multi-minute gap in which a genuinely out-of-order or gateway-retried
+// delivery (a network partition delaying a `'PENDING'` webhook so it lands
+// AFTER the `'SUCCESS'` one for the same payment) could otherwise revert an
+// already-completed payment. The update below is conditioned on the
+// payment's stored status still being `'pending'` — mirrors the
+// lock-check-update shape `advance_marketplace_order_status`
+// (0068_marketplace_order_status_transition_guard.sql) uses for the
+// analogous order-status field — so once a payment reaches a terminal
+// state (`'success'`/`'failed'`) no later webhook, however validly signed,
+// can move it again. A stale/duplicate/late webhook for an
+// already-terminal payment is logged and ignored, not applied.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -120,7 +130,11 @@ serve(async (req) => {
     if (!mappedStatus) throw new HttpError(400, `unrecognized payment status: ${status}`);
 
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-    const { error } = await supabase.from('payments').update({ status: mappedStatus }).eq('reference', reference);
+    // Only a still-'pending' payment can transition — see the header
+    // comment above. An empty `data` means either the reference doesn't
+    // exist, or (far more likely in practice) the payment already reached
+    // a terminal state and this webhook is stale/duplicate/out-of-order.
+    const { data, error } = await supabase.from('payments').update({ status: mappedStatus }).eq('reference', reference).eq('status', 'pending').select('id');
     if (error) {
       // Same info-leakage class already fixed in generate-report-snapshots
       // and ai-advisor-proxy (raw Postgres/Supabase error text — table/
@@ -130,6 +144,9 @@ serve(async (req) => {
       // schema detail. Log the real detail server-side, return generic text.
       console.error('payment-webhook-handler: DB update failed:', error);
       throw new HttpError(500, 'Internal error');
+    }
+    if ((data ?? []).length === 0) {
+      console.warn(`payment-webhook-handler: ${mappedStatus} webhook for reference ${reference} was not applied (unknown reference, or payment already reached a terminal state) — ignored rather than overwritten.`);
     }
 
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });

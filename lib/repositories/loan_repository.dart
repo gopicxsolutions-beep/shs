@@ -173,14 +173,23 @@ class LoanRepository {
       // 'PGRST202' = function not found in schema cache — migration 0029
       // not deployed yet. Falls back to the old non-atomic write rather
       // than hard-failing every approval in the gap before it's deployed
-      // (same fallback shape as `recordPayment`'s PGRST202 handling above).
+      // (same fallback shape as `recordPayment`'s PGRST202 handling above)
+      // — gated on the loan still being 'pending' (mirroring the RPC's own
+      // guard) so this fallback can no longer silently reintroduce the
+      // same-loan double-decision race the RPC exists to close.
       if (e.code == 'PGRST202') {
-        await _client.from('loans').update({
-          'status': 'active',
-          'disbursed_on': DateTime.now().toIso8601String().split('T').first,
-          'emi': emi,
-          'next_due_date': nextDueDate.toIso8601String().split('T').first,
-        }).eq('id', id);
+        final rows = await _client
+            .from('loans')
+            .update({
+              'status': 'active',
+              'disbursed_on': DateTime.now().toIso8601String().split('T').first,
+              'emi': emi,
+              'next_due_date': nextDueDate.toIso8601String().split('T').first,
+            })
+            .eq('id', id)
+            .eq('status', 'pending')
+            .select('id');
+        if ((rows as List).isEmpty) throw const LoanAlreadyDecidedException();
         return;
       }
       if (e.message.contains('no longer pending')) throw const LoanAlreadyDecidedException();
@@ -212,8 +221,11 @@ class LoanRepository {
     try {
       await _client.rpc('reject_loan', params: {'p_loan_id': id});
     } on PostgrestException catch (e) {
+      // Gated on 'pending' — see approve()'s identical PGRST202 fallback
+      // comment above for why.
       if (e.code == 'PGRST202') {
-        await _client.from('loans').update({'status': 'rejected'}).eq('id', id);
+        final rows = await _client.from('loans').update({'status': 'rejected'}).eq('id', id).eq('status', 'pending').select('id');
+        if ((rows as List).isEmpty) throw const LoanAlreadyDecidedException();
         return;
       }
       if (e.message.contains('no longer pending')) throw const LoanAlreadyDecidedException();

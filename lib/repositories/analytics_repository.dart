@@ -38,7 +38,11 @@ class AnalyticsRepository {
     final shgs = await _client.from('shgs').select('id');
     final totalShgs = (shgs as List).length;
 
-    final members = await _client.from('profiles').select('id').eq('role', 'member');
+    // See `ReportRepository.fetchFederationReport`'s matching comment: count
+    // every profile seated in an SHG (leader included), not just
+    // `role = 'member'` — otherwise this platform KPI undercounts by one
+    // leader per SHG relative to summing each SHG's own member count.
+    final members = await _client.from('profiles').select('id').not('shg_id', 'is', null);
     final activeMembers = (members as List).length;
 
     // Only verified entries count as real group funds — a pending entry is

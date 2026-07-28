@@ -36,19 +36,22 @@ class DeviceVoiceSupportService implements VoiceSupportService {
 
     final completer = Completer<String>();
     _pendingCompleter = completer;
-    await _stt.listen(
-      onResult: (result) {
-        if (result.finalResult && !completer.isCompleted) completer.complete(result.recognizedWords);
-      },
-      listenOptions: stt.SpeechListenOptions(
-        listenMode: stt.ListenMode.dictation,
-        listenFor: const Duration(seconds: 10),
-        pauseFor: const Duration(seconds: 3),
-      ),
-    );
 
     String question;
     try {
+      // See DeviceVoiceRecognitionService.listen's identical fix — listen()
+      // itself must be inside this try/finally, not before it, so a throw
+      // here still clears _pendingCompleter and stops the native session.
+      await _stt.listen(
+        onResult: (result) {
+          if (result.finalResult && !completer.isCompleted) completer.complete(result.recognizedWords);
+        },
+        listenOptions: stt.SpeechListenOptions(
+          listenMode: stt.ListenMode.dictation,
+          listenFor: const Duration(seconds: 10),
+          pauseFor: const Duration(seconds: 3),
+        ),
+      );
       question = await completer.future.timeout(const Duration(seconds: 15));
     } on TimeoutException {
       question = '';
@@ -61,6 +64,17 @@ class DeviceVoiceSupportService implements VoiceSupportService {
       throw StateError("Sorry, I couldn't hear anything. Please try again.");
     }
     return question;
+  }
+
+  @override
+  Future<void> stop() async {
+    final completer = _pendingCompleter;
+    _pendingCompleter = null;
+    if (completer != null && !completer.isCompleted) completer.complete('');
+    if (_stt.isListening) await _stt.stop();
+    try {
+      await _tts.stop();
+    } catch (_) {}
   }
 
   @override

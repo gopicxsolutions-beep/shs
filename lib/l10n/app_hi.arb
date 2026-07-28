@@ -315,7 +315,7 @@
 
   "leaderDashboardAttendanceLabel": "उपस्थिति",
 
-  "leaderDashboardRecoveryLabel": "रिकवरी",
+  "leaderDashboardRecoveryLabel": "समय पर ऋण",
 
   "memberDashboardMySavingsLabel": "मेरी बचत",
 
@@ -491,7 +491,7 @@
 
   "shgFinancialSummaryLoanOutstandingLabel": "बकाया ऋण",
 
-  "shgFinancialSummaryAvgAttendanceLabel": "औसत उपस्थिति",
+  "shgFinancialSummaryAvgAttendanceLabel": "औसत उपस्थिति (पिछले 6 महीने)",
 
   "shgPerformanceReportTitle": "प्रदर्शन रिपोर्ट",
 
@@ -1121,6 +1121,13 @@
     }
   },
 
+  "adminTrainingQuizOptionCount": "{count} विकल्प",
+  "@adminTrainingQuizOptionCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
   "adminTrainingQuizAddOptionTooltip": "एक और विकल्प जोड़ें",
 
   "adminTrainingQuizRemoveOptionTooltip": "यह विकल्प हटाएं",
@@ -1386,6 +1393,8 @@
   "courseQuizPassedDemoMode": "पास हो गए! डेमो मोड — सर्टिफिकेट सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
 
   "courseQuizSaveError": "आपका सर्टिफिकेट सेव नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "courseQuizAttemptLimitError": "आपने इस क्विज़ के लिए आज की प्रयास सीमा पूरी कर ली है। कृपया कल फिर से कोशिश करें।",
 
   "courseQuizNotFound": "यह कोर्स नहीं मिल सका",
 

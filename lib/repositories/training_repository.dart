@@ -3,6 +3,13 @@ import '../data/training.dart' as mock;
 import '../models/training.dart';
 import '../services/supabase_service.dart';
 
+/// Thrown by [TrainingRepository.submitQuiz] when `submit_quiz_attempt`
+/// (migration 0070) rejects the attempt because the member has already
+/// used up today's attempt cap for this course.
+class QuizAttemptLimitExceededException implements Exception {
+  const QuizAttemptLimitExceededException();
+}
+
 /// Backed by `public.training_courses` / `public.course_progress` when
 /// Supabase is configured; falls back to `lib/data/training.dart`
 /// otherwise. The course catalog is public reference data.
@@ -255,12 +262,17 @@ class TrainingRepository {
       if (passed) await markCertified(courseId, memberId);
       return (passed: passed, score: score, total: total);
     }
-    final rows = await _client.rpc('submit_quiz_attempt', params: {
-      'p_course_id': courseId,
-      'p_answers': answers,
-    }) as List;
-    final row = rows.first as Map<String, dynamic>;
-    return (passed: row['passed'] as bool, score: row['score'] as int, total: row['total'] as int);
+    try {
+      final rows = await _client.rpc('submit_quiz_attempt', params: {
+        'p_course_id': courseId,
+        'p_answers': answers,
+      }) as List;
+      final row = rows.first as Map<String, dynamic>;
+      return (passed: row['passed'] as bool, score: row['score'] as int, total: row['total'] as int);
+    } on PostgrestException catch (e) {
+      if (e.message.contains('too many quiz attempts')) throw const QuizAttemptLimitExceededException();
+      rethrow;
+    }
   }
 
   Future<List<Course>> fetchCertificates(String? memberId) async {

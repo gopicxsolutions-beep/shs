@@ -1387,7 +1387,7 @@ abstract class AppLocalizations {
   /// No description provided for @leaderDashboardRecoveryLabel.
   ///
   /// In en, this message translates to:
-  /// **'Recovery'**
+  /// **'On-time Loans'**
   String get leaderDashboardRecoveryLabel;
 
   /// No description provided for @memberDashboardMySavingsLabel.
@@ -1915,7 +1915,7 @@ abstract class AppLocalizations {
   /// No description provided for @shgFinancialSummaryAvgAttendanceLabel.
   ///
   /// In en, this message translates to:
-  /// **'Average Attendance'**
+  /// **'Average Attendance (last 6 months)'**
   String get shgFinancialSummaryAvgAttendanceLabel;
 
   /// No description provided for @shgPerformanceReportTitle.
@@ -3712,6 +3712,12 @@ abstract class AppLocalizations {
   /// **'Option {number}'**
   String adminTrainingQuizOptionHint(int number);
 
+  /// No description provided for @adminTrainingQuizOptionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} options'**
+  String adminTrainingQuizOptionCount(int count);
+
   /// No description provided for @adminTrainingQuizAddOptionTooltip.
   ///
   /// In en, this message translates to:
@@ -4509,6 +4515,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not save your certificate. Please try again.'**
   String get courseQuizSaveError;
+
+  /// No description provided for @courseQuizAttemptLimitError.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve reached today\'s attempt limit for this quiz. Please try again tomorrow.'**
+  String get courseQuizAttemptLimitError;
 
   /// No description provided for @courseQuizNotFound.
   ///

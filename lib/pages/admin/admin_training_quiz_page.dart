@@ -291,7 +291,7 @@ class _AdminTrainingQuizPageState extends State<AdminTrainingQuizPage> {
                           children: [
                             Text(q.question, style: AppTheme.sans(13, weight: FontWeight.w700)),
                             const SizedBox(height: 4),
-                            Text('${q.options.length} options', style: AppTheme.sans(11, color: Neutral.c500)),
+                            Text(AppLocalizations.of(context)!.adminTrainingQuizOptionCount(q.options.length), style: AppTheme.sans(11, color: Neutral.c500)),
                           ],
                         ),
                       ),

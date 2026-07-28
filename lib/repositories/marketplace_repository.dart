@@ -195,7 +195,7 @@ class MarketplaceRepository {
       }
       return;
     }
-    await _client.from('marketplace_orders').update({'status': status}).eq('id', id);
+    await _client.rpc('advance_marketplace_order_status', params: {'p_order_id': id, 'p_new_status': status});
   }
 
   /// Reviews across every product this seller lists.

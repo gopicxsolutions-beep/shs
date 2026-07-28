@@ -188,9 +188,22 @@ class SchemeRepository {
       // 'PGRST202' = function not found in schema cache — migration 0029
       // not deployed yet. Falls back to the old non-atomic write (same
       // fallback shape used elsewhere in this repository layer for
-      // not-yet-deployed migrations).
+      // not-yet-deployed migrations) — but this fallback used to blindly
+      // overwrite `status` with no state check at all, silently
+      // reintroducing the exact same-decision race the RPC exists to
+      // close, for as long as this fallback path is ever live. Gating the
+      // update on the application still being 'applied'/'under_review'
+      // (mirroring the RPC's own guard) restores that property without
+      // giving up the graceful-degrade-instead-of-hard-fail behavior this
+      // whole fallback exists for.
       if (e.code == 'PGRST202') {
-        await _client.from('scheme_applications').update({'status': approve ? 'approved' : 'rejected'}).eq('id', applicationId);
+        final rows = await _client
+            .from('scheme_applications')
+            .update({'status': approve ? 'approved' : 'rejected'})
+            .eq('id', applicationId)
+            .inFilter('status', ['applied', 'under_review'])
+            .select('id');
+        if ((rows as List).isEmpty) throw const SchemeApplicationAlreadyDecidedException();
         return;
       }
       if (e.message.contains('already decided')) throw const SchemeApplicationAlreadyDecidedException();

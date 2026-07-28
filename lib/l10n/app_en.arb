@@ -442,7 +442,7 @@
 
   "leaderDashboardAttendanceLabel": "Attendance",
 
-  "leaderDashboardRecoveryLabel": "Recovery",
+  "leaderDashboardRecoveryLabel": "On-time Loans",
 
   "memberDashboardMySavingsLabel": "My Savings",
 
@@ -712,7 +712,7 @@
 
   "shgFinancialSummaryLoanOutstandingLabel": "Loan Outstanding",
 
-  "shgFinancialSummaryAvgAttendanceLabel": "Average Attendance",
+  "shgFinancialSummaryAvgAttendanceLabel": "Average Attendance (last 6 months)",
 
   "shgPerformanceReportTitle": "Performance Report",
 
@@ -1492,6 +1492,13 @@
     }
   },
 
+  "adminTrainingQuizOptionCount": "{count} options",
+  "@adminTrainingQuizOptionCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
   "adminTrainingQuizAddOptionTooltip": "Add another option",
 
   "adminTrainingQuizRemoveOptionTooltip": "Remove this option",
@@ -1790,6 +1797,8 @@
   "courseQuizPassedDemoMode": "Passed! Demo mode — certificate not saved (connect Supabase to persist)",
 
   "courseQuizSaveError": "Could not save your certificate. Please try again.",
+
+  "courseQuizAttemptLimitError": "You've reached today's attempt limit for this quiz. Please try again tomorrow.",
 
   "courseQuizNotFound": "This course could not be found",
 

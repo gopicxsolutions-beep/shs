@@ -7,13 +7,13 @@ import 'savings_repository.dart';
 import 'shg_repository.dart';
 import 'trend_repository.dart';
 
-/// `public.report_snapshots` exists so an Edge Function can eventually
-/// generate these server-side and cache them (`report_snapshots_write_staff`
-/// restricts writes to staff). No such function is wired yet, so this
-/// repository computes the same shape on-the-fly from live tables — a
-/// documented placeholder for that future server-side generation. In demo
-/// mode (no Supabase configured) it returns a small illustrative snapshot
-/// instead of hitting any table.
+/// `public.report_snapshots` is populated nightly by the
+/// `generate-report-snapshots` Edge Function (`report_snapshots_write_staff`
+/// restricts writes to staff/service-role) — but nothing in `lib/` reads
+/// that table yet, so this repository still computes the same shape
+/// on-the-fly from live tables on every call instead of reading the cached
+/// snapshot. In demo mode (no Supabase configured) it returns a small
+/// illustrative snapshot instead of hitting any table.
 class ReportRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
@@ -179,6 +179,14 @@ class ReportRepository {
   /// Aggregates across every SHG — relies on the `is_staff()` RLS bypass on
   /// `shgs` / `savings_entries` / `loans` / `profiles`, so this only returns
   /// meaningful (non-empty) data for crp/clf/admin callers.
+  ///
+  /// Currently dead code — `FederationReportPage` is a pure 3-tile
+  /// navigation hub (Village-wise SHGs / Loan Recovery / Savings Growth)
+  /// and never calls this. Left implemented (and kept correct — see the
+  /// member-count comment below) rather than deleted, since it's the
+  /// obvious data source for a federation-wide summary header on that hub
+  /// page if one is ever added; flagging here so it doesn't read as "this
+  /// is live and displayed somewhere" to the next person who touches it.
   Future<FederationReportData> fetchFederationReport() async {
     if (!_live) {
       return const FederationReportData(shgCount: 8, memberCount: 96, totalSavings: 4120000, totalOutstanding: 1180000, period: 'All time');
@@ -186,7 +194,17 @@ class ReportRepository {
     final shgs = await _client.from('shgs').select('id');
     final shgCount = (shgs as List).length;
 
-    final members = await _client.from('profiles').select('id').eq('role', 'member');
+    // `role = 'member'` here undercounted the true federation-wide headcount
+    // relative to summing every individual `ShgReportData.memberCount`
+    // above — that per-SHG figure (and `TrendRepository`'s roster-size
+    // denominator it shares) counts every profile row for the SHG
+    // regardless of role, since an elected leader is still one of the
+    // group's members, not a separate entity outside it. Filtering to
+    // `role = 'member'` silently dropped one leader per SHG from this
+    // platform-wide total, so the sum of every SHG's own member count could
+    // exceed this rollup for the same population. Match the per-SHG
+    // definition: any profile actually seated in an SHG.
+    final members = await _client.from('profiles').select('id').not('shg_id', 'is', null);
     final memberCount = (members as List).length;
 
     final savings = await _client.from('savings_entries').select('amount').eq('status', 'verified');

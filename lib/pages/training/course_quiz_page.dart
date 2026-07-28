@@ -65,6 +65,10 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
           SnackBar(content: Text(SupabaseService.isConfigured ? l10n.courseQuizPassed : l10n.courseQuizPassedDemoMode)),
         );
       }
+    } on QuizAttemptLimitExceededException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.courseQuizAttemptLimitError)));
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.courseQuizSaveError)));

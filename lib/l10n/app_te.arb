@@ -315,7 +315,7 @@
 
   "leaderDashboardAttendanceLabel": "హాజరు",
 
-  "leaderDashboardRecoveryLabel": "రికవరీ",
+  "leaderDashboardRecoveryLabel": "సమయానికి రుణాలు",
 
   "memberDashboardMySavingsLabel": "నా పొదుపు",
 
@@ -491,7 +491,7 @@
 
   "shgFinancialSummaryLoanOutstandingLabel": "బాకీ రుణం",
 
-  "shgFinancialSummaryAvgAttendanceLabel": "సగటు హాజరు",
+  "shgFinancialSummaryAvgAttendanceLabel": "సగటు హాజరు (గత 6 నెలలు)",
 
   "shgPerformanceReportTitle": "పనితీరు నివేదిక",
 
@@ -1121,6 +1121,13 @@
     }
   },
 
+  "adminTrainingQuizOptionCount": "{count} ఎంపికలు",
+  "@adminTrainingQuizOptionCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
   "adminTrainingQuizAddOptionTooltip": "మరో ఎంపిక జోడించండి",
 
   "adminTrainingQuizRemoveOptionTooltip": "ఈ ఎంపికను తొలగించండి",
@@ -1386,6 +1393,8 @@
   "courseQuizPassedDemoMode": "పాస్ అయ్యారు! డెమో మోడ్ — సర్టిఫికెట్ సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
 
   "courseQuizSaveError": "మీ సర్టిఫికెట్‌ను సేవ్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "courseQuizAttemptLimitError": "ఈ క్విజ్ కోసం ఈరోజు మీ ప్రయత్న పరిమితి పూర్తయింది. దయచేసి రేపు మళ్ళీ ప్రయత్నించండి.",
 
   "courseQuizNotFound": "ఈ కోర్సు కనుగొనబడలేదు",
 

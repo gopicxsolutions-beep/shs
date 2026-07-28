@@ -58,20 +58,26 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
     final completer = Completer<String>();
     _pendingCompleter = completer;
 
-    await _stt.listen(
-      onResult: (result) {
-        if (result.finalResult && !completer.isCompleted) completer.complete(result.recognizedWords);
-      },
-      listenOptions: stt.SpeechListenOptions(
-        listenMode: stt.ListenMode.confirmation,
-        localeId: localeId,
-        listenFor: const Duration(seconds: 10),
-        pauseFor: const Duration(seconds: 3),
-      ),
-    );
-
     String transcript;
     try {
+      // `_stt.listen()` itself used to sit OUTSIDE this try/finally — if it
+      // threw (a platform-channel error, or a session left half-open by a
+      // page that navigated away mid-listen without calling stop(), see
+      // this class's own [stop] doc comment), the exception propagated
+      // without ever clearing `_pendingCompleter` or calling `_stt.stop()`,
+      // leaving a completer that would never complete and a native session
+      // with nothing left to stop it cleanly.
+      await _stt.listen(
+        onResult: (result) {
+          if (result.finalResult && !completer.isCompleted) completer.complete(result.recognizedWords);
+        },
+        listenOptions: stt.SpeechListenOptions(
+          listenMode: stt.ListenMode.confirmation,
+          localeId: localeId,
+          listenFor: const Duration(seconds: 10),
+          pauseFor: const Duration(seconds: 3),
+        ),
+      );
       transcript = await completer.future.timeout(const Duration(seconds: 15));
     } on TimeoutException {
       transcript = '';
@@ -84,6 +90,14 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
       throw StateError("Sorry, I couldn't hear anything. Please try again.");
     }
     return RecognizedCommand(transcript: transcript, intent: VoiceIntentClassifier.classify(transcript, language));
+  }
+
+  @override
+  Future<void> stop() async {
+    final completer = _pendingCompleter;
+    _pendingCompleter = null;
+    if (completer != null && !completer.isCompleted) completer.complete('');
+    if (_stt.isListening) await _stt.stop();
   }
 
   // speech_to_text's locale identifiers mirror whatever the platform's

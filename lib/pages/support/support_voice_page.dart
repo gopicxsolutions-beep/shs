@@ -27,6 +27,16 @@ class _SupportVoicePageState extends State<SupportVoicePage> {
   String? _question;
   String? _answer;
 
+  @override
+  void dispose() {
+    // Same leaked-microphone-session fix as AiVoiceAssistantPage.dispose —
+    // without this, leaving this page mid-listen kept
+    // DeviceVoiceSupportService's native recognition (and any in-flight TTS
+    // playback) running with no owning widget left.
+    _service.stop();
+    super.dispose();
+  }
+
   Future<void> _ask() async {
     final l10n = AppLocalizations.of(context)!;
     setState(() {

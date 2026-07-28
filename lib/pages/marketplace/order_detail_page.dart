@@ -107,7 +107,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   runSpacing: 8,
                   children: _statusFlow.asMap().entries.map((e) {
                     final selected = e.key == currentIndex;
-                    final reachable = !_updating;
+                    // Non-staff sellers can only move one step forward or
+                    // back per call (`advance_marketplace_order_status`,
+                    // migration 0068) — disable unreachable chips instead of
+                    // letting the tap fail with a server-side exception.
+                    final reachable = !_updating && (isStaff || selected || (currentIndex != -1 && (e.key - currentIndex).abs() == 1));
                     return ChoiceChip(
                       label: Text(e.value),
                       selected: selected,

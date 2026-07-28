@@ -732,7 +732,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get leaderDashboardAttendanceLabel => 'उपस्थिति';
 
   @override
-  String get leaderDashboardRecoveryLabel => 'रिकवरी';
+  String get leaderDashboardRecoveryLabel => 'समय पर ऋण';
 
   @override
   String get memberDashboardMySavingsLabel => 'मेरी बचत';
@@ -1047,7 +1047,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get shgFinancialSummaryLoanOutstandingLabel => 'बकाया ऋण';
 
   @override
-  String get shgFinancialSummaryAvgAttendanceLabel => 'औसत उपस्थिति';
+  String get shgFinancialSummaryAvgAttendanceLabel =>
+      'औसत उपस्थिति (पिछले 6 महीने)';
 
   @override
   String get shgPerformanceReportTitle => 'प्रदर्शन रिपोर्ट';
@@ -2095,6 +2096,11 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String adminTrainingQuizOptionCount(int count) {
+    return '$count विकल्प';
+  }
+
+  @override
   String get adminTrainingQuizAddOptionTooltip => 'एक और विकल्प जोड़ें';
 
   @override
@@ -2534,6 +2540,10 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get courseQuizSaveError =>
       'आपका सर्टिफिकेट सेव नहीं हो सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get courseQuizAttemptLimitError =>
+      'आपने इस क्विज़ के लिए आज की प्रयास सीमा पूरी कर ली है। कृपया कल फिर से कोशिश करें।';
 
   @override
   String get courseQuizNotFound => 'यह कोर्स नहीं मिल सका';

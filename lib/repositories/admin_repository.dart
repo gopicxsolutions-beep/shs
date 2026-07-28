@@ -169,8 +169,26 @@ class AdminRepository {
       final progress = await TrainingRepository().fetchMyProgress(null);
       return progress.isEmpty ? 0 : (progress.values.map((c) => c.progress).reduce((a, b) => a + b) / progress.length).round();
     }
-    final progressRows = await _client.from('course_progress').select('progress');
-    final progressSum = (progressRows as List).fold<int>(0, (sum, r) => sum + ((r as Map<String, dynamic>)['progress'] as int));
+    // A member's own `progress` write is entirely self-reported (RLS lets
+    // them set it to 100 unconditionally — `course_progress_write_self_or_
+    // staff`, 0037) and never actually proves they passed the course's
+    // quiz. `submit_quiz_attempt` (0051) is the only path that can ever set
+    // `certified = true`, so for any course that HAS quiz questions, count
+    // completion by `certified`, not `progress` — otherwise this
+    // federation-facing adoption stat could be inflated by members who
+    // opened a course and immediately self-marked 100% without answering a
+    // single question correctly. A course with NO quiz questions at all has
+    // no server-side way to verify completion in the first place, so
+    // `progress` is still the only signal available there and is trusted
+    // as before.
+    final quizzedCourseRows = await _client.from('quiz_questions').select('course_id');
+    final quizzedCourseIds = (quizzedCourseRows as List).map((r) => (r as Map<String, dynamic>)['course_id'] as String).toSet();
+    final progressRows = await _client.from('course_progress').select('course_id, progress, certified');
+    final progressSum = (progressRows as List).fold<int>(0, (sum, r) {
+      final map = r as Map<String, dynamic>;
+      final hasQuiz = quizzedCourseIds.contains(map['course_id'] as String);
+      return sum + (hasQuiz ? ((map['certified'] as bool) ? 100 : 0) : map['progress'] as int);
+    });
     final totalMembers = await _client.from('profiles').count().eq('role', 'member');
     final totalCourses = await _client.from('training_courses').count();
     return trainingCompletionPctFrom(progressSum: progressSum, totalMembers: totalMembers, totalCourses: totalCourses);
