@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/analytics.dart';
 import '../../repositories/analytics_repository.dart';
+import '../../routes/paths.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
@@ -71,10 +73,70 @@ class AnalyticsShgDetailPage extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+              // FR-RPT-2 (docs/SRS.md): the genuine platform-wide drill-down
+              // this SHG's Financial Summary/Performance Report needed —
+              // both pages already resolve any explicit shgId via the same
+              // is_staff() RLS bypass this page's own fetchShgDetail() uses,
+              // so this is a pure navigation addition, no repository change.
+              _ReportLinkCard(
+                icon: Icons.account_balance_wallet_rounded,
+                title: l10n.shgReportsFinancialSummaryTitle,
+                subtitle: l10n.shgReportsFinancialSummarySubtitle,
+                onTap: () => context.go(Paths.analyticsShgFinancialSummary(shgId, name: g.name)),
+              ),
+              const SizedBox(height: 8),
+              _ReportLinkCard(
+                icon: Icons.trending_up_rounded,
+                title: l10n.shgReportsPerformanceReportTitle,
+                subtitle: l10n.shgReportsPerformanceReportSubtitle,
+                onTap: () => context.go(Paths.analyticsShgPerformance(shgId, name: g.name)),
+              ),
+              const SizedBox(height: 8),
+              // Same fix template, applied to `ShgMembersPage` — RLS
+              // (`profiles_select_self_shg_or_staff`) is the same
+              // unconditional `is_staff()` grant already used above, this
+              // is again a pure navigation addition.
+              _ReportLinkCard(
+                icon: Icons.groups_rounded,
+                title: l10n.analyticsShgDetailMembersLinkTitle,
+                subtitle: l10n.analyticsShgDetailMembersLinkSubtitle,
+                onTap: () => context.go(Paths.analyticsShgMembers(shgId, name: g.name)),
+              ),
             ],
           );
         },
       ),
+    );
+  }
+}
+
+class _ReportLinkCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  const _ReportLinkCard({required this.icon, required this.title, required this.subtitle, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      onTap: onTap,
+      child: Row(children: [
+        Container(width: 40, height: 40, decoration: BoxDecoration(color: Gold.c50, borderRadius: BorderRadius.circular(12)), alignment: Alignment.center, child: Icon(icon, size: 18, color: Gold.c600)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: AppTheme.sans(13, weight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(subtitle, style: AppTheme.sans(11, color: Neutral.c500)),
+            ],
+          ),
+        ),
+        Icon(Icons.chevron_right_rounded, color: Neutral.c300),
+      ]),
     );
   }
 }

@@ -2966,6 +2966,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Based on completed-meeting attendance rate';
 
   @override
+  String get analyticsShgDetailMembersLinkTitle => 'View Members';
+
+  @override
+  String get analyticsShgDetailMembersLinkSubtitle => 'Full roster of this SHG';
+
+  @override
   String get analyticsShgListTitle => 'SHGs Monitoring';
 
   @override

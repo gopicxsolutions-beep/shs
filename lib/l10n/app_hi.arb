@@ -1605,6 +1605,10 @@
 
   "analyticsShgDetailHealthScoreNote": "समाप्त हुई बैठकों की उपस्थिति दर के आधार पर",
 
+  "analyticsShgDetailMembersLinkTitle": "सदस्य देखें",
+
+  "analyticsShgDetailMembersLinkSubtitle": "इस SHG की पूरी सदस्य सूची",
+
   "analyticsShgListTitle": "SHG निगरानी",
 
   "analyticsShgListEmptyState": "निगरानी के लिए अभी कोई SHG नहीं है",

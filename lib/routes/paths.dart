@@ -99,6 +99,17 @@ class Paths {
   static const analytics = '/app/analytics';
   static const analyticsShgList = '/app/analytics/shgs';
   static String analyticsShgDetail(String id) => '/app/analytics/shg/$id';
+  // FR-RPT-2 (docs/SRS.md): lets crp/clf/admin reach a *specific* SHG's
+  // Financial Summary/Performance Report from its Analytics detail page —
+  // nested under `/app/analytics` so the existing staff-only router
+  // restriction on that prefix covers these too, no new _roleRestrictedPrefixes
+  // entry needed.
+  static String analyticsShgFinancialSummary(String id, {String? name}) =>
+      Uri(path: '/app/analytics/shg/$id/financial-summary', queryParameters: name == null ? null : {'name': name}).toString();
+  static String analyticsShgPerformance(String id, {String? name}) =>
+      Uri(path: '/app/analytics/shg/$id/performance', queryParameters: name == null ? null : {'name': name}).toString();
+  static String analyticsShgMembers(String id, {String? name}) =>
+      Uri(path: '/app/analytics/shg/$id/members', queryParameters: name == null ? null : {'name': name}).toString();
 
   static const profileSettings = '/app/profile/settings';
   static const profileLanguage = '/app/profile/language';

@@ -1014,10 +1014,43 @@ an "Analytics → view full report" link) remains open — a reasonable future
 enhancement, not implemented here since it's a multi-page feature addition
 rather than a one-line fix.
 
+**Fixed (2026-07-26, round 171): that "remains open" line above is now
+closed for two of the three named reports — Financial Summary and
+Performance Report.** The Audit Report was already closed as a side effect
+of round 169's Financial Ledger fix (the "Audit Report" tile has always
+routed to `FinancialLedgerPage(entryType: 'audit')`, which gained a real
+platform-wide staff feed that round). `ShgFinancialSummaryPage`/
+`ShgPerformanceReportPage` gained optional `shgId`/`shgName` constructor
+params that override the viewer's own SHG when provided — both pages
+already resolved their data via `ReportRepository.fetchShgReport(shgId)`/
+`TrendRepository.attendanceTrend(shgId:)`, which take any explicit `shgId`
+and were never viewer-bound at the repository layer (unlike Loans/Savings/
+Livelihood/Financial Ledger/Meetings in rounds 168-170, this needed **no**
+new repository method — every underlying table's SELECT policy
+(`profiles`/`savings_entries`/`loans`/`meeting_attendance`, all already
+`is_staff()`-unconditional) already supported an arbitrary `shgId` read;
+the page itself just never accepted one as input). `AnalyticsShgDetailPage`
+(crp/clf/admin's existing per-SHG oversight screen, which already resolves
+an explicit `shgId`) gained two new "View Financial Summary"/"View
+Performance Report" cards linking to new routes (`/app/analytics/shg/:id/
+financial-summary`, `/app/analytics/shg/:id/performance`) — nested under
+the existing `/app/analytics` prefix, which was already staff-only
+restricted at the router level, so no new role-table entry was needed. The
+SHG's name is passed through as a query parameter and shown in each
+report's header subtitle, so a staff account always knows whose report
+they're looking at, never confusable with their own (staff have none).
+
+**Live-verified the one table not already spot-checked in rounds 168-170's
+stretch**: `profiles` (used for `memberCount`). A real crp profile's
+cross-SHG `select count(*)` against a SHG it isn't a member of returned 4
+(the real count); a real leader of a *different* SHG got 0 on the identical
+query. `savings_entries`/`loans`/`meeting_attendance` (this report's other
+three sources) were already live-verified in rounds 168-170.
+
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-RPT-1 | Any user views her own personal report hub: Savings Statement, Loan Statement, Attendance Report | All |
-| FR-RPT-2 | Leader views SHG-level reports: Financial Summary, Audit Report, Performance Report (with attendance trend chart) — CRP/CLF/Admin have no path to another SHG's version of these three specific reports (see gap note above); their own SHG oversight is FR-RPT-3's Analytics drill-down instead | Leader |
+| FR-RPT-2 | Leader views her own SHG's reports: Financial Summary, Audit Report, Performance Report (with attendance trend chart); CRP/CLF/Admin reach any SHG's version of all three via its Analytics detail page (since round 171 for Financial Summary/Performance, round 169 for Audit) | Leader, CRP, CLF, Admin |
 | FR-RPT-3 | CRP/CLF/Admin view platform-wide analytics: KPIs, SHG list with health/grade (an attendance-based proxy, not a certified metric), SHG detail drill-down | CRP, CLF, Admin |
 | FR-RPT-4 | CRP/CLF/Admin view federation-wide reports: growth, recovery rate, villages | CRP, CLF, Admin |
 

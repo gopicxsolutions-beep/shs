@@ -2077,6 +2077,10 @@
 
   "analyticsShgDetailHealthScoreNote": "Based on completed-meeting attendance rate",
 
+  "analyticsShgDetailMembersLinkTitle": "View Members",
+
+  "analyticsShgDetailMembersLinkSubtitle": "Full roster of this SHG",
+
   "analyticsShgListTitle": "SHGs Monitoring",
 
   "analyticsShgListEmptyState": "No SHGs to monitor yet",

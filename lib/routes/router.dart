@@ -367,6 +367,18 @@ GoRouter buildRouter(AppState appState) {
             path: '/app/analytics/shg/:id',
             builder: (context, state) => AnalyticsShgDetailPage(key: ValueKey(state.pathParameters['id']), shgId: state.pathParameters['id']!),
           ),
+          GoRoute(
+            path: '/app/analytics/shg/:id/financial-summary',
+            builder: (context, state) => ShgFinancialSummaryPage(key: ValueKey(state.pathParameters['id']), shgId: state.pathParameters['id']!, shgName: state.uri.queryParameters['name']),
+          ),
+          GoRoute(
+            path: '/app/analytics/shg/:id/performance',
+            builder: (context, state) => ShgPerformanceReportPage(key: ValueKey(state.pathParameters['id']), shgId: state.pathParameters['id']!, shgName: state.uri.queryParameters['name']),
+          ),
+          GoRoute(
+            path: '/app/analytics/shg/:id/members',
+            builder: (context, state) => ShgMembersPage(key: ValueKey(state.pathParameters['id']), shgId: state.pathParameters['id']!, shgName: state.uri.queryParameters['name']),
+          ),
         ],
       ),
     ],

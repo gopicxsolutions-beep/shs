@@ -21,7 +21,13 @@ class _PerformanceData {
 }
 
 class ShgPerformanceReportPage extends StatelessWidget {
-  const ShgPerformanceReportPage({super.key});
+  // Overrides the viewer's own SHG when provided — reached from
+  // `AnalyticsShgDetailPage` (crp/clf/admin only), which already resolves a
+  // specific SHG via `is_staff()`'s unrestricted read access. Omitted for a
+  // leader viewing her own SHG's report, the page's original behavior.
+  final String? shgId;
+  final String? shgName;
+  const ShgPerformanceReportPage({super.key, this.shgId, this.shgName});
 
   Future<_PerformanceData> _load(String? shgId) async {
     final reportRepo = ReportRepository();
@@ -34,12 +40,12 @@ class ShgPerformanceReportPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final shgId = context.watch<AppState>().profile?.shgId;
+    final resolvedShgId = shgId ?? context.watch<AppState>().profile?.shgId;
 
     return Scaffold(
-      appBar: PageHeader(title: l10n.shgPerformanceReportTitle),
+      appBar: PageHeader(title: l10n.shgPerformanceReportTitle, subtitle: shgName),
       body: AppAsyncBuilder<_PerformanceData>(
-        future: () => _load(shgId),
+        future: () => _load(resolvedShgId),
         builder: (context, data) {
           final r = data.report;
           return ListView(

@@ -13278,3 +13278,230 @@ capability, not just an honest explanation of its absence — except where
 (Meetings' QR check-in) the honest explanation was always the correct
 permanent answer, now explicitly documented as such rather than left
 ambiguous with the others.
+
+## Update (round 171) — Closed FR-RPT-2's round-138-documented gap: crp/clf/admin can now reach any SHG's Financial Summary and Performance Report, not just their own Analytics drill-down
+
+User asked to keep gap hunting after the five-module platform-wide-staff
+stretch (rounds 168-170) closed. Surveyed `docs/SRS.md` for other
+documented-but-deferred gaps rather than re-discovering from scratch, and
+found round 138's own note: fixing the "SHG Reports" tile's misleading-UI
+half (scoping it to `role == Role.leader`) had explicitly left open
+"extending the report *pages* themselves to accept an explicit `shgId`" as
+a deferred multi-page feature. Of the three named reports, the Audit Report
+turned out to already be closed as a side effect of round 169's Financial
+Ledger fix (its tile has always routed to `FinancialLedgerPage(entryType:
+'audit')`) — so this round's actual scope was the other two: Financial
+Summary and Performance Report.
+
+**This was a smaller, lower-risk fix than rounds 168-170's stretch**:
+unlike Loans/Savings/Livelihood/Financial Ledger/Meetings, no new
+repository method was needed at all. `ReportRepository.fetchShgReport(shgId)`
+and `TrendRepository.attendanceTrend(shgId:)` already took an explicit
+`shgId` and were never viewer-bound — every underlying table's SELECT
+policy (`profiles`, `savings_entries`, `loans`, `meeting_attendance`, all
+already `is_staff()`-unconditional per rounds 168-170's own reading) already
+supported an arbitrary `shgId` read. The gap was purely that
+`ShgFinancialSummaryPage`/`ShgPerformanceReportPage` never accepted one as
+input, always deriving it from `appState.profile?.shgId`.
+
+**Built**: both pages gained optional `shgId`/`shgName` constructor params
+that override the viewer's own SHG when provided (omitted, they fall back
+to the original leader-only behavior, unchanged). `AnalyticsShgDetailPage`
+(crp/clf/admin's existing per-SHG oversight screen, which already resolves
+an explicit `shgId` — live-verified against a real second SHG back in round
+133) gained two new "View Financial Summary"/"View Performance Report"
+cards. New routes `/app/analytics/shg/:id/financial-summary` and
+`/app/analytics/shg/:id/performance` are nested under the existing
+`/app/analytics` prefix, which was already staff-only restricted at the
+router level (`_roleRestrictedPrefixes`) — so no new role-table entry was
+needed, and the existing un-parameterized `/app/reports/shg/*` routes (the
+leader's own flow) are completely untouched. The SHG's name is passed as a
+query parameter and shown in each report's header subtitle, so a staff
+account always knows whose report they're looking at.
+
+**Live-verified against the real deployed project**: `profiles` (used for
+this report's `memberCount`) was the one table in this fetch not already
+spot-checked in rounds 168-170 — a real crp profile's cross-SHG
+`select count(*)` against a SHG it isn't a member of returned 4 (the real
+row count), and a real leader of a different SHG got 0 on the identical
+query, both inside rolled-back transactions. `savings_entries`/`loans`/
+`meeting_attendance` (this report's other three sources) were already
+live-verified in rounds 168-170 and didn't need re-proving.
+
+**Tests**: three new test files (`analytics_shg_detail_page_test.dart`,
+`shg_financial_summary_page_test.dart`, `shg_performance_report_page_test.dart`
+— none existed before this round). Each report page test covers both the
+new explicit-shgId path and the pre-existing viewer's-own-SHG fallback, to
+prove the leader flow is genuinely unaffected, not just untested.
+
+**Docs**: `docs/SRS.md` §3.15 gained a round-171 "Fixed" note closing out
+round 138's own deferred item, and FR-RPT-2's role column now reads
+"Leader, CRP, CLF, Admin" instead of "Leader" alone.
+
+`flutter analyze`: 0 issues (whole project). `flutter test`: 1031/1031
+passing (was 1025 at the start of this round: +2 in
+`analytics_shg_detail_page_test.dart`, +2 in
+`shg_financial_summary_page_test.dart`, +2 in
+`shg_performance_report_page_test.dart`). No new l10n keys (reused existing
+`shgReportsFinancialSummaryTitle`/`Subtitle` and
+`shgReportsPerformanceReportTitle`/`Subtitle` strings for the new
+Analytics-side cards, rather than duplicating them). No new migrations —
+Dart/UI-only against RLS already deployed.
+
+## Update (round 172) — Added a Fast2SMS Send SMS Auth Hook to replace Twilio as the OTP-delivery gateway, at the user's request
+
+**Why**: the user asked to move OTP delivery off Twilio and onto Fast2SMS.
+Twilio wasn't hardcoded anywhere in this repo — it's the phone provider
+configured under Supabase's Authentication → Providers → Phone dashboard
+setting (external to the codebase; see rounds "2026-07-18 (cont'd)" and 158
+for the earlier Twilio-trial-account OTP delivery investigation). Supabase
+Auth has no built-in Fast2SMS provider, so the swap needed an actual
+integration point rather than a dashboard dropdown change: Supabase's Send
+SMS Auth Hook, which lets a custom HTTPS endpoint take over just the
+"deliver this already-generated code by SMS" step while Supabase Auth
+keeps owning OTP generation, storage, and verification (`verifyOTP` is
+completely unaffected).
+
+**Built**: `supabase/functions/send-sms-hook/index.ts` (new, NOT deployed
+by default — dormant until the three activation steps in its own header
+comment are done: set `FAST2SMS_API_KEY`/`FAST2SMS_OTP_TEMPLATE_ID`/
+`SEND_SMS_HOOK_SECRET` secrets, `supabase functions deploy`, then enable
+the hook in the dashboard and point it at the deployed URL). Verifies
+Supabase's request signature using the official `standardwebhooks` library
+(Standard Webhooks spec — same approach Supabase's own Send SMS Hook docs
+use), which handles replay-window/timestamp tolerance internally, unlike
+`payment-webhook-handler`'s hand-rolled HMAC (that one hand-rolls because
+no equivalent library exists for that integration). Relays the
+already-generated OTP to Fast2SMS's `/dev/otp/send` endpoint via its `otp`
+override parameter — Fast2SMS is never asked to generate its own code,
+since that would produce a value that doesn't match what Supabase expects
+back from `verifyOTP`. Rejects non-`+91` numbers up front (Fast2SMS's OTP
+route is India-only) rather than sending a mis-shapen request to Fast2SMS
+and surfacing whatever generic error comes back.
+
+**No Flutter-side changes**: `lib/services/auth_service.dart`'s
+`sendOtp`/`verifyOtp` are untouched — this swap is entirely
+server-side/dashboard-side, which is the reason the code-level "fix" is
+just one new Edge Function.
+
+**Known gap, called out in the function's header comment, not silently
+assumed**: Fast2SMS's `/dev/otp/send` JSON response shape isn't fully
+documented publicly at the time this was written (only the request shape
+and HTTP status meanings were confirmed). The success/failure check
+handles this defensively — any non-2xx status is always treated as
+failure, and a `return: false` field (used by Fast2SMS's older bulkV2 API)
+is also treated as failure if present — but the exact body shape should be
+confirmed against a real send once live secrets are configured, per
+[[project-dlt-registration-pending]]'s memory: verify against the real
+response, don't assume.
+
+**Unrelated to but adjacent to this change**: Fast2SMS's OTP route, like
+Twilio's domestic Indian routing, still requires the sender to have
+completed TRAI DLT template registration to reliably reach Jio/Airtel/
+Vi/BSNL — switching gateways doesn't change or bypass that requirement
+(see the DLT compliance note referenced above, last confirmed pending as
+of 2026-07-25). `FAST2SMS_OTP_TEMPLATE_ID` in the new function assumes a
+DLT-approved template already exists in the Fast2SMS dashboard; sends will
+fail without one.
+
+**Deployed** (`supabase functions deploy send-sms-hook --no-verify-jwt`,
+project `pccbwfmlhpvieetetrpx`) later the same round, at the user's
+request. `--no-verify-jwt` is required, not optional: this hook fires
+during `signInWithOtp()` before any Supabase JWT exists, and Supabase's
+hook caller only sends the `webhook-*` Standard Webhooks signature
+headers — never an `Authorization: Bearer` token — confirmed against
+Supabase's Auth Hooks docs before deploying, since deploying with the
+default JWT verification on would have made the platform gateway 401
+every call before it ever reached this function's own code, a failure
+mode indistinguishable from a bad `SEND_SMS_HOOK_SECRET` from the
+outside.
+
+**Still not live/active**: deployed code has no effect until the
+remaining dashboard/secrets steps are done (see the function's own header
+comment) — `FAST2SMS_API_KEY`/`FAST2SMS_OTP_TEMPLATE_ID`/
+`SEND_SMS_HOOK_SECRET` secrets and enabling the hook in Authentication →
+Hooks are all still outside this session (no Fast2SMS credentials are
+available here, and CLAUDE.md's live-verification requirement can't be
+satisfied for a hook that depends on a real external account this
+session doesn't have). Until that's done, Supabase keeps using the
+existing Twilio phone provider unchanged. `flutter analyze`/`flutter
+test` are unaffected (no Dart files touched). The Deno function itself
+was reviewed against Supabase's official Send SMS Hook and Auth Hooks
+documentation for the payload/signing/response/JWT contract but not yet
+exercised against a real Fast2SMS send.
+
+## Update (later 2026-07-28) — Fast2SMS switch completed, activated, and verified end-to-end against real live infrastructure; found and fixed a hook-payload bug in the process
+
+**Why**: continuation of round 172, same day. The user supplied real
+Fast2SMS credentials and asked for the switch to be finished and fully
+tested, then asked to complete the cutover ("change completely twilio to
+fast2sms").
+
+**Route rewrite**: the user's account uses Fast2SMS's **DLT route**
+(`POST /dev/bulkV2`, `route: "dlt"`), not `/dev/otp/send` as round 172's
+version called — confirmed from a real working request the user provided.
+Rewrote `send-sms-hook/index.ts` accordingly: `message` carries the
+DLT-approved template id (`FAST2SMS_OTP_TEMPLATE_ID`), `variables_values`
+carries the actual OTP as `` `${otp}|` ``, `sender_id` is a new
+`FAST2SMS_SENDER_ID` secret. Set secrets to the account's real registered
+values (`FAST2SMS_API_KEY`, `FAST2SMS_OTP_TEMPLATE_ID=177598`,
+`FAST2SMS_SENDER_ID=SSENEE`) and redeployed.
+
+**Fast2SMS API verified directly first**: before touching the Supabase
+hook activation, called the live Fast2SMS API directly with a test code to
+two real Indian numbers the user provided — `{"return":true,"request_id":
+"...","message":["SMS sent successfully."]}`, and the user confirmed both
+phones actually received the text. This isolated "does Fast2SMS/DLT
+template/sender work at all" from "is the Supabase hook wired correctly"
+before debugging the latter.
+
+**Hook activated via the Management API, not the dashboard**: the
+Supabase CLI (v2.90.0) has no subcommand for Auth Hooks config, and there's
+no `supabase config pull` — only `push` — so hand-authoring a
+`config.toml` and pushing it risked silently resetting unrelated live auth
+settings (session timeouts, other providers, MFA config, etc.) that aren't
+tracked in any local file. Instead, at the user's choice, used a
+user-supplied Management API personal access token to call
+`PATCH /v1/projects/{ref}/config/auth` with **only**
+`{hook_send_sms_enabled, hook_send_sms_uri, hook_send_sms_secrets}` — a
+genuine partial update, safe against the "unrelated settings" risk. Set the
+matching `SEND_SMS_HOOK_SECRET` function secret and verified the applied
+state with a follow-up `GET` (not just trusting the `PATCH`'s 200).
+Side effect worth recording: the `GET /config/auth` response body includes
+*all* auth settings, including the live Twilio `account_sid`/`auth_token`
+in plaintext — those were incidentally exposed in this session. Twilio is
+now inert (the hook takes priority when enabled) but the user was advised
+to consider rotating that token, and to revoke the Management API PAT now
+that it's no longer needed.
+
+**Live end-to-end test caught a real bug**: a direct
+`POST /auth/v1/otp {"phone":"+918341915251"}` against the live project
+initially came back `500 "Invalid payload sent to hook"` — a generic
+GoTrue error that doesn't surface the hook's actual rejection reason.
+Diagnosed via the Management API's log-query endpoint
+(`GET /v1/projects/{ref}/analytics/endpoints/logs.all` with a `sql=`
+against the `function_edge_logs` table — the CLI's `functions` command has
+no `logs` subcommand in this version), which showed the hook itself
+returning `400`. Root cause: `toFast2SmsMobile()`'s regex
+(`^\+91([6-9]\d{9})$`) assumed GoTrue's `user.phone` field is `+91XXXXXXXXXX`,
+but Supabase Auth actually stores it as `91XXXXXXXXXX` — **no leading
+`+`** — a known Supabase quirk that round 172's comment ("Supabase phone
+auth normalizes numbers to E.164 (e.g. `+919876543210`)") got wrong,
+because it was never exercised against a real hook call until now. Every
+real OTP send was silently being rejected by our own function since the
+hook went live. Fixed the regex to `^\+?91([6-9]\d{9})$` (accepts both
+forms) and redeployed. The retried `/auth/v1/otp` call then returned
+`200 {}`, and the user confirmed the OTP text actually arrived on
+8341915251.
+
+**Result**: the Fast2SMS switch called "done" in round 172 was not
+actually live or correct — this round is what made it both. Twilio is no
+longer in the OTP delivery path for real `signInWithOtp()` calls; Fast2SMS
+is, confirmed via a real end-to-end send with a real recipient, not just a
+direct-API test or a reviewed-but-unexercised deploy. See
+[[project-fast2sms-otp-switch]] (auto-memory) for the full blow-by-blow.
+[[project-dlt-registration-pending]] updated too: the OTP template
+(177598/SSENEE) is now confirmed DLT-registered and working, since
+Fast2SMS's DLT route hard-rejects unregistered template/sender pairs —
+narrows, but doesn't fully close, the broader DLT compliance gap (other
+future SMS types would still need their own registered templates).

@@ -1605,6 +1605,10 @@
 
   "analyticsShgDetailHealthScoreNote": "పూర్తయిన సమావేశాల హాజరు రేటు ఆధారంగా",
 
+  "analyticsShgDetailMembersLinkTitle": "సభ్యులను చూడండి",
+
+  "analyticsShgDetailMembersLinkSubtitle": "ఈ SHG యొక్క పూర్తి సభ్యుల జాబితా",
+
   "analyticsShgListTitle": "SHG పర్యవేక్షణ",
 
   "analyticsShgListEmptyState": "పర్యవేక్షణ కోసం ఇంకా SHGలు లేవు",

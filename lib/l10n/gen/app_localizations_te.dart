@@ -2965,6 +2965,13 @@ class AppLocalizationsTe extends AppLocalizations {
       'పూర్తయిన సమావేశాల హాజరు రేటు ఆధారంగా';
 
   @override
+  String get analyticsShgDetailMembersLinkTitle => 'సభ్యులను చూడండి';
+
+  @override
+  String get analyticsShgDetailMembersLinkSubtitle =>
+      'ఈ SHG యొక్క పూర్తి సభ్యుల జాబితా';
+
+  @override
   String get analyticsShgListTitle => 'SHG పర్యవేక్షణ';
 
   @override

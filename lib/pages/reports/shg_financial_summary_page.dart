@@ -13,18 +13,24 @@ import '../../widgets/async_state.dart';
 import '../../widgets/stat_card.dart';
 
 class ShgFinancialSummaryPage extends StatelessWidget {
-  const ShgFinancialSummaryPage({super.key});
+  // Overrides the viewer's own SHG when provided — reached from
+  // `AnalyticsShgDetailPage` (crp/clf/admin only), which already resolves a
+  // specific SHG via `is_staff()`'s unrestricted read access. Omitted for a
+  // leader viewing her own SHG's report, the page's original behavior.
+  final String? shgId;
+  final String? shgName;
+  const ShgFinancialSummaryPage({super.key, this.shgId, this.shgName});
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final shgId = context.watch<AppState>().profile?.shgId;
+    final resolvedShgId = shgId ?? context.watch<AppState>().profile?.shgId;
     final repo = ReportRepository();
 
     return Scaffold(
-      appBar: PageHeader(title: l10n.shgFinancialSummaryTitle),
+      appBar: PageHeader(title: l10n.shgFinancialSummaryTitle, subtitle: shgName),
       body: AppAsyncBuilder<ShgReportData>(
-        future: () => repo.fetchShgReport(shgId),
+        future: () => repo.fetchShgReport(resolvedShgId),
         builder: (context, r) {
           return ListView(
             padding: const EdgeInsets.all(16),

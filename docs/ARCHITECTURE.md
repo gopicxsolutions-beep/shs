@@ -321,7 +321,15 @@ for an uncooperative client to exploit.
 
 - **Supabase Postgres** — schema + RLS, per above.
 - **Supabase Auth** — phone/OTP. `lib/services/auth_service.dart` wraps
-  `signInWithOtp`/`verifyOTP`.
+  `signInWithOtp`/`verifyOTP`. OTP generation/storage/verification stay
+  entirely inside Supabase Auth; only the "deliver this code by SMS" step is
+  swappable, via Supabase's Send SMS Auth Hook
+  (`supabase/functions/send-sms-hook`) — currently wired to relay through
+  Fast2SMS instead of Supabase's built-in Twilio provider. Swapping the
+  hook's downstream gateway again later is a server-side-only change; the
+  client-side call shape never changes. See the function's own header
+  comment for activation steps (secrets + dashboard hook config) and round
+  172 in `docs/DEVELOPMENT_PROGRESS.md` for why.
 - **Supabase Realtime** — used narrowly, only where collaborative live updates
   genuinely matter (the savings ledger, so a second leader's verification
   appears without a manual refresh; `loans` is wired the same way in the

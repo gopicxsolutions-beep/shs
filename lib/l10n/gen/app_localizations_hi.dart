@@ -2904,6 +2904,13 @@ class AppLocalizationsHi extends AppLocalizations {
       'समाप्त हुई बैठकों की उपस्थिति दर के आधार पर';
 
   @override
+  String get analyticsShgDetailMembersLinkTitle => 'सदस्य देखें';
+
+  @override
+  String get analyticsShgDetailMembersLinkSubtitle =>
+      'इस SHG की पूरी सदस्य सूची';
+
+  @override
   String get analyticsShgListTitle => 'SHG निगरानी';
 
   @override

@@ -23,19 +23,28 @@ const _roleTones = <String, BadgeTone>{
 };
 
 class ShgMembersPage extends StatelessWidget {
-  const ShgMembersPage({super.key});
+  // Overrides the viewer's own SHG when provided — reached from
+  // `AnalyticsShgDetailPage` (crp/clf/admin only), which already resolves a
+  // specific SHG via `is_staff()`'s unrestricted read access on `profiles`
+  // (same RLS the round-171 Reports fix relies on). Omitted for a
+  // leader/member viewing her own SHG's roster, the page's original
+  // behavior.
+  final String? shgId;
+  final String? shgName;
+  const ShgMembersPage({super.key, this.shgId, this.shgName});
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final repo = ShgRepository();
-    final shgId = appState.profile?.shgId;
+    final resolvedShgId = shgId ?? appState.profile?.shgId;
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: PageHeader(
         title: l10n.shgMembersTitle,
-        right: appState.user.role == Role.leader
+        subtitle: shgName,
+        right: shgId == null && appState.user.role == Role.leader
             ? IconButton(
                 tooltip: l10n.shgMembersJoinRequestsTooltip,
                 icon: Icon(Icons.person_add_alt_1_rounded, color: Brand.c600),
@@ -44,7 +53,7 @@ class ShgMembersPage extends StatelessWidget {
             : null,
       ),
       body: AppAsyncBuilder<List<Member>>(
-        future: () => repo.fetchMembers(shgId),
+        future: () => repo.fetchMembers(resolvedShgId),
         builder: (context, members) {
           if (members.isEmpty) {
             return AppEmptyState(icon: Icons.groups_rounded, message: l10n.shgMembersEmpty);

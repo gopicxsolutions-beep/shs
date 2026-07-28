@@ -5164,6 +5164,18 @@ abstract class AppLocalizations {
   /// **'Based on completed-meeting attendance rate'**
   String get analyticsShgDetailHealthScoreNote;
 
+  /// No description provided for @analyticsShgDetailMembersLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'View Members'**
+  String get analyticsShgDetailMembersLinkTitle;
+
+  /// No description provided for @analyticsShgDetailMembersLinkSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Full roster of this SHG'**
+  String get analyticsShgDetailMembersLinkSubtitle;
+
   /// No description provided for @analyticsShgListTitle.
   ///
   /// In en, this message translates to:
