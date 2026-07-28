@@ -123,10 +123,10 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.qr_code_scanner_rounded, size: 48, color: Brand.c600),
                   const SizedBox(height: 8),
-                  Text('Tap to scan a QR code', textAlign: TextAlign.center, style: AppTheme.sans(13, weight: FontWeight.w600, color: Neutral.c700)),
+                  Text(AppLocalizations.of(context)?.paymentsQrScanPrompt ?? 'Tap to scan a QR code', textAlign: TextAlign.center, style: AppTheme.sans(13, weight: FontWeight.w600, color: Neutral.c700)),
                   if (_payeeName != null) ...[
                     const SizedBox(height: 4),
-                    Text('Paying $_payeeName', style: AppTheme.sans(11, color: Brand.c600)),
+                    Text(AppLocalizations.of(context)?.paymentsQrPayingLabel(_payeeName!) ?? 'Paying $_payeeName', style: AppTheme.sans(11, color: Brand.c600)),
                   ],
                 ]),
               ),
@@ -136,7 +136,7 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Amount', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                  Text(AppLocalizations.of(context)?.paymentsQrAmountLabel ?? 'Amount', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                   const SizedBox(height: 6),
                   Row(children: [
                     Text('₹', style: AppTheme.display(22)),
@@ -162,7 +162,7 @@ class _PaymentsQrPageState extends State<PaymentsQrPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Payment mode', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                  Text(AppLocalizations.of(context)?.paymentsQrPaymentModeLabel ?? 'Payment mode', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,

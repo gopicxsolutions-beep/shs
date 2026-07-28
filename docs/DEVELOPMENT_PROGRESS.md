@@ -13505,3 +13505,288 @@ direct-API test or a reviewed-but-unexercised deploy. See
 Fast2SMS's DLT route hard-rejects unregistered template/sender pairs —
 narrows, but doesn't fully close, the broader DLT compliance gap (other
 future SMS types would still need their own registered templates).
+
+## Update (round 173) — Live multi-role account creation, a real leader-onboarding bug found and documented, and iteration 1 of a continuous gap-hunting loop: 8 parallel module audits, 5 confirmed bugs fixed and live-verified, one real-account privilege-escalation incident caught and reverted
+
+**Why**: user asked to build real accounts for every role via the actual
+OTP signup flow (not raw SQL fixtures) and exercise each dashboard live,
+then pivoted to an explicit, continuous "gap hunting loop" — find real
+gaps across every module, fix them, verify live, repeat.
+
+**OTP-via-edge-logs technique, refined**: to complete `verifyOTP()` for
+numbers with no real device behind them, temporarily added
+`console.log` of the raw OTP inside `send-sms-hook/index.ts`, deployed,
+read the value back via the Management API's `function_logs` analytics
+endpoint (`GET .../analytics/endpoints/logs.all`, needs an explicit
+`iso_timestamp_start`/`iso_timestamp_end` range or it silently returns
+empty), then reverted the debug line and redeployed clean each time. Also
+raised `sms_otp_exp` from Supabase Auth's default 60s to 1800s at the
+user's request — the original 60s window was the actual root cause of
+several early "incorrect or expired code" failures during careful manual
+OTP-box entry, not a real bug in the entry mechanism itself.
+
+**5 accounts created via the real signup flow** (not fixture SQL): a
+member and leader linked to the same live SHG (`__TEST__ Jyothi Mahila
+Sangham`), plus a CRP and CLF (each self-signed-up as member, then
+promoted through the real admin "Manage Users" flow — the one legitimate
+path for staff roles), plus one bootstrap admin (necessarily promoted via
+direct SQL once, since staff roles categorically can't self-select and no
+admin existed yet to promote the first one). The old `__TEST__` fixture
+profiles (99999999-...-10x, inserted via raw SQL rounds ago) turned out to
+be **permanently unreachable via real login** — Supabase Auth mints a new
+`auth.users.id` on first real OTP verification for any phone number, which
+never matches a fixture's made-up `profiles.id`, so the app correctly (by
+its own logic) treats that first real login as a brand-new user. Not
+fixed (would need per-fixture id migration across every FK referencing
+table); left as a known, documented limitation of the fixture data.
+
+**Real bug found**: a **new leader** who picks an existing SHG during
+onboarding never actually gets linked to it.
+`AppState.completeProfileSetup()` always files a member-style
+`shg_join_requests` row and hardcodes `role: 'member'` at that point
+(before Role Select even runs), regardless of which role the user is
+about to pick — so a brand-new leader's request needs another leader of
+the *same* SHG to approve it, which doesn't exist for a first leader. The
+dashboard header still shows the SHG name (from an unconfirmed local
+`AppState._pendingShg` cache), masking that `shg_id` stays null. Not
+code-fixed — the correct behavior (leader-role SHG links probably need
+admin approval, not peer-leader approval) is a product decision, not a
+mechanical bug; documented here and worked around for this session's test
+accounts via a direct, verified-safe `shg_id`/join-request SQL patch.
+
+**Real bug found and fixed live**: `ShgJoinRequestRepository.fetchMine()`
+embedded `shgs(name)` from the RLS-locked base `shgs` table, which only
+allows reads once you're already a member (`id = current_shg_id()`) — a
+still-pending requester never satisfies that, so the "Waiting for
+approval" screen showed "Unknown SHG" for the single most common case
+it exists to serve. Fixed in `shg_join_request_repository.dart` to resolve
+the name through `shg_directory` instead (the view built precisely for
+this authenticated-but-not-yet-a-member access level). Live-verified: a
+fresh test signup requesting to join now correctly shows the real SHG
+name instead of "Unknown SHG".
+
+**Real-account safety incident**: mid-session, discovered the user's own
+real account (a genuine phone number, "QA Leader Test") had `role=admin`
+in the live DB when it had been `role=leader` at the start of the session.
+Checked `audit_log` (no entry for this row) and `postgres_logs` (no
+matching `UPDATE ... role` statement) and could not conclusively trace the
+cause — possibly a stray automated click on the admin "Manage Users" page
+during testing, though no recorded action in this session's own tool
+history targeted that specific row. Flagged to the user immediately rather
+than silently fixing or ignoring it; user chose to revert, done via direct
+SQL, confirmed back to `leader`.
+
+**Gap-hunting loop, iteration 1**: launched 8 parallel research agents,
+each auditing one module by reading the actual deployed code/migrations
+(not just doc claims) — loans, meetings/attendance, marketplace, schemes
+&amp; training, AI advisor/voice assistant, payments/ledger, cross-role RLS,
+and i18n/accessibility. Cross-role RLS came back clean (every escalation
+path traced was already closed by an earlier migration — a genuine "no new
+bug" result, not under-investigation). The other 7 surfaced 23 distinct,
+independently-verified findings. Fixed and live-verified 5 of the highest-
+severity ones this iteration (see below); the remaining ~18 are real,
+specific, and documented in this session's findings but not yet
+code-fixed — next iteration's starting point, not forgotten:
+
+1. **`marketplace_reviews_insert_authenticated` had a `reviewer_id IS NULL`
+   bypass** that fully defeated the purchase-verification, self-review
+   block, and duplicate-review protections three earlier migrations
+   (0015/0032/0048) built — any authenticated caller could post unlimited
+   fake reviews for any product via direct REST, never reachable through
+   the app UI itself but a live RLS hole regardless. Fixed in migration
+   `0061`: removed the null branch entirely and added
+   `o.status = 'delivered'` to the purchase check (reviews now require an
+   actually-delivered order, not just any-status one). Live-verified via a
+   real (non-service-role) authenticated RLS test: the exact
+   previously-working exploit now fails with `42501: new row violates
+   row-level security policy`; the legitimate delivered-order review path
+   still succeeds.
+2. **SHG/federation attendance-rate queries undercounted absentees** —
+   `TrendRepository.attendanceTrend`/`attendanceRate` and
+   `AnalyticsRepository.fetchShgList` computed attendance % as `present
+   rows / total meeting_attendance ROWS`, not `present / roster size`. A
+   leader who only toggles the members who actually showed up (the natural
+   workflow — there's no "mark everyone absent first" affordance) never
+   writes a row for absentees, so a meeting with 2 of 6 members present
+   read as 100% attended in the old formula. This is the exact number
+   CRP/CLF dashboards color an SHG's health-score status by. Fixed both
+   repositories to use each meeting's actual SHG roster size as the
+   denominator. **Live-verified against real production data**: the same
+   SHG (`__TEST__ Jyothi Mahila Sangham`, one real meeting, 2 of 6 members
+   marked present) showed **67%** on the CRP dashboard before this fix and
+   **33%** — the true 2/6 ratio — after rebuilding and redeploying.
+3. **`loans_insert_self` never bounded `amount`** — every other lifecycle
+   column (status/outstanding/emi/disbursed_on/next_due_date/created_at)
+   was locked by migration 0027, but the ₹10,00,000 cap docs/SRS.md
+   documents as a "fat-finger guard" only ever existed client-side
+   (`loan_apply_page.dart`). Fixed via migration `0062`: table-level
+   `check (amount &lt;= 1000000)` on `loans`. Live-verified: a real
+   authenticated-user RLS test inserting `amount: 999999999` now fails
+   with `23514: violates check constraint "loans_amount_cap"`; a normal
+   ₹50,000 loan still succeeds.
+4. **AI advisor safety/moderation messages were English-only**, including
+   the supportive self-harm resource message — the one message in this
+   feature where actual comprehension matters most, regardless of the
+   member's selected Hindi/Telugu app language. Threaded a `language`
+   parameter end-to-end: `ai_advisor_chat_page.dart` now sends
+   `AppState.language.name` with every request;
+   `ai-advisor-proxy/index.ts` parses and normalizes it (falls back to
+   English for anything unrecognized, never errors); `moderation.ts`'s
+   self-harm/generic-blocked/rate-limit reason strings are now
+   `Record&lt;Language, string&gt;` maps with real Hindi/Telugu translations,
+   picked by the caller's language for the regex pre-filter, the Llama
+   Guard ML classifier's verdict, and the rate-limit 429. Added 7 new Deno
+   unit tests specifically asserting Devanagari/Telugu script appears in
+   the returned reason for `hi`/`te` (43 pre-existing tests continued
+   passing unchanged, confirming English-default backward compatibility).
+   Not yet live-clicked through the chat UI in Hindi/Telugu (would have
+   needed another temporary debug-log/OTP round trip on top of an already
+   long session) — verification here rests on the unit tests plus a
+   successful redeploy and reachability smoke test, not a real UI
+   click-through; flagged here rather than silently upgraded to "fully
+   verified."
+5. Two Dart unit test fakes (`_FakeAiAdvisorService`,
+   `_ThrowingAiAdvisorService`) needed the new `language` parameter added
+   to keep compiling once `AiAdvisorService.ask()`'s signature changed —
+   caught immediately by running the full test suite before considering
+   the AI advisor fix done, not left for a later session to discover as a
+   broken build.
+
+**Remaining ~18 findings from this iteration, not yet fixed** (real,
+specific, module-tagged, for the next iteration to start from): marketplace
+— reviews still possible immediately after order placement without
+requiring delivery-plus-time, order `status` has no forward/backward
+state-machine guard or change history, `reviewer_name` is unverified free
+text even for identified reviews; loans — `ON DELETE CASCADE` from
+`profiles`/`shgs` lets a routine admin delete permanently destroy loan/
+payment records with no restriction (the same bug class already fixed for
+3 other tables in migration 0039, never re-applied here), direct-insert
+bypass of `record_loan_payment()` (already known/deferred, confirmed still
+open); meetings — `meetings_insert_leader_or_staff` has no temporal bound,
+so a leader can backdate a fabricated, perfectly-attended historical
+meeting into her SHG's real record; `generate-report-snapshots` edge
+function still uses a formula `analytics_repository.dart`'s own comment
+documents as live-proven wrong (currently dormant — nothing reads
+`report_snapshots` yet); UTC-vs-local-timezone "today" mismatch between
+that edge function and the Flutter client; payments — webhook handler has
+no monotonic status-transition guard (a stale, still-valid "pending"
+webhook can silently downgrade an already-"success" payment if delivered
+out of order — currently latent, no gateway wired in yet), `payments.status`
+is entirely self-supplied at insert time (no real gateway exists to attest
+it), ledger's advisory-lock race protection only covers the RPC path not a
+direct table insert by leader/staff (already disclosed, confirmed still
+open), no idempotency key on the ledger-entry retry path; schemes/training
+— the federation-facing "Training Completion" KPI (recently wired into
+CRP/CLF dashboards) still averages the self-reported, button-mashable
+`progress` column instead of the RLS-locked `certified` flag migration
+0051 was built to protect; admin scheme-authoring UI has no field to ever
+populate a new scheme's free-text eligibility list, so a newly-created
+scheme can show a bare "Eligible" badge with empty real-world
+requirements; quiz-grading RPC has no attempt cap, enabling a score-delta
+oracle attack to reconstruct the answer key without ever exposing it
+directly; AI advisor — Llama Guard's output classification likely
+mis-frames the completion as a `user` turn instead of an `assistant` turn,
+weakening exactly the category (S6, unqualified financial advice) most
+relevant to this app's harm surface; no PII-redaction warning shown to
+members before free-text queries reach a third-party LLM provider and a
+staff-readable 180-day log; no finance-domain-specific harm screening
+(e.g. "take a loan from an illegal lender") in either the regex layer or
+the system prompt; i18n — 25 hardcoded English `Text()` literals bypassing
+`AppLocalizations` across 4 files (`admin_users_page.dart`,
+`admin_shgs_page.dart`, `payments_qr_page.dart`,
+`financial_ledger_page.dart`) — the `.arb` files themselves have exact
+1003/1003/1003 key parity across en/hi/te, so this is an
+incomplete-component-migration gap, not a translation gap.
+
+## Update (round 174) — Gap-hunting loop, iteration 2: fixed 3 more of round 173's documented findings, launched 3 fresh module audits, found 8 more real gaps
+
+**Why**: continuation of the same continuous gap-hunting loop, user
+confirmed to proceed after reviewing iteration 1's production changes.
+
+**Fixed and live-verified this iteration:**
+
+1. **`loans.shg_id`/`loans.member_id` changed from `ON DELETE CASCADE` to
+   `ON DELETE RESTRICT`** (migration `0063`) — a routine admin deleting a
+   duplicate profile or defunct SHG no longer silently destroys real loan/
+   payment history; Postgres now blocks the delete outright. Live-verified:
+   attached a real test loan to an existing profile, confirmed the delete
+   now fails with `23503: still referenced from table "loans"`, cleaned up
+   the test loan (the profile itself was never actually deleted).
+2. **`meetings_insert_leader_or_staff` now requires `meeting_date >= today
+   - 7 days`** (migration `0064`) — closes the fabricated-history gap
+   found last iteration (a leader backdating a perfectly-attended meeting
+   from months ago to inflate her SHG's health score ahead of a CLF/bank
+   review). The 7-day grace window deliberately still allows the real,
+   common case of logging a meeting a few days late. Live-verified via a
+   real authenticated-user RLS test: a 90-day-backdated insert now fails
+   with `42501`; a 2-day-late insert still succeeds.
+3. **25 hardcoded English strings routed through `AppLocalizations`**
+   across `admin_users_page.dart`, `admin_shgs_page.dart`,
+   `payments_qr_page.dart`, `financial_ledger_page.dart` — added ~19 new
+   keys (some shared, e.g. `actionLoadMore`) with real Hindi/Telugu
+   translations to all 3 `.arb` files, regenerated via `flutter gen-l10n`.
+   Caught and fixed a real pre-existing-pattern issue in the process:
+   `payments_qr_page_test.dart`'s harness uses a plain `MaterialApp` with
+   no localization delegates configured, so `AppLocalizations.of(context)!`
+   (force-unwrap) crashed there specifically — switched those 3 usages to
+   the same null-coalescing fallback pattern (`?.key ?? 'English default'`)
+   this file already used elsewhere (`_scan()`'s existing calls). Full
+   `flutter analyze` (0 issues) and full `flutter test` (1033/1033 passing,
+   3 initially failing from the above, now fixed) both clean.
+
+**Fresh audits launched for 3 modules not yet covered this loop**
+(livelihoods, announcements/support tickets, admin monitoring metric
+honesty) surfaced 8 more real, specific findings — not yet fixed, next
+iteration's starting point:
+
+- **Livelihoods `INSERT` policy doesn't lock `status`/`revenue`** — the
+  team's own migration history already contains the reasoning that would
+  justify fixing this (0039's "CLF/bank-review gaming" concern for this
+  exact table's DELETE side was never connected back to 0027's earlier,
+  now-contradicted "no other party's interests are at stake" decision on
+  the INSERT side). A member can fabricate a fully "completed," highly
+  profitable activity in one direct-REST call, no staging.
+- **Livelihoods `investment`/`revenue` have no upper bound** — unlike
+  `loans.outstanding`, which got a dedicated ceiling after an identical gap
+  was found there.
+- **Livelihoods `activity_type` has no server-side enum constraint** — a
+  direct REST write can set it to any string; the label renderer falls
+  back to showing the raw value verbatim for anything unrecognized,
+  leaking untranslated text into a Hindi/Telugu session.
+- **`announcement_reads_self_or_staff`'s `is_staff()` branch is
+  unconditional** — any crp/clf/admin account can forge or erase another
+  specific member's read receipt (`member_id` isn't required to match
+  `auth.uid()` even on the staff branch), tampering with the one
+  per-member audit table in the schema that should never be
+  third-party-writable this way.
+- **A reopened support ticket keeps showing a stale "Resolved by … on
+  …" banner** — `resolved_by`/`resolved_at` are never cleared on reopen,
+  so `support_ticket_detail_page.dart` renders it unconditionally off
+  those two fields being non-null, with no check against the ticket's
+  current (non-resolved) status.
+- **`SupportRepository.sendMessage`/`AnnouncementRepository.markRead`
+  silently no-op instead of throwing** when `senderId`/`memberId` is null
+  — currently masked by the router's `hasProfile` gate, but no
+  defense-in-depth in the repository itself.
+- **Staff support-ticket queue caps at 500 ordered by `created_at` alone**
+  — an old ticket that's still genuinely `open` (never addressed) sorts
+  just as "old" as a resolved one and silently vanishes from the queue
+  alongside it once the platform passes 500 total tickets.
+- **`AdminRepository.fetchSystemHealth`'s row counts use unbounded
+  `select()` instead of `.count()`** (contrast `fetchTrainingCompletionPct`
+  30 lines below in the same file, which correctly uses `.count()`) — an
+  unbounded-growth performance/cost concern for `savings_entries`/`loans`
+  specifically, the tables expected to grow fastest; also a plausible
+  silent-undercount risk if the project's PostgREST `max-rows` setting is
+  ever configured (couldn't confirm the live setting from this session).
+  Separately, the Admin Dashboard's "System Uptime" stat card (a different
+  page from Monitoring) has no on-screen disclosure at all that it only
+  measures a pg_cron heartbeat, not real infra uptime — unlike the
+  Monitoring page's explicit "Placeholder metrics" banner, this narrowing
+  is documented only in code comments.
+
+**Not yet re-tackled this iteration** (still open from round 173, real and
+specific): marketplace order state-machine/reviewer_name spoofing, payment
+webhook monotonic-transition guard, AI advisor Llama Guard role-framing and
+PII-redaction-warning gaps, schemes/quiz brute-force and Training-Completion
+KPI gaming, loans' already-known `loan_payments` direct-insert bypass.

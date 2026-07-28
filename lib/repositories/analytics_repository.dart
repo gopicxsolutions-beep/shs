@@ -140,12 +140,29 @@ class AnalyticsRepository {
     final totalByShg = <String, int>{};
     if (meetingRows.isNotEmpty) {
       final attendance = await _client.from('meeting_attendance').select('present, meeting_id').inFilter('meeting_id', shgByMeetingId.keys.toList());
+      final presentByMeeting = <String, int>{};
       for (final r in attendance as List) {
         final map = r as Map<String, dynamic>;
-        final shgId = shgByMeetingId[map['meeting_id'] as String];
-        if (shgId == null) continue;
-        totalByShg[shgId] = (totalByShg[shgId] ?? 0) + 1;
-        if (map['present'] == true) presentByShg[shgId] = (presentByShg[shgId] ?? 0) + 1;
+        if (map['present'] != true) continue;
+        final meetingId = map['meeting_id'] as String;
+        presentByMeeting[meetingId] = (presentByMeeting[meetingId] ?? 0) + 1;
+      }
+      // Denominator is the SHG's actual roster size (`memberCountByShg`,
+      // already computed above) per qualifying meeting, not the count of
+      // `meeting_attendance` rows written — a leader who only toggles the
+      // members who actually showed up (there's no "mark everyone absent
+      // first" affordance) otherwise reads as ~100% attended regardless of
+      // true turnout. See `TrendRepository.attendanceTrend`'s doc comment
+      // for the full reasoning; `fetchShgDetail` above already gets this
+      // right by delegating to `TrendRepository.attendanceRate`, but this
+      // batch path recomputed its own (undercounting) version instead.
+      for (final entry in shgByMeetingId.entries) {
+        final meetingId = entry.key;
+        final shgId = entry.value;
+        final rosterSize = memberCountByShg[shgId] ?? 0;
+        if (rosterSize == 0) continue;
+        totalByShg[shgId] = (totalByShg[shgId] ?? 0) + rosterSize;
+        presentByShg[shgId] = (presentByShg[shgId] ?? 0) + (presentByMeeting[meetingId] ?? 0);
       }
     }
 

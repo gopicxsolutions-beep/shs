@@ -65,7 +65,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
       });
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not load more users. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.adminUsersLoadMoreError)));
       }
     } finally {
       if (mounted) setState(() => _loadingMore = false);
@@ -76,7 +76,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     final selected = await showDialog<Role>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: Text('Change role — ${user.name}'),
+        title: Text(AppLocalizations.of(context)!.adminUsersChangeRoleDialogTitle(user.name)),
         children: roles
             .map((r) => SimpleDialogOption(
                   onPressed: () => Navigator.of(context).pop(r.id),
@@ -100,11 +100,11 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Change role?'),
-        content: Text('Change ${user.name}\'s role from $currentLabel to $newLabel?'),
+        title: Text(AppLocalizations.of(context)!.adminUsersChangeRoleConfirmTitle),
+        content: Text(AppLocalizations.of(context)!.adminUsersChangeRoleConfirmMessage(user.name, currentLabel, newLabel)),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Change')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(AppLocalizations.of(context)!.adminUsersChangeRoleConfirmButton)),
         ],
       ),
     );
@@ -132,7 +132,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update this role. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.adminUsersUpdateRoleError)));
       }
     } finally {
       if (mounted) setState(() => _changingRoleFor = null);
@@ -167,7 +167,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not assign this SHG. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.adminUsersAssignShgError)));
       }
     } finally {
       if (mounted) setState(() => _assigningShgFor = null);
@@ -202,7 +202,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
                   child: Center(
                     child: _loadingMore
                         ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                        : TextButton(onPressed: _loadMore, child: const Text('Load more')),
+                        : TextButton(onPressed: _loadMore, child: Text(AppLocalizations.of(context)!.actionLoadMore)),
                   ),
                 );
               }

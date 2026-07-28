@@ -32,6 +32,7 @@ class _ThrowingAiAdvisorService implements AiAdvisorService {
     required String advisorType,
     required String query,
     List<AiAdvisorExchange> history = const [],
+    String language = 'en',
   }) async {
     throw makeError();
   }

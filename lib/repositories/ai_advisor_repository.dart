@@ -55,11 +55,12 @@ class AiAdvisorRepository {
   /// member's question was actually answered, but they'd never see it.
   /// Mirrors `announcement_detail_page.dart`'s established "read-receipt
   /// failure must not hide successfully-loaded content" pattern.
-  Future<String> ask({required String? memberId, required String advisorType, required String query}) async {
+  Future<String> ask({required String? memberId, required String advisorType, required String query, String language = 'en'}) async {
     final response = await _service.ask(
       advisorType: advisorType,
       query: query,
       history: List.unmodifiable(_sessionHistory),
+      language: language,
     );
     _sessionHistory.add(AiAdvisorExchange(query: query, response: response));
     if (_sessionHistory.length > _maxHistoryExchanges) {

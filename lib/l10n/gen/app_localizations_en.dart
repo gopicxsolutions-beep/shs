@@ -3514,4 +3514,85 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get aiAdvisorUpstreamUnavailable =>
       'The advisor service is temporarily unavailable right now. Please try again in a moment.';
+
+  @override
+  String get actionLoadMore => 'Load more';
+
+  @override
+  String get adminUsersLoadMoreError =>
+      'Could not load more users. Please try again.';
+
+  @override
+  String adminUsersChangeRoleDialogTitle(String name) {
+    return 'Change role — $name';
+  }
+
+  @override
+  String get adminUsersChangeRoleConfirmTitle => 'Change role?';
+
+  @override
+  String adminUsersChangeRoleConfirmMessage(
+    String name,
+    String from,
+    String to,
+  ) {
+    return 'Change $name\'s role from $from to $to?';
+  }
+
+  @override
+  String get adminUsersChangeRoleConfirmButton => 'Change';
+
+  @override
+  String get adminUsersUpdateRoleError =>
+      'Could not update this role. Please try again.';
+
+  @override
+  String get adminUsersAssignShgError =>
+      'Could not assign this SHG. Please try again.';
+
+  @override
+  String get adminShgsLoadMoreError =>
+      'Could not load more SHGs. Please try again.';
+
+  @override
+  String get adminShgsFormationDateLabel => 'Formation date (optional)';
+
+  @override
+  String get adminShgsPickDateButton => 'Pick date';
+
+  @override
+  String get adminShgsNotGradedOption => 'Not graded';
+
+  @override
+  String get adminShgsAddTitle => 'Add SHG';
+
+  @override
+  String get adminShgsNameRequiredError => 'SHG name is required.';
+
+  @override
+  String get adminShgsAddError => 'Could not add this SHG. Please try again.';
+
+  @override
+  String get adminShgsEditTitle => 'Edit SHG';
+
+  @override
+  String get adminShgsUpdateError =>
+      'Could not update this SHG. Please try again.';
+
+  @override
+  String get paymentsQrScanPrompt => 'Tap to scan a QR code';
+
+  @override
+  String paymentsQrPayingLabel(String name) {
+    return 'Paying $name';
+  }
+
+  @override
+  String get paymentsQrAmountLabel => 'Amount';
+
+  @override
+  String get paymentsQrPaymentModeLabel => 'Payment mode';
+
+  @override
+  String get financialLedgerBalancePrefix => 'Bal';
 }

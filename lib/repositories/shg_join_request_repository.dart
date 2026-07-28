@@ -29,9 +29,30 @@ class ShgJoinRequestRepository {
   /// show which SHG they asked to join and whether it was rejected).
   Future<ShgJoinRequest?> fetchMine(String? memberId) async {
     if (!_live || memberId == null) return null;
-    final rows = await _client.from('shg_join_requests').select('*, shgs(name)').eq('member_id', memberId).order('requested_at', ascending: false).limit(1);
+    final rows = await _client.from('shg_join_requests').select().eq('member_id', memberId).order('requested_at', ascending: false).limit(1);
     final list = rows as List;
-    return list.isEmpty ? null : ShgJoinRequest.fromMap(list.first as Map<String, dynamic>);
+    if (list.isEmpty) return null;
+    final map = Map<String, dynamic>.from(list.first as Map<String, dynamic>);
+    // `shgs_select_own_or_staff` RLS only allows reading a `shgs` row once
+    // you're already a member of it (`id = current_shg_id()`) — a still-
+    // PENDING requester never satisfies that (their own `shg_id` is null
+    // until approved), so embedding `shgs(name)` directly here always came
+    // back null and this page showed "Unknown SHG" for every request that
+    // hadn't been approved yet, the common case this page exists for. The
+    // pending requester still needs to see which SHG they asked to join, so
+    // resolve the name through `shg_directory` instead — the view that
+    // exists precisely to expose the safe non-sensitive columns (no
+    // bank_account/ifsc) to any authenticated user for onboarding search,
+    // which is exactly the access level appropriate here too.
+    final shgId = map['shg_id'] as String?;
+    if (shgId != null) {
+      final shgRows = await _client.from('shg_directory').select('name').eq('id', shgId).limit(1);
+      final shgList = shgRows as List;
+      if (shgList.isNotEmpty) {
+        map['shgs'] = {'name': (shgList.first as Map<String, dynamic>)['name']};
+      }
+    }
+    return ShgJoinRequest.fromMap(map);
   }
 
   /// Pending requests for the leader's own SHG.

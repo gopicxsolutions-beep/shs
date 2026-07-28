@@ -105,6 +105,7 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
         memberId: memberId,
         advisorType: widget.advisorType,
         query: text,
+        language: context.read<AppState>().language.name,
       );
       if (!mounted) return;
       setState(() {

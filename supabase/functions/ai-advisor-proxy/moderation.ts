@@ -23,6 +23,28 @@
 
 export type PreFilterResult = { blocked: true; reason: string } | { blocked: false };
 
+// The three languages the app ships in (lib/l10n/app_en.arb / app_hi.arb /
+// app_te.arb). Every member-safe rejection reason below is shown VERBATIM
+// in the chat UI (ai_advisor_chat_page.dart's `_errorMessageFor`) — until
+// this type existed, every one of these strings was English-only
+// regardless of the member's selected app language, including the
+// self-harm supportive-resource message: the one place in this feature
+// where actual comprehension matters most. Found during a broad
+// gap-hunting audit, not a support report — a Telugu/Hindi-only-literate
+// member whose message tripped the self-harm filter would have received
+// that message in a language they may not read.
+export type Language = 'en' | 'hi' | 'te';
+
+// Not every caller (e.g. a direct Edge Function invocation bypassing the
+// Flutter client) sends a valid `language` — this is the fail-safe when
+// none/an unrecognized one is given, matching AppState's own `Language.en`
+// default (lib/state/app_state.dart).
+export const DEFAULT_LANGUAGE: Language = 'en';
+
+export function normalizeLanguage(raw: unknown): Language {
+  return raw === 'hi' || raw === 'te' ? raw : DEFAULT_LANGUAGE;
+}
+
 // Self-harm: a short list of common, unambiguous first-person self-harm
 // phrases. Deliberately narrow, and deliberately avoids anything that could
 // collide with ordinary financial-advisor vocabulary — e.g. "end my life"
@@ -42,8 +64,11 @@ const SELF_HARM_PATTERNS: RegExp[] = [
   /\b(hurt(ing)?|cutting|cut) myself\b/i,
 ];
 
-const SELF_HARM_REASON =
-  "This looks like it may be about self-harm. This assistant can't help with that — please reach out to someone you trust, your SHG leader, or a local helpline right away.";
+const SELF_HARM_REASON: Record<Language, string> = {
+  en: "This looks like it may be about self-harm. This assistant can't help with that — please reach out to someone you trust, your SHG leader, or a local helpline right away.",
+  hi: 'ऐसा लगता है कि यह आत्म-हानि से संबंधित हो सकता है। यह सहायक इसमें मदद नहीं कर सकता — कृपया तुरंत किसी भरोसेमंद व्यक्ति, अपने SHG नेता, या स्थानीय हेल्पलाइन से संपर्क करें।',
+  te: 'ఇది స్వీయ-హాని గురించి కావచ్చు అని అనిపిస్తోంది. ఈ సహాయకుడు దీనిలో సహాయం చేయలేడు — దయచేసి వెంటనే మీరు నమ్మే వ్యక్తిని, మీ SHG నాయకురాలిని, లేదా స్థానిక హెల్ప్‌లైన్‌ను సంప్రదించండి.',
+};
 
 // Hate speech: intentionally scoped to explicit violent-incitement /
 // dehumanization phrasing directed at a demographic/religious/ethnic group,
@@ -66,7 +91,13 @@ const HATE_SPEECH_PATTERNS: RegExp[] = [
   /\bgenocide\b/i,
 ];
 
-const HATE_SPEECH_REASON = 'This request cannot be processed.';
+const GENERIC_BLOCKED_REASON: Record<Language, string> = {
+  en: 'This request cannot be processed.',
+  hi: 'इस अनुरोध को संसाधित नहीं किया जा सकता।',
+  te: 'ఈ అభ్యర్థనను ప్రాసెస్ చేయడం సాధ్యం కాదు.',
+};
+
+const HATE_SPEECH_REASON = GENERIC_BLOCKED_REASON;
 
 // Prompt-extraction / jailbreak attempts: standard, well-known phrasing used
 // to try to override a system prompt or extract it verbatim. Narrow by
@@ -95,16 +126,18 @@ const JAILBREAK_PATTERNS: RegExp[] = [
   /\bbypass your (restrictions|rules|guidelines)\b/i,
 ];
 
-const JAILBREAK_REASON = 'This request cannot be processed.';
+const JAILBREAK_REASON = GENERIC_BLOCKED_REASON;
 
 /// Checks the raw member query against the pattern sets above. Order
 /// matters only for which reason message comes back when multiple
 /// categories match at once (self-harm takes priority since it's the one
 /// case where the reason text itself matters for the member's safety).
-export function checkQueryForDisallowedContent(query: string): PreFilterResult {
-  if (SELF_HARM_PATTERNS.some((p) => p.test(query))) return { blocked: true, reason: SELF_HARM_REASON };
-  if (HATE_SPEECH_PATTERNS.some((p) => p.test(query))) return { blocked: true, reason: HATE_SPEECH_REASON };
-  if (JAILBREAK_PATTERNS.some((p) => p.test(query))) return { blocked: true, reason: JAILBREAK_REASON };
+/// [language] picks which of the member-safe reason strings above is
+/// returned — see the type's own doc comment for why this exists at all.
+export function checkQueryForDisallowedContent(query: string, language: Language = DEFAULT_LANGUAGE): PreFilterResult {
+  if (SELF_HARM_PATTERNS.some((p) => p.test(query))) return { blocked: true, reason: SELF_HARM_REASON[language] };
+  if (HATE_SPEECH_PATTERNS.some((p) => p.test(query))) return { blocked: true, reason: HATE_SPEECH_REASON[language] };
+  if (JAILBREAK_PATTERNS.some((p) => p.test(query))) return { blocked: true, reason: JAILBREAK_REASON[language] };
   return { blocked: false };
 }
 
@@ -264,11 +297,11 @@ export function parseLlamaGuardVerdict(raw: string): LlamaGuardVerdict {
 /// regex filter uses for every other category — deliberately not echoing
 /// Llama Guard's raw category codes back to the caller (meaningless to a
 /// member, and unnecessary detail to hand an adversarial one).
-export function reasonForLlamaGuardVerdict(verdict: LlamaGuardVerdict): string {
-  return verdict.categories.includes(LLAMA_GUARD_SELF_HARM_CATEGORY) ? SELF_HARM_REASON : ML_MODERATION_REASON;
+export function reasonForLlamaGuardVerdict(verdict: LlamaGuardVerdict, language: Language = DEFAULT_LANGUAGE): string {
+  return verdict.categories.includes(LLAMA_GUARD_SELF_HARM_CATEGORY) ? SELF_HARM_REASON[language] : ML_MODERATION_REASON[language];
 }
 
-const ML_MODERATION_REASON = 'This request cannot be processed.';
+const ML_MODERATION_REASON = GENERIC_BLOCKED_REASON;
 
 /// Returned in place of a completion whose OUTPUT Llama Guard itself flags
 /// as unsafe — distinct wording from [SAFE_FALLBACK_ON_SUSPECTED_LEAK]

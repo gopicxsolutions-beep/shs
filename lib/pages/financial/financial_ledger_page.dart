@@ -180,7 +180,7 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
                                   // front instead, and format the magnitude like every other
                                   // amount on this page/app.
                                   Text(
-                                    'Bal ${e.balance < 0 ? '-' : ''}₹${NumberFormat('#,##,##0', 'en_IN').format(e.balance.abs())}',
+                                    '${AppLocalizations.of(context)!.financialLedgerBalancePrefix} ${e.balance < 0 ? '-' : ''}₹${NumberFormat('#,##,##0', 'en_IN').format(e.balance.abs())}',
                                     style: AppTheme.sans(11, color: e.balance < 0 ? Accent.red600 : Neutral.c500),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,

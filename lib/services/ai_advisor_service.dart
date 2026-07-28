@@ -14,10 +14,17 @@ abstract class AiAdvisorService {
   /// `AiAdvisorRepository`) — real cross-turn memory, sent to the provider
   /// as actual prior user/assistant messages rather than folded into the
   /// query text.
+  /// [language] picks which localized member-safe rejection string (self-harm,
+  /// generic-blocked, rate-limit) the server returns for this call — see
+  /// `supabase/functions/ai-advisor-proxy/moderation.ts`'s `Language` doc
+  /// comment. Pass the member's currently-selected app language (an ISO code
+  /// the server recognizes: 'en'/'hi'/'te'); any other value falls back to
+  /// English server-side rather than erroring.
   Future<String> ask({
     required String advisorType,
     required String query,
     List<AiAdvisorExchange> history = const [],
+    String language = 'en',
   });
 }
 
@@ -93,12 +100,14 @@ class EdgeFunctionAiAdvisorService implements AiAdvisorService {
     required String advisorType,
     required String query,
     List<AiAdvisorExchange> history = const [],
+    String language = 'en',
   }) async {
     Map<String, dynamic>? data;
     try {
       final res = await _client.functions.invoke('ai-advisor-proxy', body: {
         'advisor_type': advisorType,
         'query': query,
+        'language': language,
         if (history.isNotEmpty) 'history': history.map((h) => h.toJson()).toList(),
       }).timeout(
         _timeout,
@@ -185,6 +194,7 @@ class MockAiAdvisorService implements AiAdvisorService {
     required String advisorType,
     required String query,
     List<AiAdvisorExchange> history = const [],
+    String language = 'en',
   }) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final q = query.toLowerCase();

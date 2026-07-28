@@ -81,7 +81,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
       });
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not load more SHGs. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.adminShgsLoadMoreError)));
       }
     } finally {
       if (mounted) setState(() => _loadingMore = false);
@@ -106,7 +106,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
         const SizedBox(height: 12),
         TextField(controller: _district, maxLength: 100, textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'District')),
         const SizedBox(height: 16),
-        Text('Formation date (optional)', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+        Text(AppLocalizations.of(dialogContext)!.adminShgsFormationDateLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -126,7 +126,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
                 );
                 if (picked != null) setDialogState(() => _formationDate = picked);
               },
-              child: const Text('Pick date'),
+              child: Text(AppLocalizations.of(dialogContext)!.adminShgsPickDateButton),
             ),
             if (_formationDate != null)
               IconButton(
@@ -141,7 +141,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
           initialValue: _grade,
           decoration: const InputDecoration(hintText: 'Grade (optional)'),
           items: [
-            const DropdownMenuItem<String?>(value: null, child: Text('Not graded')),
+            DropdownMenuItem<String?>(value: null, child: Text(AppLocalizations.of(dialogContext)!.adminShgsNotGradedOption)),
             ..._gradeOptions.map((g) => DropdownMenuItem<String?>(value: g, child: Text(g))),
           ],
           onChanged: (v) => setDialogState(() => _grade = v),
@@ -158,7 +158,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add SHG'),
+          title: Text(AppLocalizations.of(context)!.adminShgsAddTitle),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -179,7 +179,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
       // dialog and did nothing — indistinguishable from a broken button,
       // since nothing here told the admin why no SHG was created.
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('SHG name is required.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.adminShgsNameRequiredError)));
       }
       return;
     }
@@ -200,7 +200,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not add this SHG. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.adminShgsAddError)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -231,7 +231,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Edit SHG'),
+          title: Text(AppLocalizations.of(context)!.adminShgsEditTitle),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -241,7 +241,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
           ),
           actions: [
             TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)?.actionCancel ?? 'Cancel')),
-            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Save')),
+            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(AppLocalizations.of(context)?.actionSave ?? 'Save')),
           ],
         ),
       ),
@@ -249,7 +249,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
     if (confirmed != true || !mounted) return;
     if (_name.text.trim().isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('SHG name is required.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.adminShgsNameRequiredError)));
       }
       return;
     }
@@ -313,7 +313,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
                   child: Center(
                     child: _loadingMore
                         ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                        : TextButton(onPressed: _loadMore, child: const Text('Load more')),
+                        : TextButton(onPressed: _loadMore, child: Text(AppLocalizations.of(context)!.actionLoadMore)),
                   ),
                 );
               }

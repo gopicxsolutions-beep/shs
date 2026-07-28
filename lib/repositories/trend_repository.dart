@@ -58,22 +58,40 @@ class TrendRepository {
     // drag a month's attendance rate down as a 0%-attended completed
     // meeting.
     final todayStr = DateTime.now().toIso8601String().split('T').first;
-    var meetingsQuery = _client.from('meetings').select('id, meeting_date').neq('status', 'cancelled').lt('meeting_date', todayStr);
+    var meetingsQuery = _client.from('meetings').select('id, meeting_date, shg_id').neq('status', 'cancelled').lt('meeting_date', todayStr);
     final meetings = (shgId != null ? await meetingsQuery.eq('shg_id', shgId) : await meetingsQuery) as List;
     if (meetings.isEmpty) return const [];
     final meetingDates = {for (final m in meetings) m['id'] as String: m['meeting_date'] as String};
+    final meetingShgIds = {for (final m in meetings) m['id'] as String: m['shg_id'] as String};
     final meetingIds = meetingDates.keys.toList();
+    final rosterSizeByShg = await _rosterSizeByShg(meetingShgIds.values.toSet());
     final attendance = await _client.from('meeting_attendance').select('meeting_id, present').inFilter('meeting_id', meetingIds);
-
-    final byMonth = <String, (int present, int total)>{};
+    // `present` rows are only ever written for members a leader actually
+    // toggled (see `MeetingRepository.fetchAttendance`'s own doc comment —
+    // no row means "not yet marked", defaulting to absent in the UI, not
+    // "doesn't count"). Counting attendance ROWS as the denominator instead
+    // of the SHG's actual roster size meant a leader who only toggled the 2
+    // members who showed up (out of 10) — the natural workflow, since
+    // there's no "mark everyone absent first" affordance — produced a 100%
+    // attendance rate (2 present / 2 rows), not the true 20%. This is
+    // exactly the SHG "health score" CRP/CLF triage off of
+    // (analytics_repository.dart, crp/clf dashboards), so an undercounted
+    // denominator silently inverted the signal it exists to provide.
+    final presentByMeeting = <String, int>{};
     for (final r in attendance as List) {
       final map = r as Map<String, dynamic>;
-      final meetingDate = meetingDates[map['meeting_id'] as String];
-      if (meetingDate == null) continue;
+      if (map['present'] != true) continue;
+      final id = map['meeting_id'] as String;
+      presentByMeeting[id] = (presentByMeeting[id] ?? 0) + 1;
+    }
+    final byMonth = <String, (int present, int total)>{};
+    for (final id in meetingIds) {
+      final meetingDate = meetingDates[id];
+      final rosterSize = rosterSizeByShg[meetingShgIds[id]] ?? 0;
+      if (meetingDate == null || rosterSize == 0) continue;
       final key = DateFormat('yyyy-MM').format(DateTime.parse(meetingDate));
       final current = byMonth[key] ?? (0, 0);
-      final present = map['present'] == true;
-      byMonth[key] = (current.$1 + (present ? 1 : 0), current.$2 + 1);
+      byMonth[key] = (current.$1 + (presentByMeeting[id] ?? 0), current.$2 + rosterSize);
     }
     return _lastSixMonthKeys().map((k) {
       final (present, total) = byMonth[k] ?? (0, 0);
@@ -117,15 +135,46 @@ class TrendRepository {
     final now = DateTime.now();
     final windowStartStr = DateFormat('yyyy-MM-dd').format(DateTime(now.year, now.month - 5));
     final todayStr = now.toIso8601String().split('T').first;
-    var meetingsQuery = _client.from('meetings').select('id').neq('status', 'cancelled').gte('meeting_date', windowStartStr).lt('meeting_date', todayStr);
+    var meetingsQuery = _client.from('meetings').select('id, shg_id').neq('status', 'cancelled').gte('meeting_date', windowStartStr).lt('meeting_date', todayStr);
     final meetings = (shgId != null ? await meetingsQuery.eq('shg_id', shgId) : await meetingsQuery) as List;
     if (meetings.isEmpty) return 0.0;
-    final meetingIds = meetings.map((m) => (m as Map<String, dynamic>)['id'] as String).toList();
-    final attendance = await _client.from('meeting_attendance').select('present').inFilter('meeting_id', meetingIds);
-    final total = attendance.length;
+    final meetingIds = <String>[];
+    final meetingShgIds = <String, String>{};
+    for (final m in meetings) {
+      final map = m as Map<String, dynamic>;
+      meetingIds.add(map['id'] as String);
+      meetingShgIds[map['id'] as String] = map['shg_id'] as String;
+    }
+    // Denominator is each meeting's actual SHG roster size, not the count of
+    // `meeting_attendance` rows written — see `attendanceTrend`'s doc comment
+    // for why counting rows alone lets a partially-marked meeting read as
+    // ~100% attended.
+    final rosterSizeByShg = await _rosterSizeByShg(meetingShgIds.values.toSet());
+    final attendance = await _client.from('meeting_attendance').select('meeting_id, present').inFilter('meeting_id', meetingIds);
+    var present = 0;
+    for (final r in attendance as List) {
+      if ((r as Map<String, dynamic>)['present'] == true) present++;
+    }
+    final total = meetingIds.fold<int>(0, (sum, id) => sum + (rosterSizeByShg[meetingShgIds[id]] ?? 0));
     if (total == 0) return 0.0;
-    final present = attendance.where((r) => r['present'] == true).length;
     return (present / total) * 100;
+  }
+
+  /// Member count per SHG, for the given set of SHG ids — the correct
+  /// per-meeting attendance denominator (see `attendanceTrend`/
+  /// `attendanceRate`'s own doc comments). A single `profiles` query rather
+  /// than one `fetchRoster` call per SHG, since a federation-wide chart can
+  /// span many SHGs at once.
+  Future<Map<String, int>> _rosterSizeByShg(Set<String> shgIds) async {
+    if (shgIds.isEmpty) return const {};
+    final rows = await _client.from('profiles').select('shg_id').inFilter('shg_id', shgIds.toList());
+    final counts = <String, int>{};
+    for (final r in rows as List) {
+      final id = (r as Map<String, dynamic>)['shg_id'] as String?;
+      if (id == null) continue;
+      counts[id] = (counts[id] ?? 0) + 1;
+    }
+    return counts;
   }
 
   /// Demo-mode `attendanceTrend`, computed from `MeetingRepository`'s own

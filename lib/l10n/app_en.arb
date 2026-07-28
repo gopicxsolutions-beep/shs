@@ -2494,5 +2494,49 @@
     }
   },
 
-  "aiAdvisorUpstreamUnavailable": "The advisor service is temporarily unavailable right now. Please try again in a moment."
+  "aiAdvisorUpstreamUnavailable": "The advisor service is temporarily unavailable right now. Please try again in a moment.",
+
+  "actionLoadMore": "Load more",
+
+  "adminUsersLoadMoreError": "Could not load more users. Please try again.",
+  "adminUsersChangeRoleDialogTitle": "Change role — {name}",
+  "@adminUsersChangeRoleDialogTitle": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "adminUsersChangeRoleConfirmTitle": "Change role?",
+  "adminUsersChangeRoleConfirmMessage": "Change {name}'s role from {from} to {to}?",
+  "@adminUsersChangeRoleConfirmMessage": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "from": {"type": "String"},
+      "to": {"type": "String"}
+    }
+  },
+  "adminUsersChangeRoleConfirmButton": "Change",
+  "adminUsersUpdateRoleError": "Could not update this role. Please try again.",
+  "adminUsersAssignShgError": "Could not assign this SHG. Please try again.",
+
+  "adminShgsLoadMoreError": "Could not load more SHGs. Please try again.",
+  "adminShgsFormationDateLabel": "Formation date (optional)",
+  "adminShgsPickDateButton": "Pick date",
+  "adminShgsNotGradedOption": "Not graded",
+  "adminShgsAddTitle": "Add SHG",
+  "adminShgsNameRequiredError": "SHG name is required.",
+  "adminShgsAddError": "Could not add this SHG. Please try again.",
+  "adminShgsEditTitle": "Edit SHG",
+  "adminShgsUpdateError": "Could not update this SHG. Please try again.",
+
+  "paymentsQrScanPrompt": "Tap to scan a QR code",
+  "paymentsQrPayingLabel": "Paying {name}",
+  "@paymentsQrPayingLabel": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "paymentsQrAmountLabel": "Amount",
+  "paymentsQrPaymentModeLabel": "Payment mode",
+
+  "financialLedgerBalancePrefix": "Bal"
 }

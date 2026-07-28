@@ -6117,6 +6117,142 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The advisor service is temporarily unavailable right now. Please try again in a moment.'**
   String get aiAdvisorUpstreamUnavailable;
+
+  /// No description provided for @actionLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get actionLoadMore;
+
+  /// No description provided for @adminUsersLoadMoreError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load more users. Please try again.'**
+  String get adminUsersLoadMoreError;
+
+  /// No description provided for @adminUsersChangeRoleDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change role — {name}'**
+  String adminUsersChangeRoleDialogTitle(String name);
+
+  /// No description provided for @adminUsersChangeRoleConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change role?'**
+  String get adminUsersChangeRoleConfirmTitle;
+
+  /// No description provided for @adminUsersChangeRoleConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Change {name}\'s role from {from} to {to}?'**
+  String adminUsersChangeRoleConfirmMessage(
+    String name,
+    String from,
+    String to,
+  );
+
+  /// No description provided for @adminUsersChangeRoleConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get adminUsersChangeRoleConfirmButton;
+
+  /// No description provided for @adminUsersUpdateRoleError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update this role. Please try again.'**
+  String get adminUsersUpdateRoleError;
+
+  /// No description provided for @adminUsersAssignShgError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not assign this SHG. Please try again.'**
+  String get adminUsersAssignShgError;
+
+  /// No description provided for @adminShgsLoadMoreError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load more SHGs. Please try again.'**
+  String get adminShgsLoadMoreError;
+
+  /// No description provided for @adminShgsFormationDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Formation date (optional)'**
+  String get adminShgsFormationDateLabel;
+
+  /// No description provided for @adminShgsPickDateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick date'**
+  String get adminShgsPickDateButton;
+
+  /// No description provided for @adminShgsNotGradedOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Not graded'**
+  String get adminShgsNotGradedOption;
+
+  /// No description provided for @adminShgsAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add SHG'**
+  String get adminShgsAddTitle;
+
+  /// No description provided for @adminShgsNameRequiredError.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG name is required.'**
+  String get adminShgsNameRequiredError;
+
+  /// No description provided for @adminShgsAddError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add this SHG. Please try again.'**
+  String get adminShgsAddError;
+
+  /// No description provided for @adminShgsEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit SHG'**
+  String get adminShgsEditTitle;
+
+  /// No description provided for @adminShgsUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update this SHG. Please try again.'**
+  String get adminShgsUpdateError;
+
+  /// No description provided for @paymentsQrScanPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to scan a QR code'**
+  String get paymentsQrScanPrompt;
+
+  /// No description provided for @paymentsQrPayingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Paying {name}'**
+  String paymentsQrPayingLabel(String name);
+
+  /// No description provided for @paymentsQrAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get paymentsQrAmountLabel;
+
+  /// No description provided for @paymentsQrPaymentModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment mode'**
+  String get paymentsQrPaymentModeLabel;
+
+  /// No description provided for @financialLedgerBalancePrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Bal'**
+  String get financialLedgerBalancePrefix;
 }
 
 class _AppLocalizationsDelegate

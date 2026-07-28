@@ -20,7 +20,7 @@
 // prompt-injection-hardening delimiter wrapper for every user-authored turn,
 // past or present.
 
-import { buildUserMessage, checkQueryForDisallowedContent } from './moderation.ts';
+import { buildUserMessage, checkQueryForDisallowedContent, DEFAULT_LANGUAGE, Language } from './moderation.ts';
 
 export type HistoryExchange = { query: string; response: string };
 export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
@@ -133,11 +133,11 @@ export type HistoryFilterResult = { blocked: true; reason: string; matchedText: 
 /// question. There's no way to cryptographically verify a client-supplied
 /// `response` is genuinely prior model output, so it gets the same
 /// scrutiny as member-authored text.
-export function checkHistoryForDisallowedContent(history: HistoryExchange[]): HistoryFilterResult {
+export function checkHistoryForDisallowedContent(history: HistoryExchange[], language: Language = DEFAULT_LANGUAGE): HistoryFilterResult {
   for (const turn of history) {
-    const queryResult = checkQueryForDisallowedContent(turn.query);
+    const queryResult = checkQueryForDisallowedContent(turn.query, language);
     if (queryResult.blocked) return { ...queryResult, matchedText: turn.query };
-    const responseResult = checkQueryForDisallowedContent(turn.response);
+    const responseResult = checkQueryForDisallowedContent(turn.response, language);
     if (responseResult.blocked) return { ...responseResult, matchedText: turn.response };
   }
   return { blocked: false };

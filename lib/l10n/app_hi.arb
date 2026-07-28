@@ -1921,5 +1921,32 @@
 
   "adminDashboardActivityDocument": "दस्तावेज़ अपलोड किया गया — {name}",
 
-  "aiAdvisorUpstreamUnavailable": "सलाहकार सेवा अभी अस्थायी रूप से उपलब्ध नहीं है। कृपया थोड़ी देर बाद फिर से प्रयास करें।"
+  "aiAdvisorUpstreamUnavailable": "सलाहकार सेवा अभी अस्थायी रूप से उपलब्ध नहीं है। कृपया थोड़ी देर बाद फिर से प्रयास करें।",
+
+  "actionLoadMore": "और लोड करें",
+
+  "adminUsersLoadMoreError": "और उपयोगकर्ता लोड नहीं हो सके। कृपया फिर से प्रयास करें।",
+  "adminUsersChangeRoleDialogTitle": "भूमिका बदलें — {name}",
+  "adminUsersChangeRoleConfirmTitle": "भूमिका बदलें?",
+  "adminUsersChangeRoleConfirmMessage": "{name} की भूमिका {from} से {to} में बदलें?",
+  "adminUsersChangeRoleConfirmButton": "बदलें",
+  "adminUsersUpdateRoleError": "यह भूमिका अपडेट नहीं हो सकी। कृपया फिर से प्रयास करें।",
+  "adminUsersAssignShgError": "यह SHG असाइन नहीं हो सका। कृपया फिर से प्रयास करें।",
+
+  "adminShgsLoadMoreError": "और SHG लोड नहीं हो सके। कृपया फिर से प्रयास करें।",
+  "adminShgsFormationDateLabel": "गठन तिथि (वैकल्पिक)",
+  "adminShgsPickDateButton": "तिथि चुनें",
+  "adminShgsNotGradedOption": "ग्रेड नहीं किया गया",
+  "adminShgsAddTitle": "SHG जोड़ें",
+  "adminShgsNameRequiredError": "SHG का नाम आवश्यक है।",
+  "adminShgsAddError": "यह SHG जोड़ा नहीं जा सका। कृपया फिर से प्रयास करें।",
+  "adminShgsEditTitle": "SHG संपादित करें",
+  "adminShgsUpdateError": "यह SHG अपडेट नहीं हो सका। कृपया फिर से प्रयास करें।",
+
+  "paymentsQrScanPrompt": "QR कोड स्कैन करने के लिए टैप करें",
+  "paymentsQrPayingLabel": "{name} को भुगतान कर रहे हैं",
+  "paymentsQrAmountLabel": "राशि",
+  "paymentsQrPaymentModeLabel": "भुगतान का तरीका",
+
+  "financialLedgerBalancePrefix": "शेष"
 }

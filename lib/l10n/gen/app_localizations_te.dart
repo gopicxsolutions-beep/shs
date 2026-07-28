@@ -3516,4 +3516,86 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get aiAdvisorUpstreamUnavailable =>
       'సలహాదారు సేవ ప్రస్తుతం తాత్కాలికంగా అందుబాటులో లేదు. దయచేసి కొద్దిసేపటి తర్వాత మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get actionLoadMore => 'మరిన్ని లోడ్ చేయండి';
+
+  @override
+  String get adminUsersLoadMoreError =>
+      'మరింత మంది వినియోగదారులను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String adminUsersChangeRoleDialogTitle(String name) {
+    return 'పాత్రను మార్చండి — $name';
+  }
+
+  @override
+  String get adminUsersChangeRoleConfirmTitle => 'పాత్రను మార్చాలా?';
+
+  @override
+  String adminUsersChangeRoleConfirmMessage(
+    String name,
+    String from,
+    String to,
+  ) {
+    return '$name పాత్రను $from నుండి $toకి మార్చాలా?';
+  }
+
+  @override
+  String get adminUsersChangeRoleConfirmButton => 'మార్చండి';
+
+  @override
+  String get adminUsersUpdateRoleError =>
+      'ఈ పాత్రను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get adminUsersAssignShgError =>
+      'ఈ SHGని కేటాయించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get adminShgsLoadMoreError =>
+      'మరిన్ని SHGలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get adminShgsFormationDateLabel => 'ఏర్పాటు తేదీ (ఐచ్ఛికం)';
+
+  @override
+  String get adminShgsPickDateButton => 'తేదీని ఎంచుకోండి';
+
+  @override
+  String get adminShgsNotGradedOption => 'గ్రేడ్ చేయలేదు';
+
+  @override
+  String get adminShgsAddTitle => 'SHGని జోడించండి';
+
+  @override
+  String get adminShgsNameRequiredError => 'SHG పేరు అవసరం.';
+
+  @override
+  String get adminShgsAddError =>
+      'ఈ SHGని జోడించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get adminShgsEditTitle => 'SHGని సవరించండి';
+
+  @override
+  String get adminShgsUpdateError =>
+      'ఈ SHGని అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get paymentsQrScanPrompt => 'QR కోడ్‌ను స్కాన్ చేయడానికి నొక్కండి';
+
+  @override
+  String paymentsQrPayingLabel(String name) {
+    return '$nameకి చెల్లిస్తున్నారు';
+  }
+
+  @override
+  String get paymentsQrAmountLabel => 'మొత్తం';
+
+  @override
+  String get paymentsQrPaymentModeLabel => 'చెల్లింపు విధానం';
+
+  @override
+  String get financialLedgerBalancePrefix => 'మిగులు';
 }

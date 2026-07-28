@@ -26,6 +26,7 @@ class _FakeAiAdvisorService implements AiAdvisorService {
     required String advisorType,
     required String query,
     List<AiAdvisorExchange> history = const [],
+    String language = 'en',
   }) async {
     capturedHistories.add(List.of(history));
     _calls++;

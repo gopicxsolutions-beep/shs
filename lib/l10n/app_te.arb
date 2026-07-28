@@ -1921,5 +1921,32 @@
 
   "adminDashboardActivityDocument": "పత్రం అప్‌లోడ్ చేయబడింది — {name}",
 
-  "aiAdvisorUpstreamUnavailable": "సలహాదారు సేవ ప్రస్తుతం తాత్కాలికంగా అందుబాటులో లేదు. దయచేసి కొద్దిసేపటి తర్వాత మళ్లీ ప్రయత్నించండి."
+  "aiAdvisorUpstreamUnavailable": "సలహాదారు సేవ ప్రస్తుతం తాత్కాలికంగా అందుబాటులో లేదు. దయచేసి కొద్దిసేపటి తర్వాత మళ్లీ ప్రయత్నించండి.",
+
+  "actionLoadMore": "మరిన్ని లోడ్ చేయండి",
+
+  "adminUsersLoadMoreError": "మరింత మంది వినియోగదారులను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  "adminUsersChangeRoleDialogTitle": "పాత్రను మార్చండి — {name}",
+  "adminUsersChangeRoleConfirmTitle": "పాత్రను మార్చాలా?",
+  "adminUsersChangeRoleConfirmMessage": "{name} పాత్రను {from} నుండి {to}కి మార్చాలా?",
+  "adminUsersChangeRoleConfirmButton": "మార్చండి",
+  "adminUsersUpdateRoleError": "ఈ పాత్రను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  "adminUsersAssignShgError": "ఈ SHGని కేటాయించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+
+  "adminShgsLoadMoreError": "మరిన్ని SHGలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  "adminShgsFormationDateLabel": "ఏర్పాటు తేదీ (ఐచ్ఛికం)",
+  "adminShgsPickDateButton": "తేదీని ఎంచుకోండి",
+  "adminShgsNotGradedOption": "గ్రేడ్ చేయలేదు",
+  "adminShgsAddTitle": "SHGని జోడించండి",
+  "adminShgsNameRequiredError": "SHG పేరు అవసరం.",
+  "adminShgsAddError": "ఈ SHGని జోడించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  "adminShgsEditTitle": "SHGని సవరించండి",
+  "adminShgsUpdateError": "ఈ SHGని అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+
+  "paymentsQrScanPrompt": "QR కోడ్‌ను స్కాన్ చేయడానికి నొక్కండి",
+  "paymentsQrPayingLabel": "{name}కి చెల్లిస్తున్నారు",
+  "paymentsQrAmountLabel": "మొత్తం",
+  "paymentsQrPaymentModeLabel": "చెల్లింపు విధానం",
+
+  "financialLedgerBalancePrefix": "మిగులు"
 }

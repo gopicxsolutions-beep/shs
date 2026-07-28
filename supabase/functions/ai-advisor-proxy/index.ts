@@ -57,6 +57,7 @@ import {
   LLAMA_GUARD_MAX_TOKENS,
   LLAMA_GUARD_MODEL,
   looksLikeSystemPromptLeak,
+  normalizeLanguage,
   parseLlamaGuardVerdict,
   reasonForLlamaGuardVerdict,
   SAFE_FALLBACK_ON_SUSPECTED_LEAK,
@@ -102,6 +103,16 @@ const MAX_QUERY_LENGTH = 2000;
 // correctly through Postgres's own row locking instead of racing.
 const RATE_LIMIT_MAX_PER_WINDOW = 10;
 const RATE_LIMIT_WINDOW_SECONDS = 60;
+
+// Shown to the member verbatim (ai_advisor_chat_page.dart shows a 429's
+// `reason` as-is, same as a 400) — was English-only regardless of the
+// member's selected app language until this fix (see moderation.ts's
+// `Language` doc comment for the full reasoning).
+const RATE_LIMIT_REASON: Record<string, string> = {
+  en: 'Too many requests. Please wait a minute before asking again.',
+  hi: 'बहुत अधिक अनुरोध। कृपया दोबारा पूछने से पहले एक मिनट प्रतीक्षा करें।',
+  te: 'చాలా ఎక్కువ అభ్యర్థనలు. దయచేసి మళ్లీ అడగడానికి ముందు ఒక నిమిషం వేచి ఉండండి.',
+};
 
 // This function is otherwise deliberately stateless (see file header) and
 // never decodes the caller's JWT — the rate limit is the one thing that
@@ -179,8 +190,13 @@ serve(async (req) => {
       throw new HttpError(500, 'LLM_API_KEY secret is not configured — run `supabase secrets set LLM_API_KEY=...` before deploying this function for real use.');
     }
 
-    const { advisor_type, query, history: rawHistory } = await req.json();
+    const { advisor_type, query, history: rawHistory, language: rawLanguage } = await req.json();
     if (!advisor_type || !query || typeof query !== 'string') throw new HttpError(400, 'advisor_type and a string query are required');
+    // Picks which localized member-safe rejection string (self-harm,
+    // generic-blocked, rate-limit) comes back — see moderation.ts's
+    // `Language` doc comment. Falls back to English for a caller that omits
+    // it or sends something unrecognized, never throws for a bad value.
+    const language = normalizeLanguage(rawLanguage);
     if (query.length > MAX_QUERY_LENGTH) throw new HttpError(400, `query is too long (max ${MAX_QUERY_LENGTH} characters)`);
     const systemPrompt = SYSTEM_PROMPTS[advisor_type];
     // Defense-in-depth length cap on the echoed value: advisor_type is
@@ -217,7 +233,7 @@ serve(async (req) => {
       console.error(`ai-advisor-proxy: rate limit check failed: ${rateLimitError.message}`);
       throw new HttpError(500, 'Internal error');
     }
-    if (!withinLimit) throw new HttpError(429, 'Too many requests. Please wait a minute before asking again.');
+    if (!withinLimit) throw new HttpError(429, RATE_LIMIT_REASON[language]);
 
     // Cross-turn memory: validate the optional, client-supplied bounded
     // slice of this session's prior turns (shape only here — MAX_QUERY_LENGTH
@@ -261,12 +277,12 @@ serve(async (req) => {
     // history entry (both `query` and `response` — see
     // checkHistoryForDisallowedContent's doc comment for why `response`
     // needs this too) as well as the live query.
-    const historyFilter = checkHistoryForDisallowedContent(history);
+    const historyFilter = checkHistoryForDisallowedContent(history, language);
     if (historyFilter.blocked) {
       await logBlockedRequest(historyFilter.reason, historyFilter.matchedText);
       throw new HttpError(400, historyFilter.reason);
     }
-    const preFilter = checkQueryForDisallowedContent(query);
+    const preFilter = checkQueryForDisallowedContent(query, language);
     if (preFilter.blocked) {
       await logBlockedRequest(preFilter.reason);
       throw new HttpError(400, preFilter.reason);
@@ -293,7 +309,7 @@ serve(async (req) => {
     // visibility.
     const queryVerdict = await classifyContentSafety(apiKey, query);
     if (queryVerdict.flagged) {
-      const reason = reasonForLlamaGuardVerdict(queryVerdict);
+      const reason = reasonForLlamaGuardVerdict(queryVerdict, language);
       await logBlockedRequest(reason);
       throw new HttpError(400, reason);
     }

@@ -1,0 +1,25 @@
+-- loans_insert_self: enforce the documented ₹10,00,000 loan-amount cap
+-- server-side, not just in the Flutter client.
+--
+-- Found during a broad gap-hunting audit. docs/SRS.md (FR-LOAN-1) documents
+-- the loan amount as "validated > 0 and capped at ₹1,000,000 as a
+-- fat-finger guard" — the `> 0` half is a real table constraint
+-- (`0001_init_schema.sql`'s `check (amount > 0)` on `loans`), but the upper
+-- bound only ever existed in `lib/pages/loans/loan_apply_page.dart`
+-- (`_maxAmount = 1000000`), a plain Dart check. `loans_insert_self`
+-- (`0027_insert_lifecycle_column_lock_gaps.sql`) locks every other
+-- lifecycle column (`status`, `outstanding`, `emi`, `disbursed_on`,
+-- `next_due_date`, `created_at`) but never referenced `amount` itself.
+--
+-- A member issuing `POST /rest/v1/loans` directly with
+-- `{"member_id": self, "shg_id": own, "amount": 999999999, ...}` passes RLS
+-- untouched today and lands in the leader's normal-looking pending queue —
+-- the documented fat-finger guard is fully unenforced against anything but
+-- the app's own UI.
+--
+-- Table-level (not just this one policy) so the same bound also applies to
+-- the staff-side of any future insert-on-behalf-of path, matching how
+-- `amount > 0` is already a table constraint rather than duplicated across
+-- policies.
+
+alter table public.loans add constraint loans_amount_cap check (amount <= 1000000);

@@ -3444,4 +3444,86 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get aiAdvisorUpstreamUnavailable =>
       'सलाहकार सेवा अभी अस्थायी रूप से उपलब्ध नहीं है। कृपया थोड़ी देर बाद फिर से प्रयास करें।';
+
+  @override
+  String get actionLoadMore => 'और लोड करें';
+
+  @override
+  String get adminUsersLoadMoreError =>
+      'और उपयोगकर्ता लोड नहीं हो सके। कृपया फिर से प्रयास करें।';
+
+  @override
+  String adminUsersChangeRoleDialogTitle(String name) {
+    return 'भूमिका बदलें — $name';
+  }
+
+  @override
+  String get adminUsersChangeRoleConfirmTitle => 'भूमिका बदलें?';
+
+  @override
+  String adminUsersChangeRoleConfirmMessage(
+    String name,
+    String from,
+    String to,
+  ) {
+    return '$name की भूमिका $from से $to में बदलें?';
+  }
+
+  @override
+  String get adminUsersChangeRoleConfirmButton => 'बदलें';
+
+  @override
+  String get adminUsersUpdateRoleError =>
+      'यह भूमिका अपडेट नहीं हो सकी। कृपया फिर से प्रयास करें।';
+
+  @override
+  String get adminUsersAssignShgError =>
+      'यह SHG असाइन नहीं हो सका। कृपया फिर से प्रयास करें।';
+
+  @override
+  String get adminShgsLoadMoreError =>
+      'और SHG लोड नहीं हो सके। कृपया फिर से प्रयास करें।';
+
+  @override
+  String get adminShgsFormationDateLabel => 'गठन तिथि (वैकल्पिक)';
+
+  @override
+  String get adminShgsPickDateButton => 'तिथि चुनें';
+
+  @override
+  String get adminShgsNotGradedOption => 'ग्रेड नहीं किया गया';
+
+  @override
+  String get adminShgsAddTitle => 'SHG जोड़ें';
+
+  @override
+  String get adminShgsNameRequiredError => 'SHG का नाम आवश्यक है।';
+
+  @override
+  String get adminShgsAddError =>
+      'यह SHG जोड़ा नहीं जा सका। कृपया फिर से प्रयास करें।';
+
+  @override
+  String get adminShgsEditTitle => 'SHG संपादित करें';
+
+  @override
+  String get adminShgsUpdateError =>
+      'यह SHG अपडेट नहीं हो सका। कृपया फिर से प्रयास करें।';
+
+  @override
+  String get paymentsQrScanPrompt => 'QR कोड स्कैन करने के लिए टैप करें';
+
+  @override
+  String paymentsQrPayingLabel(String name) {
+    return '$name को भुगतान कर रहे हैं';
+  }
+
+  @override
+  String get paymentsQrAmountLabel => 'राशि';
+
+  @override
+  String get paymentsQrPaymentModeLabel => 'भुगतान का तरीका';
+
+  @override
+  String get financialLedgerBalancePrefix => 'शेष';
 }
