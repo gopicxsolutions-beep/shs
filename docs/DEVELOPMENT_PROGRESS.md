@@ -19392,6 +19392,17 @@ rather than patched from memory of a pre-compaction summary:**
    batch edge case flagged as low-severity/fails-closed — needs
    re-confirming.
 
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full 1077+
+test suite passing. Live: migration `0128` deployed via `supabase db push`
+and independently live-verified per CLAUDE.md's rule (real rolled-back
+transactions, explicit row-count/error assertions, not HTTP status) —
+including both a negative (attack) and positive (legitimate-use) case, the
+combination that has repeatedly caught self-introduced regressions earlier
+in this loop. `attendanceRate()`'s fix mirrors an already-verified pattern
+(`attendanceTrend()`) applied identically, checked via `flutter analyze`
+and the full test suite (no dedicated live-data test existed for either
+method; both are read-path aggregations with no RLS boundary to test).
+
 Findings 4-6 above were re-audited fresh in iteration 32's dogfooding pass
 (see below) rather than acted on from memory — the responsible choice per
 this project's own quality bar, and it paid off: the dogfooding pass found
@@ -19516,14 +19527,127 @@ case per fix — the combination this loop has repeatedly found catches
 over-broad fixes that a negative-only test would miss. All test fixtures
 confirmed removed via re-querying afterward (zero residual rows).
 
-**Verification**: `flutter analyze` — 0 issues. `flutter test` — full 1077+
-test suite passing. Live: migration `0128` deployed via `supabase db push`
-and independently live-verified per CLAUDE.md's rule (real rolled-back
-transactions, explicit row-count/error assertions, not HTTP status) —
-including both a negative (attack) and positive (legitimate-use) case, the
-combination that has repeatedly caught self-introduced regressions earlier
-in this loop. `attendanceRate()`'s fix mirrors an already-verified pattern
-(`attendanceTrend()`) applied identically, checked via `flutter analyze`
-and the full test suite (no dedicated live-data test existed for either
-method; both are read-path aggregations with no RLS boundary to test).
+## Gap-hunting loop iteration 33: dogfooding catches TWO fresh bypasses in iteration 32's own just-shipped fixes (a meeting cancel+backdate combo, a livelihood revenue-freeze cycle), plus a HIGH staff shg_documents retargeting gap three prior rounds all misjudged as "safe"
+
+Iteration 33 launched 4 fresh audits: a dogfooding pass over iteration 32's
+fixes (migrations 0129/0130/0131, `analytics_repository.dart`), plus fresh
+sweeps of Announcements/Profile, Training Courses/SHG Documents, and Admin
+Monitoring/Federation Reports.
+
+**Fixed and live-verified this round:**
+
+1. **[HIGH, live-verified]** Dogfooding found migration 0129's new
+   `meetings_update_leader_or_staff` cancel-guard (`status <> 'cancelled' or
+   meeting_date >= current_date`) is evaluated against the NEW row, but the
+   staff branch never locks `meeting_date` to its original value — so a
+   staff account can cancel a genuinely historical meeting AND
+   simultaneously move its `meeting_date` into the future in the SAME
+   update, satisfying the guard while relocating/erasing the original
+   record's real attendance from any past-window health-score calculation.
+   Live-verified: a 3-day-old `completed` meeting with attendance was
+   cancelled and moved to a future date in one UPDATE, 1 row affected, no
+   error. Fixed in migration
+   `0133_iteration33_meeting_cancel_backdate_close_and_read_receipt_active_gate.sql`
+   by evaluating the guard against the meeting's ORIGINAL `meeting_date`
+   (via `meetings_locked_fields`) instead of the submitted new value — staff
+   retains the ability to independently correct a near-term meeting's date,
+   but can no longer launder a retroactive cancellation behind a
+   simultaneous date change. Live-verified: the combo attack now throws
+   `42501`; a legitimate near-term date correction still succeeds.
+2. **[HIGH, live-verified]** Dogfooding found `livelihood_activities`'s
+   "revenue locked once completed" rule (0104/0122) only ever compares
+   against the immediately preceding committed row, with no memory of
+   history — since `completed <-> active` is an allowed adjacent
+   transition, ANY actor (not staff-specific) can cycle
+   `completed -> active -> completed` across two statements to reset the
+   freeze and set an arbitrary new revenue on the second hop. Live-verified:
+   two sequential UPDATEs (to 'active', then back to 'completed' with a
+   fabricated revenue) both succeeded with no error, defeating the freeze.
+   Fixed in migration
+   `0132_iteration33_shg_documents_shg_id_lock_and_livelihood_revenue_permanence.sql`
+   with a new `revenue_locked_at` column + a `BEFORE INSERT OR UPDATE`
+   trigger: once an activity is EVER marked `completed`, `revenue_locked_at`
+   is stamped and never cleared, and from that point forward `revenue` is
+   force-pinned to its locked value regardless of any later status
+   toggling — a single-row RLS comparison can't see history, so the fix
+   moves the invariant into a trigger that can. Live-verified: the
+   cycle-and-fabricate attack now silently force-pins revenue back to its
+   original locked value (the fabricated value never lands); a genuinely
+   first-time completion still sets revenue as submitted and locks it.
+3. **[HIGH, live-verified]** Fresh Training/SHG Documents audit found
+   `shg_documents_write_leader_or_staff` (a single `for all` policy) has
+   never constrained `shg_id` for its `is_staff()` branch — three separate
+   prior rounds (0015, 0024, 0036) judged this "safe" reasoning only about
+   INSERT (a new row's shg_id needs no further lock), never considering
+   UPDATE: a staff account could retarget an EXISTING document to a
+   different SHG, silently removing it from its original SHG's visibility
+   with no audit trail. Live-verified: a real staff UPDATE moved a document
+   from one SHG to another, 1 row affected, no error. Fixed in the same
+   migration 0132 by splitting the single `for all` policy into separate
+   INSERT/UPDATE/DELETE policies (this schema's established pattern
+   elsewhere) — INSERT keeps the exact prior behavior, UPDATE now locks
+   `shg_id` to its original value via a new `shg_documents_locked_fields()`
+   helper for both branches, DELETE is unchanged. Live-verified: staff
+   retargeting a document's shg_id now throws `42501`; staff renaming a
+   document without changing its shg_id still works.
+4. **[LOW, live-verified]** Announcements/Profile audit found
+   `announcement_reads_delete_self` (0090) was deliberately left without
+   the `profile_is_active` gate its sibling insert/update policies both
+   have — a deactivated member could still delete her own read-receipt,
+   making an already-read announcement look unread again for herself (no
+   cross-user impact). Fixed in the same migration 0133 by adding the same
+   gate. Live-verified: a temporarily-deactivated member's delete now
+   matches 0 rows; an active member's delete still succeeds.
+
+**Found this round, documented rather than fixed (lower severity or needs
+more design than a same-round RLS tweak):**
+
+5. Admin/Reports audit: two admin-facing pages disagree on the
+   "heartbeat healthy" threshold (20 min in `admin_repository.dart` vs.
+   15 min in the `system-health-check` edge function) — same fact, two
+   screens, different answers in a 15-20 min window. `AnalyticsRepository.
+   fetchPlatformKpis()` remains genuinely unbounded (already an
+   acknowledged, unresolved item in this log per iteration 9's notes, not a
+   fresh discovery) — the single hottest staff-dashboard query in the app,
+   still won't scale past current seed volume. `SchemeRepository`/
+   `TrainingRepository` are hard-capped at 500 rows rather than given real
+   keyset pagination.
+6. Announcements/Profile audit: a hardcoded, non-localized "NavaSakhi
+   v1.0.0" version string on the settings page (should derive from
+   `pubspec.yaml`, not a literal); unbounded local growth of the
+   seen-announcement-ids SharedPreferences list (no pruning, cosmetic
+   on-device storage debt, not a correctness bug).
+7. Dogfooding pass: a `financial_ledger` cross-*transaction* balance race
+   (two genuinely concurrent sessions, as opposed to the same-statement
+   multi-row race migration 0130 already closed) is real by mechanism (the
+   statement-level trigger can only see its own transaction's rows) but
+   the audit could not empirically force it with the available tooling —
+   flagged as a mechanism-level residual risk requiring true low-level
+   concurrent sessions to confirm definitively, not a proven live exploit.
+   `place_marketplace_order()`'s 20/hour limit is confirmed scoped strictly
+   per-`buyer_id`, as designed — a multi-account attacker bypasses it
+   per-account, an already-accepted limitation per migration 0131's own
+   comment, not a new bug.
+
+**Re-confirmed still correctly closed by this round's audits (no
+regression):** `course_progress` self-certification bypass (`decide_scheme_
+application`-equivalent RPC/RLS split for training quizzes, `security
+definer` `submit_quiz_attempt` fully re-verified); cross-tenant `shg_documents`
+read at both the table-RLS and storage-bucket layers; leader/member write
+scoping on `shg_documents`; the 0128 scheme_applications status lock
+(leader/member/staff angles, no INSERT-time bypass); the announcement_reads
+staff-forgery fix; the profiles leader-self-escalation and role-immutability
+fixes (both INSERT- and UPDATE-path variants); no fourth instance of the
+attendance-numerator bug exists anywhere else in the codebase (exhaustively
+grepped this round specifically to check).
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full 1077
+test suite passing (no Dart changes this iteration — all 4 fixes are
+migrations 0132/0133 only). Live: both migrations deployed via `supabase
+db push` and individually live-verified in rolled-back transactions with
+both a negative (attack) and positive (legitimate-use) case per fix. All
+test fixtures confirmed removed via re-querying afterward (zero residual
+rows), including a temporarily-deactivated real profile's `is_active`
+correctly reverting to `true` once its wrapping transaction rolled back.
+
 
