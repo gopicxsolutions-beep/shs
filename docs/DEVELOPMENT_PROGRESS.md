@@ -17701,3 +17701,195 @@ warnings from the `flutter_tts` package). Browser-preview UI verification
 succeeded: preview server restarted, tab fronted, landing page and the
 Login page (carrying this round's liveRegion fix) both confirmed rendering
 correctly via screenshot, no visual regression.
+
+## Update (round 198) — Gap-hunting loop iteration 25: 2 CRITICAL staff-bypass RLS forgery gaps (meeting_attendance retargeting, loan_payments direct-insert), 2 HIGH staff bypasses (meetings backdating/reassignment, course_progress DELETE wipe), plus a moderation.ts zero-width/punctuation bypass class and 9 more gaps
+
+Four parallel audits: dogfooding round 197's own new work, Meetings/
+Attendance/Minutes full sweep, Training/Quiz/Certification full sweep,
+Support Tickets + Payments sweep.
+
+**Dogfooding round 197 (2 new findings; round 197's own 4 claimed-complete
+fixes all held up under adversarial re-derivation — a real break from the
+3-round moderation.ts pattern)**
+1. **[MEDIUM]** `moderation.ts`'s whitespace-bypass fix (rounds 195-197)
+   genuinely closed the whitespace class, but a DISTINCT bypass class
+   survived: `\s` never matches a zero-width Unicode character (e.g. U+200B
+   ZERO WIDTH SPACE), so `"kill" + U+200B + "myself"` still slipped
+   through regardless of how far the separator class was widened; ordinary
+   word-joining punctuation (`kill.myself`, `kill_myself`) wasn't `\s`
+   either. Partially mitigated (Llama Guard's second-pass ML classifier
+   catches self-harm/hate-speech regardless of character-level obfuscation;
+   jailbreak has no such backstop). Fixed by (a) neutralizing known
+   zero-width/invisible characters to a space before matching (not deleting
+   them outright — deleting collapses "kill"+ZWS+"myself" to
+   "killmyself" with zero separator characters, which the widened
+   separator's `+` quantifier then can't match), and (b) widening every
+   multi-word pattern's separator to a shared `[\s._-]+`/`[\s._-]*`
+   fragment. This surfaced a THIRD sub-bug while fixing it: `_` is a regex
+   "word" character, so 3 `JAILBREAK_PATTERNS` entries whose `\b` sat
+   directly against a `.{0,N}` arbitrary-content gap silently stopped
+   matching once `_` became a valid separator immediately after that `\b`
+   (word-to-word is never a boundary) — fixed by dropping those specific
+   internal `\b`s (the leading/trailing ones bounding the whole pattern
+   were kept). Extended the exhaustive sweep test from 4 separators to 7
+   (added zero-width space, period, underscore) so this stays covered
+   going forward. 55/55 `deno test` passed. Redeployed.
+2. **[MEDIUM]** Same bug CLASS as round 197's own `role` fix in
+   `AppState.completeProfileSetup()`, missed on a sibling field: `village`
+   resolved to `''` (not `null`) when left blank with no SHG reselected on
+   the "choose a different SHG" retry path, and the method required a
+   non-null `village` it always wrote through — silently blanking a
+   previously-saved village. `mandal`/`district` were already correctly
+   nullable and didn't have this bug. Fixed by making `village` nullable
+   too, matching the pattern already used for mandal/district (and
+   correctly leaving it unset via `upsertMyProfile`'s existing `?village`
+   null-omission rather than writing an empty string, which is also more
+   correct for a genuinely new profile that never provided one).
+3. Also fixed as a low-cost consistency pass (not itself a demonstrated
+   live bug): `login_page.dart`/`otp_page.dart`/`profile_setup_page.dart`'s
+   submit handlers relied solely on the disabled-button `onPressed` guard
+   for re-entrancy, unlike `role_select_page.dart`'s explicit `if (_saving)
+   return;` early-return guard — added the same guard to all three for
+   consistency against a same-frame double-tap.
+4. The 6 dialog `SingleChildScrollView` wraps, the 2 Row `Flexible` wraps,
+   and migration 0109 were all independently re-verified live and
+   confirmed correct.
+
+**Meetings/Attendance/Minutes full sweep (2 CRITICAL/HIGH RLS findings +
+3 lower-severity)**
+1. **[CRITICAL]** `meeting_attendance_update_self_or_leader`'s `is_staff()`
+   branch was a fully independent top-level `or` in the `with check`,
+   never ANDed with the locked-fields clause (0035) that stops a
+   leader/self from retargeting an existing row's `meeting_id`/`member_id`
+   — any staff account could rewrite both to any meeting/any active member
+   platform-wide, inflating one member's attendance at another's expense
+   or moving a row between meetings/SHGs, corrupting `avg_attendance_pct`
+   and every CRP/CLF health score computed from it (a real self-dealing
+   surface: CRPs are themselves graded on the SHGs they supervise). Fixed
+   by ANDing the locked-fields check onto the staff branch too, mirroring
+   0104's identical fix for `savings_update_leader_or_staff`/
+   `payments_update_staff`. Live-verified: staff retargeting attempt now
+   raises `42501` (blocked); staff's legitimate `present`/notes correction
+   (no retargeting) still succeeds (1 row).
+2. **[HIGH]** `meetings_update_leader_or_staff`'s `is_staff()` branch
+   bypassed `meetings_locked_fields` (0071) entirely — staff could rewrite
+   `shg_id` (reassign a meeting to a different SHG, never permitted for
+   any branch) or `meeting_date` to any value with no bound, reopening the
+   exact backdating attack 0064 closed for INSERT via UPDATE with a staff
+   account instead. Fixed: `shg_id` locked for staff too; `meeting_date`
+   bounded to the same 7-day grace window already established for INSERT.
+   Live-verified: staff backdating 90 days and cross-SHG reassignment both
+   now raise `42501`; staff's legitimate near-term date/venue correction
+   still succeeds (1 row).
+3. **[LOW]** `meeting_action_items_delete_related`'s `is_staff()` branch
+   had no self-exclusion, unlike its sibling `meeting_attendance_delete_
+   staff` (0104) — currently inert (staff isn't assignable via the
+   roster-only "Assign to" picker) but closed for consistency.
+4. **[MEDIUM]** 2 `AlertDialog`s (`meeting_schedule_page.dart`'s duplicate-
+   meeting confirm, `meeting_detail_page.dart`'s cancel-meeting confirm)
+   weren't wrapped in `SingleChildScrollView` despite this session's
+   just-landed sweep touching 6 other pages but never this module — fixed.
+5. **[MEDIUM]** Action-item due date was hardcoded to exactly "now + 7
+   days" with zero picker UI anywhere on the page — a leader assigning an
+   urgent task always got a week-out deadline with no way to correct it.
+   Added a real `showDatePicker`-backed due-date field (still defaulting
+   to 7-days-out so the common case needs zero extra taps), plus new
+   `meetingMomDueByLabel` i18n key in all 3 languages. Self-caught during
+   this round's own test run: the new due-date Row initially had no
+   `Flexible` and overflowed at 2.0x text scale in Hindi/Telugu (caught by
+   `hi_te_locale_overflow_test.dart`) — fixed before committing.
+
+**Training/Quiz/Certification full sweep (1 HIGH RLS finding + 1 MEDIUM
+scale finding, staff-self-certification re-verified fully closed)**
+1. **[HIGH]** `course_progress_write_self_or_staff` was a single `for all`
+   policy — four rounds of hardening (0051/0091/0106/0107) all tightened
+   `with check`, which Postgres never applies to DELETE, only `using`
+   (unguarded for DELETE since 0002). Any staff account could erase
+   another member's earned `certified=true`/`completed_on` row outright
+   via direct REST, with no self-exclusion and no audit trail, feeding
+   straight into the federation-wide training-adoption stat. Grep
+   confirmed zero legitimate call sites ever delete this table. Fixed by
+   splitting the single `for all` policy into explicit SELECT/INSERT/
+   UPDATE policies (behavior unchanged) with no DELETE policy at all — RLS
+   defaults to deny. Live-verified: staff DELETE on another member's
+   `certified=true` row now matches 0 rows; SELECT still works (1 row).
+2. **[MEDIUM]** `AdminRepository.fetchTrainingCompletionPct()` fetched
+   every active-member id, every quizzed course_id, and the ENTIRE
+   `course_progress` table client-side just to sum one platform-wide
+   percentage — flagged as a follow-up in round 196 (not fixable with a
+   `.limit()`, since capping rows would silently corrupt the computed
+   percentage). Implemented the deferred fix: a new `security definer`
+   `training_completion_stats()` SQL function (migration 0110, gated to
+   `is_staff()`) computes the identical three aggregates server-side in
+   one round trip. Live-verified: staff caller gets the real aggregate row;
+   a member caller gets 0 rows back.
+3. Staff-self-certification bypass (closed in earlier rounds) re-verified
+   from every additional angle the audit asked for — laundering a
+   certification onto a different member via `member_id` reassignment,
+   other RPCs/tables touching `certified`/`completed_on`, course/quiz
+   deletion orphaning progress rows — all confirmed still closed, no new
+   angle found.
+
+**Support Tickets + Payments sweep (1 CRITICAL RLS finding, Support
+Tickets fully re-verified clean)**
+1. **[CRITICAL]** `loan_payments_insert_related`'s leader/staff branches
+   let either role directly INSERT a `loan_payments` row against ANY loan
+   (leader: any loan in her own SHG; staff: any loan platform-wide) with
+   none of `record_loan_payment()`'s (the app's only real, RPC-based
+   payment path) safeguards: no self-exclusion (a leader/staff who is also
+   a borrowing member could pay off her own loan), no overpayment check,
+   and — critically — the direct insert never touches `loans.outstanding`/
+   `status` at all, so a forged row appears in Payment History
+   indistinguishable from a real payment while the loan's actual
+   outstanding balance silently stops reconciling with
+   `sum(loan_payments.amount)`. Grep confirmed `LoanRepository.
+   recordPayment()` only ever calls the RPC — zero legitimate call sites
+   for direct insert. `record_loan_payment()` is `security definer` and
+   performs its own internal insert, so it doesn't depend on this policy
+   at all. Retired the policy entirely (migration 0110), matching this
+   session's established precedent for `marketplace_orders_insert_staff`
+   (0106) and the member self-branch already retired from this same
+   policy in 0108. Live-verified: direct staff INSERT now raises `42501`;
+   `record_loan_payment()` (leader, legitimate) still succeeds and
+   correctly reduces `outstanding`.
+2. Support Tickets: no new gaps found across the state machine, RLS,
+   deletion policy, or UI/i18n — every prior fix re-verified holding,
+   including a dating correction (the staff self-exclusion on
+   `support_tickets_update_staff_or_self_reopen` was actually added in
+   migration 0105/round 193, not 0093/round 188 as previously attributed
+   in this log).
+3. `payments` table's `status`/`amount`/`mode`/`reference` remaining
+   fully self-reported on INSERT — re-confirmed as an already-documented,
+   deliberate deferral (0081) given the mocked-payment-gateway
+   architecture, not a new gap; will need revisiting once a real gateway
+   is wired.
+
+**Migration `0110_iteration25_staff_bypass_and_forgery_closures.sql`**
+(all individually live-verified via committed `__TEST__` fixtures + a
+separate rolled-back verification transaction, checking both the negative
+case and the positive/legitimate case for every policy-shape change):
+`meeting_attendance_update_self_or_leader`'s staff branch now locked to
+`meeting_attendance_locked_fields`; `meetings_update_leader_or_staff`'s
+staff branch now locked to `shg_id` and bounded on `meeting_date`;
+`meeting_action_items_delete_related`'s staff branch self-excluded;
+`course_progress_write_self_or_staff` split into SELECT/INSERT/UPDATE with
+no DELETE policy; `loan_payments_insert_related` dropped entirely; new
+`training_completion_stats()` aggregate RPC.
+
+**Verification:** `flutter analyze` — 0 issues (after fixing an
+unnecessary-cast warning and regenerating l10n getters for the new
+`meetingMomDueByLabel` key). `flutter test` — 1039/1039 passed (2 initial
+failures — the new due-date Row overflowing at 2.0x Hindi/Telugu text
+scale — self-caught and fixed before this final run). `deno test`
+(ai-advisor-proxy) — 55/55 passed after the moderation.ts fix, redeployed.
+Migration 0110 pushed to the linked live project; every RLS-shape change
+individually live-verified for both the blocked case and the still-
+legitimate case (`record_loan_payment()` RPC, staff attendance
+`present`-only edits, staff near-term meeting corrections, course_progress
+SELECT, staff-gated training stats). All `__TEST__` fixtures (2 meetings +
+1 attendance row, 1 course_progress row, 1 extra test SHG) created and
+deleted within the same round, re-queried to confirm 0 rows remain.
+`flutter build web --release --dart-define-from-file=.env.json` rebuilt
+cleanly. Browser-preview UI verification succeeded: preview server
+restarted, tab fronted, landing page confirmed rendering correctly via
+screenshot on the rebuilt live-mode bundle.

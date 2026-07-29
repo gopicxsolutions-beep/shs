@@ -80,6 +80,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   }
 
   Future<void> _continue() async {
+    // Same re-entrancy guard as login_page.dart._submit — see its comment.
+    if (_saving) return;
     setState(() {
       _saving = true;
       _error = null;
@@ -91,7 +93,13 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     try {
       await appState.completeProfileSetup(
         name: _name.text.trim(),
-        village: _village.text.trim().isNotEmpty ? _village.text.trim() : _selectedShg?.village ?? '',
+        // Was `?? ''` — unlike mandal/district below, that meant "leave
+        // village blank AND didn't reselect an SHG" resolved to the empty
+        // string, not null, and `completeProfileSetup` used to require a
+        // non-null `village` and always write it through — silently
+        // blanking a previously-saved village on this retry path (see
+        // AppState.completeProfileSetup's now-nullable `village` param).
+        village: _village.text.trim().isNotEmpty ? _village.text.trim() : _selectedShg?.village,
         mandal: _mandal.text.trim().isNotEmpty ? _mandal.text.trim() : _selectedShg?.mandal,
         district: _district.text.trim().isNotEmpty ? _district.text.trim() : _selectedShg?.district,
       );

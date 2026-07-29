@@ -222,18 +222,18 @@ class AdminRepository {
     // the denominator, not just one: filtering only `totalMembers` while
     // still summing every deactivated member's `progress`/`certified` into
     // `progressSum` would inflate this stat instead of correcting it.
-    final activeMemberIds = (await _client.from('profiles').select('id').eq('role', 'member').eq('is_active', true) as List).map((r) => (r as Map<String, dynamic>)['id'] as String).toSet();
-    final quizzedCourseRows = await _client.from('quiz_questions').select('course_id');
-    final quizzedCourseIds = (quizzedCourseRows as List).map((r) => (r as Map<String, dynamic>)['course_id'] as String).toSet();
-    final progressRows = await _client.from('course_progress').select('member_id, course_id, progress, certified');
-    final progressSum = (progressRows as List).fold<int>(0, (sum, r) {
-      final map = r as Map<String, dynamic>;
-      if (!activeMemberIds.contains(map['member_id'] as String)) return sum;
-      final hasQuiz = quizzedCourseIds.contains(map['course_id'] as String);
-      return sum + (hasQuiz ? ((map['certified'] as bool) ? 100 : 0) : map['progress'] as int);
-    });
-    final totalMembers = activeMemberIds.length;
-    final totalCourses = await _client.from('training_courses').count();
+    //
+    // This used to fetch every active-member id, every quizzed course_id,
+    // and the ENTIRE course_progress table client-side just to sum one
+    // percentage — real at platform scale, and not fixable with a
+    // `.limit()` since capping the underlying rows would silently make the
+    // computed percentage wrong rather than merely show fewer rows.
+    // `training_completion_stats()` (migration 0110) computes the exact
+    // same three aggregates server-side in one round trip.
+    final row = await _client.rpc('training_completion_stats').single();
+    final progressSum = (row['progress_sum'] as num).toInt();
+    final totalMembers = (row['total_members'] as num).toInt();
+    final totalCourses = (row['total_courses'] as num).toInt();
     return trainingCompletionPctFrom(progressSum: progressSum, totalMembers: totalMembers, totalCourses: totalCourses);
   }
 

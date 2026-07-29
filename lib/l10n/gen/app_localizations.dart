@@ -2770,6 +2770,12 @@ abstract class AppLocalizations {
   /// **'Assign to'**
   String get meetingMomAssignToLabel;
 
+  /// No description provided for @meetingMomDueByLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Due by'**
+  String get meetingMomDueByLabel;
+
   /// No description provided for @meetingMomUnassigned.
   ///
   /// In en, this message translates to:

@@ -101,7 +101,7 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
           context: context,
           builder: (context) => AlertDialog(
             title: Text(l10n.meetingScheduleDuplicateConfirmTitle),
-            content: Text(l10n.meetingScheduleDuplicateConfirmMessage(DateFormat('dd MMM yyyy').format(_date))),
+            content: SingleChildScrollView(child: Text(l10n.meetingScheduleDuplicateConfirmMessage(DateFormat('dd MMM yyyy').format(_date)))),
             actions: [
               TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
               FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.meetingScheduleDuplicateConfirmButton)),

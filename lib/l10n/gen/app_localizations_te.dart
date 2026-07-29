@@ -1579,6 +1579,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get meetingMomAssignToLabel => 'అప్పగించండి';
 
   @override
+  String get meetingMomDueByLabel => 'చివరి తేదీ';
+
+  @override
   String get meetingMomUnassigned => 'ఎవరూ లేరు';
 
   @override

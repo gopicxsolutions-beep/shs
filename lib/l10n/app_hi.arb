@@ -764,6 +764,8 @@
 
   "meetingMomAssignToLabel": "सौंपें",
 
+  "meetingMomDueByLabel": "अंतिम तिथि",
+
   "meetingMomUnassigned": "कोई नहीं",
 
   "meetingMomAddTaskHint": "एक कार्य जोड़ें…",

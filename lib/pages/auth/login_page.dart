@@ -37,6 +37,13 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _submit() async {
+    // A same-frame double-tap (e.g. a scripted/automated submit, or two
+    // pointer events landing before the disabled-button rebuild paints) can
+    // still both reach this handler — the button's own `!_sending` guard on
+    // `onPressed` isn't itself synchronous re-entrancy protection. Matches
+    // the explicit early-return guard `role_select_page.dart._selectRole`
+    // already uses for the same reason.
+    if (_sending) return;
     final phone = '+91${_controller.text}';
     if (!SupabaseService.isConfigured) {
       context.go(Paths.otp, extra: phone);

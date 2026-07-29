@@ -68,7 +68,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.meetingDetailCancelDialogTitle),
-        content: Text(l10n.meetingDetailCancelDialogContent(DateFormat('dd MMM yyyy').format(meeting.date))),
+        content: SingleChildScrollView(child: Text(l10n.meetingDetailCancelDialogContent(DateFormat('dd MMM yyyy').format(meeting.date)))),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.meetingDetailKeepMeeting)),
           FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.meetingDetailCancelMeeting)),

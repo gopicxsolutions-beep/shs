@@ -51,6 +51,13 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
   // assigned task done.
   List<(String id, String name)> _roster = [];
   String? _selectedOwnerId;
+  // Was hardcoded to exactly `DateTime.now().add(const Duration(days: 7))`
+  // with no picker UI anywhere on this page — a leader assigning an urgent
+  // task ("submit before Friday's inspection") always got a due date a week
+  // out with no way to correct it. Defaults to the same 7-day-out value so
+  // the common case still needs zero taps, but is now a real editable field.
+  DateTime _dueDate = _defaultDueDate();
+  static DateTime _defaultDueDate() => DateTime.now().add(const Duration(days: 7));
   bool _savingDecision = false;
   bool _savingActionItem = false;
   final _togglingItems = <String>{};
@@ -111,8 +118,8 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
         }
       }
     }
+    final dueDate = _dueDate;
     try {
-      final dueDate = DateTime.now().add(const Duration(days: 7));
       await _repo.addActionItem(widget.meetingId, text, ownerId: ownerId, dueDate: dueDate);
       if (mounted) {
         // Same issue as decisions: fetchActionItems() always returns an
@@ -127,9 +134,13 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
               ]);
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.meetingMomDemoModeNotSaved)));
         }
-        // Reset so the next action item defaults back to "Unassigned"
-        // rather than silently carrying over the previous item's assignee.
-        setState(() => _selectedOwnerId = null);
+        // Reset so the next action item defaults back to "Unassigned" /
+        // 7-days-out rather than silently carrying over the previous
+        // item's assignee or a date the leader deliberately picked once.
+        setState(() {
+          _selectedOwnerId = null;
+          _dueDate = _defaultDueDate();
+        });
       }
     } catch (_) {
       if (mounted) {
@@ -351,6 +362,27 @@ class _MeetingMomPageState extends State<MeetingMomPage> {
                                     ..._roster.map((m) => DropdownMenuItem<String?>(value: m.$1, child: Text(m.$2, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12)))),
                                   ],
                                   onChanged: (v) => setState(() => _selectedOwnerId = v),
+                                ),
+                              ),
+                            ]),
+                            Row(children: [
+                              Icon(Icons.event_rounded, size: 16, color: Neutral.c400),
+                              const SizedBox(width: 6),
+                              Flexible(child: Text(l10n.meetingMomDueByLabel, style: AppTheme.sans(11, color: Neutral.c500))),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: InkWell(
+                                  onTap: () async {
+                                    final now = DateTime.now();
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: _dueDate,
+                                      firstDate: DateTime(now.year, now.month, now.day),
+                                      lastDate: now.add(const Duration(days: 365)),
+                                    );
+                                    if (picked != null && mounted) setState(() => _dueDate = picked);
+                                  },
+                                  child: Text(l10n.meetingMomDueDate(DateFormat('dd MMM yyyy').format(_dueDate)), style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
                                 ),
                               ),
                             ]),

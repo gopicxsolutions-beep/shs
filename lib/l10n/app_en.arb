@@ -1067,6 +1067,8 @@
 
   "meetingMomAssignToLabel": "Assign to",
 
+  "meetingMomDueByLabel": "Due by",
+
   "meetingMomUnassigned": "Unassigned",
 
   "meetingMomAddTaskHint": "Add a task…",

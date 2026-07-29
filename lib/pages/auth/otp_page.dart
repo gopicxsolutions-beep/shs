@@ -105,6 +105,8 @@ class _OtpPageState extends State<OtpPage> {
   }
 
   Future<void> _submit() async {
+    // Same re-entrancy guard as login_page.dart._submit — see its comment.
+    if (_verifying) return;
     if (!SupabaseService.isConfigured) {
       context.go(Paths.profileSetup);
       return;

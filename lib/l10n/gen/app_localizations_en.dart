@@ -1573,6 +1573,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetingMomAssignToLabel => 'Assign to';
 
   @override
+  String get meetingMomDueByLabel => 'Due by';
+
+  @override
   String get meetingMomUnassigned => 'Unassigned';
 
   @override

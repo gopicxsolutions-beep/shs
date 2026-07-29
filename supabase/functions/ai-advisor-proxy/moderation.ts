@@ -77,24 +77,61 @@ export function normalizeLanguage(raw: unknown): Language {
 //         without the `s` (dotAll) flag, which none of them had, so
 //         "reveal\nyour system prompt" bypassed the pattern even though
 //         every literal space in it had already been converted to `\s+`.
-//   3rd pass (this one): fixed (a)/(b)/(c) above, added the `s` flag to
-//     every `.{0,N}` gap pattern, and verified with a systematic sweep
-//     (every pattern × multiple separator types), not hand-picked example
+//   3rd pass: fixed (a)/(b)/(c) above, added the `s` flag to every
+//     `.{0,N}` gap pattern, and verified with a systematic sweep (every
+//     pattern × multiple separator types), not hand-picked example
 //     phrases — see the "the REST of..." and dedicated dotAll/self-harm/
-//     incitement-verb tests in moderation.test.ts. Any future edit to
-//     these three pattern arrays MUST re-run that sweep, not just eyeball
-//     the diff — cherry-picked examples are exactly how the first two
+//     incitement-verb tests in moderation.test.ts.
+//   4th pass (gap-hunt iteration 25, this one): a DISTINCT bypass class,
+//     found by dogfooding round 197's own "complete" claim above — a
+//     zero-width Unicode character (e.g. U+200B ZERO WIDTH SPACE) inserted
+//     between letters is not whitespace at all, so no amount of widening
+//     `\s` ever catches it ("kill" + U+200B + "myself" slipped through
+//     even with every fix above applied); separately, ordinary word-joining
+//     punctuation typed in place of a space ("kill.myself",
+//     "kill_myself") also isn't `\s`. Fixed by (i) stripping known
+//     zero-width/invisible characters from the query before matching
+//     (`stripInvisibleChars`, below) rather than trying to match around
+//     them, and (ii) widening every multi-word pattern's separator from a
+//     bare `\s+`/`\s*` to the shared `SEP`/`SEP_OPT` fragments (which also
+//     accept `.`/`_`/`-`). Any future edit to these three pattern arrays
+//     MUST re-run the full sweep in moderation.test.ts (now covering both
+//     whitespace AND zero-width/punctuation separators), not just eyeball
+//     the diff — cherry-picked examples are exactly how the first three
 //     "complete" claims went out wrong.
+const SEP = '[\\s._-]+';
+const SEP_OPT = '[\\s._-]*';
+
+// Neutralizes zero-width/invisible Unicode characters (ZERO WIDTH SPACE,
+// ZERO WIDTH NON-JOINER, ZERO WIDTH JOINER, WORD JOINER, ZERO WIDTH NO-BREAK
+// SPACE/BOM) before any pattern below ever sees the query — these render as
+// nothing to a human reading the text but silently split a word for regex
+// purposes, defeating every pattern above regardless of how the separator
+// character class is widened. Replaced with an ordinary space, NOT deleted
+// outright — deleting it from "kill" + U+200B + "myself" collapses the
+// query to "killmyself" with zero characters between the words, which
+// SEP's `+` quantifier (at least one separator) then fails to match;
+// replacing with a space turns it into "kill myself", which every pattern
+// already matches. Built with `new RegExp` from explicit `\uXXXX` escapes
+// (not a regex literal containing the raw invisible characters themselves)
+// so the bypass characters this guards against aren't silently sitting
+// un-reviewably in the source file.
+const INVISIBLE_CHARS_RE = new RegExp('[\u200B\u200C\u200D\u2060\uFEFF]', 'g');
+
+function stripInvisibleChars(text: string): string {
+  return text.replace(INVISIBLE_CHARS_RE, ' ');
+}
+
 const SELF_HARM_PATTERNS: RegExp[] = [
-  /\bkill(ing)?\s+myself\b/i,
+  new RegExp(`\\bkill(ing)?${SEP}myself\\b`, 'i'),
   /\bsuicid(e|al)\b/i,
-  /\bwant(ed|ing)?\s+to\s+die\b/i,
-  /\bend(ing)?\s+it\s+all\b/i,
-  /\bdon'?t\s+want\s+to\s+(live|be\s+alive)\b/i,
-  /\bno\s+reason\s+to\s+live\b/i,
-  /\bnot\s+worth\s+living\b/i,
-  /\bself[\s-]*harm(ing)?\b/i,
-  /\b(hurt(ing)?|cutting|cut)\s+myself\b/i,
+  new RegExp(`\\bwant(ed|ing)?${SEP}to${SEP}die\\b`, 'i'),
+  new RegExp(`\\bend(ing)?${SEP}it${SEP}all\\b`, 'i'),
+  new RegExp(`\\bdon'?t${SEP}want${SEP}to${SEP}(live|be${SEP}alive)\\b`, 'i'),
+  new RegExp(`\\bno${SEP}reason${SEP}to${SEP}live\\b`, 'i'),
+  new RegExp(`\\bnot${SEP}worth${SEP}living\\b`, 'i'),
+  new RegExp(`\\bself${SEP_OPT}harm(ing)?\\b`, 'i'),
+  new RegExp(`\\b(hurt(ing)?|cutting|cut)${SEP}myself\\b`, 'i'),
 ];
 
 const SELF_HARM_REASON: Record<Language, string> = {
@@ -114,13 +151,13 @@ const SELF_HARM_REASON: Record<Language, string> = {
 // sellers (e.g. "how do I kill all the pests on my crop") — matching on any
 // noun after "kill all" would false-positive on exactly that kind of
 // question.
-const INCITEMENT_VERBS = '(kill|exterminate|eliminate|slaughter|wipe\\s+out)';
+const INCITEMENT_VERBS = `(kill|exterminate|eliminate|slaughter|wipe${SEP}out)`;
 const GROUP_TERMS =
   '(jews?|muslims?|hindus?|christians?|sikhs?|buddhists?|dalits?|gays?|lesbians?|immigrants?|refugees?|blacks?|whites?|asians?|foreigners?)';
 const HATE_SPEECH_PATTERNS: RegExp[] = [
-  new RegExp(`\\b${INCITEMENT_VERBS}\\s+(all\\s+|every\\s+)?(the\\s+)?${GROUP_TERMS}\\b`, 'i'),
+  new RegExp(`\\b${INCITEMENT_VERBS}${SEP}(all${SEP}|every${SEP})?(the${SEP})?${GROUP_TERMS}\\b`, 'i'),
   /\bsubhuman\b/i,
-  /\bethnic\s+cleansing\b/i,
+  new RegExp(`\\bethnic${SEP}cleansing\\b`, 'i'),
   /\bgenocide\b/i,
 ];
 
@@ -145,18 +182,28 @@ const JAILBREAK_PATTERNS: RegExp[] = [
   // qualifier and missed natural, common phrasings like "ignore all your
   // previous instructions" or "disregard your previous instructions",
   // found by adversarial review to slip through unblocked.
-  /\bignore\s+(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(previous|prior|above|earlier)\s+instructions?\b/i,
-  /\bdisregard\s+(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(previous|prior|above|earlier)\s+instructions?\b/i,
-  /\bforget\s+(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(previous|prior|above|earlier)\s*instructions?\b/i,
-  /\b(reveal|show|print|repeat|output)\b.{0,20}\b(your\s+|the\s+)?system\s+prompt\b/is,
-  /\bwhat\s+(is|are)\s+your\s+(system\s+prompt|instructions)\b/i,
-  /\brepeat\s+(the\s+words|everything|the\s+text)\s+(above|before\s+this)\b/i,
-  /\bact\s+as\b.{0,30}\b(no\s+restrictions|unfiltered|jailbroken|without\s+(any\s+)?limits)\b/is,
-  /\bpretend\s+(you\s+are|to\s+be)\b.{0,20}\b(dan|jailbroken|unrestricted)\b/is,
-  /\bdeveloper\s+mode\b/i,
+  new RegExp(`\\bignore${SEP}(all${SEP}|any${SEP}|the${SEP}|your${SEP}|my${SEP}|our${SEP})?(all${SEP}|any${SEP}|the${SEP}|your${SEP}|my${SEP}|our${SEP})?(previous|prior|above|earlier)${SEP}instructions?\\b`, 'i'),
+  new RegExp(`\\bdisregard${SEP}(all${SEP}|any${SEP}|the${SEP}|your${SEP}|my${SEP}|our${SEP})?(all${SEP}|any${SEP}|the${SEP}|your${SEP}|my${SEP}|our${SEP})?(previous|prior|above|earlier)${SEP}instructions?\\b`, 'i'),
+  new RegExp(`\\bforget${SEP}(all${SEP}|any${SEP}|the${SEP}|your${SEP}|my${SEP}|our${SEP})?(all${SEP}|any${SEP}|the${SEP}|your${SEP}|my${SEP}|our${SEP})?(previous|prior|above|earlier)${SEP_OPT}instructions?\\b`, 'i'),
+  // The `\b` that used to sit directly against `.{0,N}` here (right after
+  // the verb/qualifier group, before the arbitrary-content gap) was dropped
+  // in gap-hunt iteration 25: `_` is one of SEP's separator characters but
+  // IS a regex "word" character, so a query using `_` as its separator
+  // right at that exact position ("reveal_system_prompt") put a word char
+  // on both sides of the `\b`, which is never a boundary — silently
+  // un-matching the whole pattern regardless of how SEP itself was widened.
+  // The leading/trailing `\b` (bounding the pattern as a whole against
+  // being embedded in an unrelated longer word) are kept; only the ones
+  // immediately adjacent to a `.{0,N}` gap were removed.
+  new RegExp(`\\b(reveal|show|print|repeat|output).{0,20}(your${SEP}|the${SEP})?system${SEP}prompt\\b`, 'is'),
+  new RegExp(`\\bwhat${SEP}(is|are)${SEP}your${SEP}(system${SEP}prompt|instructions)\\b`, 'i'),
+  new RegExp(`\\brepeat${SEP}(the${SEP}words|everything|the${SEP}text)${SEP}(above|before${SEP}this)\\b`, 'i'),
+  new RegExp(`\\bact${SEP}as.{0,30}(no${SEP}restrictions|unfiltered|jailbroken|without${SEP}(any${SEP})?limits)\\b`, 'is'),
+  new RegExp(`\\bpretend${SEP}(you${SEP}are|to${SEP}be).{0,20}(dan|jailbroken|unrestricted)\\b`, 'is'),
+  new RegExp(`\\bdeveloper${SEP}mode\\b`, 'i'),
   /\bjailbreak(ing)?\b/i,
-  /\bdan\s+mode\b/i,
-  /\bbypass\s+your\s+(restrictions|rules|guidelines)\b/i,
+  new RegExp(`\\bdan${SEP}mode\\b`, 'i'),
+  new RegExp(`\\bbypass${SEP}your${SEP}(restrictions|rules|guidelines)\\b`, 'i'),
 ];
 
 const JAILBREAK_REASON = GENERIC_BLOCKED_REASON;
@@ -168,9 +215,10 @@ const JAILBREAK_REASON = GENERIC_BLOCKED_REASON;
 /// [language] picks which of the member-safe reason strings above is
 /// returned — see the type's own doc comment for why this exists at all.
 export function checkQueryForDisallowedContent(query: string, language: Language = DEFAULT_LANGUAGE): PreFilterResult {
-  if (SELF_HARM_PATTERNS.some((p) => p.test(query))) return { blocked: true, reason: SELF_HARM_REASON[language] };
-  if (HATE_SPEECH_PATTERNS.some((p) => p.test(query))) return { blocked: true, reason: HATE_SPEECH_REASON[language] };
-  if (JAILBREAK_PATTERNS.some((p) => p.test(query))) return { blocked: true, reason: JAILBREAK_REASON[language] };
+  const normalized = stripInvisibleChars(query);
+  if (SELF_HARM_PATTERNS.some((p) => p.test(normalized))) return { blocked: true, reason: SELF_HARM_REASON[language] };
+  if (HATE_SPEECH_PATTERNS.some((p) => p.test(normalized))) return { blocked: true, reason: HATE_SPEECH_REASON[language] };
+  if (JAILBREAK_PATTERNS.some((p) => p.test(normalized))) return { blocked: true, reason: JAILBREAK_REASON[language] };
   return { blocked: false };
 }
 

@@ -1555,6 +1555,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get meetingMomAssignToLabel => 'सौंपें';
 
   @override
+  String get meetingMomDueByLabel => 'अंतिम तिथि';
+
+  @override
   String get meetingMomUnassigned => 'कोई नहीं';
 
   @override

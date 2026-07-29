@@ -385,7 +385,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> completeProfileSetup({
     required String name,
-    required String village,
+    String? village,
     String? mandal,
     String? district,
   }) async {
@@ -395,7 +395,7 @@ class AppState extends ChangeNotifier {
       // the name/village typed here were silently discarded and the app
       // kept showing the default "Lakshmi Devi" persona everywhere.
       if (name.isNotEmpty) _legacyName = name;
-      if (village.isNotEmpty) _legacyVillage = village;
+      if (village != null && village.isNotEmpty) _legacyVillage = village;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_sessionKey, true);
       if (_legacyName != null) await prefs.setString(_nameKey, _legacyName!);
