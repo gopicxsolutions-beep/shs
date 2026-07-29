@@ -19392,6 +19392,130 @@ rather than patched from memory of a pre-compaction summary:**
    batch edge case flagged as low-severity/fails-closed — needs
    re-confirming.
 
+Findings 4-6 above were re-audited fresh in iteration 32's dogfooding pass
+(see below) rather than acted on from memory — the responsible choice per
+this project's own quality bar, and it paid off: the dogfooding pass found
+no NEW gap in iteration 31's own fixes, but did find a real, previously
+undisclosed instance of iteration 30's attendance-numerator bug in a THIRD
+call site that iteration 31 never touched.
+
+## Gap-hunting loop iteration 32: dogfooding finds a third live instance of the attendance-numerator bug, plus 2 CRITICAL/HIGH RLS gaps in Meetings/Livelihood, a financial_ledger balance-chain forgery (same MVCC class as 0123), and a support_tickets self-resolution bypass that contradicted the app's own security comment
+
+Iteration 32 launched 4 fresh audits: a dogfooding pass over iteration 31's
+own fixes (migration 0128, `attendanceRate`/`attendanceTrend`), plus fresh
+sweeps of Meetings/Livelihood, Payments/Financial Ledger, and Marketplace/
+Support Tickets.
+
+**Fixed and live-verified this round (all via rolled-back or explicitly
+cleaned-up transactions against the real linked Supabase project, checking
+actual row counts/errors, never HTTP status):**
+
+1. **[MEDIUM-HIGH, live-verified]** Dogfooding found `scheme_applications`'s
+   migration 0128 fix holds (leader/member/staff attack angles all
+   correctly blocked, legitimate decisions still work, no INSERT-time or
+   trigger-based bypass exists) — but found a real THIRD instance of
+   iteration 30/31's attendance cross-SHG numerator leak, in
+   `lib/repositories/analytics_repository.dart`'s `fetchShgList()` (the
+   batch path powering the CRP dashboard's "Avg. Health Score" stat and the
+   federation SHG list) — it recomputed its own unfixed present-count
+   instead of delegating to `TrendRepository.attendanceRate()` the way
+   `fetchShgDetail()` in the same file already correctly does. Live-verified
+   4 real stray rows on the actual linked project inflating a real SHG's
+   score today (an admin account with `shg_id = null` marked present on 4
+   of that SHG's meetings). Fixed by applying the identical
+   `profiles(shg_id, is_active)` filter already used in `trend_repository.dart`.
+2. **[CRITICAL, live-verified]** `livelihood_update_self_leader_or_staff`'s
+   staff-editing-another's-row branch (migration 0122) had NO column lock
+   at all — a completely separate, unrestricted `is_staff() and member_id
+   <> auth.uid() and profile_is_active(member_id)` disjunct that let any
+   staff account retarget a livelihood row's `shg_id`/`member_id`/
+   `activity_type` and fabricate `investment`/`revenue` freely. The second
+   branch already correctly covered staff (as one of its 3 permitted
+   actors) with every column lock/status-transition/revenue-freeze rule —
+   the first branch was pure redundant attack surface. Fixed in migration
+   `0129_iteration32_livelihood_staff_lock_and_meeting_cancel_guard.sql` by
+   deleting the unrestricted branch entirely. Live-verified: a staff
+   attempt to retarget shg_id/member_id/activity_type + fabricate
+   investment/revenue on someone else's row now throws a hard `42501`;
+   a legitimate staff progress update (`revenue`/`status` only, matching
+   `LivelihoodDetailPage`'s real payload shape) still succeeds.
+3. **[HIGH, live-verified]** `meetings_update_leader_or_staff`'s staff
+   branch (0110) never got the `status <> 'cancelled' or meeting_date >=
+   current_date` cancel-guard the leader branch already has — reopening,
+   for staff, the exact "retroactively cancel a well-attended historical
+   meeting to erase it from health scores" exploit migration 0042 closed
+   for leaders. Fixed in the same migration 0129. Live-verified: staff
+   cancelling a real 3-day-old completed meeting now throws `42501`; a
+   legitimate staff status update on an upcoming meeting still succeeds.
+4. **[HIGH, live-verified]** `financial_ledger`'s balance-chain invariant
+   (`balance = previous_balance + credit - debit`) is the same per-row
+   MVCC-snapshot bug class migration 0123 fixed for 4 other tables, never
+   extended to this one — a single batched multi-row INSERT for the same
+   `(shg_id, entry_type)` posted 2 rows with an identical `balance`, each
+   computed off the same stale snapshot, corrupting the exact running-total
+   audit trail this table exists to guarantee. Unlike 0123's fix, a
+   statement-level trigger can't safely re-chain balances here (same-batch
+   rows also share an identical locked `entry_date`/`created_at`, so
+   there's no ordering column to chain against even in principle) — fixed
+   in migration `0130_iteration32_financial_ledger_batch_chain_integrity.sql`
+   by rejecting any batch with more than one row per `(shg_id, entry_type)`,
+   since the real app only ever inserts one ledger row per statement anyway.
+   Live-verified: the exact 2-row batch attack now throws `P0001`; a single
+   legitimate insert still succeeds.
+5. **[MEDIUM-HIGH, live-verified]** `support_tickets_update_staff_or_self_
+   reopen`'s staff branch had no `member_id <> auth.uid()` self-exclusion —
+   despite `support_ticket_detail_page.dart` explicitly asserting in its own
+   comment that RLS "correctly self-excludes the staff branch" and gating
+   its UI on that assumption. This round's audit live-verified (and
+   committed, then manually reverted) a real CRP account self-resolving and
+   self-escalating-to-`urgent` her own filed ticket. Fixed in migration
+   `0131_iteration32_support_ticket_self_exclusion_and_marketplace_hardening.sql`
+   by adding the same self-exclusion already used on
+   `marketplace_orders_update_seller_or_staff` (0113). Live-verified: staff
+   self-resolving her own ticket is now blocked (0 rows matched by USING);
+   staff resolving a different member's ticket still works.
+6. **[MEDIUM, live-verified]** `marketplace_products.name`/`description`
+   and `marketplace_reviews.comment` had no server-side length bound
+   (client caps existed but were REST-bypassable), and `marketplace_products.
+   category` had no allow-list — unlike every sibling table. Added as
+   `NOT VALID` CHECK constraints (this project's established pattern for
+   adding a constraint without retroactively rejecting real historical
+   rows) in the same migration 0131. Live-verified: a 200-char name +
+   invalid category is rejected; a normal product still inserts; an
+   800-char review comment is rejected; a normal-length comment still
+   inserts.
+7. **[MEDIUM, live-verified]** `place_marketplace_order()` had no per-buyer
+   rate limit, unlike every other mutating path in this schema (products
+   10/hr, tickets 10/hr, messages 20/10min, announcements 10/hr, payments
+   30/hr) — since payments are still mocked, a scripted caller could
+   rapid-fire this RPC to drain any seller's stock at no cost. Fixed in the
+   same migration 0131 with a 20/hour per-buyer check inside the
+   `security definer` function itself (no MVCC bypass risk here, since each
+   call is its own single-row-insert statement). Live-verified: a 21st order
+   within the hour throws `P0001`; the legitimate case still succeeds.
+8. **[housekeeping]** Found and deleted a second stale live `__TEST__`
+   financial_ledger row (`99999999-9999-9999-9999-999999999140`, created in
+   an earlier round, description `__TEST__ Monthly group contribution`)
+   during this round's final leftover-data sweep — re-queried and confirmed
+   zero `__TEST__`-tagged rows remain in that table.
+
+**Re-confirmed still correctly closed by this round's audits (no
+regression):** the 0128 scheme_applications status lock (leader/member/
+staff attack angles, no bulk-import bypass); the 0123 payments rate-limit
+trigger; `record_loan_payment()`'s from-scratch authorization; the
+financial_ledger UPDATE/DELETE lockdown and cross-tenant isolation; the
+0113 marketplace staff-as-seller order-status-forgery fix; the 0124
+`seller_name` pin trigger; the 0123/0127 rate-limit triggers (all confirmed
+still attached and enabled via `pg_trigger`/`pg_policies`).
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full 1077
+test suite passing. Live: migrations `0129`, `0130`, `0131` all deployed via
+`supabase db push` and individually live-verified in rolled-back
+transactions with both a negative (attack) and positive (legitimate-use)
+case per fix — the combination this loop has repeatedly found catches
+over-broad fixes that a negative-only test would miss. All test fixtures
+confirmed removed via re-querying afterward (zero residual rows).
+
 **Verification**: `flutter analyze` — 0 issues. `flutter test` — full 1077+
 test suite passing. Live: migration `0128` deployed via `supabase db push`
 and independently live-verified per CLAUDE.md's rule (real rolled-back

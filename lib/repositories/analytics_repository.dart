@@ -176,12 +176,19 @@ class AnalyticsRepository {
     final presentByShg = <String, int>{};
     final totalByShg = <String, int>{};
     if (meetingRows.isNotEmpty) {
-      final attendance = await _client.from('meeting_attendance').select('present, meeting_id').inFilter('meeting_id', shgByMeetingId.keys.toList());
+      final attendance =
+          await _client.from('meeting_attendance').select('present, meeting_id, profiles(shg_id, is_active)').inFilter('meeting_id', shgByMeetingId.keys.toList());
       final presentByMeeting = <String, int>{};
       for (final r in attendance as List) {
         final map = r as Map<String, dynamic>;
         if (map['present'] != true) continue;
         final meetingId = map['meeting_id'] as String;
+        // Same cross-SHG/deactivated-member leak `TrendRepository` was fixed
+        // for — a stray `meeting_attendance` row for a member who's since
+        // left (or never belonged to) this meeting's own SHG must not
+        // inflate its health score.
+        final profile = map['profiles'] as Map<String, dynamic>?;
+        if (profile == null || profile['is_active'] != true || profile['shg_id'] != shgByMeetingId[meetingId]) continue;
         presentByMeeting[meetingId] = (presentByMeeting[meetingId] ?? 0) + 1;
       }
       // Denominator is the SHG's actual roster size (`memberCountByShg`,
