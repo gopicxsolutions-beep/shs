@@ -12,6 +12,20 @@ String marketplaceOrderStatusLabel(String status, AppLocalizations l10n) => swit
       _ => status,
     };
 
+/// Product categories (`marketplace_home_page.dart`'s filter chips,
+/// `add_product_page.dart`'s picker, and a listing's own detail badge) were
+/// the one enum-like field in this module never given the same treatment
+/// as order status above — shown as raw English on the most member-facing
+/// screens in the app (round 189/iteration 17 audit).
+String marketplaceCategoryLabel(String category, AppLocalizations l10n) => switch (category) {
+      'Handicrafts' => l10n.marketplaceCategoryHandicrafts,
+      'Tailoring' => l10n.marketplaceCategoryTailoring,
+      'Food' => l10n.marketplaceCategoryFood,
+      'Agriculture' => l10n.marketplaceCategoryAgriculture,
+      'Other' => l10n.marketplaceCategoryOther,
+      _ => category,
+    };
+
 /// Mirrors a row in `public.marketplace_products` (joined with seller name).
 class Product {
   final String id;

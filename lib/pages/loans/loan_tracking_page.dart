@@ -66,7 +66,15 @@ class LoanTrackingPage extends StatelessWidget {
                         Flexible(child: Text(l10n.loanTrackingOfAmount(NumberFormat('#,##,##0', 'en_IN').format(l.amount)), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: AppTheme.sans(12, color: Neutral.c500))),
                       ]),
                       const SizedBox(height: 8),
-                      AppProgressBar(value: paid, max: l.amount, tone: l.status == 'overdue' ? ProgressTone.danger : ProgressTone.gold),
+                      AppProgressBar(
+                        value: paid,
+                        max: l.amount,
+                        tone: l.status == 'overdue' ? ProgressTone.danger : ProgressTone.gold,
+                        semanticLabel: l10n.loanProgressRepaidSemanticLabel(
+                          NumberFormat('#,##,##0', 'en_IN').format(paid),
+                          NumberFormat('#,##,##0', 'en_IN').format(l.amount),
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                         if (l.nextDueDate != null)

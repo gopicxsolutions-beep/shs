@@ -89,6 +89,24 @@ class _SupportChatPageState extends State<SupportChatPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // The list itself is capped at 500 rows (`SupportRepository.
+                      // fetchTickets`) — once platform ticket volume exceeds that,
+                      // search/filter here only ever sees the most-recently-
+                      // updated 500, so a staff member searching for an older,
+                      // untouched ticket gets a false "not found" with no
+                      // indication results are incomplete, unless flagged here.
+                      if (tickets.length >= 500) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(color: Gold.c50, borderRadius: BorderRadius.circular(10)),
+                          child: Row(children: [
+                            Icon(Icons.info_outline_rounded, size: 14, color: Gold.c700),
+                            const SizedBox(width: 6),
+                            Expanded(child: Text(l10n.supportChatSearchIncompleteNotice, style: AppTheme.sans(11, color: Gold.c700))),
+                          ]),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       TextField(
                         controller: _search,
                         onChanged: (_) => setState(() {}),

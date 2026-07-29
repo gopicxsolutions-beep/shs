@@ -16129,3 +16129,210 @@ identical `flt-glass-pane`-never-mounts symptom, zero console errors, no
 server-side errors in `preview_logs` (the 14th consecutive such attempt
 across twelve rounds). Relied on live-DB/edge-function-test verification
 for every fix above instead.
+
+## Update (round 189) — Gap-hunting loop, iteration 17: launched 4 fresh module audits (dogfooding round 188's own features, Loans full lifecycle, Meetings/Attendance/Notifications, Marketplace + Financial Ledger), fixed 18 real gaps including a systemic project-wide grant-hygiene sweep
+
+The dogfooding audit found a real, currently-exploitable metadata-
+disclosure bug in round 188's own new code — fixed first (`0095`), then
+generalized into a full project-wide sweep once the same root cause was
+confirmed present on 27 other functions (`0096`/`0097`). Everything else
+below is new findings from this round's remaining three audits.
+
+**Fixed, live-verified against the real Supabase project:**
+
+1. **[HIGH — self-caught via dogfooding, confirmed exploitable by an
+   unauthenticated caller] `support_messages_recent_count()` (round 188's
+   own `0094`) had no internal ownership check and was directly callable
+   by the bare `anon` key** — `revoke all ... from public` (the idiom
+   0093/0094 used) does not touch this project's own default-privilege
+   grant of EXECUTE to `anon`/`authenticated` on every new function,
+   exactly the gap migration `0055` diagnosed once already for two other
+   functions. Any caller — authenticated or, per this bug, fully
+   anonymous — could pass an arbitrary member UUID and learn how many
+   support messages that person sent in any time window, bypassing
+   `support_messages_select_related`'s owner/staff confidentiality
+   boundary entirely. Fixed (`0095`) with the correct `revoke execute ...
+   from anon, authenticated` pattern plus an internal `auth.uid() or
+   is_staff()` check inside the function itself (belt and suspenders) —
+   also tightened the lower-risk `support_tickets_locked_fields` (already
+   internally gated, so not itself exploitable) and
+   `support_messages_bump_ticket_updated_at` (trigger-only) the same way.
+   **Live-verified**: `set local role anon; select ...` now raises `42501:
+   permission denied`; the legitimate authenticated insert path (a real
+   member replying to her own ticket) still succeeds.
+2. **[HIGH, systemic hygiene] A live `pg_proc.proacl` sweep of every
+   `SECURITY DEFINER` function in `public` found 27 more instances of the
+   exact same "revoke from public isn't enough" gap** — including, notably,
+   the state-mutating `approve_loan`/`reject_loan`/`record_loan_payment`
+   (`0088`) and `place_marketplace_order` (`0057`/`0091`). Each one's
+   actual logic was read in full before touching it: every single one
+   already gates on `auth.uid()`-derived checks (`is_staff()`,
+   `current_role()`, `o.buyer_id = auth.uid()`, etc.), so `anon`
+   (`auth.uid()` is `NULL`) already failed every one of them today — none
+   of these were live-exploitable the way finding #1 was. Fixed as pure
+   defense-in-depth (`0096`, `0097`) by explicitly revoking `anon`'s grant
+   on all 27, leaving one (`rls_auto_enable`) untouched — it's a Supabase-
+   platform-managed `event trigger` function, not part of this app's own
+   schema, not REST-callable at all. **Live-verified**: `anon` now gets
+   `42501: permission denied` calling `approve_loan` directly; a real
+   leader's legitimate approval of a real pending test loan still
+   succeeds (`status` -> `active`, correct `emi`), confirming zero
+   behavior change for every real caller.
+3. **[HIGH, Loans audit] `record_loan_payment` (`0088`) never checked the
+   loan's own status before recording a payment**, unlike its siblings
+   `approve_loan`/`reject_loan` which both explicitly reject anything but
+   `pending`. Any leader/staff could call the RPC directly against a
+   still-`pending` or already-`rejected` loan (`apply()` already sets
+   `outstanding = amount` at insert time) and flip it straight to
+   `closed`, skipping approval entirely — with `disbursed_on`/`emi`/
+   `decided_by` all left null, zero audit-trail row (`audit_loan_
+   decision()` only fires on `pending -> active/rejected`, never `->
+   closed`), while `AnalyticsRepository.fetchPlatformKpis` still counted
+   it as a genuinely disbursed, closed loan, silently inflating the
+   federation-wide "Loans Disbursed"/"Recovery Rate" numbers. Fixed
+   (`0098`) with the same status guard its siblings already have.
+   **Live-verified**: recording a payment against a real `__TEST__`
+   pending loan now raises `loan is not open for payment (current status:
+   pending)`; the same call against a real active loan still succeeds
+   and correctly reduces `outstanding`.
+4. **[HIGH, Meetings audit] `meeting_attendance`'s self-check-in "same
+   day" guard compared `m.meeting_date` against bare `current_date`,
+   which runs in the Postgres server's UTC clock** (no `timezone`
+   override anywhere in this project) — but the app's own "is this
+   meeting today" logic runs on the device's local IST (UTC+5:30) clock.
+   IST's calendar day starts 5.5 hours before UTC's, so every single day
+   from roughly 00:00-05:29 IST, a genuinely same-day meeting's self-
+   check-in was silently rejected by RLS (the UI correctly showed the
+   Check-In button; the `INSERT` failed with only a generic error) even
+   though nothing was actually wrong. Fixed (`0098`) by comparing against
+   `(now() at time zone 'Asia/Kolkata')::date` instead, on both the
+   INSERT and UPDATE self-branches. **Live-verified**: a same-day self-
+   check-in against a real `__TEST__` meeting (dated via the same IST
+   expression) still succeeds — UTC and IST happen to read the same
+   calendar date at verification time, so the exact bug window couldn't
+   be directly reproduced live, but the fix is a straightforward,
+   regression-tested expression swap matching the diagnosed root cause.
+5. **[HIGH, Marketplace audit] The `profile_is_active()` sweep (rounds
+   184-187) never reached the SELLER side of Marketplace** — only the
+   buyer's own active status was ever checked
+   (`place_marketplace_order`). A staff-deactivated seller's still-valid
+   session could keep listing new products, editing price/stock/
+   description, and advancing order status indefinitely, and her existing
+   listings stayed fully visible/purchasable to any buyer with zero
+   indication anything had changed. Fixed (`0098`) on
+   `marketplace_products_insert_seller_or_staff`,
+   `marketplace_products_update_seller_or_staff`,
+   `marketplace_orders_update_seller_or_staff`, and
+   `place_marketplace_order` itself (checking the resolved seller, not
+   just the buyer) — each rewritten from its own actual current
+   definition (re-read live via `pg_get_functiondef`/the migration
+   history first, not reconstructed from memory, after an initial draft
+   of this fix was caught diverging from the real logic before it was
+   ever pushed). **Live-verified**: ordering from a deactivated seller's
+   product now raises `this product is no longer available` with the
+   product's stock left untouched; a deactivated seller can no longer
+   update her own listing's price; ordering from an active seller and an
+   active seller editing her own listing both still succeed unchanged.
+6. **[MEDIUM, Meetings audit] `meeting_action_items_update_self_or_leader`'s
+   bare self-toggle branch never checked `profile_is_active(owner_id)`**,
+   unlike the leader-assigning branch two lines below it in the same
+   policy — the 6th table in the same repeating pattern rounds 184-187
+   closed one at a time. Fixed (`0098`).
+7. **[MEDIUM, dogfooding] `_roleRestrictedPrefixes`' sibling check —
+   `onAuthFlow = !state.matchedLocation.startsWith('/app')` at
+   `router.dart:150` — used the exact raw `startsWith` pattern round 188
+   fixed two lines below it for the restricted-prefix loop, but never
+   applied the same fix to this one.** Dormant today (no existing path
+   collides), but this is the single root boundary for "is this user
+   inside the authenticated app." Fixed to the same segment-boundary
+   match (`== '/app' || startsWith('/app/')`).
+8. **[MEDIUM, dogfooding] Loan detail page's status badge was hardcoded
+   `BadgeTone.neutral` regardless of `loan.status`** — the one loan-
+   status badge in the app not varying with the status it names, unlike
+   `loans_home_page.dart`'s own `_statusTones` map. Fixed by adding the
+   same tone map to `loan_detail_page.dart`.
+9. **[MEDIUM, dogfooding] Support Tickets' staff search silently searches
+   an incomplete list once ticket volume exceeds the existing 500-row
+   cap**, with zero indication to the searching staff member — round
+   188's new search UI was the first place to imply "search finds any
+   ticket." Added a notice banner shown whenever the fetched list hits
+   the cap, rather than the larger scope of moving filtering server-side.
+10. **[MEDIUM, Marketplace audit] Product categories were hardcoded
+    English strings** (`'Handicrafts'`, `'Tailoring'`, `'Food'`,
+    `'Agriculture'`, `'Other'`) rendered directly via `Text(c)` in both
+    the browse-page filter chips and the add-product category picker —
+    unlike every other status/enum field in this app, including this same
+    module's own `marketplaceOrderStatusLabel` helper. Added
+    `marketplaceCategoryLabel()` following the identical pattern, wired
+    into both pickers and the product detail page's category badge (a
+    third raw-text site found while fixing the two the audit flagged).
+11-18. **[LOW-MEDIUM, accessibility ×3 + i18n ×~6 keys]** loan repayment
+    progress bars (`loan_detail_page.dart`, `loan_tracking_page.dart`,
+    `member_dashboard.dart`) never passed `semanticLabel` to
+    `AppProgressBar`, the same "purely decorative to a screen reader"
+    defect round 188 fixed for the analytics health-score bar — fixed
+    with a new `loanProgressRepaidSemanticLabel` key. All new user-facing
+    strings this round (the loan progress label, 5 marketplace category
+    labels, the support-search-incomplete notice) added to all three
+    `app_en.arb`/`app_hi.arb`/`app_te.arb` files and regenerated via
+    `flutter gen-l10n` — grouped here rather than each counted as its own
+    numbered gap, consistent with prior rounds' convention.
+
+**Documented, deliberately not fixed this round** (real findings, larger
+scope or lower severity):
+
+- **Loans: a staff account promoted from within an SHG keeps a stale
+  non-null `shg_id`**, silently degrading both the platform-wide loans
+  portfolio and approval-queue pages to that one origin SHG only, with no
+  error — round 185 already documented the same `updateUserRole()` gap
+  for its self-decision-lock security implication; this round's audit
+  connected its separate functional consequence. Needs a deliberate
+  decision (null `shg_id` on staff promotion, or gate UI on role instead
+  of the field) rather than a drive-by fix.
+- **Meetings: no per-hour rate limit on scheduling new meetings/minutes/
+  action items** — lower severity (only leader/staff, already-trusted
+  actors, can reach it) and no concrete exploit scenario beyond the
+  existing 7-day-to-365-day date-bound guard.
+- **Meetings: Android/iOS notification channel names/descriptions are
+  hardcoded English**, unlike the notification body text (already
+  localized) — a Hindi/Telugu member managing notification settings in
+  her phone's OS sees raw English category names. Deferred: channel
+  metadata is set once at channel creation, not per-notification, making
+  a clean fix more involved than this round's other findings.
+- **Meetings: switching app language doesn't resync already-scheduled
+  reminders' baked-in text** — confirmed real and narrow (self-heals on
+  next visit to the relevant tab), matching the identical, already-
+  documented gap for Announcements from round 187.
+- **Marketplace: no idempotency protection on `place_marketplace_order`
+  against a network-timeout retry** — a real risk for this app's rural/
+  flaky-connectivity users (a timeout after the RPC actually succeeded
+  server-side, followed by a client retry, could create a duplicate
+  order and double-decrement stock). Needs a client-generated idempotency
+  token + server-side dedup, a schema change, not a quick patch.
+- **Marketplace: no platform-wide staff oversight view**, unlike Loans/
+  Savings/Livelihood/Financial Ledger/Meetings which all already have one
+  — staff have zero visibility into marketplace fraud, review-bombing, or
+  fulfillment disputes platform-wide despite RLS already permitting it.
+  A real, standalone feature gap, same shape as the already-long-deferred
+  seller-listing-management UI.
+- **Marketplace: `marketplace_products.image_url` accepts any external
+  URL**, not restricted to the app's own storage bucket — a compromised
+  seller account could point it at an arbitrary third-party host. Needs a
+  `WITH CHECK` constraining the value to the known bucket's public-URL
+  prefix; deferred to scope this round's already-large RLS-fix batch
+  tightly around confirmed-exploitable/high-severity findings.
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1038/1038, all passing after this round's Dart-side changes — loan
+detail/tracking/dashboard progress bars and status badge, marketplace
+category labels across 3 pages, support chat search notice, router,
+model helper additions) both clean. Migrations `0095`-`0098` all pushed
+to the linked live project; every RLS/RPC claim above independently
+live-verified with real `__TEST__` fixture rows in rolled-back
+transactions, each re-queried afterward to confirm zero footprint —
+including a project-wide re-sweep confirming zero remaining app-schema
+functions carry an `anon` grant after `0096`/`0097`. `flutter build web`
+rebuilt cleanly. **Browser preview attempted again, still stuck** —
+fresh `preview_start`, identical `flt-glass-pane`-never-mounts symptom,
+zero console errors (the 15th consecutive such attempt across thirteen
+rounds). Relied on live-DB verification for every fix above instead.

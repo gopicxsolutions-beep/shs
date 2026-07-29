@@ -1305,6 +1305,8 @@
 
   "supportChatFilterAll": "అన్నీ",
 
+  "supportChatSearchIncompleteNotice": "ఇటీవలి 500 టికెట్లు మాత్రమే చూపబడుతున్నాయి — శోధన మరియు ఫిల్టర్‌లు పాత టికెట్లను వదిలేయవచ్చు",
+
   "supportTicketFormTitle": "టికెట్ నమోదు చేయండి",
 
   "supportTicketFormSubjectLabel": "విషయం",
@@ -1575,6 +1577,16 @@
 
   "marketplaceOrderStatusDelivered": "డెలివరీ చేయబడింది",
 
+  "marketplaceCategoryHandicrafts": "హస్తకళలు",
+
+  "marketplaceCategoryTailoring": "టైలరింగ్",
+
+  "marketplaceCategoryFood": "ఆహారం",
+
+  "marketplaceCategoryAgriculture": "వ్యవసాయం",
+
+  "marketplaceCategoryOther": "ఇతర",
+
   "savingsStatusPending": "పెండింగ్",
 
   "savingsStatusVerified": "ధృవీకరించబడింది",
@@ -1658,6 +1670,8 @@
   "loanDetailNotFoundMessage": "ఈ రుణం కనుగొనబడలేదు",
 
   "loanDetailOutstandingOfAmount": "₹{amount}లో బాకీ",
+
+  "loanProgressRepaidSemanticLabel": "₹{total}లో ₹{paid} చెల్లించారు",
 
   "loanDetailEmiLabel": "EMI",
 

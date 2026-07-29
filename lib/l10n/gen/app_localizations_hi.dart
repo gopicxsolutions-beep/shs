@@ -2449,6 +2449,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get supportChatFilterAll => 'सभी';
 
   @override
+  String get supportChatSearchIncompleteNotice =>
+      'केवल नवीनतम 500 टिकट दिखाए जा रहे हैं — खोज और फ़िल्टर पुराने टिकट छोड़ सकते हैं';
+
+  @override
   String get supportTicketFormTitle => 'टिकट दर्ज करें';
 
   @override
@@ -2898,6 +2902,21 @@ class AppLocalizationsHi extends AppLocalizations {
   String get marketplaceOrderStatusDelivered => 'डिलीवर किया गया';
 
   @override
+  String get marketplaceCategoryHandicrafts => 'हस्तशिल्प';
+
+  @override
+  String get marketplaceCategoryTailoring => 'सिलाई';
+
+  @override
+  String get marketplaceCategoryFood => 'खाद्य';
+
+  @override
+  String get marketplaceCategoryAgriculture => 'कृषि';
+
+  @override
+  String get marketplaceCategoryOther => 'अन्य';
+
+  @override
   String get savingsStatusPending => 'लंबित';
 
   @override
@@ -3045,6 +3064,11 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String loanDetailOutstandingOfAmount(String amount) {
     return '₹$amount में से बकाया';
+  }
+
+  @override
+  String loanProgressRepaidSemanticLabel(String paid, String total) {
+    return '₹$total में से ₹$paid चुकाया गया';
   }
 
   @override

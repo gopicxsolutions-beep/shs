@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
+import '../../models/marketplace.dart';
 import '../../repositories/marketplace_repository.dart';
 import '../../routes/paths.dart';
 import '../../services/supabase_service.dart';
@@ -284,7 +285,7 @@ class _AddProductPageState extends State<AddProductPage> {
                     children: _categories.map((c) {
                       final selected = c == _category;
                       return ChoiceChip(
-                        label: Text(c),
+                        label: Text(marketplaceCategoryLabel(c, l10n)),
                         selected: selected,
                         onSelected: (_) => setState(() {
                           _category = c;

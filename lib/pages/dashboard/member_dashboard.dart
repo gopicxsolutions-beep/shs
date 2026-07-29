@@ -269,7 +269,15 @@ class _MemberDashboardBody extends StatelessWidget {
                     Flexible(child: Text(l10n.memberDashboardOfAmount(NumberFormat('#,##,##0', 'en_IN').format(myLoan.amount)), maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, color: Neutral.c500))),
                   ]),
                   const SizedBox(height: 8),
-                  AppProgressBar(value: myLoan.amount - myLoan.outstanding, max: myLoan.amount, tone: ProgressTone.gold),
+                  AppProgressBar(
+                    value: myLoan.amount - myLoan.outstanding,
+                    max: myLoan.amount,
+                    tone: ProgressTone.gold,
+                    semanticLabel: l10n.loanProgressRepaidSemanticLabel(
+                      NumberFormat('#,##,##0', 'en_IN').format(myLoan.amount - myLoan.outstanding),
+                      NumberFormat('#,##,##0', 'en_IN').format(myLoan.amount),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     Flexible(child: AppBadge(text: myLoan.nextDueDate != null ? l10n.memberDashboardEmiDueBadge(NumberFormat('#,##,##0', 'en_IN').format(myLoan.emi), DateFormat('dd MMM').format(myLoan.nextDueDate!)) : l10n.memberDashboardEmiBadge(NumberFormat('#,##,##0', 'en_IN').format(myLoan.emi)), tone: BadgeTone.warning, dot: true)),

@@ -147,7 +147,15 @@ GoRouter buildRouter(AppState appState) {
       onRetry: () => context.go(Paths.dashboard),
     ),
     redirect: (context, state) {
-      final onAuthFlow = !state.matchedLocation.startsWith('/app');
+      // Segment-boundary match, not raw startsWith — the same fragility
+      // the `_roleRestrictedPrefixes` loop below was hardened against
+      // (round 188). Dormant today (no path collides), but this is the
+      // single root boundary for "is this user inside the authenticated
+      // app," so a future top-level auth-flow path starting with the
+      // literal characters `app` (e.g. `/apply`, `/appeal`) would
+      // otherwise silently satisfy the old check and mis-route a logged-
+      // out/mid-onboarding user away from it.
+      final onAuthFlow = state.matchedLocation != '/app' && !state.matchedLocation.startsWith('/app/');
 
       // No session yet (OTP not verified) — confined to the auth flow.
       if (!appState.hasSession) {

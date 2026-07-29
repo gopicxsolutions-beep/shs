@@ -4342,6 +4342,12 @@ abstract class AppLocalizations {
   /// **'All'**
   String get supportChatFilterAll;
 
+  /// No description provided for @supportChatSearchIncompleteNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the latest 500 tickets only — search and filters may miss older ones'**
+  String get supportChatSearchIncompleteNotice;
+
   /// No description provided for @supportTicketFormTitle.
   ///
   /// In en, this message translates to:
@@ -5158,6 +5164,36 @@ abstract class AppLocalizations {
   /// **'Delivered'**
   String get marketplaceOrderStatusDelivered;
 
+  /// No description provided for @marketplaceCategoryHandicrafts.
+  ///
+  /// In en, this message translates to:
+  /// **'Handicrafts'**
+  String get marketplaceCategoryHandicrafts;
+
+  /// No description provided for @marketplaceCategoryTailoring.
+  ///
+  /// In en, this message translates to:
+  /// **'Tailoring'**
+  String get marketplaceCategoryTailoring;
+
+  /// No description provided for @marketplaceCategoryFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Food'**
+  String get marketplaceCategoryFood;
+
+  /// No description provided for @marketplaceCategoryAgriculture.
+  ///
+  /// In en, this message translates to:
+  /// **'Agriculture'**
+  String get marketplaceCategoryAgriculture;
+
+  /// No description provided for @marketplaceCategoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get marketplaceCategoryOther;
+
   /// No description provided for @savingsStatusPending.
   ///
   /// In en, this message translates to:
@@ -5409,6 +5445,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'outstanding of ₹{amount}'**
   String loanDetailOutstandingOfAmount(String amount);
+
+  /// No description provided for @loanProgressRepaidSemanticLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Repaid ₹{paid} of ₹{total}'**
+  String loanProgressRepaidSemanticLabel(String paid, String total);
 
   /// No description provided for @loanDetailEmiLabel.
   ///

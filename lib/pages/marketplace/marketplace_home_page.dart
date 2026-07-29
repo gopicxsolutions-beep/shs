@@ -112,7 +112,7 @@ class _MarketplaceHomePageState extends State<MarketplaceHomePage> {
                             _CategoryChip(label: l10n.marketplaceHomeCategoryAll, selected: _category == null, onTap: () => setState(() => _category = null)),
                             const SizedBox(width: 8),
                             for (final c in _categories) ...[
-                              _CategoryChip(label: c, selected: _category == c, onTap: () => setState(() => _category = c)),
+                              _CategoryChip(label: marketplaceCategoryLabel(c, l10n), selected: _category == c, onTap: () => setState(() => _category = c)),
                               const SizedBox(width: 8),
                             ],
                           ],

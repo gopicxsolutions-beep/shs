@@ -1305,6 +1305,8 @@
 
   "supportChatFilterAll": "सभी",
 
+  "supportChatSearchIncompleteNotice": "केवल नवीनतम 500 टिकट दिखाए जा रहे हैं — खोज और फ़िल्टर पुराने टिकट छोड़ सकते हैं",
+
   "supportTicketFormTitle": "टिकट दर्ज करें",
 
   "supportTicketFormSubjectLabel": "विषय",
@@ -1575,6 +1577,16 @@
 
   "marketplaceOrderStatusDelivered": "डिलीवर किया गया",
 
+  "marketplaceCategoryHandicrafts": "हस्तशिल्प",
+
+  "marketplaceCategoryTailoring": "सिलाई",
+
+  "marketplaceCategoryFood": "खाद्य",
+
+  "marketplaceCategoryAgriculture": "कृषि",
+
+  "marketplaceCategoryOther": "अन्य",
+
   "savingsStatusPending": "लंबित",
 
   "savingsStatusVerified": "सत्यापित",
@@ -1658,6 +1670,8 @@
   "loanDetailNotFoundMessage": "यह ऋण नहीं मिल सका",
 
   "loanDetailOutstandingOfAmount": "₹{amount} में से बकाया",
+
+  "loanProgressRepaidSemanticLabel": "₹{total} में से ₹{paid} चुकाया गया",
 
   "loanDetailEmiLabel": "EMI",
 

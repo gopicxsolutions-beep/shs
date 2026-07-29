@@ -2487,6 +2487,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get supportChatFilterAll => 'All';
 
   @override
+  String get supportChatSearchIncompleteNotice =>
+      'Showing the latest 500 tickets only — search and filters may miss older ones';
+
+  @override
   String get supportTicketFormTitle => 'Raise a Ticket';
 
   @override
@@ -2947,6 +2951,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get marketplaceOrderStatusDelivered => 'Delivered';
 
   @override
+  String get marketplaceCategoryHandicrafts => 'Handicrafts';
+
+  @override
+  String get marketplaceCategoryTailoring => 'Tailoring';
+
+  @override
+  String get marketplaceCategoryFood => 'Food';
+
+  @override
+  String get marketplaceCategoryAgriculture => 'Agriculture';
+
+  @override
+  String get marketplaceCategoryOther => 'Other';
+
+  @override
   String get savingsStatusPending => 'Pending';
 
   @override
@@ -3099,6 +3118,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String loanDetailOutstandingOfAmount(String amount) {
     return 'outstanding of ₹$amount';
+  }
+
+  @override
+  String loanProgressRepaidSemanticLabel(String paid, String total) {
+    return 'Repaid ₹$paid of ₹$total';
   }
 
   @override

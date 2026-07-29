@@ -2483,6 +2483,10 @@ class AppLocalizationsTe extends AppLocalizations {
   String get supportChatFilterAll => 'అన్నీ';
 
   @override
+  String get supportChatSearchIncompleteNotice =>
+      'ఇటీవలి 500 టికెట్లు మాత్రమే చూపబడుతున్నాయి — శోధన మరియు ఫిల్టర్‌లు పాత టికెట్లను వదిలేయవచ్చు';
+
+  @override
   String get supportTicketFormTitle => 'టికెట్ నమోదు చేయండి';
 
   @override
@@ -2946,6 +2950,21 @@ class AppLocalizationsTe extends AppLocalizations {
   String get marketplaceOrderStatusDelivered => 'డెలివరీ చేయబడింది';
 
   @override
+  String get marketplaceCategoryHandicrafts => 'హస్తకళలు';
+
+  @override
+  String get marketplaceCategoryTailoring => 'టైలరింగ్';
+
+  @override
+  String get marketplaceCategoryFood => 'ఆహారం';
+
+  @override
+  String get marketplaceCategoryAgriculture => 'వ్యవసాయం';
+
+  @override
+  String get marketplaceCategoryOther => 'ఇతర';
+
+  @override
   String get savingsStatusPending => 'పెండింగ్';
 
   @override
@@ -3099,6 +3118,11 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String loanDetailOutstandingOfAmount(String amount) {
     return '₹$amountలో బాకీ';
+  }
+
+  @override
+  String loanProgressRepaidSemanticLabel(String paid, String total) {
+    return '₹$totalలో ₹$paid చెల్లించారు';
   }
 
   @override

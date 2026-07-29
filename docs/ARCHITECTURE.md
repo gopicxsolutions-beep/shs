@@ -150,6 +150,25 @@ on its way to answering the question. New policies needing "is this the
 caller's own row in this table" must use or extend these helpers, never
 inline an equivalent subquery.
 
+**Grant hygiene — `revoke ... from public` is not enough**: this project's
+`public` schema grants EXECUTE on every newly created function to
+`anon`/`authenticated`/`service_role` via a default-privilege rule, independent
+of the `PUBLIC` pseudo-role. Every new `security definer` function must
+explicitly `revoke execute on function ... from anon;` (not just `from
+public`) before granting to `authenticated` — omitting this leaves the
+function callable by a fully unauthenticated caller. Confirmed live via
+`pg_proc.proacl` twice: migration `0055` diagnosed and fixed it for two
+functions; migrations `0093`/`0094` (round 188) repeated the same mistake for
+two new functions — one of which, `support_messages_recent_count()`, had no
+internal ownership check at all and was a genuine, live, unauthenticated
+metadata-disclosure bug until fixed in `0095`. A full project-wide sweep
+(`0096`/`0097`, round 189) confirmed and closed 27 more instances of the same
+grant gap; every one of those 27 turned out to already be internally gated on
+`auth.uid()`-derived checks, so none were independently exploitable — but the
+grant itself should still never be left open, since a function's internal
+logic is a much easier thing to get wrong later than a `revoke` statement is
+to get right up front.
+
 ### 3.2 Design decisions that recur across every module
 
 - **SHG-scoped read transparency**: within an SHG, members share **read**

@@ -1692,6 +1692,8 @@
 
   "supportChatFilterAll": "All",
 
+  "supportChatSearchIncompleteNotice": "Showing the latest 500 tickets only — search and filters may miss older ones",
+
   "supportTicketFormTitle": "Raise a Ticket",
 
   "supportTicketFormSubjectLabel": "Subject",
@@ -1999,6 +2001,16 @@
 
   "marketplaceOrderStatusDelivered": "Delivered",
 
+  "marketplaceCategoryHandicrafts": "Handicrafts",
+
+  "marketplaceCategoryTailoring": "Tailoring",
+
+  "marketplaceCategoryFood": "Food",
+
+  "marketplaceCategoryAgriculture": "Agriculture",
+
+  "marketplaceCategoryOther": "Other",
+
   "savingsStatusPending": "Pending",
 
   "savingsStatusVerified": "Verified",
@@ -2128,6 +2140,14 @@
   "@loanDetailOutstandingOfAmount": {
     "placeholders": {
       "amount": {"type": "String"}
+    }
+  },
+
+  "loanProgressRepaidSemanticLabel": "Repaid ₹{paid} of ₹{total}",
+  "@loanProgressRepaidSemanticLabel": {
+    "placeholders": {
+      "paid": {"type": "String"},
+      "total": {"type": "String"}
     }
   },
 

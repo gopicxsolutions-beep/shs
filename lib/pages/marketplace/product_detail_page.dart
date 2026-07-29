@@ -200,7 +200,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               const SizedBox(height: 16),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Expanded(child: Text(product.name, style: AppTheme.display(18))),
-                if (product.category != null) AppBadge(text: product.category!, tone: BadgeTone.brand),
+                if (product.category != null) AppBadge(text: marketplaceCategoryLabel(product.category!, l10n), tone: BadgeTone.brand),
               ]),
               const SizedBox(height: 6),
               Text(l10n.productDetailBySeller(product.sellerName), style: AppTheme.sans(12, color: Neutral.c500)),
