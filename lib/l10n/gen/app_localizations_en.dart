@@ -4149,6 +4149,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not update this role. Please try again.';
 
   @override
+  String get adminUsersUpdateRoleErrorNeedsShg =>
+      'Could not update this role — a Leader must be linked to an SHG first. Use \"Assign SHG\" on this account, then try again.';
+
+  @override
   String get adminUsersAssignShgError =>
       'Could not assign this SHG. Please try again.';
 

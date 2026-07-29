@@ -173,9 +173,19 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
           await context.read<AppState>().refreshProfile();
         }
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.adminUsersUpdateRoleError)));
+        // Gap-hunt iteration 34: this used to be a single generic message
+        // for every failure — including the specific, common, and
+        // perfectly-recoverable case of promoting an unlinked member to
+        // Leader, which `profiles_leader_requires_shg` (migration 0119)
+        // correctly rejects. A bare "could not update this role" gives the
+        // admin no clue the fix is "assign an SHG first," on an otherwise-
+        // correct security guard.
+        final needsShg = selected.name == 'leader' && e is PostgrestException && e.code == '23514' && e.message.contains('profiles_leader_requires_shg');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(needsShg ? AppLocalizations.of(context)!.adminUsersUpdateRoleErrorNeedsShg : AppLocalizations.of(context)!.adminUsersUpdateRoleError),
+        ));
       }
     } finally {
       if (mounted) setState(() => _changingRoleFor = null);
@@ -410,7 +420,20 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
                         children: [
                           if (!u.isActive) AppBadge(text: AppLocalizations.of(context)!.adminUsersInactiveBadge, tone: BadgeTone.danger),
                           AppBadge(text: u.role, tone: _roleTone[u.role] ?? BadgeTone.neutral),
-                          if (isAdmin && u.shgId == null)
+                          // Gap-hunt iteration 34: this used to be `isAdmin &&
+                          // u.shgId == null` alone, with no role check —
+                          // showing "Assign SHG" on an unlinked crp/clf/admin
+                          // account too. Those roles are platform-wide BY
+                          // DESIGN (is_staff() ignores shg_id entirely); no
+                          // constraint stops assigning one a shg_id, and doing
+                          // so silently flips every isPlatformWideStaff-gated
+                          // dashboard/savings/loans/livelihood/meetings page
+                          // from platform-wide to single-SHG-scoped, with no
+                          // error — the exact "broken view, indistinguishable
+                          // from empty" bug class already fixed for leaders,
+                          // left open here. Only member/leader ever legitimately
+                          // need this action.
+                          if (isAdmin && u.shgId == null && (u.role == 'member' || u.role == 'leader'))
                             IconButton(
                               icon: assigningShg
                                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))

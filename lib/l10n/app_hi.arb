@@ -2205,6 +2205,7 @@
   "adminUsersChangeRoleConfirmMessage": "{name} की भूमिका {from} से {to} में बदलें?",
   "adminUsersChangeRoleConfirmButton": "बदलें",
   "adminUsersUpdateRoleError": "यह भूमिका अपडेट नहीं हो सकी। कृपया फिर से प्रयास करें।",
+  "adminUsersUpdateRoleErrorNeedsShg": "भूमिका अपडेट नहीं हो सकी — नेता को पहले किसी SHG से जोड़ा जाना चाहिए। इस खाते पर \"SHG असाइन करें\" का उपयोग करें, फिर पुनः प्रयास करें।",
   "adminUsersAssignShgError": "यह SHG असाइन नहीं हो सका। कृपया फिर से प्रयास करें।",
   "adminUsersRoleUpdatedMessage": "भूमिका अपडेट की गई",
   "adminUsersRoleUpdatedDemoMessage": "डेमो मोड — भूमिका सहेजी नहीं गई (सहेजने के लिए Supabase कनेक्ट करें)",

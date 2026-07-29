@@ -2205,6 +2205,7 @@
   "adminUsersChangeRoleConfirmMessage": "{name} పాత్రను {from} నుండి {to}కి మార్చాలా?",
   "adminUsersChangeRoleConfirmButton": "మార్చండి",
   "adminUsersUpdateRoleError": "ఈ పాత్రను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  "adminUsersUpdateRoleErrorNeedsShg": "పాత్రను అప్‌డేట్ చేయలేకపోయాము — నాయకురాలిని ముందుగా ఒక SHGకి లింక్ చేయాలి. ఈ ఖాతాలో \"SHG కేటాయించు\" ఉపయోగించి, ఆపై మళ్లీ ప్రయత్నించండి.",
   "adminUsersAssignShgError": "ఈ SHGని కేటాయించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
   "adminUsersRoleUpdatedMessage": "పాత్ర నవీకరించబడింది",
   "adminUsersRoleUpdatedDemoMessage": "డెమో మోడ్ — పాత్ర సేవ్ చేయబడలేదు (సేవ్ చేయడానికి Supabaseను కనెక్ట్ చేయండి)",

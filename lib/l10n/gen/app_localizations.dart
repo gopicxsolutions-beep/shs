@@ -7232,6 +7232,12 @@ abstract class AppLocalizations {
   /// **'Could not update this role. Please try again.'**
   String get adminUsersUpdateRoleError;
 
+  /// No description provided for @adminUsersUpdateRoleErrorNeedsShg.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update this role — a Leader must be linked to an SHG first. Use \"Assign SHG\" on this account, then try again.'**
+  String get adminUsersUpdateRoleErrorNeedsShg;
+
   /// No description provided for @adminUsersAssignShgError.
   ///
   /// In en, this message translates to:

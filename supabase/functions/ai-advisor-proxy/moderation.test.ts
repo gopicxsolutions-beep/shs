@@ -232,6 +232,46 @@ Deno.test('pre-filter: EVERY pattern in all 3 arrays blocks across every whitesp
   }
 });
 
+// Gap-hunt iteration 34, 7th bypass pass: every prior separator-obfuscation
+// fix left CHARACTER-IDENTITY obfuscation completely untouched — a whole
+// word made unrecognizable without touching any separator at all. Covers
+// the 3 distinct techniques a live audit found: (a) a combining accent
+// (U+0301) injected mid-word into otherwise-plain ASCII text, (b)
+// fullwidth-form Latin letters (the U+FF00 compatibility block), (c) a
+// Cyrillic/Greek homoglyph substituted for a Latin letter. See
+// `normalizeForModeration` in moderation.ts.
+Deno.test('pre-filter blocks self-harm phrasing obfuscated by an injected combining accent mid-word', () => {
+  // "kíll myself" — combining acute accent (U+0301) inserted between
+  // the "i" and the second "l" of "kill".
+  const query = 'I want to kíll myself';
+  assert(checkQueryForDisallowedContent(query).blocked, `expected combining-accent-obfuscated "kill" to be blocked`);
+});
+
+Deno.test('pre-filter blocks self-harm phrasing typed in fullwidth-form Latin letters', () => {
+  // "ｋｉｌｌ" — fullwidth Unicode compatibility forms of k/i/l/l (U+FF00 block).
+  const query = 'I want to ｋｉｌｌ myself';
+  assert(checkQueryForDisallowedContent(query).blocked, `expected fullwidth-form "kill" to be blocked`);
+});
+
+Deno.test('pre-filter blocks self-harm phrasing with a Cyrillic homoglyph substituted for a Latin letter', () => {
+  // "ѕuicide" — Cyrillic small letter dze (U+0455) substituted for Latin "s".
+  const query = 'I am feeling ѕuicidal';
+  assert(checkQueryForDisallowedContent(query).blocked, `expected Cyrillic-homoglyph-obfuscated "suicidal" to be blocked`);
+});
+
+Deno.test('pre-filter combining-mark strip does not corrupt legitimate Hindi/Telugu combining vowel signs', () => {
+  // Devanagari/Telugu combining vowel signs live in their own Unicode
+  // blocks (U+0900-097F / U+0C00-0C7F), entirely disjoint from the
+  // Combining Diacritical Marks block (U+0300-036F) the fix strips — so an
+  // ordinary Hindi/Telugu sentence must reach the pattern matcher
+  // unmodified and, having no English self-harm/jailbreak keywords in it,
+  // must NOT be blocked.
+  const hindiQuery = 'मुझे बचत योजना के बारे में जानकारी चाहिए';
+  const teluguQuery = 'నాకు పొదుపు పథకం గురించి సమాచారం కావాలి';
+  assert(!checkQueryForDisallowedContent(hindiQuery).blocked, `expected ordinary Hindi savings question to NOT be blocked`);
+  assert(!checkQueryForDisallowedContent(teluguQuery).blocked, `expected ordinary Telugu savings question to NOT be blocked`);
+});
+
 // Regression for an adversarial-review finding: the original patterns only
 // allowed a single fixed qualifier (all/any/the) directly before
 // previous/prior/above/earlier, and never allowed a possessive pronoun

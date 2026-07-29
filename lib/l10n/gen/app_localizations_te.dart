@@ -4152,6 +4152,10 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఈ పాత్రను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
 
   @override
+  String get adminUsersUpdateRoleErrorNeedsShg =>
+      'పాత్రను అప్‌డేట్ చేయలేకపోయాము — నాయకురాలిని ముందుగా ఒక SHGకి లింక్ చేయాలి. ఈ ఖాతాలో \"SHG కేటాయించు\" ఉపయోగించి, ఆపై మళ్లీ ప్రయత్నించండి.';
+
+  @override
   String get adminUsersAssignShgError =>
       'ఈ SHGని కేటాయించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
 

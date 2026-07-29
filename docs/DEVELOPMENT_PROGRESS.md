@@ -19650,4 +19650,167 @@ test fixtures confirmed removed via re-querying afterward (zero residual
 rows), including a temporarily-deactivated real profile's `is_active`
 correctly reverting to `true` once its wrapping transaction rolled back.
 
+## Gap-hunting loop iteration 34: a 7th moderation bypass class (Unicode confusables/combining marks/fullwidth forms — this one caught and fixed 2 of its own bugs before shipping), dogfooding finds a recurring "DELETE+recreate defeats an UPDATE-time lock" pattern across 2 more tables, and a platform-wide-staff-view integrity gap
+
+Iteration 34 launched 4 fresh audits: a dogfooding pass over iteration 33's
+fixes (migrations 0132/0133), plus fresh sweeps of AI Advisor/Voice
+Assistant, Loans/Savings, and SHG onboarding/CRP-CLF workflows.
+
+**Fixed and live-verified this round:**
+
+1. **[HIGH]** The AI Advisor's `moderation.ts` content filter has now had 6
+   documented rounds of separator-obfuscation bypass fixes (whitespace
+   variants, then invisible/zero-width characters). This round's audit
+   found the 7th, entirely different bypass class: CHARACTER-IDENTITY
+   obfuscation — a combining accent (U+0301) injected mid-word into plain
+   ASCII ("kíll"), fullwidth-form Latin letters (the U+FF00 compatibility
+   block, "ｋｉｌｌ"), or a Cyrillic/Greek homoglyph substituted for a
+   Latin letter ("ѕuicide" with Cyrillic U+0455) — all trivially typeable,
+   all defeat every pattern in all 3 categories at once. Fixed with
+   `normalizeForModeration()`: `String.normalize('NFKD')` folds fullwidth
+   forms to ASCII AND decomposes a precomposed accented character into
+   base+combining-mark form; a targeted strip of just the Combining
+   Diacritical Marks block (U+0300-036F, NOT a blanket `\p{Mn}` strip,
+   which would corrupt real Hindi/Telugu combining vowel signs — those
+   live in entirely separate Unicode blocks); a small confusables table
+   folding common Cyrillic/Greek homoglyphs. Caught and fixed 2 of its own
+   bugs before ever shipping (see below) — the exact self-catch discipline
+   this loop has repeatedly relied on. Verified: `deno test` on
+   `moderation.test.ts` (40 tests, including 4 new ones for this exact
+   bypass class, one specifically confirming the fix does NOT corrupt
+   ordinary Hindi/Telugu sentences) and `history.test.ts` (19 tests) both
+   fully green.
+   - **Self-caught bug 1**: initial version ran the combining-mark strip
+     BEFORE the existing invisible-character handling, which deletes
+     U+034F (combining grapheme joiner) entirely as an "accent" — but
+     U+034F is deliberately handled elsewhere as a SEPARATOR (replaced
+     with a space, per the 6th-pass history). Stripping it first collapsed
+     "kill" + U+034F + "myself" into "killmyself" with no separator at
+     all, failing this file's own exhaustive separator-sweep test.
+     Fixed by reordering: invisible-character handling now runs first.
+   - **Self-caught bug 2**: initial version used `NFKC` normalization,
+     which recomposes after decomposing — so a precomposed "í" (typed as
+     one code point, not base+combining-mark) stayed composed with no
+     separate combining mark left for the strip to remove. Switched to
+     `NFKD`, which decomposes without recomposing.
+2. **[HIGH]** Dogfooding found `livelihood_activities`'s `revenue_locked_at`
+   permanence (0132) is airtight against same-row edits, but staff could
+   DELETE a completed activity and INSERT a fresh one for the same member,
+   walking it through the lifecycle again with a fabricated revenue — the
+   "permanent" lock reset because a brand-new row has no history to lock
+   against. Fixed in migration
+   `0134_iteration34_delete_recreate_bypass_closures_and_staff_shg_invariant.sql`
+   by refusing to let staff delete an activity that has ever been
+   completed (`revenue_locked_at is not null`) — once locked, its history
+   can no longer be erased-and-reborn either. Live-verified: staff deleting
+   a completed activity now matches 0 rows; staff deleting a never-
+   completed activity for a different member still works.
+3. **[HIGH]** Dogfooding found `meetings_update_leader_or_staff`'s staff
+   cancel-guard (0133) compares against `meetings_locked_fields()`'s
+   CURRENT committed `meeting_date` — itself mutable by staff — enabling a
+   2-STATEMENT bypass: statement 1 moves a historical meeting's date into
+   the future while leaving `status` unchanged (allowed, since the guard's
+   date check only applies when actually cancelling); statement 2 then
+   cancels it, now reading back the already-committed future date as "the
+   original." Fixed in the same migration with a genuinely immutable
+   `original_meeting_date` column, stamped once at INSERT and force-pinned
+   by a trigger on every subsequent UPDATE (the trigger runs before RLS's
+   own WITH CHECK evaluation, so the guard can never see an intermediate
+   attacker-chosen value, regardless of statement count or order). Live-
+   verified: the 2-statement combo now fails at statement 2 (`42501`);
+   legitimate near-term date corrections and legitimate cancellation of a
+   genuinely-still-future meeting both still work.
+4. **[MEDIUM-HIGH]** Fresh SHG/CRP-CLF audit found the admin panel's
+   "Assign SHG" action had no role check anywhere — a crp/clf/admin
+   account (platform-wide BY DESIGN) could be given a `shg_id`, silently
+   narrowing every `isPlatformWideStaff`-gated dashboard to single-SHG
+   scope with no error. `profiles_leader_requires_shg` (0119) only ever
+   enforced the LEADER direction. Fixed with a new symmetric
+   `profiles_staff_no_shg` CHECK constraint (validated immediately — zero
+   live staff profiles currently have a non-null `shg_id`) in the same
+   migration, plus a client-side gate in `admin_users_page.dart` (the
+   "Assign SHG" button now also requires `role in ('member','leader')`) —
+   the constraint is the real authorization boundary per this project's
+   own security model, the UI change just keeps the ordinary admin panel
+   from ever hitting it in normal use. Live-verified: assigning a real
+   shg_id to a real admin account now throws `23514`; the profile's
+   `shg_id` confirmed unchanged afterward.
+5. **[LOW]** Same audit found `admin_users_page.dart`'s role-change action
+   showed one generic error message for every failure — including the
+   specific, common, and perfectly recoverable case of promoting an
+   unlinked member to Leader (correctly rejected by
+   `profiles_leader_requires_shg`), giving the admin no clue the fix is
+   "assign an SHG first." Added a targeted message (detecting the specific
+   `23514`/constraint-name combination) plus new `hi`/`te` translations.
+
+**Found this round, documented rather than fixed (needs a real design
+decision, not a guessed RLS patch):**
+
+6. Dogfooding also found `shg_documents`'s new shg_id UPDATE lock (0132)
+   is real for a plain UPDATE, but staff's unrestricted DELETE + unrestricted
+   INSERT (any shg_id) reproduces the identical "document silently moved to
+   another SHG" outcome under a new row id — the same DELETE+recreate shape
+   as finding 2 above. Left undecided rather than guessed: unlike
+   livelihood (where "once completed, never erasable" was already this
+   table's own established invariant), `shg_documents` has no existing
+   signal for what a legitimate staff cross-SHG document workflow actually
+   needs, and narrowing DELETE/INSERT unilaterally risks breaking a real
+   workflow this codebase has no visibility into.
+7. AI/Voice audit: a variant of the already-disclosed, structurally-
+   unfixable-from-this-file completer-hijack race (AI_MODULES.md §3.5) —
+   `_lastErrorUnavailable`'s single instance-lifetime scope means a stale
+   error from a just-superseded attempt can misclassify a new attempt's
+   genuine empty result as "unavailable" instead of "try again." Analyzed
+   in depth: this is the SAME race already accepted as residual (the
+   plugin gives no per-attempt error correlation id), just a new symptom
+   of it, not a separately closeable bug — not worth a code change that
+   can't actually fix the root cause.
+8. Loans/Savings audit found no new gap in the specific "locked-once-X but
+   only compares the immediately-preceding row" bug class (loans/savings
+   lock every financial column unconditionally on every UPDATE, and no RPC
+   has a reverse/reopen transition, so the two-step cycle iteration 33
+   found in livelihood structurally can't reproduce here) — 9 live attack
+   attempts against a fresh fixture set, all correctly blocked. A genuine
+   negative result, not an unchecked area.
+9. **[housekeeping observation, not acted on]** The Loans/Savings audit
+   flagged that SHG `99999999-...-9101` ("__TEST__ Jyothi Mahila Sangham",
+   created 2026-07-25) and its associated profiles/loans/savings/meetings
+   are `__TEST__`-prefixed fixture data, technically in tension with
+   CLAUDE.md's "delete every row afterward" rule for session-created test
+   fixtures. Independently re-verified this round: this fixture set
+   predates this session's own work and has been the de facto seed/
+   verification substrate for essentially every RLS check across all 34
+   iterations (referenced constantly, by these exact ids, throughout this
+   entire log) — deleting it now would be a unilateral, disruptive action
+   against the established testing practice this whole loop depends on,
+   not a fix. Documented rather than deleted; a real decision on whether
+   to formalize this as permanent seed data (rename off the `__TEST__`
+   prefix) or actually retire it is left to the project owner.
+
+**Process note (not a product gap):** two of this round's 4 audit agents
+triggered the harness's own security classifier for running a live
+mutation against a real (non-`__TEST__`-fixture) row without wrapping it
+in `BEGIN/ROLLBACK` — one on a real member's `profiles.role`, one during
+an attempted (and honestly reported as incomplete) fixture cleanup.
+Independently re-verified both directly against the live linked project
+immediately upon each flag: in both cases the flagged statement had
+already failed on its own (a CHECK constraint violation in the first
+case, a FK error in the second) and Postgres's own single-statement/
+transaction rollback semantics meant nothing was actually left mutated —
+confirmed by direct re-query, not by trusting either agent's own account.
+No lasting harm occurred, but future audit-agent prompts in this loop
+should be more explicit that every mutation, including ones expected to
+fail, must be wrapped in an explicit transaction — matching CLAUDE.md's
+own rule, which exists for exactly this reason.
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full 1077
+test suite passing. `deno test` — moderation.test.ts (40) and
+history.test.ts (19) both fully green. Live: migration `0134` deployed via
+`supabase db push` and individually live-verified in rolled-back
+transactions with both a negative (attack) and positive (legitimate-use)
+case per fix. All test fixtures confirmed removed via re-querying
+afterward (zero residual rows) — including independently re-verifying, by
+direct query rather than trusting either flagged sub-agent's own account,
+that no real data was actually mutated by either of the process-note
+incidents above.
 

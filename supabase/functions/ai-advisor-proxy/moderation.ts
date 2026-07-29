@@ -125,11 +125,36 @@ export function normalizeLanguage(raw: unknown): Language {
 //     real-world moderation-bypass character — deliberately only this one
 //     code point, NOT the whole U+2800-U+28FF block, which contains real
 //     braille text with visible dot patterns that must not be stripped).
-//     Any future edit to these three pattern arrays, or to the
-//     invisible-character handling, MUST re-run the full sweep in
+//   7th pass (gap-hunt iteration 34): every prior pass attacked SEPARATOR
+//     obfuscation (whitespace variants, invisible characters splitting a
+//     word). None addressed CHARACTER-IDENTITY obfuscation — a live
+//     gap-hunt audit found three DISTINCT ways to make a whole word itself
+//     unrecognizable to a literal-ASCII pattern without any separator
+//     involved at all: (a) a combining accent (e.g. U+0301) inserted
+//     mid-word into otherwise-plain ASCII text ("kíll"); (b) fullwidth-form
+//     Latin letters (the U+FF00 compatibility block, "ｋｉｌｌ"); (c) a
+//     Cyrillic/Greek homoglyph substituted for a Latin letter ("ѕuicide"
+//     with Cyrillic U+0455). All three are trivially typeable (common
+//     IME/keyboard output, or plain copy-paste) and visually near-identical
+//     or fully readable to a human, and defeat every pattern in all three
+//     categories at once — a single root-cause gap, not per-pattern. Fixed
+//     by `normalizeForModeration`, below: `String.prototype.normalize
+//     ('NFKC')` folds compatibility-equivalent forms (fullwidth Latin) to
+//     plain ASCII; stripping U+0300-U+036F (the Combining Diacritical Marks
+//     block specifically, NOT a blanket `\p{Mn}` strip) removes an injected
+//     accent without touching Hindi/Telugu combining vowel signs, which
+//     live in their own, entirely separate Unicode blocks (Devanagari
+//     U+0900-097F, Telugu U+0C00-0C7F) — same reasoning the 5th pass's
+//     comment already gives for why a blanket Mn strip would be wrong; a
+//     small confusables table folds the common, actually-typeable Cyrillic/
+//     Greek homoglyphs of the Latin letters these patterns use — not
+//     Unicode's full confusables database (out of scope for a lightweight
+//     filter per this file's own header), just the practical common cases.
+//     Any future edit to these pattern arrays, or to the character-
+//     normalization handling, MUST re-run the full sweep in
 //     moderation.test.ts, not just eyeball the diff — cherry-picked
 //     examples are exactly how six consecutive "complete" claims on this
-//     file went out wrong.
+//     file went out wrong before this one.
 const SEP = '[\\s._-]+';
 const SEP_OPT = '[\\s._-]*';
 
@@ -154,6 +179,54 @@ const INVISIBLE_CHARS_RE = new RegExp('[\\p{Cf}\\uFE00-\\uFE0F\\u034F\\u{E0100}-
 
 function stripInvisibleChars(text: string): string {
   return text.replace(INVISIBLE_CHARS_RE, ' ');
+}
+
+// See the "7th pass" history entry above. Combining Diacritical Marks
+// block only (U+0300-U+036F) — deliberately NOT the broader `\p{Mn}`
+// category, which would also strip legitimate Hindi/Telugu combining
+// vowel signs (matras/vottulu). Those live in the Devanagari (U+0900-097F)
+// and Telugu (U+0C00-0C7F) blocks respectively, entirely disjoint from
+// this one, so this strip cannot corrupt a real Hindi/Telugu phrase.
+const COMBINING_MARKS_RE = new RegExp('[\\u0300-\\u036f]', 'g');
+
+// Common, actually-typeable Cyrillic/Greek homoglyphs of the Latin letters
+// used in the pattern sets below, folded to their Latin lookalike. Not
+// Unicode's full confusables database — a lightweight, maintainable
+// subset per this file's own stated scope.
+const CONFUSABLES: Record<string, string> = {
+  а: 'a', е: 'e', о: 'o', р: 'p', с: 'c', х: 'x', у: 'y', і: 'i', ѕ: 's', к: 'k',
+  м: 'm', н: 'h', т: 't', в: 'v', ё: 'e', ј: 'j', ԁ: 'd', ц: 'c', ӏ: 'i',
+  α: 'a', ο: 'o', ν: 'v', κ: 'k', ρ: 'p', υ: 'u', τ: 't', ι: 'i', β: 'b', η: 'n',
+  А: 'a', Е: 'e', О: 'o', Р: 'p', С: 'c', Х: 'x', У: 'y', І: 'i', Ѕ: 's', К: 'k',
+  М: 'm', Н: 'h', Т: 't', В: 'v', Ё: 'e', Ј: 'j',
+  Α: 'a', Ο: 'o', Ν: 'n', Κ: 'k', Ρ: 'p', Υ: 'y', Τ: 't', Ι: 'i', Β: 'b', Η: 'h',
+};
+
+function foldConfusables(text: string): string {
+  let out = '';
+  for (const ch of text) out += CONFUSABLES[ch] ?? ch;
+  return out;
+}
+
+// Applied AFTER `stripInvisibleChars`, not before — U+034F (combining
+// grapheme joiner) is deliberately handled there as a SEPARATOR (replaced
+// with a space, preserving the word break), while every other character in
+// COMBINING_MARKS_RE's range is an ACCENT to be deleted outright. Running
+// this first would delete U+034F before stripInvisibleChars ever got a
+// chance to turn it into a space, collapsing "kill" + U+034F + "myself"
+// into "killmyself" with no separator left at all — caught by this file's
+// own exhaustive separator-sweep test before it ever shipped.
+//
+// `normalize('NFKD')`, not NFKC: NFKD both folds compatibility-equivalent
+// forms (fullwidth Latin, the U+FF00 block) AND fully decomposes a
+// precomposed accented character (e.g. "í", U+00ED) into its base letter
+// plus a separate combining mark ("i" + U+0301) — NFKC would leave "í"
+// composed as a single code point with nothing for `COMBINING_MARKS_RE` to
+// strip, since NFKC recomposes after decomposing. Both the "typed as two
+// separate code points" and "typed as one precomposed character" forms of
+// the same visual accent injection need to reach the same stripped result.
+function normalizeForModeration(text: string): string {
+  return foldConfusables(text.normalize('NFKD').replace(COMBINING_MARKS_RE, ''));
 }
 
 const SELF_HARM_PATTERNS: RegExp[] = [
@@ -249,7 +322,7 @@ const JAILBREAK_REASON = GENERIC_BLOCKED_REASON;
 /// [language] picks which of the member-safe reason strings above is
 /// returned — see the type's own doc comment for why this exists at all.
 export function checkQueryForDisallowedContent(query: string, language: Language = DEFAULT_LANGUAGE): PreFilterResult {
-  const normalized = stripInvisibleChars(query);
+  const normalized = normalizeForModeration(stripInvisibleChars(query));
   if (SELF_HARM_PATTERNS.some((p) => p.test(normalized))) return { blocked: true, reason: SELF_HARM_REASON[language] };
   if (HATE_SPEECH_PATTERNS.some((p) => p.test(normalized))) return { blocked: true, reason: HATE_SPEECH_REASON[language] };
   if (JAILBREAK_PATTERNS.some((p) => p.test(normalized))) return { blocked: true, reason: JAILBREAK_REASON[language] };

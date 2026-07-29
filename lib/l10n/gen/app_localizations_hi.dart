@@ -4080,6 +4080,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'यह भूमिका अपडेट नहीं हो सकी। कृपया फिर से प्रयास करें।';
 
   @override
+  String get adminUsersUpdateRoleErrorNeedsShg =>
+      'भूमिका अपडेट नहीं हो सकी — नेता को पहले किसी SHG से जोड़ा जाना चाहिए। इस खाते पर \"SHG असाइन करें\" का उपयोग करें, फिर पुनः प्रयास करें।';
+
+  @override
   String get adminUsersAssignShgError =>
       'यह SHG असाइन नहीं हो सका। कृपया फिर से प्रयास करें।';
 
