@@ -257,9 +257,14 @@ self-or-leader-for-a-verified-member-of-her-own-SHG-or-staff, and every
 non-staff insert is forced to start `pending`/dated today. Updates are
 leader/staff-only, with every column except `status` frozen — a leader
 "verifying" a deposit cannot simultaneously alter its amount. Deletion is
-staff-only. A leader verifying her *own* submitted deposit is deliberately
-still permitted (judged lower-stakes than loan self-approval, since it moves
-no money out of the SHG).
+staff-only. **Reversed as of round 190**: a leader/staff account can no
+longer verify her own submitted deposit — `savings_update_leader_or_staff`
+now self-excludes both branches (`member_id <> auth.uid()`), the same
+self-dealing lockdown applied everywhere else in this schema. The ledger
+UI (`savings_ledger_page.dart`, round 196) correspondingly no longer shows
+the Verify/Reject controls on the viewer's own pending entry — it renders
+a plain "Pending" status badge instead, since the server-side RLS
+self-exclusion made the buttons a guaranteed silent no-op.
 
 **Known gap, confirmed live (2026-07-25, round 147): FR-SAV-4/5 below had two
 separate problems, and the same root cause turned out to be systemic across
@@ -351,7 +356,7 @@ Financial Ledger, and Livelihood — see those sections' own notes.
 | FR-SAV-1 | Member (or leader/staff for a roster member) records a savings entry, always starting `pending` | Member, Leader, staff |
 | FR-SAV-2 | Member views own savings history and a running-balance statement (verified entries only) | Member |
 | FR-SAV-3 | SHG members share realtime read access to the group's savings ledger | Member, Leader |
-| FR-SAV-4 | Leader verifies a pending entry from her own SHG's queue (flat status flip; self-verification permitted); CRP/CLF/Admin verify platform-wide across every SHG (since round 168) | Leader, CRP, CLF, Admin |
+| FR-SAV-4 | Leader verifies a pending entry from her own SHG's queue (flat status flip; self-verification blocked as of round 190 — the button doesn't render for her own row); CRP/CLF/Admin verify platform-wide across every SHG (since round 168) | Leader, CRP, CLF, Admin |
 | FR-SAV-5 | Member views a group savings report: per-member leaderboard and monthly trend, verified entries only (SHG transparency) — reached from Savings home's "Group" tile; leader/staff are routed to the ledger (FR-SAV-4) instead, not this report | Member |
 
 ### 3.4 Loans (`loans/`)

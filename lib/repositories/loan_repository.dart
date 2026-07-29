@@ -56,7 +56,9 @@ class LoanRepository {
   Future<List<Loan>> fetchForShg(String? shgId) async {
     if (!_live) return _demoLoans();
     if (shgId == null) return [];
-    final rows = await _client.from('loans').select(_loanSelect).eq('shg_id', shgId).order('created_at', ascending: false);
+    // Was fully unbounded — the same anti-pattern already fixed across
+    // most of this codebase's other repositories.
+    final rows = await _client.from('loans').select(_loanSelect).eq('shg_id', shgId).order('created_at', ascending: false).limit(500);
     return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -70,7 +72,9 @@ class LoanRepository {
   /// from different SHGs apart in one flat list.
   Future<List<Loan>> fetchAllForStaff() async {
     if (!_live) return _demoLoans();
-    final rows = await _client.from('loans').select('$_loanSelect, shgs(name)').order('created_at', ascending: false);
+    // Was a bare, fully unbounded select — every loan on the entire
+    // platform, on every staff visit to this feed.
+    final rows = await _client.from('loans').select('$_loanSelect, shgs(name)').order('created_at', ascending: false).limit(500);
     return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -83,7 +87,8 @@ class LoanRepository {
     // total for every member.
     if (!_live) return _demoLoans().where((l) => l.memberName == _demoMemberName(memberId)).toList();
     if (memberId == null) return [];
-    final rows = await _client.from('loans').select(_loanSelect).eq('member_id', memberId).order('created_at', ascending: false);
+    // Same fix as fetchForShg above.
+    final rows = await _client.from('loans').select(_loanSelect).eq('member_id', memberId).order('created_at', ascending: false).limit(500);
     return (rows as List).map((r) => Loan.fromMap(r as Map<String, dynamic>)).toList();
   }
 

@@ -89,6 +89,13 @@ class _SavingsLedgerPageState extends State<SavingsLedgerPage> {
     // otherwise get their live subscription silently torn down and rebuilt
     // for no reason. `.select` only rebuilds when shgId itself changes.
     final shgId = context.select<AppState, String?>((s) => s.profile?.shgId);
+    // Same selective-rebuild reasoning as `shgId` above — only used to gate
+    // the Verify/Reject controls on the viewer's own pending entries
+    // (`savings_update_leader_or_staff`'s self-exclusion already blocks
+    // this server-side; the button used to still render for a leader/staff
+    // account's own row, tap it, and hit a silent 0-row no-op with only the
+    // generic error message, indistinguishable from a real failure).
+    final viewerId = context.select<AppState, String?>((s) => s.profile?.id);
     final repo = widget.repository ?? SavingsRepository();
     final live = SupabaseService.isConfigured && shgId != null;
     final l10n = AppLocalizations.of(context)!;
@@ -126,12 +133,12 @@ class _SavingsLedgerPageState extends State<SavingsLedgerPage> {
                   final l10n = AppLocalizations.of(context);
                   return Center(child: Text(l10n?.asyncErrorGeneric ?? 'Something went wrong. Please try again.', style: AppTheme.sans(13, color: Neutral.c500)));
                 }
-                return _LedgerList(entries: snapshot.data ?? const [], repo: repo, memberNames: _memberNames, isPlatformWide: false);
+                return _LedgerList(entries: snapshot.data ?? const [], repo: repo, memberNames: _memberNames, isPlatformWide: false, viewerId: viewerId);
               },
             )
           : AppAsyncBuilder<List<SavingsEntry>>(
               future: () => isPlatformWide ? repo.fetchAllForStaff() : repo.fetchForShg(shgId),
-              builder: (context, entries) => _LedgerList(entries: entries, repo: repo, memberNames: _memberNames, isPlatformWide: isPlatformWide),
+              builder: (context, entries) => _LedgerList(entries: entries, repo: repo, memberNames: _memberNames, isPlatformWide: isPlatformWide, viewerId: viewerId),
             ),
     );
   }
@@ -142,7 +149,8 @@ class _LedgerList extends StatefulWidget {
   final SavingsRepository repo;
   final Map<String, String> memberNames;
   final bool isPlatformWide;
-  const _LedgerList({required this.entries, required this.repo, required this.memberNames, required this.isPlatformWide});
+  final String? viewerId;
+  const _LedgerList({required this.entries, required this.repo, required this.memberNames, required this.isPlatformWide, required this.viewerId});
 
   @override
   State<_LedgerList> createState() => _LedgerListState();
@@ -214,7 +222,16 @@ class _LedgerListState extends State<_LedgerList> {
               // stacking avoids the same trailing-slot overflow class
               // already caught (and fixed the same way) elsewhere this
               // round in `shg_members_page.dart`/`savings_history_page.dart`.
-              trailing: e.status == 'pending'
+              //
+              // `e.memberId != widget.viewerId` — `savings_update_leader_or_
+              // staff` (RLS) self-excludes both the leader and staff
+              // branches (round 190), so a leader/staff account's own
+              // pending entry can never actually be verified this way; the
+              // button used to still render, get tapped, and hit a silent
+              // 0-row no-op surfaced only as the generic error snackbar,
+              // reading as a bug rather than a rule. Own-row pending
+              // entries now show a plain read-only status badge instead.
+              trailing: e.status == 'pending' && e.memberId != widget.viewerId
                   ? Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -256,7 +273,9 @@ class _LedgerListState extends State<_LedgerList> {
                       children: [
                         Text('₹${NumberFormat('#,##,##0', 'en_IN').format(e.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700)),
                         const SizedBox(height: 4),
-                        AppBadge(text: l10n.savingsLedgerVerifiedBadge, tone: BadgeTone.success),
+                        e.status == 'pending'
+                            ? AppBadge(text: l10n.savingsStatusPending, tone: BadgeTone.warning)
+                            : AppBadge(text: l10n.savingsLedgerVerifiedBadge, tone: BadgeTone.success),
                       ],
                     ),
               chevron: false,

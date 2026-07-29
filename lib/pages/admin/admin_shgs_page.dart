@@ -211,11 +211,15 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
     }
   }
 
-  /// `ShgRepository.updateShg()` was a fully-working, RLS-backed write (the
-  /// same `shgs_update_leader_or_staff` policy already permits any staff
-  /// role, unrestricted, on every column — see
-  /// supabase/migrations/0013_self_service_write_check_gaps.sql) with zero
-  /// call sites anywhere in the app — there was no Edit-SHG UI at all.
+  /// `ShgRepository.updateShg()` was a fully-working, RLS-backed write with
+  /// zero call sites anywhere in the app — there was no Edit-SHG UI at all.
+  /// `shgs_update_leader_or_staff` was admin-only, unrestricted, on every
+  /// column at the time this comment was written — see
+  /// supabase/migrations/0082_audit_trail_and_loan_attribution.sql (0013
+  /// predates that tightening and is no longer the current live shape; citing it
+  /// would mislead a future reader into thinking a CRP/CLF write capability
+  /// still exists here to re-test — it doesn't, admin-only is correctly
+  /// enforced both here and at the RLS layer).
   /// Concretely, that meant an SHG onboarded without a formation date/grade
   /// (true of every SHG created via `_addShg` before this fix existed) had
   /// no in-app way to ever have those facts filled in later, so a scheme

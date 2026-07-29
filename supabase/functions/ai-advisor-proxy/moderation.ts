@@ -52,12 +52,17 @@ export function normalizeLanguage(raw: unknown): Language {
 // "life insurance" / "life cover" questions, which are exactly the kind of
 // legitimate query this advisor exists to answer. This is a cheap block on
 // the most obvious cases, not a clinical crisis-detection system.
-// Every multi-word pattern below uses `\s+` (not a literal single space)
-// between words — a literal space fails to match a newline/tab/double-space,
-// which a live gap-hunt round found trivially defeats every one of these
-// (e.g. "kill\nmyself" or "kill  myself" slipped through unblocked, "kill
-// myself" did not). `HATE_SPEECH_PATTERNS` below already used `\s+`
-// correctly; this brought the self-harm/jailbreak sets in line with it.
+// Every multi-word pattern in this file (SELF_HARM/HATE_SPEECH/JAILBREAK)
+// uses `\s+` (not a literal single space) between words — a literal space
+// fails to match a newline/tab/double-space, which a live gap-hunt round
+// found trivially defeats a pattern (e.g. "kill\nmyself" or "kill  myself"
+// slipped through unblocked, "kill myself" did not). The FIRST fix pass
+// only converted SELF_HARM_PATTERNS and 3 of 12 JAILBREAK_PATTERNS entries,
+// and incorrectly asserted HATE_SPEECH_PATTERNS was already fully correct
+// (it wasn't — "ethnic cleansing" was still a literal space) — a
+// dogfooding round caught the incomplete first pass and adversarially
+// verified all 3 pattern sets are now actually clean, not just the ones
+// the commit message claimed.
 const SELF_HARM_PATTERNS: RegExp[] = [
   /\bkill(ing)?\s+myself\b/i,
   /\bsuicid(e|al)\b/i,
@@ -93,7 +98,7 @@ const GROUP_TERMS =
 const HATE_SPEECH_PATTERNS: RegExp[] = [
   new RegExp(`\\b${INCITEMENT_VERBS}\\s+(all\\s+|every\\s+)?(the\\s+)?${GROUP_TERMS}\\b`, 'i'),
   /\bsubhuman\b/i,
-  /\bethnic cleansing\b/i,
+  /\bethnic\s+cleansing\b/i,
   /\bgenocide\b/i,
 ];
 
@@ -121,15 +126,15 @@ const JAILBREAK_PATTERNS: RegExp[] = [
   /\bignore\s+(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(previous|prior|above|earlier)\s+instructions?\b/i,
   /\bdisregard\s+(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(previous|prior|above|earlier)\s+instructions?\b/i,
   /\bforget\s+(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(previous|prior|above|earlier)\s*instructions?\b/i,
-  /\b(reveal|show|print|repeat|output)\b.{0,20}\b(your |the )?system prompt\b/i,
-  /\bwhat (is|are) your (system prompt|instructions)\b/i,
-  /\brepeat (the words|everything|the text) (above|before this)\b/i,
-  /\bact as\b.{0,30}\b(no restrictions|unfiltered|jailbroken|without (any )?limits)\b/i,
-  /\bpretend (you are|to be)\b.{0,20}\b(dan|jailbroken|unrestricted)\b/i,
-  /\bdeveloper mode\b/i,
+  /\b(reveal|show|print|repeat|output)\b.{0,20}\b(your\s+|the\s+)?system\s+prompt\b/i,
+  /\bwhat\s+(is|are)\s+your\s+(system\s+prompt|instructions)\b/i,
+  /\brepeat\s+(the\s+words|everything|the\s+text)\s+(above|before\s+this)\b/i,
+  /\bact\s+as\b.{0,30}\b(no\s+restrictions|unfiltered|jailbroken|without\s+(any\s+)?limits)\b/i,
+  /\bpretend\s+(you\s+are|to\s+be)\b.{0,20}\b(dan|jailbroken|unrestricted)\b/i,
+  /\bdeveloper\s+mode\b/i,
   /\bjailbreak(ing)?\b/i,
-  /\bdan mode\b/i,
-  /\bbypass your (restrictions|rules|guidelines)\b/i,
+  /\bdan\s+mode\b/i,
+  /\bbypass\s+your\s+(restrictions|rules|guidelines)\b/i,
 ];
 
 const JAILBREAK_REASON = GENERIC_BLOCKED_REASON;

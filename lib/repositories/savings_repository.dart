@@ -57,7 +57,10 @@ class SavingsRepository {
   /// entries from different SHGs apart in one flat list.
   Future<List<SavingsEntry>> fetchAllForStaff() async {
     if (!_live) return [..._locallyAdded.reversed, ..._mockEntries()];
-    final rows = await _client.from('savings_entries').select('*, profiles(name), shgs(name)').order('entry_date', ascending: false);
+    // Was fully unbounded — every SHG's entire savings history, fetched on
+    // every staff dashboard/ledger open, the same anti-pattern already
+    // fixed across the rest of this codebase.
+    final rows = await _client.from('savings_entries').select('*, profiles(name), shgs(name)').order('entry_date', ascending: false).limit(500);
     return (rows as List).map((r) => SavingsEntry.fromMap(r as Map<String, dynamic>)).toList();
   }
 
