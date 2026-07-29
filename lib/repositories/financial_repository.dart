@@ -23,9 +23,11 @@ class FinancialRepository {
   // the 500th most-recent row for a long-running SHG (the exact gap
   // AdminUsersPage/AdminShgsPage already fixed for their own lists — see
   // [PagedResult]). Sort key is (`entry_date` desc, `created_at` desc) —
-  // entries can be legitimately backdated, so `entry_date` alone isn't a
-  // unique cursor; `created_at` is the tiebreaker for entries sharing the
-  // same `entry_date`. [afterEntryDate]/[afterCreatedAt] are the last-seen
+  // `financial_ledger_insert_staff`'s RLS actually pins `entry_date` to
+  // `current_date` unconditionally, so backdating isn't possible; the
+  // composite cursor is still required because multiple entries recorded
+  // on the same calendar day all share that same `entry_date`, and
+  // `created_at` is the tiebreaker among them. [afterEntryDate]/[afterCreatedAt] are the last-seen
   // page's final row's own values; the first call omits both. Fetches one
   // extra row beyond [pageSize] to detect `hasMore` without a separate
   // COUNT query, same as AdminRepository.fetchAllUsers.

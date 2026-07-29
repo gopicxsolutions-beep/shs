@@ -16,6 +16,8 @@ class Profile {
   // backend now silently rejects almost everything from.
   final bool isActive;
   final DateTime? deactivatedAt;
+  final String? mandal;
+  final String? district;
 
   const Profile({
     required this.id,
@@ -27,6 +29,8 @@ class Profile {
     this.avatarColor,
     this.isActive = true,
     this.deactivatedAt,
+    this.mandal,
+    this.district,
   });
 
   factory Profile.fromMap(Map<String, dynamic> map) => Profile(
@@ -39,6 +43,8 @@ class Profile {
         avatarColor: map['avatar_color'] as String?,
         isActive: map['is_active'] as bool? ?? true,
         deactivatedAt: map['deactivated_at'] != null ? DateTime.parse(map['deactivated_at'] as String) : null,
+        mandal: map['mandal'] as String?,
+        district: map['district'] as String?,
       );
 
   Profile copyWith({String? role, String? shgId}) => Profile(
@@ -51,6 +57,8 @@ class Profile {
         avatarColor: avatarColor,
         isActive: isActive,
         deactivatedAt: deactivatedAt,
+        mandal: mandal,
+        district: district,
       );
 }
 

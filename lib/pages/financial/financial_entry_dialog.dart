@@ -25,31 +25,38 @@ Future<bool?> showFinancialEntryDialog(
         final l10n = AppLocalizations.of(context)!;
         return AlertDialog(
           title: Text(l10n.financialEntryDialogTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(controller: descController, maxLength: 200, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.financialEntryDialogDescriptionHint)),
-              const SizedBox(height: 12),
-              TextField(controller: amountController, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, textInputAction: TextInputAction.done, maxLength: 9, decoration: InputDecoration(prefixText: '₹', hintText: l10n.financialEntryDialogAmountHint, counterText: '')),
-              const SizedBox(height: 12),
-              SegmentedButton<bool>(
-                segments: [
-                  ButtonSegment(value: true, label: Text(l10n.financialEntryDialogCreditLabel)),
-                  ButtonSegment(value: false, label: Text(l10n.financialEntryDialogDebitLabel)),
-                ],
-                selected: {isCredit},
-                onSelectionChanged: (v) => setState(() => isCredit = v.first),
-              ),
-              if (error != null) ...[
+          // Two text fields + a segmented button + potential error text can
+          // overflow an `AlertDialog`'s fixed-height content area at a
+          // large text-scale setting (1.3x-2x) on a short device — wrapping
+          // in a scroll view lets the dialog scroll internally instead of
+          // clipping/overflowing, matching CLAUDE.md's text-scale bar.
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(controller: descController, maxLength: 200, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.financialEntryDialogDescriptionHint)),
                 const SizedBox(height: 12),
-                // liveRegion so a screen-reader user hears the validation
-                // error the instant it appears, not just if they happen to
-                // already be focused here — same fix as AppAsyncBuilder's
-                // error state.
-                Semantics(liveRegion: true, child: Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12))),
+                TextField(controller: amountController, keyboardType: TextInputType.number, inputFormatters: decimalAmountInputFormatters, textInputAction: TextInputAction.done, maxLength: 9, decoration: InputDecoration(prefixText: '₹', hintText: l10n.financialEntryDialogAmountHint, counterText: '')),
+                const SizedBox(height: 12),
+                SegmentedButton<bool>(
+                  segments: [
+                    ButtonSegment(value: true, label: Text(l10n.financialEntryDialogCreditLabel)),
+                    ButtonSegment(value: false, label: Text(l10n.financialEntryDialogDebitLabel)),
+                  ],
+                  selected: {isCredit},
+                  onSelectionChanged: (v) => setState(() => isCredit = v.first),
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 12),
+                  // liveRegion so a screen-reader user hears the validation
+                  // error the instant it appears, not just if they happen to
+                  // already be focused here — same fix as AppAsyncBuilder's
+                  // error state.
+                  Semantics(liveRegion: true, child: Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12))),
+                ],
               ],
-            ],
+            ),
           ),
           actions: [
             TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),

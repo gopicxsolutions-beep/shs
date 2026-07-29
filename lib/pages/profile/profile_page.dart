@@ -135,6 +135,22 @@ class _ProfilePageState extends State<ProfilePage> {
                     _row(Icons.phone_rounded, l10n.profileMobile, user.mobile),
                     const Divider(height: 20),
                     _row(Icons.location_on_rounded, l10n.profileVillage, user.village),
+                    // Round 193 fixed mandal/district (collected at
+                    // onboarding since v1) silently vanishing instead of
+                    // being persisted — but a fix that only writes the
+                    // data, with no reader anywhere ever displaying it
+                    // again, is only half the bug. `Profile.mandal`/
+                    // `.district` are null for any account created before
+                    // that fix, so these rows are conditional rather than
+                    // always shown.
+                    if ((profile?.mandal ?? '').isNotEmpty) ...[
+                      const Divider(height: 20),
+                      _row(Icons.map_rounded, l10n.fieldMandal, profile!.mandal!),
+                    ],
+                    if ((profile?.district ?? '').isNotEmpty) ...[
+                      const Divider(height: 20),
+                      _row(Icons.map_rounded, l10n.fieldDistrict, profile!.district!),
+                    ],
                     const Divider(height: 20),
                     _row(Icons.groups_rounded, l10n.profileSHG, shg?.name ?? _shgFallbackText(user, l10n)),
                   ],

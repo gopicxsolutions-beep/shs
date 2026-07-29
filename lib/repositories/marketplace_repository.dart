@@ -239,7 +239,11 @@ class MarketplaceRepository {
 
   Future<List<Review>> fetchReviewsForProduct(String productId) async {
     if (!_live) return mock.marketplaceReviews.where((r) => r.productId == productId).map((r) => Review(id: r.id, productId: r.productId, reviewerName: r.reviewerName, rating: r.rating, comment: r.comment)).toList();
-    final rows = await _client.from('marketplace_reviews').select().eq('product_id', productId).order('created_at', ascending: false);
+    // Matches this file's other bounded list queries (fetchOrdersForBuyer/
+    // fetchOrdersForSeller at 200, fetchReviewsForSeller at 300) — was the
+    // one remaining unbounded query here, a genuinely popular product could
+    // otherwise accumulate an unbounded review list.
+    final rows = await _client.from('marketplace_reviews').select().eq('product_id', productId).order('created_at', ascending: false).limit(300);
     return (rows as List).map((r) => Review.fromMap(r as Map<String, dynamic>)).toList();
   }
 

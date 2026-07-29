@@ -17066,3 +17066,165 @@ pane is at least displayed. Did not repeat the same diagnostic loop a
 third time; falling back to the live-DB verification and full
 analyze/test suite pass above, honestly documented as UI-unverified this
 round rather than claimed as visually confirmed.
+
+## Update (round 194) — Gap-hunting loop iteration 21: staff order forgery + fake "verified purchase" reviews (HIGH), order-status guard only living in an RPC not RLS (HIGH), staff training self-certification (HIGH), plus 15 more gaps across 4 fresh audits
+
+Four parallel background audits, each independently confirmed live: dogfooding
+round 193's own new work, a full Marketplace sweep, Training/Certificates +
+Schemes, and Payments + Financial Ledger UI (which also independently
+re-derived and confirmed round 193's `financial_ledger_update_staff` fix was
+correct).
+
+**Marketplace full sweep (5 findings)**
+1. **[HIGH]** `marketplace_orders_insert_staff` had zero field-level
+   restriction (`with check (is_staff())`) — any crp/clf/admin could directly
+   insert a fabricated order for any product, as any buyer, with any status
+   including `'delivered'`, bypassing `place_marketplace_order` entirely
+   (stock never touched). Live-verified this round: a forged `'delivered'`
+   order was then used to pass `marketplace_reviews_insert_authenticated`'s
+   "must have a delivered order" check, posting a fake 5-star "verified
+   purchase" review for a product never bought.
+2. **[HIGH]** The one-step order-status transition guard
+   (`advance_marketplace_order_status`, migration 0068 — sellers can only
+   move new→packed→shipped→delivered one step at a time) was only ever
+   enforced inside that RPC, never in `marketplace_orders_update_seller_or_
+   staff`'s own `WITH CHECK`. Live-verified: a plain `UPDATE ... SET status =
+   'delivered'` issued directly against the table (bypassing the RPC
+   entirely) succeeded, skipping straight from `'new'` in one step.
+3. **[LOW, grant hygiene]** `advance_marketplace_order_status` missed the
+   anon-grant-hygiene sweeps (migrations 0096-0098) — confirmed
+   non-exploitable (fails closed on its first internal check) but a real,
+   confirmed miss of this project's standing grant-hygiene rule.
+4. **[LOW]** `MarketplaceRepository.fetchReviewsForProduct` was the one
+   remaining unbounded list query in an otherwise consistently-capped
+   repository.
+5. **[LOW, documentation]** `docs/SRS.md` §3.8's "order status is free-form,
+   not guarded by any lock/RPC" claim describes pre-0068 behavior and is
+   stale — nobody auditing against the SRS would think to check whether the
+   guard is enforced at the RLS layer (it wasn't — see finding #2).
+
+**Training/Certificates + Schemes (4 findings)**
+1. **[HIGH]** `course_progress_write_self_or_staff`'s staff branch had no
+   self-exclusion — the identical "no identity may escalate itself" bug
+   already fixed for the sibling `scheme_applications_update_staff` policy
+   (migration 0049), never applied here. Live-verified: a CRP account could
+   directly upsert her OWN `course_progress` row with `certified=true`,
+   bypassing `submit_quiz_attempt` (the app's only intended certification
+   path per docs/SRS.md FR-TRN-3) entirely.
+2. **[LOW, grant hygiene]** `decide_scheme_application` also missed the
+   anon-grant-hygiene sweep (confirmed non-exploitable, same as marketplace
+   finding #3).
+3. **[MEDIUM]** `SchemeRepository.fetchSchemes()` unbounded — the sibling
+   `TrainingRepository.fetchCourses()` was explicitly capped at 500 with a
+   documented rationale; the scheme catalog never got the same treatment.
+4. **[MEDIUM]** `SchemeRepository.fetchPendingApplications()` — federation-
+   wide staff review queue, unbounded, no pagination UI.
+
+**Payments + Financial Ledger UI (5 findings)**
+1. **[MEDIUM]** `financial_ledger_delete_staff` (self-excluded in round 193)
+   still let staff delete a MID-SEQUENCE row belonging to a different staff
+   member — `balance` is computed once at insert time from the previous row,
+   not recomputed on read, so deleting a middle row corrupts the chain with
+   no tombstone or trace. Live-verified: seeding 3 chained entries and
+   deleting the middle one succeeded with no error.
+2. **[MEDIUM]** `PaymentRepository.pay()`'s live-mode `memberId == null`
+   guard — added specifically to fix a real prior "false success" bug (its
+   own doc comment explains the history) — had zero test coverage despite
+   being trivially testable with no live backend needed.
+3. **[LOW]** `financial_entry_dialog.dart`'s `AlertDialog` content wasn't
+   wrapped in a `SingleChildScrollView` — 2 text fields + a segmented button
+   + potential error text risks overflow at 1.3x-2x text scale (shared with
+   most of this codebase's `AlertDialog`s, not a unique regression, but
+   present within this audit's scope).
+4. **[LOW, documentation]** `financial_repository.dart`'s pagination-cursor
+   comment justified itself with "entries can be legitimately backdated" —
+   the live RLS INSERT policy actually pins `entry_date` to `current_date`
+   unconditionally, so backdating isn't possible; the composite cursor is
+   still correct, just the stated reason was wrong.
+5. Independently re-derived round 193's `financial_ledger_update_staff` fix
+   column-by-column against the live schema and confirmed it correct — no
+   new finding, but real independent verification of a CRITICAL fix rather
+   than trusting the prior round's own testing.
+
+**Dogfooding round 193's own new work (4 findings, one HIGH-adjacent)**
+1. **[MEDIUM]** `profiles.mandal`/`.district` were being WRITTEN (round 193's
+   fix) but could never be READ BACK anywhere — `Profile.fromMap` had no
+   `mandal`/`district` fields at all, so every reader (ProfilePage, admin
+   views) silently dropped them. The round's own stated bug ("data silently
+   vanished") was only half-fixed: data no longer vanishes at write time,
+   but stayed invisible everywhere in the UI.
+2. **[LOW, defense-in-depth]** `marketplace_reviews_moderate_staff`/`_delete_
+   staff`'s self-exclusion (`reviewer_id <> auth.uid()`) was NULL-unsafe
+   against a nullable column — confirmed currently unreachable (a pre-
+   existing trigger makes a null-`reviewer_id` row impossible to insert at
+   all) but worth the `IS DISTINCT FROM` fix for defense-in-depth.
+3. **[LOW]** No test coverage added for round 193's new behaviors
+   (`ShgRepository.shgExists()`, the staff join-requests route, the
+   `afterId` tie-breaker, the empty-trend fixes) — informational, addressed
+   partially this round via the `PaymentRepository` test above.
+4. **Observation, not a defect**: 8+ stale `__TEST__`-prefixed rows left
+   over from an earlier round, never cleaned up per CLAUDE.md's own rule.
+   Investigated and correctly distinguished from this session's standing,
+   deliberately-reused `99999999-...-1NN` fixture convention (which every
+   round's SQL verification depends on and must NOT be deleted) — only 2
+   genuinely stray one-off rows (a `__TEST__ Member One` profile plus its
+   orphaned `savings_entries` row, and a `__TEST__ Stationery expense`
+   ledger entry) matched neither the standing convention nor any current
+   round's work, and were deleted, re-verified at zero rows remaining.
+
+**Fixes — migration `0106_iteration21_marketplace_and_staff_selfdealing.sql`**
+(all individually live-verified via rolled-back `__TEST__` transactions,
+including a self-caught test-setup mistake mid-verification — the first
+attempt at testing the order-status guard used a fixture seller id with no
+actual product row, silently no-opping both the "should block" and "should
+allow" cases for the wrong reason; re-run against the real fixture seller
+confirmed both directions correctly): dropped `marketplace_orders_insert_
+staff` entirely (no UI call site anywhere uses it — retiring unused
+permissive grants rather than patching a proven forgery vector); folded the
+one-step transition guard into `marketplace_orders_update_seller_or_staff`'s
+own `WITH CHECK` (extended `marketplace_order_locked_fields` to also expose
+the OLD `status` value, needed a drop-and-recreate since the column list
+changed and a dependent policy blocked the first push attempt — fixed by
+reordering the drops); revoked `anon` from `advance_marketplace_order_status`
+and `decide_scheme_application`; added `member_id <> auth.uid()` to `course_
+progress_write_self_or_staff`'s staff branch; added a `financial_ledger_is_
+latest()` helper (SECURITY DEFINER, matching this schema's established
+pattern for a table's own policy needing to read its own other rows, to
+avoid the 42P17 self-reference risk) and used it to restrict `financial_
+ledger_delete_staff` to only the most-recent row per `(shg_id, entry_type)`;
+switched `marketplace_reviews_moderate_staff`/`_delete_staff`'s self-
+exclusion from `<>` to `IS DISTINCT FROM`.
+
+**Dart-side fixes**: `Profile`/`Profile.fromMap` gained `mandal`/`district`
+fields; `ProfilePage` now shows them (conditionally, since pre-fix accounts
+have them null); `SchemeRepository.fetchSchemes()` capped at 500 (matching
+`TrainingRepository`), `fetchPendingApplications()` capped at 200;
+`MarketplaceRepository.fetchReviewsForProduct` capped at 300; `financial_
+entry_dialog.dart`'s content wrapped in `SingleChildScrollView`; `financial_
+repository.dart`'s stale backdating comment corrected; a new `PaymentRepository`
+test covers the live-mode `memberId == null` fast-fail path.
+
+**Verification:** `flutter analyze` — 0 issues. `flutter test` —
+1039/1039 passed (1038 + the 1 new `PaymentRepository` test). Migration 0106
+pushed to the linked live project; every claim above individually live-
+verified via rolled-back `__TEST__` transactions against real fixture rows —
+including both the negative case (blocked) AND the positive case (legitimate
+one-step transition / most-recent-row delete still succeeds) for the two
+policy-shape changes, not just the negative case alone. Stale test-fixture
+cleanup verified at zero rows remaining afterward for the 2 rows actually
+deleted, and confirmed the standing `99999999-...` fixture convention was
+correctly left untouched. `flutter build web --release --dart-define-from-
+file=.env.json` rebuilt cleanly (68.6s). **Browser-preview UI verification
+succeeded this round** (unlike round 193): after stopping and restarting the
+`flutter-web-release` preview server and re-fronting the tab,
+`document.visibilityState` read `'visible'` (vs. `'hidden'` last round) and
+a `computer{screenshot}` showed the landing page fully and correctly
+rendered; clicking through to `/#/login` also rendered correctly — confirms
+last round's pane-display issue was transient/session-level, not a real
+regression. Did not complete a full per-role OTP sign-in this round (would
+require re-enabling debug OTP logging on `send-sms-hook`, which this session
+has already treated as a real production-risk action requiring explicit
+fresh authorization each time, not a routine step) — RLS-layer changes are
+already thoroughly verified via live rolled-back transactions above, and the
+release build's landing/login rendering is confirmed as real, non-fabricated
+evidence the build itself isn't broken.

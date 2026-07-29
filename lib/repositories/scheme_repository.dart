@@ -70,7 +70,11 @@ class SchemeRepository {
       });
       return list;
     }
-    final rows = await _client.from('schemes').select().order('deadline');
+    // Matches TrainingRepository.fetchCourses()'s identical cap — an
+    // admin-growable platform-wide catalog, not bounded by any single
+    // SHG's size, so it needs the same explicit limit its sibling catalog
+    // already has rather than growing unbounded forever.
+    final rows = await _client.from('schemes').select().order('deadline').limit(500);
     return (rows as List).map((r) => Scheme.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -164,11 +168,15 @@ class SchemeRepository {
     // ambiguous to PostgREST (the exact bug already hit `shg_join_requests`,
     // round 90). This queue only ever shows applied/under_review rows, so
     // `decided_by` is always null here and isn't embedded.
+    // Federation-wide staff review queue, no pagination UI yet — bounded at
+    // 200 (matching this schema's other unpaginated-but-bounded staff
+    // queues) rather than left fully unbounded.
     final rows = await _client
         .from('scheme_applications')
         .select('id, scheme_id, member_id, status, applied_on, schemes(name), profiles!member_id(name)')
         .inFilter('status', ['applied', 'under_review'])
-        .order('applied_on');
+        .order('applied_on')
+        .limit(200);
     return (rows as List).map((r) => SchemeApplicationReview.fromMap(r as Map<String, dynamic>)).toList();
   }
 

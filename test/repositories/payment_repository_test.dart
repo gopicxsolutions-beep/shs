@@ -65,4 +65,26 @@ void main() {
       }
     });
   });
+
+  group('PaymentRepository.pay (live mode, no live client needed)', () {
+    setUp(() {
+      SupabaseService.isConfigured = true;
+    });
+    tearDown(() {
+      SupabaseService.isConfigured = false;
+    });
+
+    // pay()'s doc comment explains why this branch exists: charging first
+    // and only then discovering there's nowhere to record the result used
+    // to surface the processor's own always-successful mock outcome
+    // unchanged, showing "Payment successful" for a write that never
+    // happened. The check returns before ever touching the Supabase
+    // client, so this is safely testable without a live backend.
+    test('a null memberId in live mode fails fast without ever charging', () async {
+      final repo = PaymentRepository();
+      final result = await repo.pay(memberId: null, amount: 500, mode: 'UPI');
+      expect(result.success, isFalse);
+      expect(result.reference, isEmpty);
+    });
+  });
 }
