@@ -18882,3 +18882,228 @@ live; `anon`'s grants on all 4 tables confirmed empty; the deployed
 check. The stray `__TEST__` training course and its one dependent
 `course_progress` row were deleted from the live project and re-queried to
 confirm zero remain.
+
+## Gap-hunting loop iteration 29: dogfooding found the CRITICAL leader-escalation chain from iteration 28 was only ONE-THIRD closed — two more live doors into the identical exploit, a third real production row already broken — plus Payments/Support/CRP-CLF sweeps close 10 more gaps
+
+Four parallel audits: dogfooding iteration 28's own fixes, CRP/CLF
+federation-hierarchy full sweep, Payments full sweep, Support/Voice-Support
+full sweep (all four stale — CRP/CLF and Payments not dedicated-swept since
+iteration 8/9, Support since iteration 16).
+
+**Dogfooding — the standout finding of this iteration**
+
+Iteration 28's migration `0117` closed exactly one path into
+`role='leader' AND shg_id IS NULL` (a self-PATCH via
+`profiles_update_self_or_admin`'s self-branch). Dogfooding it found TWO more
+admin-side doors into the identical state, still wide open — and a real,
+live profile already sitting in that shape as a result:
+
+1. **[CRITICAL]** `AdminRepository.assignShg()` — the "Assign SHG" button in
+   Admin > Users — is a bare `update({shg_id})` with zero role awareness,
+   callable on ANY unlinked profile regardless of current role. If a
+   profile is already `role='leader'` (from any historical path — a
+   pre-0117 self-PATCH, or door #2 below), clicking this ordinary admin
+   remedy links her SHG while leaving 'leader' untouched: full leader
+   authority, `approve_shg_join_request`/`is_staff()` never involved.
+2. **[CRITICAL, same severity]** `AdminRepository.updateUserRole()`'s
+   "Change Role" dialog offers ALL 5 roles unconditionally, and its
+   `shg_id`-clearing logic only fires for `crp`/`clf`/`admin` — picking
+   'leader' for any still-unlinked member sets `role='leader'` while
+   `shg_id` stays null, a THIRD, completely independent door into the same
+   state.
+3. **Live-confirmed, not hypothetical**: a real profile ("uma",
+   `a8fe99d2-...`) was found CURRENTLY LIVE in production with
+   `role='leader'`, `shg_id=null`, and no `shg_join_requests` row justifying
+   it at all.
+
+**Root-caused as reactive, path-by-path patching** (0117 closed door #1;
+this round would only add doors #2/#3 to the patch list) instead of a
+structural fix. Migration `0119` instead adds the actual invariant this
+whole redesign depends on as a table-level CHECK constraint:
+**`profiles_leader_requires_shg`** — `role <> 'leader' or shg_id is not
+null`, enforced for every writer (self, admin, any future RPC) at once,
+closing all three doors AND every not-yet-discovered future one, the same
+"structural, not reactive" philosophy migration 0116 already used for
+`p_as_leader`. The one live broken profile was downgraded to `'member'` in
+the same migration (no legitimate basis for 'leader' — she was never
+decided by `approve_shg_join_request`). **Live-verified**: attempting the
+exact escalation via a raw admin-role UPDATE now raises `23514` (check
+violation) instead of succeeding; the fixture's role stayed `'member'`
+afterward, confirmed via re-query.
+
+Same migration also closed a related **[MEDIUM]** finding:
+`approve_shg_join_request`'s iteration-28 re-validation was check-then-act,
+not atomic — a separate `select exists(...)` read with no row lock,
+followed by a separate UPDATE with no re-check in its own WHERE clause,
+leaving a real (if narrow) race window for a concurrent write to slip in
+between. Folded the guard directly into the UPDATE's WHERE clause with
+`GET DIAGNOSTICS` on the row count — check-and-write are now one atomic
+statement, no separate read step exists for a race to exploit.
+
+Two more dogfooding findings, both fixed in Dart:
+
+4. **[MEDIUM]** Training video upload: if the DB write (`createCourse`/
+   `updateCourse`) throws AFTER a video upload already succeeded, the fresh
+   object was never cleaned up — the same orphan class iteration 28 fixed
+   for replace/remove/delete, missed on this "upload succeeded, metadata
+   write failed" path. Both `_addCourse`/`_editCourse` now clean up the
+   just-uploaded object on that specific failure.
+5. **[MEDIUM]** `LoanDetailPage._recordPayment`'s iteration-28 stale-balance
+   fix reloaded the PAGE behind the dialog but never refreshed the dialog's
+   OWN `loan` reference — the amount-clamp and exceeds-check kept comparing
+   against the pre-rejection balance for the rest of that dialog's open
+   lifetime, so a same-session retry could still loop. Now refetches the
+   loan and swaps the closure's own reference on a stale-balance rejection.
+
+**[LOW, honestly re-disclosed, not re-claimed-fixed]** The onError
+cross-attempt race iteration 28 "fixed" for the AI Voice Assistant is a
+narrowing, not a full close — dogfooding confirmed a stale native error can
+still land on a newer attempt in the gap between `stop()` returning and the
+browser/OS actually delivering the delayed event, and `speech_to_text`
+exposes no per-attempt correlation id to close this from the app side.
+Softened both the code comment and `AI_MODULES.md` §3.5 to say so plainly
+instead of overclaiming "closes the overlap window entirely."
+
+**Support/Voice Support full sweep (9 findings; 4 fixed, rest documented)**
+
+6. **[HIGH, fixed]** `DeviceVoiceSupportService.transcribe()` passed no
+   `localeId` to `speech_to_text` at all — unlike the AI Voice Assistant
+   (fixed iteration 28), this recognized in whatever the device/browser
+   happened to default to, a coincidence not a guarantee. Rather than the
+   much larger lift of translating the FAQ bank (finding 7 below) to match,
+   pinned `localeId: 'en-IN'` explicitly — the FAQ content and TTS voice
+   this feature matches against are already English-only by design, so this
+   makes that scope deliberate instead of accidental, and added an
+   English-only hint on the page itself so a Telugu/Hindi-display member
+   isn't left silently guessing why it didn't understand her.
+7. **[MEDIUM, fixed]** The hardcoded English "I don't have an answer..."
+   fallback string was never localized (the one user-facing string on this
+   page that wasn't). `VoiceSupportService.answer()` now takes an optional
+   `noMatchFallback` the page passes in from `AppLocalizations`.
+8. **[MEDIUM, fixed, migration `0121`]** `support_tickets`'s `category` was
+   never locked on UPDATE, contradicting this table's own documented design
+   ("member-set at creation") — every sibling immutable column was locked,
+   this one was missed. Now locked identically.
+9. **[MEDIUM, fixed, migration `0121`]** `resolved_at` was likewise never
+   locked, unlike its sibling `resolved_by` — the stamping trigger only
+   overwrites it when `resolved_by` newly changes, so any OTHER update
+   (notably a member's own reopen, which never touches `resolved_by`) let a
+   client-supplied `resolved_at` value through unchecked, forgeable by the
+   ticket's own member. Locked to the prior value except when `resolved_by`
+   is itself changing (in which case the trigger has already overwritten it
+   server-side regardless of what the client sent).
+10. **[HIGH, documented, not translated this round]** The FAQ bank itself
+    (5 English entries) can never match a correctly-transcribed non-English
+    question even after fix #6 — deliberately not translating the whole
+    bank this round given scope; the honest scoping fix (#6) covers the
+    input side, translating the answer side is a larger, separate lift.
+11. **[LOW/MEDIUM, documented]** FAQ coverage (5 entries) is much narrower
+    than the 9-category ticket taxonomy, and the pure-token-overlap matcher
+    misses natural paraphrases (e.g. "know my group's rating" vs. "check my
+    SHG grade") — not fixed this round.
+12. **[LOW, documented]** No DB-level non-blank constraint on `subject`/
+    `body` anywhere in the schema (client-only `.trim().isEmpty` checks) —
+    a pre-existing, schema-wide gap, not unique to Support, not fixed here.
+13. Reconfirmed still-open (not new): no notification on ticket
+    resolution/reply (flagged since iteration 14). Reconfirmed still
+    correct (not a bug): deactivated-member/staff RLS gates, cross-tenant
+    isolation, the intentionally-unguarded "who resolves first" race,
+    resolved-by banner staleness handling.
+
+**Payments full sweep (6 findings; 3 fixed, rest documented)**
+
+14. **[HIGH, fixed, migration `0120`]** `payments_insert_self_or_staff`'s
+    `is_staff()` disjunct let any crp/clf/admin fabricate a "successful"
+    payment for ANY member, platform-wide — no SHG scoping, no `member_id`
+    restriction, no block on inserting directly as `status='success'`.
+    Confirmed via grep that every real write path (`PaymentRepository.pay()`)
+    only ever inserts with the caller's own id — the staff branch backs no
+    real feature. Retired entirely, mirroring this exact reasoning already
+    applied to `loan_payments_insert_related` in migration `0110`.
+15. **[MEDIUM, fixed, migration `0120`]** `payments` had no INSERT rate
+    limit at all, unlike every sibling table hardened in the same
+    migration-0090 round (`support_tickets`/`announcements` both got
+    `<10/hour`) — `payments` was named in that round's own comment as one
+    of the tables being closed together but never actually got this half of
+    the pattern. Added `<30/hour` (generous, since legitimate contribution
+    payments can be more frequent than a support ticket).
+16. **[MEDIUM, fixed]** `PaymentProcessor`'s doc comment claimed a real
+    gateway swap is a pure one-file change — false: every real gateway
+    settles asynchronously via the webhook handler already built for
+    exactly that (`payment-webhook-handler` only transitions a row FROM
+    `'pending'`), but no code path today ever writes a `'pending'` row
+    (`pay()` always awaits synchronously and writes a final status in one
+    step). Corrected the comment to say a real integration also needs
+    reworking `PaymentRepository.pay()`, not just swapping the processor.
+17. **[MEDIUM, documented, not fixed]** An ambiguous-failure gap: if the DB
+    insert throws AFTER the processor already reported success, the
+    exception collapses into the same generic "could not process, try
+    again" message as an ordinary clean decline — with nothing recorded,
+    so there's no history to check either. Harmless under today's
+    always-succeeding mock; would matter the moment a real gateway lands.
+18. **[MEDIUM, documented, not fixed]** `MockPaymentProcessor`'s reference
+    is a bare client-clock millisecond timestamp with no collision
+    resistance and no idempotency token exists for a manual retry after any
+    failure — two attempts in the same millisecond collide on the unique
+    index, feeding straight into finding #17's ambiguous path.
+19. **[LOW, documented]** No widget test coverage for `payments_home_page.dart`/
+    `payments_history_page.dart` (only the QR/pay page has tests). One
+    adversarial hypothesis (a Row overflow at 3.0x text scale) was tested
+    directly and did NOT reproduce — not a live bug, a coverage gap only.
+
+**CRP/CLF federation-hierarchy full sweep (3 findings; 1 fixed, 2 documented)**
+
+20. **[HIGH, fixed]** `CRPDashboard`'s "SHGs Monitored" and "Avg. Health
+    Score" were derived from `fetchShgList()`'s FIRST PAGE ONLY (≤100 rows)
+    with `hasMore` never read — for any federation exceeding 100 SHGs,
+    "SHGs Monitored" silently truncated at the page size instead of showing
+    the true count, and "Avg. Health Score" averaged only the
+    alphabetically-first ~100 SHGs, biased toward whatever names sort
+    first. (Contrast: the CLF dashboard's equivalent stats already come
+    from a genuinely unbounded `fetchPlatformKpis()`/`fetchVillageWiseShgs()`
+    query, so CLF's numbers were already correct, just slow — CRP's were
+    the ones actually wrong.) Fixed "SHGs Monitored" to use
+    `fetchPlatformKpis().totalShgs` (a real, cheap count query). Left "Avg.
+    Health Score" computed from the loaded page (a true unbounded average
+    would need the same expensive batched-query logic pagination was
+    introduced to avoid) but now honestly labels the stat as partial
+    ("first N SHGs") whenever the federation's real total exceeds what was
+    actually averaged, instead of silently presenting a partial figure as
+    the platform-wide truth.
+21. **[MEDIUM, documented, not changed]** `audit_log` (grade changes, SHG
+    reassignment, loan decisions, role changes) is Admin-only — the ONLY
+    table in the schema using `current_role() = 'admin'` instead of the
+    `is_staff()` pattern every other CRP/CLF-facing table uses — leaving
+    CRP/CLF, whose entire job is oversight, unable to see why a number they
+    use to grade an SHG just changed. Not clearly documented as intentional
+    anywhere (a plausible reason exists — preventing a CRP from erasing
+    evidence of her own SHG's grade-gaming — but no comment says so).
+    Left as-is rather than guess at the right scoping without product
+    input; flagged here so it's at least written down.
+22. **[MEDIUM, documented, not changed]** `shgs.clf`/`vo`/`mandal` (the
+    schema's only representation of the CLF/CRP federation hierarchy
+    itself) are admin-settable but never surfaced anywhere a CRP/CLF
+    actually works (dashboard, SHG list, SHG detail) — combined with having
+    no FK to any CRP/CLF profile, the hierarchy is purely decorative admin
+    metadata today. A pure additive UI fix (no RLS change needed, these
+    columns are already staff-readable); deferred to a future round given
+    this iteration's already-large scope.
+
+**Verification**: `flutter analyze` — 0 issues across every file touched.
+`flutter test` — full suite passing. Live: migrations `0119` (leader-
+requires-shg invariant + data fix + atomic re-verify), `0120` (payments
+staff-forgery retirement + rate limit), `0121` (support ticket
+category/resolved_at lock) all deployed via `supabase db push` and
+individually confirmed live — the escalation attempt now raises `23514`;
+`payments_insert_self`'s policy text confirmed member-only with the rate
+limit; `support_tickets_locked_fields()`'s return shape confirmed to include
+both new columns.
+
+**One more gap surfaced by the verification pass itself**: the full
+`flutter test` run caught `test/pages/shg_join_approval_test.dart` asserting
+the OLD, buggy `ShgApprovalPendingPage` behavior iteration 28 intentionally
+fixed — that pre-existing test expected a null join-request (which demo
+mode's `fetchMine()` always returns, same as a live account with a genuinely
+absent request) to render the "Waiting for approval" copy, exactly the
+bug iteration 28 closed. Updated the test to assert the corrected "no SHG
+selected yet" state instead of the old one.

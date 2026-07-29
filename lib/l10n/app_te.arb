@@ -289,6 +289,7 @@
   "crpDashboardAvgHealthScoreLabel": "సగటు హెల్త్ స్కోర్",
 
   "crpDashboardAttendanceProxyTrend": "హాజరు ఆధారంగా అంచనా",
+  "crpDashboardAvgHealthPartialTrend": "హాజరు ఆధారంగా అంచనా · మొదటి {count} SHGలు",
 
   "crpDashboardTrainingCompletionLabel": "శిక్షణ పూర్తి",
 
@@ -1377,6 +1378,8 @@
   "supportVoiceError": "క్షమించండి, ఏదో తప్పు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి.",
   "supportVoiceMicUnavailableError": "ఈ పరికరంలో వాయిస్ గుర్తింపు అందుబాటులో లేదు. మీ ఫోన్ సెట్టింగ్‌లలో మైక్రోఫోన్ అనుమతిని తనిఖీ చేయండి.",
   "supportVoiceNoSpeechError": "క్షమించండి, నాకు ఏమీ వినిపించలేదు. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+  "supportVoiceNoMatchFallback": "దానికి నా దగ్గర ఇంకా సమాధానం లేదు. పొదుపు, లోన్లు, మీ SHG గ్రేడ్, ప్రకటనలు లేదా సపోర్ట్ టికెట్ల గురించి అడగండి — లేదా ఒక వ్యక్తి సహాయం కోసం సపోర్ట్ టికెట్ నమోదు చేయండి.",
+  "supportVoiceEnglishOnlyHint": "వాయిస్ సపోర్ట్ ప్రస్తుతం ఇంగ్లీష్ మాత్రమే అర్థం చేసుకుంటుంది.",
 
   "supportVoiceYouAsked": "మీరు అడిగారు",
 

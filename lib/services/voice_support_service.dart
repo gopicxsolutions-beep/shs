@@ -25,8 +25,12 @@ abstract class VoiceSupportService {
   Future<String> transcribe();
 
   /// Answers a transcribed question, speaking the reply aloud as a
-  /// side effect where the implementation supports it.
-  Future<String> answer(String question);
+  /// side effect where the implementation supports it. [noMatchFallback],
+  /// when given, is shown instead of a hardcoded English string when no
+  /// FAQ entry matches — callers should pass a localized string so this
+  /// page-chrome-level message respects the app's display language even
+  /// though the FAQ content itself is English-only.
+  Future<String> answer(String question, {String? noMatchFallback});
 
   /// Stops any in-flight recognition/speech session immediately — see
   /// [VoiceRecognitionService.stop]'s doc comment for why a page must call
@@ -63,7 +67,7 @@ class MockVoiceSupportService implements VoiceSupportService {
   }
 
   @override
-  Future<String> answer(String question) async {
+  Future<String> answer(String question, {String? noMatchFallback}) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final match = _pairs.firstWhere((p) => p.$1 == question, orElse: () => _pairs[_i % _pairs.length]);
     _i++;

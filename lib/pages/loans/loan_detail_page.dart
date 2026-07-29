@@ -250,15 +250,32 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                         // identically forever until the member manually
                         // navigated away and back.
                         final isStaleBalance = e is PostgrestException && e.message.contains('exceeds outstanding balance');
+                        if (isStaleBalance) {
+                          _key.currentState?.reload();
+                          _paymentsKey.currentState?.reload();
+                          // Reloading the page's own AppAsyncBuilders above
+                          // only refreshes what's behind this still-open
+                          // dialog — the dialog's own `loan` (captured once,
+                          // before it opened) is what the amount-clamp and
+                          // the `amount > loan.outstanding` check above
+                          // actually read. Left unrefreshed, both kept
+                          // comparing against the pre-rejection balance for
+                          // the rest of this dialog's lifetime — since the
+                          // true balance only ever decreases, a retry based
+                          // on what the member glimpses behind the dimmed
+                          // modal could pass this stale check yet be
+                          // rejected again by the server, looping until she
+                          // closes and reopens the dialog. Refetch and swap
+                          // the closure's own `loan` reference so this same
+                          // still-open dialog reflects it immediately.
+                          final fresh = await _repo.fetchById(loan.id);
+                          if (fresh != null) loan = fresh;
+                        }
                         if (context.mounted) {
                           setState(() {
                             submitting = false;
                             error = isStaleBalance ? l10n.loanDetailBalanceChangedErrorMessage : l10n.loanDetailRecordErrorMessage;
                           });
-                        }
-                        if (isStaleBalance) {
-                          _key.currentState?.reload();
-                          _paymentsKey.currentState?.reload();
                         }
                       }
                     },

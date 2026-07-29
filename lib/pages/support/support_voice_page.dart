@@ -51,7 +51,7 @@ class _SupportVoicePageState extends State<SupportVoicePage> {
         _question = question;
         _state = _VoiceState.thinking;
       });
-      final answer = await _service.answer(question);
+      final answer = await _service.answer(question, noMatchFallback: l10n.supportVoiceNoMatchFallback);
       if (!mounted) return;
       setState(() {
         _answer = answer;
@@ -111,6 +111,15 @@ class _SupportVoicePageState extends State<SupportVoicePage> {
           // state transition the instant it happens instead of only if
           // already focused on this label.
           Center(child: Semantics(liveRegion: true, child: Text(label, style: AppTheme.sans(13, weight: FontWeight.w600, color: Neutral.c500)))),
+          const SizedBox(height: 6),
+          // The page's own chrome (labels above) is fully localized, which
+          // could reasonably lead a Telugu/Hindi-display member to expect
+          // she can speak her own language here — but recognition and the
+          // FAQ answer bank behind it are both English-only by design (see
+          // DeviceVoiceSupportService's own doc comments). Silently doing
+          // nothing useful for a non-English question is worse than telling
+          // her upfront what to expect.
+          Center(child: Text(l10n.supportVoiceEnglishOnlyHint, textAlign: TextAlign.center, style: AppTheme.sans(11, color: Neutral.c400))),
           if (_question != null) ...[
             const SizedBox(height: 24),
             AppCard(

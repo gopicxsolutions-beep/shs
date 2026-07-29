@@ -371,6 +371,13 @@
 
   "crpDashboardAttendanceProxyTrend": "Attendance-based proxy",
 
+  "crpDashboardAvgHealthPartialTrend": "Attendance-based proxy · first {count} SHGs",
+  "@crpDashboardAvgHealthPartialTrend": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
   "crpDashboardTrainingCompletionLabel": "Training Completion",
 
   "crpDashboardTrainingCompletionTrend": "Platform-wide average",
@@ -1764,6 +1771,8 @@
   "supportVoiceError": "Sorry, something went wrong. Please try again.",
   "supportVoiceMicUnavailableError": "Speech recognition isn't available on this device. Check microphone permission in your phone's Settings.",
   "supportVoiceNoSpeechError": "Sorry, I couldn't hear anything. Please try again.",
+  "supportVoiceNoMatchFallback": "I don't have an answer for that yet. Try asking about savings, loans, your SHG grade, announcements, or support tickets — or raise a support ticket for a person to help.",
+  "supportVoiceEnglishOnlyHint": "Voice Support currently understands English only.",
 
   "supportVoiceYouAsked": "You asked",
 

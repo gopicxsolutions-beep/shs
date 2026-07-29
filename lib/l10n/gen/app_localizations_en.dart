@@ -715,6 +715,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crpDashboardAttendanceProxyTrend => 'Attendance-based proxy';
 
   @override
+  String crpDashboardAvgHealthPartialTrend(int count) {
+    return 'Attendance-based proxy · first $count SHGs';
+  }
+
+  @override
   String get crpDashboardTrainingCompletionLabel => 'Training Completion';
 
   @override
@@ -2653,6 +2658,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get supportVoiceNoSpeechError =>
       'Sorry, I couldn\'t hear anything. Please try again.';
+
+  @override
+  String get supportVoiceNoMatchFallback =>
+      'I don\'t have an answer for that yet. Try asking about savings, loans, your SHG grade, announcements, or support tickets — or raise a support ticket for a person to help.';
+
+  @override
+  String get supportVoiceEnglishOnlyHint =>
+      'Voice Support currently understands English only.';
 
   @override
   String get supportVoiceYouAsked => 'You asked';

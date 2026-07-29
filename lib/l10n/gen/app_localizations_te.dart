@@ -722,6 +722,11 @@ class AppLocalizationsTe extends AppLocalizations {
   String get crpDashboardAttendanceProxyTrend => 'హాజరు ఆధారంగా అంచనా';
 
   @override
+  String crpDashboardAvgHealthPartialTrend(int count) {
+    return 'హాజరు ఆధారంగా అంచనా · మొదటి $count SHGలు';
+  }
+
+  @override
   String get crpDashboardTrainingCompletionLabel => 'శిక్షణ పూర్తి';
 
   @override
@@ -2649,6 +2654,14 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get supportVoiceNoSpeechError =>
       'క్షమించండి, నాకు ఏమీ వినిపించలేదు. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get supportVoiceNoMatchFallback =>
+      'దానికి నా దగ్గర ఇంకా సమాధానం లేదు. పొదుపు, లోన్లు, మీ SHG గ్రేడ్, ప్రకటనలు లేదా సపోర్ట్ టికెట్ల గురించి అడగండి — లేదా ఒక వ్యక్తి సహాయం కోసం సపోర్ట్ టికెట్ నమోదు చేయండి.';
+
+  @override
+  String get supportVoiceEnglishOnlyHint =>
+      'వాయిస్ సపోర్ట్ ప్రస్తుతం ఇంగ్లీష్ మాత్రమే అర్థం చేసుకుంటుంది.';
 
   @override
   String get supportVoiceYouAsked => 'మీరు అడిగారు';

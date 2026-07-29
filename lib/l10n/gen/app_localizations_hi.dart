@@ -713,6 +713,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get crpDashboardAttendanceProxyTrend => 'उपस्थिति के आधार पर अनुमान';
 
   @override
+  String crpDashboardAvgHealthPartialTrend(int count) {
+    return 'उपस्थिति के आधार पर अनुमान · पहले $count SHG';
+  }
+
+  @override
   String get crpDashboardTrainingCompletionLabel => 'प्रशिक्षण पूर्णता';
 
   @override
@@ -2614,6 +2619,14 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get supportVoiceNoSpeechError =>
       'माफ़ कीजिए, मुझे कुछ सुनाई नहीं दिया। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get supportVoiceNoMatchFallback =>
+      'मेरे पास अभी इसका जवाब नहीं है। बचत, लोन, अपने SHG की ग्रेड, घोषणाओं या सपोर्ट टिकट के बारे में पूछें — या किसी व्यक्ति की मदद के लिए सपोर्ट टिकट दर्ज करें।';
+
+  @override
+  String get supportVoiceEnglishOnlyHint =>
+      'वॉइस सपोर्ट फ़िलहाल केवल अंग्रेज़ी समझता है।';
 
   @override
   String get supportVoiceYouAsked => 'आपने पूछा';

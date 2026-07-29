@@ -1354,6 +1354,12 @@ abstract class AppLocalizations {
   /// **'Attendance-based proxy'**
   String get crpDashboardAttendanceProxyTrend;
 
+  /// No description provided for @crpDashboardAvgHealthPartialTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance-based proxy · first {count} SHGs'**
+  String crpDashboardAvgHealthPartialTrend(int count);
+
   /// No description provided for @crpDashboardTrainingCompletionLabel.
   ///
   /// In en, this message translates to:
@@ -4635,6 +4641,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sorry, I couldn\'t hear anything. Please try again.'**
   String get supportVoiceNoSpeechError;
+
+  /// No description provided for @supportVoiceNoMatchFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'I don\'t have an answer for that yet. Try asking about savings, loans, your SHG grade, announcements, or support tickets — or raise a support ticket for a person to help.'**
+  String get supportVoiceNoMatchFallback;
+
+  /// No description provided for @supportVoiceEnglishOnlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Support currently understands English only.'**
+  String get supportVoiceEnglishOnlyHint;
 
   /// No description provided for @supportVoiceYouAsked.
   ///

@@ -179,7 +179,19 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
       if (_pickedVideo != null && SupabaseService.isConfigured) {
         videoUrl = await _repo.uploadCourseVideo(bytes: _pickedVideo!.bytes!, fileName: _pickedVideo!.name, contentType: _contentTypeForVideo(_pickedVideo!.extension));
       }
-      await _repo.createCourse(title: _title.text.trim(), topic: _topic.text.trim(), format: _format, duration: _duration.text.trim().isEmpty ? null : _duration.text.trim(), videoUrl: videoUrl);
+      try {
+        await _repo.createCourse(title: _title.text.trim(), topic: _topic.text.trim(), format: _format, duration: _duration.text.trim().isEmpty ? null : _duration.text.trim(), videoUrl: videoUrl);
+      } catch (e) {
+        // The upload itself already succeeded — a real object now sits in
+        // storage. If the DB write that was supposed to reference it then
+        // fails (dropped connection, a transient server error), that
+        // object has no course row pointing to it at all and would
+        // otherwise sit orphaned in the bucket forever, the same class of
+        // gap iteration 28 fixed for replace/remove/delete but missed on
+        // this "upload succeeded, metadata write failed" path.
+        if (videoUrl != null) await _repo.deleteCourseVideo(videoUrl);
+        rethrow;
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(SupabaseService.isConfigured ? l10n.adminTrainingCoursesAddedMessage : l10n.adminTrainingCoursesDemoModeMessage)));
         _key.currentState?.reload();
@@ -235,7 +247,16 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
       if (_pickedVideo != null && SupabaseService.isConfigured) {
         videoUrl = await _repo.uploadCourseVideo(bytes: _pickedVideo!.bytes!, fileName: _pickedVideo!.name, contentType: _contentTypeForVideo(_pickedVideo!.extension));
       }
-      await _repo.updateCourse(c.id, title: _title.text.trim(), topic: _topic.text.trim(), format: _format, duration: _duration.text.trim().isEmpty ? null : _duration.text.trim(), videoUrl: videoUrl);
+      try {
+        await _repo.updateCourse(c.id, title: _title.text.trim(), topic: _topic.text.trim(), format: _format, duration: _duration.text.trim().isEmpty ? null : _duration.text.trim(), videoUrl: videoUrl);
+      } catch (e) {
+        // The NEW upload already succeeded but the course row was never
+        // updated to point at it — clean up the fresh orphan. The OLD
+        // video (still what the DB row actually references) is
+        // deliberately left alone here, since the update never landed.
+        if (_pickedVideo != null && videoUrl != null) await _repo.deleteCourseVideo(videoUrl);
+        rethrow;
+      }
       if (oldVideoToDelete != null) await _repo.deleteCourseVideo(oldVideoToDelete);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(SupabaseService.isConfigured ? l10n.adminTrainingCoursesUpdatedMessage : l10n.adminTrainingCoursesDemoModeMessage)));

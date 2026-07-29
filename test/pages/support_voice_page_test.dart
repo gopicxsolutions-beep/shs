@@ -10,7 +10,7 @@ class _ThrowingVoiceService implements VoiceSupportService {
   Future<String> transcribe() async => throw Exception('mic unavailable');
 
   @override
-  Future<String> answer(String question) async => throw Exception('unreachable');
+  Future<String> answer(String question, {String? noMatchFallback}) async => throw Exception('unreachable');
 
   @override
   Future<void> stop() async {}

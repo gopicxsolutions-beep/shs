@@ -289,6 +289,7 @@
   "crpDashboardAvgHealthScoreLabel": "औसत हेल्थ स्कोर",
 
   "crpDashboardAttendanceProxyTrend": "उपस्थिति के आधार पर अनुमान",
+  "crpDashboardAvgHealthPartialTrend": "उपस्थिति के आधार पर अनुमान · पहले {count} SHG",
 
   "crpDashboardTrainingCompletionLabel": "प्रशिक्षण पूर्णता",
 
@@ -1377,6 +1378,8 @@
   "supportVoiceError": "माफ़ कीजिए, कुछ गलत हो गया। कृपया फिर से कोशिश करें।",
   "supportVoiceMicUnavailableError": "इस डिवाइस पर वाक् पहचान उपलब्ध नहीं है। अपने फ़ोन की सेटिंग्स में माइक्रोफ़ोन की अनुमति जांचें।",
   "supportVoiceNoSpeechError": "माफ़ कीजिए, मुझे कुछ सुनाई नहीं दिया। कृपया फिर से कोशिश करें।",
+  "supportVoiceNoMatchFallback": "मेरे पास अभी इसका जवाब नहीं है। बचत, लोन, अपने SHG की ग्रेड, घोषणाओं या सपोर्ट टिकट के बारे में पूछें — या किसी व्यक्ति की मदद के लिए सपोर्ट टिकट दर्ज करें।",
+  "supportVoiceEnglishOnlyHint": "वॉइस सपोर्ट फ़िलहाल केवल अंग्रेज़ी समझता है।",
 
   "supportVoiceYouAsked": "आपने पूछा",
 

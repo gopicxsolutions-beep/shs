@@ -21,7 +21,11 @@ class _CrpDashboardData {
   final List<ShgHealth> shgs;
   final List<Course> courses;
   final int trainingCompletionPct;
-  const _CrpDashboardData({required this.shgs, required this.courses, required this.trainingCompletionPct});
+  // The federation's TRUE total SHG count (from a real count query), not
+  // `shgs.length` — see this class's own doc comment on `_load()` for why
+  // those two used to silently diverge past 100 SHGs.
+  final int totalShgs;
+  const _CrpDashboardData({required this.shgs, required this.courses, required this.trainingCompletionPct, required this.totalShgs});
 }
 
 class CRPDashboard extends StatelessWidget {
@@ -40,13 +44,29 @@ class CRPDashboard extends StatelessWidget {
       AnalyticsRepository().fetchShgList(),
       TrainingRepository().fetchCourses(),
       AdminRepository().fetchTrainingCompletionPct(),
+      // A real count, not derived from the paginated list below —
+      // `fetchShgList()` only ever returns its first page (`pageSize:
+      // 100` default), so "SHGs Monitored" used to silently show that
+      // page's length as if it were the federation's total, truncating at
+      // exactly 100 for any federation past that size with no indication
+      // anything was cut off. `fetchPlatformKpis().totalShgs` already
+      // exists (it's what the CLF dashboard's equivalent stat correctly
+      // uses) and is a genuine, unbounded `count`, cheap even at scale
+      // since it only selects `id`.
+      AnalyticsRepository().fetchPlatformKpis(),
     ]);
     // Dashboard landing preview — first page only (same 100-row default as
     // AdminUsersPage's first page), same spirit as this page's own existing
     // "Recent activity" 5-row caps elsewhere in the app. The dedicated "SHG
     // list" screen (AnalyticsShgListPage) is where a CRP/CLF/Admin reaches
     // every SHG via Load More.
-    return _CrpDashboardData(shgs: (results[0] as PagedResult<ShgHealth>).items, courses: results[1] as List<Course>, trainingCompletionPct: results[2] as int);
+    final shgPage = results[0] as PagedResult<ShgHealth>;
+    return _CrpDashboardData(
+      shgs: shgPage.items,
+      courses: results[1] as List<Course>,
+      trainingCompletionPct: results[2] as int,
+      totalShgs: (results[3] as PlatformKpis).totalShgs,
+    );
   }
 
   @override
@@ -68,6 +88,16 @@ class _CrpDashboardBody extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final shgs = data.shgs;
     final avgHealth = shgs.isEmpty ? 0 : (shgs.map((g) => g.healthScore).reduce((a, b) => a + b) / shgs.length).round();
+    // "Avg. Health Score" is only ever computed from the loaded preview
+    // page (`shgs`, capped at 100) — a true federation-wide average would
+    // need the same 4-query batching this page's own history already
+    // fixed once for scaling reasons, run unbounded across every SHG,
+    // reintroducing exactly the cost that fix was meant to avoid. Rather
+    // than silently present a partial figure as the platform-wide truth
+    // once a federation exceeds that page size, the trend label says so
+    // explicitly whenever `data.totalShgs` (a real count) exceeds what was
+    // actually averaged.
+    final avgHealthIsPartial = data.totalShgs > shgs.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -77,9 +107,17 @@ class _CrpDashboardBody extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(children: [
-              Expanded(child: StatCard(label: l10n.crpDashboardShgsMonitoredLabel, value: '${shgs.length}', tone: StatTone.brand, trend: shgs.isNotEmpty ? shgs.first.village : l10n.crpDashboardNoShgsYetTrend, icon: Icons.apartment_rounded)),
+              Expanded(child: StatCard(label: l10n.crpDashboardShgsMonitoredLabel, value: '${data.totalShgs}', tone: StatTone.brand, trend: shgs.isNotEmpty ? shgs.first.village : l10n.crpDashboardNoShgsYetTrend, icon: Icons.apartment_rounded)),
               const SizedBox(width: 12),
-              Expanded(child: StatCard(label: l10n.crpDashboardAvgHealthScoreLabel, value: '$avgHealth%', tone: StatTone.gold, trend: l10n.crpDashboardAttendanceProxyTrend, icon: Icons.trending_up_rounded)),
+              Expanded(
+                child: StatCard(
+                  label: l10n.crpDashboardAvgHealthScoreLabel,
+                  value: '$avgHealth%',
+                  tone: StatTone.gold,
+                  trend: avgHealthIsPartial ? l10n.crpDashboardAvgHealthPartialTrend(shgs.length) : l10n.crpDashboardAttendanceProxyTrend,
+                  icon: Icons.trending_up_rounded,
+                ),
+              ),
             ]),
           ),
         ),

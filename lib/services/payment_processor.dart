@@ -1,7 +1,17 @@
 /// Abstraction over a real payment gateway (UPI/card processor). No real
-/// gateway is wired yet — a production key would swap [MockPaymentProcessor]
-/// for a real implementation of this same interface without touching any
-/// call site. See docs/DEVELOPMENT_PROGRESS.md's "External API abstraction
+/// gateway is wired yet. **Correction (gap-hunt iteration 29)**: swapping in
+/// a real gateway is NOT a pure one-file change as this comment used to
+/// claim — every real UPI/card gateway settles asynchronously (a webhook
+/// callback after the user leaves the app), and `supabase/functions/
+/// payment-webhook-handler` already assumes exactly that flow (it only ever
+/// transitions a row FROM `status = 'pending'`). But no code path today ever
+/// inserts a `'pending'` row — `PaymentRepository.pay()` always awaits
+/// `charge()` synchronously and writes a final `'success'`/`'failed'` status
+/// in one step, which only a fully-synchronous mock processor can honestly
+/// support. A real integration therefore also requires reworking
+/// `PaymentRepository.pay()` to write an initial `'pending'` row and stop
+/// awaiting a synchronous final result in the UI — a second file, not just
+/// this one. See docs/DEVELOPMENT_PROGRESS.md's "External API abstraction
 /// plan".
 abstract class PaymentProcessor {
   Future<PaymentChargeResult> charge({required num amount, required String mode});

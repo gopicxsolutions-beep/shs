@@ -199,6 +199,13 @@ only from the recognizer genuinely hearing nothing.
 Support's free-form question, then matches the question against the same FAQ
 content shown on the (text) FAQ page by keyword overlap — not a separate
 canned answer bank — and speaks the matched answer back via `flutter_tts`.
+This shared plumbing does NOT mean shared language scope: the FAQ bank and
+TTS voice here are English-only by design (unlike the AI Voice Assistant's
+3-language support), and gap-hunt iteration 29 pinned this service's STT
+`localeId` to `'en-IN'` explicitly to match that scope on purpose, rather
+than fixing it to resolve a member's selected language the way §3.4 does
+for the AI Voice Assistant — see `docs/DEVELOPMENT_PROGRESS.md`'s "iteration
+29" entry.
 
 Text-to-speech (`AiVoiceAssistantPage._speak`) checks
 `FlutterTts.isLanguageAvailable` before speaking and silently no-ops if the
@@ -355,12 +362,24 @@ discarding whatever real transcript that attempt was about to produce. The
 page's own busy-disabled mic button should normally prevent two overlapping
 `listen()` calls from existing at once, but `listen()` now also forces any
 stray still-pending completer to a clean `stop()` before starting a new
-attempt, closing the overlap window at the service layer too rather than
+attempt, narrowing the overlap window at the service layer too rather than
 relying solely on the caller never double-invoking it.
+
+**Residual limitation, honestly disclosed rather than claimed fixed**:
+gap-hunt iteration 29's dogfooding pass on this exact fix found the
+narrowing is real but not a full close — a stale native error can still be
+delivered asynchronously by the browser/OS *after* the new `stop()` call
+returns but *before* it's actually processed, landing on the new attempt's
+completer instead. Closing this fully would require the plugin to expose a
+per-attempt error-correlation id; `speech_to_text`'s `onError` is a single
+instance-lifetime callback (`listen()` itself accepts no error listener of
+its own), so no such id exists to check against. This residual race is
+accepted and documented rather than pretended-closed, consistent with this
+project's own verification standard.
 
 Both fixed in the same file, with 3 additional regression tests for the
 subtag-boundary case. See `docs/DEVELOPMENT_PROGRESS.md`'s "Gap-hunting loop
-iteration 28" entry for the full write-up.
+iteration 28"/"iteration 29" entries for the full write-up.
 
 ---
 

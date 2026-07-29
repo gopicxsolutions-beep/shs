@@ -23,7 +23,14 @@ void main() {
     SupabaseService.isConfigured = false;
   });
 
-  testWidgets('ShgApprovalPendingPage renders the waiting state without a live request', (tester) async {
+  // Demo mode's ShgJoinRequestRepository.fetchMine() always returns null (no
+  // backing table) — same as a live account whose join request genuinely
+  // doesn't exist. Gap-hunt iteration 28 found and fixed a real bug where
+  // that exact case fell into the same "Waiting for approval" copy as a
+  // genuinely pending request; the corrected, intentional behavior for a
+  // null request is the distinct "no SHG selected yet" state instead — see
+  // shg_approval_pending_page.dart's `noRequest` branch.
+  testWidgets('ShgApprovalPendingPage renders the no-request state without a live request', (tester) async {
     await tester.pumpWidget(
       ChangeNotifierProvider<AppState>(
         create: (_) => AppState(),
@@ -32,8 +39,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Waiting for approval'), findsOneWidget);
-    expect(find.text('Check Status'), findsOneWidget);
+    expect(find.text('No SHG selected yet'), findsOneWidget);
+    expect(find.text('Choose an SHG'), findsOneWidget);
   });
 
   testWidgets('ShgJoinRequestsPage renders the empty state without any live requests', (tester) async {

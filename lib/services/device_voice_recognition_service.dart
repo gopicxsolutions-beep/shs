@@ -144,8 +144,17 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
     // attempt was about to produce. The page-level UI already disables the
     // mic button while an attempt is in flight, so this shouldn't normally
     // be reachable — but forcing a clean stop of any stray prior completer
-    // first removes the overlap window entirely rather than relying only
-    // on the caller never invoking `listen()` twice concurrently.
+    // first narrows that overlap window (removes the specific case where
+    // OUR OWN prior attempt's completer is still sitting unresolved when a
+    // new one starts). This does NOT fully close the class: a stale native
+    // error can still arrive asynchronously after this stop() call returns
+    // but before it's actually delivered by the browser/OS, landing on the
+    // new attempt's completer instead — the plugin exposes no per-attempt
+    // error correlation id (`onError` is a single instance-lifetime
+    // callback; `listen()` accepts no error listener of its own), so that
+    // residual race can't be fully eliminated from this side. Gap-hunt
+    // iteration 29 found and documented this as an accepted residual
+    // limitation rather than a closed bug — see AI_MODULES.md §3.5.
     if (_pendingCompleter != null) {
       await stop();
     }
