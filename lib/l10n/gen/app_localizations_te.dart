@@ -2236,6 +2236,10 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఈ కోర్సును తొలగించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
+  String get adminTrainingCoursesDeleteHasProgressError =>
+      'ఈ కోర్సును తొలగించలేము — కనీసం ఒక సభ్యురాలు దీనిలో పురోగతి సాధించారు లేదా సర్టిఫికేషన్ పొందారు.';
+
+  @override
   String get adminDashboardTrainingTile => 'శిక్షణ';
 
   @override
@@ -2423,6 +2427,60 @@ class AppLocalizationsTe extends AppLocalizations {
   String supportTicketDetailResolvedBy(String name, String date) {
     return '$name ద్వారా $dateన పరిష్కరించబడింది';
   }
+
+  @override
+  String get supportTicketDetailReopenAction => 'టికెట్‌ను తిరిగి తెరవండి';
+
+  @override
+  String get supportTicketDetailPriorityLabel => 'ప్రాధాన్యత';
+
+  @override
+  String get supportCategoryGeneral => 'సాధారణ';
+
+  @override
+  String get supportCategorySavings => 'పొదుపు';
+
+  @override
+  String get supportCategoryLoans => 'రుణాలు';
+
+  @override
+  String get supportCategoryMeetings => 'సమావేశాలు';
+
+  @override
+  String get supportCategoryLivelihood => 'జీవనోపాధి';
+
+  @override
+  String get supportCategoryMarketplace => 'మార్కెట్‌ప్లేస్';
+
+  @override
+  String get supportCategoryPayments => 'చెల్లింపులు';
+
+  @override
+  String get supportCategoryAccount => 'ఖాతా';
+
+  @override
+  String get supportCategoryOther => 'ఇతర';
+
+  @override
+  String get supportPriorityLow => 'తక్కువ';
+
+  @override
+  String get supportPriorityNormal => 'సాధారణ';
+
+  @override
+  String get supportPriorityHigh => 'అధిక';
+
+  @override
+  String get supportPriorityUrgent => 'అత్యవసరం';
+
+  @override
+  String get supportTicketFormCategoryLabel => 'వర్గం';
+
+  @override
+  String get supportChatSearchHint => 'టికెట్లు లేదా సభ్యుల పేర్లను వెతకండి';
+
+  @override
+  String get supportChatFilterAll => 'అన్నీ';
 
   @override
   String get supportTicketFormTitle => 'టికెట్ నమోదు చేయండి';
@@ -3424,6 +3482,12 @@ class AppLocalizationsTe extends AppLocalizations {
   String adminAuditLogDecisionLabel(String decision) {
     return 'నిర్ణయం: $decision';
   }
+
+  @override
+  String get adminAuditLogActiveValue => 'క్రియాశీలం';
+
+  @override
+  String get adminAuditLogInactiveValue => 'నిష్క్రియం చేయబడింది';
 
   @override
   String get adminAuditLogUnknownActor => 'తెలియదు';

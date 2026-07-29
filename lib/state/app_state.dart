@@ -274,6 +274,13 @@ class AppState extends ChangeNotifier {
         // still refetches, since those genuinely can correspond to a new or
         // changed profile.
         await _loadProfile();
+      } else {
+        // Pure token rotation, nothing else in this object changed — no
+        // profile refetch above (see the branch's own comment) and no
+        // session-null reset either, so notifying here was a pure-waste
+        // app-wide rebuild + router redirect re-evaluation on every ~hourly
+        // refresh tick for as long as the app stayed open.
+        return;
       }
       notifyListeners();
     });

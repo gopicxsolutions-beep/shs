@@ -30,7 +30,10 @@ class PaymentRepository {
       ];
     }
     if (memberId == null) return [];
-    final rows = await _client.from('payments').select().eq('member_id', memberId).order('created_at', ascending: false);
+    // Was the one remaining fully unbounded list query in the repository
+    // layer — every sibling self-scoped history fetch already caps at a
+    // few hundred rows (e.g. marketplace orders at 200, round 185/186).
+    final rows = await _client.from('payments').select().eq('member_id', memberId).order('created_at', ascending: false).limit(300);
     return (rows as List).map((r) => Payment.fromMap(r as Map<String, dynamic>)).toList();
   }
 

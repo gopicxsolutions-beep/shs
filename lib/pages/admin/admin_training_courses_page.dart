@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/training.dart';
@@ -169,6 +170,18 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
       if (mounted) {
         _key.currentState?.reload();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(SupabaseService.isConfigured ? l10n.adminTrainingCoursesDeletedMessage : l10n.adminTrainingCoursesDeleteDemoModeMessage)));
+      }
+    } on PostgrestException catch (e) {
+      // '23503' = foreign-key violation — specifically the
+      // `course_progress_course_id_fkey` RESTRICT (round 187's `0091`,
+      // replacing the old CASCADE that used to silently destroy every
+      // member's earned certification). Previously fell into the same
+      // generic error toast as any other failure, giving the admin zero
+      // indication WHY — she'd retry the identical action expecting a
+      // transient failure, when this is actually a guaranteed, permanent
+      // dead end for this course.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.code == '23503' ? l10n.adminTrainingCoursesDeleteHasProgressError : l10n.adminTrainingCoursesDeleteErrorMessage)));
       }
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminTrainingCoursesDeleteErrorMessage)));

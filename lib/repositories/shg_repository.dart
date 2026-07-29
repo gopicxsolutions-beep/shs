@@ -239,7 +239,7 @@ class ShgRepository {
   Future<List<Member>> fetchMembers(String? shgId) async {
     if (!_live) {
       return (debugMembersOverride ?? mock_members.members)
-          .map((m) => Member(id: m.id, name: m.name, mobile: m.mobile, role: AdminRepository.roleOverride(m.id, _mockRoleMap[m.role] ?? 'member'), village: null))
+          .map((m) => Member(id: m.id, name: m.name, mobile: m.mobile, role: AdminRepository.roleOverride(m.id, _mockRoleMap[m.role] ?? 'member'), village: null, isActive: m.status == 'active'))
           .toList();
     }
     if (shgId == null) return [];
@@ -252,7 +252,7 @@ class ShgRepository {
       final matches = (debugMembersOverride ?? mock_members.members).where((m) => m.id == id);
       if (matches.isEmpty) return null;
       final m = matches.first;
-      return Member(id: m.id, name: m.name, mobile: m.mobile, role: AdminRepository.roleOverride(m.id, _mockRoleMap[m.role] ?? 'member'), village: null);
+      return Member(id: m.id, name: m.name, mobile: m.mobile, role: AdminRepository.roleOverride(m.id, _mockRoleMap[m.role] ?? 'member'), village: null, isActive: m.status == 'active');
     }
     final row = await _client.from('profiles').select().eq('id', id).maybeSingle();
     return row == null ? null : Member.fromMap(row);

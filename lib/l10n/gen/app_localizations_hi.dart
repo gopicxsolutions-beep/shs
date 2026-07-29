@@ -2202,6 +2202,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'इस कोर्स को हटाया नहीं जा सका। कृपया फिर से कोशिश करें।';
 
   @override
+  String get adminTrainingCoursesDeleteHasProgressError =>
+      'यह कोर्स हटाया नहीं जा सकता — कम से कम एक सदस्य ने इसमें प्रगति की है या प्रमाणपत्र प्राप्त किया है।';
+
+  @override
   String get adminDashboardTrainingTile => 'प्रशिक्षण';
 
   @override
@@ -2389,6 +2393,60 @@ class AppLocalizationsHi extends AppLocalizations {
   String supportTicketDetailResolvedBy(String name, String date) {
     return '$name द्वारा $date को हल किया गया';
   }
+
+  @override
+  String get supportTicketDetailReopenAction => 'टिकट फिर से खोलें';
+
+  @override
+  String get supportTicketDetailPriorityLabel => 'प्राथमिकता';
+
+  @override
+  String get supportCategoryGeneral => 'सामान्य';
+
+  @override
+  String get supportCategorySavings => 'बचत';
+
+  @override
+  String get supportCategoryLoans => 'ऋण';
+
+  @override
+  String get supportCategoryMeetings => 'बैठकें';
+
+  @override
+  String get supportCategoryLivelihood => 'आजीविका';
+
+  @override
+  String get supportCategoryMarketplace => 'बाज़ार';
+
+  @override
+  String get supportCategoryPayments => 'भुगतान';
+
+  @override
+  String get supportCategoryAccount => 'खाता';
+
+  @override
+  String get supportCategoryOther => 'अन्य';
+
+  @override
+  String get supportPriorityLow => 'कम';
+
+  @override
+  String get supportPriorityNormal => 'सामान्य';
+
+  @override
+  String get supportPriorityHigh => 'उच्च';
+
+  @override
+  String get supportPriorityUrgent => 'अत्यावश्यक';
+
+  @override
+  String get supportTicketFormCategoryLabel => 'श्रेणी';
+
+  @override
+  String get supportChatSearchHint => 'टिकट या सदस्य के नाम खोजें';
+
+  @override
+  String get supportChatFilterAll => 'सभी';
 
   @override
   String get supportTicketFormTitle => 'टिकट दर्ज करें';
@@ -3354,6 +3412,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String adminAuditLogDecisionLabel(String decision) {
     return 'निर्णय: $decision';
   }
+
+  @override
+  String get adminAuditLogActiveValue => 'सक्रिय';
+
+  @override
+  String get adminAuditLogInactiveValue => 'निष्क्रिय किया गया';
 
   @override
   String get adminAuditLogUnknownActor => 'अज्ञात';

@@ -40,7 +40,11 @@ class SupportRepository {
     // the deployment. Previously had no `.limit()` at all. Capped at a
     // generous 500 rather than left unbounded; newest-first ordering means
     // it's old, already-resolved tickets that fall past the cap first.
-    final rows = await query.order('created_at', ascending: false).limit(500);
+    // Ordered by `updated_at` (round 188), not `created_at` — a resolved
+    // ticket that gets a fresh reply (or gets reopened) now moves back to
+    // the top instead of staying buried at its original creation-time
+    // position forever, invisible to staff without opening every ticket.
+    final rows = await query.order('updated_at', ascending: false).limit(500);
     return (rows as List).map((r) => SupportTicket.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -70,8 +74,10 @@ class SupportRepository {
   }
 
   /// Raises a new ticket and returns its id, so the caller can navigate
-  /// straight into the chat thread.
-  Future<String?> raiseTicket({required String? memberId, required String subject, required String description}) async {
+  /// straight into the chat thread. [category] defaults to 'general' —
+  /// staff-only `priority` is always pinned to 'normal' at creation time
+  /// server-side (migration 0093), matching the existing status trust shape.
+  Future<String?> raiseTicket({required String? memberId, required String subject, required String description, String category = 'general'}) async {
     if (!_live) {
       final ticket = SupportTicket(
         id: 'local-${DateTime.now().microsecondsSinceEpoch}',
@@ -79,6 +85,7 @@ class SupportRepository {
         subject: subject,
         description: description,
         status: 'open',
+        category: category,
         createdAt: DateTime.now(),
       );
       _locallyAdded.add(ticket);
@@ -88,6 +95,7 @@ class SupportRepository {
       'member_id': memberId,
       'subject': subject,
       'description': description,
+      'category': category,
     }).select().single();
     return row['id'] as String;
   }
@@ -124,6 +132,22 @@ class SupportRepository {
       if (isResolution) 'resolved_by': resolvedBy,
     }).eq('id', ticketId);
   }
+
+  /// Staff-only (round 188): sets a ticket's triage priority. Never touches
+  /// `status`/`resolved_by` — a separate, independent axis from the
+  /// resolve/reopen lifecycle `updateStatus` governs.
+  Future<void> updatePriority(String ticketId, String priority) async {
+    if (!_live) return;
+    await _client.from('support_tickets').update({'priority': priority}).eq('id', ticketId);
+  }
+
+  /// Round 188: a member can now reopen her own resolved/closed ticket
+  /// (`support_tickets_update_staff_or_self_reopen`, migration 0093) — this
+  /// is just `updateStatus(ticketId, 'open')` with no `resolvedBy` (the RLS
+  /// policy's self-reopen branch requires `resolved_by` stay unchanged, so
+  /// the "resolved by X" history is preserved, not cleared, until staff
+  /// resolves it again).
+  Future<void> reopenTicket(String ticketId) => updateStatus(ticketId, 'open');
 
   DateTime _parseMockDate(String s) {
     const months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12};

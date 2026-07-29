@@ -106,7 +106,17 @@ class _AnalyticsShgListPageState extends State<AnalyticsShgListPage> {
                       ]),
                       const SizedBox(height: 10),
                       Row(children: [
-                        Expanded(child: AppProgressBar(value: g.healthScore, tone: g.healthScore > 80 ? ProgressTone.brand : g.healthScore > 60 ? ProgressTone.gold : ProgressTone.danger)),
+                        Expanded(
+                          child: AppProgressBar(
+                            value: g.healthScore,
+                            tone: g.healthScore > 80 ? ProgressTone.brand : g.healthScore > 60 ? ProgressTone.gold : ProgressTone.danger,
+                            // Was purely decorative to a screen reader — the
+                            // only other on-row info is a letter grade
+                            // badge, not the numeric score this bar
+                            // visualizes.
+                            semanticLabel: '${l10n.analyticsShgDetailHealthScore}: ${g.healthScore.toStringAsFixed(0)}%',
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         Text('${g.healthScore.toStringAsFixed(0)}%', style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
                       ]),

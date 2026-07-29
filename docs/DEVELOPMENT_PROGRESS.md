@@ -15939,3 +15939,193 @@ again, still stuck** — fresh `preview_start` + re-navigate, identical
 `flt-glass-pane`-never-mounts symptom, zero console errors (the 13th
 consecutive such attempt across eleven rounds). Relied on live-DB/edge-
 function-test verification for every fix above instead.
+
+## Update (round 188) — Gap-hunting loop, iteration 16: launched 4 fresh module audits (dogfooding round 187's own features, Support Tickets dedicated round, Payments, Router/Session/shared-widget accessibility), fixed 18 real gaps including 2 self-caught CRITICAL production bugs
+
+The dogfooding audit, and separately my own live-verification discipline
+while building this round's own migration, each independently caught a
+CRITICAL bug already live in production from this session's own immediately
+preceding work — both fixed and live-verified before anything else in this
+round shipped.
+
+**Fixed, live-verified against the real Supabase project:**
+
+1. **[CRITICAL — self-caught via dogfooding, already live in production]
+   `guard_last_admin_deactivation()`/`guard_last_admin_delete()` (round
+   183's own `0091` "fix") combined `for update` with `count(*)` in the
+   same `select`** — invalid Postgres (`0A000: FOR UPDATE is not allowed
+   with aggregate functions`). Because this lives inside a `plpgsql`
+   function body, `supabase db push` never validates it at deploy time —
+   it silently broke **every** admin role-change/deactivation/deletion in
+   production, not just the last-admin case, until this round's own
+   dogfooding audit flagged it and a live `supabase db query` reproduced
+   the exact error. Fixed (`0092`) by moving the row-locking `for update`
+   into a non-aggregate subquery and counting the already-locked rows in
+   the outer query. **Live-verified**: ordinary admin demotion now
+   succeeds again; the last-admin protection itself still correctly blocks
+   removing the final active admin; zero test-fixture footprint left.
+2. **[CRITICAL — self-caught during my own live verification, never
+   shipped to production] The new `support_messages_insert_related` policy
+   (this round's own migration, below) triggered genuine Postgres RLS
+   infinite recursion (`42P17`)** when combined with `support_messages_
+   select_related`'s pre-existing correlated `EXISTS` subquery — a shape
+   that looks identical to the working `support_tickets_insert_self`
+   self-referential-count precedent elsewhere in this same schema, but
+   isn't, because that table's SELECT policy has no correlated subquery to
+   recurse against. Isolated via a sequence of targeted live queries
+   (plain `SELECT`: fine; trigger as superuser: fine; the existing
+   precedent: fine; only this new combined shape: fails) before ever
+   pushing the broken version live. Fixed (`0094`) by wrapping the
+   self-referential count in a new `security definer stable` helper,
+   `support_messages_recent_count()` — `SECURITY DEFINER` bypasses RLS for
+   its own internal query, sidestepping the recursive re-evaluation
+   entirely. **Live-verified**: message insert now succeeds, the
+   `updated_at`-resurface trigger fires correctly, the length cap and rate
+   limit both still enforce.
+3. **[HIGH] Support Tickets' own dedicated round, promised and deferred
+   across rounds 184-187** — closed 5 of its 6 previously-deferred items
+   in one migration (`0093`): a resolved/closed ticket had **no reopen
+   path at all** for the member who filed it (only staff could ever move
+   status again); tickets had no `category`; no staff-settable `priority`;
+   and a resolved-then-replied-to ticket stayed buried at its original
+   creation-time position in the staff queue forever (no `updated_at`,
+   list ordered by `created_at`). Added `updated_at` (bumped by a ticket-
+   row trigger AND by a new `support_messages_bump_ticket_updated_at`
+   security-definer trigger on new messages, since a reply never touches
+   `support_tickets` itself), `category` (member-set at creation, 9-value
+   check constraint), and `priority` (staff-only, defaults `'normal'`).
+   Rewrote the update policy so a member can move `resolved`/`closed` ->
+   `open` only — never directly to `resolved`/`closed`, preserving the
+   staff-only-approval shape migration 0013 already established — by
+   widening `support_tickets_locked_fields()` to also lock `priority` for
+   both branches (0024's original reasoning for leaving those columns
+   unlocked no longer held once a member-writable branch existed at all).
+   Dart/UI side: `SupportTicketDetailPage` gained a member-only "Reopen
+   ticket" button and a category+priority badge row (staff gets a popup
+   menu to change priority); `SupportTicketFormPage` gained a category
+   chip picker; `SupportChatPage` (staff view) gained a search box + status
+   filter row. **Live-verified**: a real `__TEST__` resolved ticket
+   reopened by its own member now shows `status = 'open'`; a member
+   attempting to jump straight to `resolved` is still rejected; a new
+   message on a resolved ticket correctly bumps it back to the top of the
+   `updated_at`-ordered queue.
+4. **[MEDIUM] `support_messages` had no length cap or rate limit at all**,
+   unlike its sibling `support_tickets` (150/1000-char caps + 10/hour,
+   migration 0078) — messages are the higher-frequency write of the two.
+   Added a 500-char check constraint and a 20-per-10-minutes rate limit
+   (looser than tickets' 10/hour, since messages are the intended
+   high-frequency channel). Also pinned `created_at = now()`, closing a
+   gap where 0038's original adversarial insert-sweep covered `sender_id`/
+   membership but never `created_at` — a message could previously be
+   backdated/postdated, corrupting the thread's displayed order.
+5. **[MEDIUM] `payments_insert_self_or_staff` was the one self-insert
+   policy in the whole schema that never got the `created_at` lock**
+   every sibling (loans, savings_entries, meetings, scheme_applications,
+   marketplace_orders, shg_join_requests, support_tickets, announcements)
+   already has from migration 0027's original sweep — a direct insert
+   could backdate/postdate a fabricated payment in a member's own
+   displayed history. Fixed. The separate question of whether staff's
+   branch should also be restricted to the caller's own `member_id` (vs.
+   a plausible staff-assisted-payment workflow) is a design decision,
+   deliberately left open in the migration's own comment rather than
+   rushed.
+6. **[MEDIUM] `AdminAuditLogPage` rendered `deactivation`'s `old_is_active`/
+   `new_is_active` meta as raw Dart booleans (`true`/`false`)** instead of
+   through any localized label — the one action type on that page that
+   hadn't been given human-readable rendering. Added
+   `adminAuditLogActiveValue`/`adminAuditLogInactiveValue` and special-
+   cased the pair.
+7. **[MEDIUM] Deleting a training course with real `course_progress` rows
+   attached (round 187's `on delete restrict` fix) failed with the page's
+   generic catch-all error**, giving a crp/clf/admin user zero indication
+   *why* the delete failed versus any other failure mode. Added a
+   `PostgrestException` branch checking for the `23503` foreign-key-
+   violation code with a distinct, explanatory message. Also corrected
+   `TrainingRepository.deleteCourse()`'s doc comment, which still
+   described the old `cascade` behavior round 187 removed.
+8. **[LOW] `PaymentRepository.fetchHistory()` was the one remaining fully
+   unbounded self-scoped list query in the repository layer** — every
+   sibling history fetch already caps at a few hundred rows (marketplace
+   orders at 200, rounds 185/186). Added `.limit(300)`.
+9. **[MEDIUM, accessibility] `AppProgressBar` was the one purely-visual
+   shared widget with no `Semantics` at all**, unlike `StatCard`/
+   `TrendChart`/`IconTile` (each already handling this). A screen-reader
+   user got zero information about the health score/repayment ratio/
+   attendance rate every progress bar on loan tracking, SHG health, and
+   financial-summary pages visualizes. Added an optional `semanticLabel`
+   param (defaulting to the plain percentage for existing call sites) and
+   wired a descriptive label into the one call site (`AnalyticsShgListPage`'s
+   health-score bar) this round's audit specifically flagged as having no
+   other on-row numeric info for a screen reader (only a letter-grade
+   badge).
+10. **[MEDIUM] `_roleRestrictedPrefixes`' router redirect matched via raw
+    `String.startsWith`** — nothing prevented a future route whose path
+    happens to share a restricted prefix as a string (e.g. a hypothetical
+    `/app/loans/approval-history` next to the restricted `/app/loans/
+    approval`) from silently inheriting that restriction, or the reverse.
+    Fixed to a segment-boundary match (`matchedLocation == prefix ||
+    matchedLocation.startsWith('$prefix/')`).
+11. **[LOW, performance] `AppState`'s auth-state listener still called
+    `notifyListeners()` unconditionally on every event**, including pure
+    `tokenRefreshed` ticks — GoTrue's auto-refresh timer fires roughly
+    hourly purely to rotate the JWT, and round 54 already correctly
+    skipped the `_loadProfile()` refetch for this event type, but the
+    unconditional `notifyListeners()` right after it still forced an
+    app-wide rebuild + full router redirect re-evaluation on every tick
+    for as long as the app stayed open, for an event where nothing in
+    `AppState` actually changed. Now returns before notifying when the
+    event is `tokenRefreshed` and the session didn't become null.
+12. **[LOW] `ShgRepository.fetchMembers()`/`fetchMember()`'s demo-mode
+    branch never populated `Member.isActive`** from the mock member's own
+    `status` field, unlike the live-mode branch — the deactivated-member
+    savings-picker exclusion built in round 184 (iteration 12) silently
+    had no effect in demo mode, showing deactivated mock members as
+    eligible for a new savings entry. Fixed to derive `isActive: m.status
+    == 'active'` in both demo-mode branches, matching live mode.
+13-18. **[LOW, i18n ×~9 keys across the above]** every new user-facing
+    string introduced by this round's fixes (reopen action, priority
+    label, 9 category labels, 4 priority labels, category-picker label,
+    chat search hint/filter labels, the two admin-audit-log boolean
+    labels, the training-course delete error) added to all three
+    `app_en.arb`/`app_hi.arb`/`app_te.arb` files and regenerated via
+    `flutter gen-l10n` — grouped here rather than each counted as its own
+    numbered gap, consistent with prior rounds' convention.
+
+**Documented, deliberately not fixed this round** (real findings, larger
+scope or lower severity):
+
+- **`payments_insert_self_or_staff`'s staff branch is not scoped to the
+  caller's own `member_id`** — see finding #5 above; a genuine open design
+  question (staff-assisted payment workflow vs. tightening), not rushed.
+- **Router write-path session-expiry classification** — 73 call sites
+  across 46 files still don't uniformly distinguish an expired-session
+  failure from any other error; too large for one round, unchanged from
+  prior rounds' assessment.
+- **`AppState` profile staleness in a continuously-foregrounded session**
+  and **`SavingsLedgerPage`'s realtime stream lacking `isAuthExpiredError`
+  handling** — both still open, unchanged from prior rounds.
+- **`AppListRow`/`AppCard` still lack merged Semantics** — deliberately
+  deferred again given how many existing widget tests target the most-
+  reused widget pair in the app; a change here needs its own careful,
+  test-aware pass rather than a drive-by fix.
+- **Marketplace seller listing management UI and Reports CSV/PDF export**
+  — both still entirely missing, re-confirmed unchanged.
+- **No seller performance dashboard** — unchanged.
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1038/1038, all passing after this round's Dart-side changes — support
+ticket model/repo/UI, admin audit log, training course page, payment
+repository, progress bar + analytics page, router, app_state) both clean.
+`deno test` on the AI-advisor edge function suite: 32/32 passing
+(unaffected by this round, re-run to confirm no regression). Migrations
+`0092`, `0093`, `0094` all pushed to the linked live project; every RLS/
+trigger claim above independently live-verified with real `__TEST__`
+fixture rows in rolled-back transactions where possible, each re-queried
+afterward to confirm zero footprint. `flutter build web` rebuilt cleanly.
+**Browser preview attempted again, still stuck** — fresh `preview_start`,
+tried both the auto-opened tab and navigating a separate existing tab to
+the same URL exactly once (tab-creation itself was capped this round),
+identical `flt-glass-pane`-never-mounts symptom, zero console errors, no
+server-side errors in `preview_logs` (the 14th consecutive such attempt
+across twelve rounds). Relied on live-DB/edge-function-test verification
+for every fix above instead.

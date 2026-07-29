@@ -7,7 +7,16 @@ class AppProgressBar extends StatelessWidget {
   final num value;
   final num max;
   final ProgressTone tone;
-  const AppProgressBar({super.key, required this.value, this.max = 100, this.tone = ProgressTone.brand});
+  // Was the one purely-visual shared widget in this set with no Semantics
+  // at all, unlike StatCard/TrendChart/IconTile (each with their own doc
+  // comment explaining why a decorative widget still needs one) — a
+  // screen-reader user got zero information about the health score/
+  // repayment ratio/attendance rate this bar visualizes on every page that
+  // uses it (loan tracking, SHG health, financial summaries, dashboards).
+  // Optional so existing call sites keep working with a sensible default
+  // (the plain percentage) rather than needing every one updated at once.
+  final String? semanticLabel;
+  const AppProgressBar({super.key, required this.value, this.max = 100, this.tone = ProgressTone.brand, this.semanticLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -18,19 +27,24 @@ class AppProgressBar extends StatelessWidget {
       ProgressTone.danger => Accent.red500,
       ProgressTone.info => Accent.sky600,
     };
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: LayoutBuilder(
-        builder: (context, constraints) => Stack(
-          children: [
-            Container(height: 8, width: double.infinity, color: Neutral.c100),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 400),
-              height: 8,
-              width: constraints.maxWidth * pct,
-              color: color,
+    return Semantics(
+      label: semanticLabel ?? '${(pct * 100).round()}%',
+      child: ExcludeSemantics(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LayoutBuilder(
+            builder: (context, constraints) => Stack(
+              children: [
+                Container(height: 8, width: double.infinity, color: Neutral.c100),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 400),
+                  height: 8,
+                  width: constraints.maxWidth * pct,
+                  color: color,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

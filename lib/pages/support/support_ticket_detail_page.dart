@@ -20,6 +20,12 @@ const _statusTones = <String, BadgeTone>{
   'closed': BadgeTone.neutral,
 };
 const _statuses = ['open', 'in_progress', 'resolved', 'closed'];
+const _priorityTones = <String, BadgeTone>{
+  'low': BadgeTone.neutral,
+  'normal': BadgeTone.info,
+  'high': BadgeTone.warning,
+  'urgent': BadgeTone.danger,
+};
 
 String _statusLabel(AppLocalizations l10n, String status) => switch (status) {
       'open' => l10n.supportStatusOpen,
@@ -112,6 +118,41 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
     }
   }
 
+  Future<void> _changePriority(String priority) async {
+    if (_changingStatus) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _changingStatus = true);
+    try {
+      await _repo.updatePriority(widget.ticketId, priority);
+      if (mounted) _key.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.supportTicketDetailStatusError)));
+      }
+    } finally {
+      if (mounted) setState(() => _changingStatus = false);
+    }
+  }
+
+  // Round 188: a member can now reopen her own resolved/closed ticket
+  // (`support_tickets_update_staff_or_self_reopen`, migration 0093) — was
+  // previously staff-only both in the UI and at the RLS layer.
+  Future<void> _reopen() async {
+    if (_changingStatus) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _changingStatus = true);
+    try {
+      await _repo.reopenTicket(widget.ticketId);
+      if (mounted) _key.currentState?.reload();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.supportTicketDetailStatusError)));
+      }
+    } finally {
+      if (mounted) setState(() => _changingStatus = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -156,6 +197,24 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                   ],
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    AppBadge(text: supportCategoryLabel(ticket.category, l10n), tone: BadgeTone.neutral),
+                    if (isStaff && SupabaseService.isConfigured)
+                      PopupMenuButton<String>(
+                        onSelected: _changePriority,
+                        itemBuilder: (context) => supportPriorities.map((p) => PopupMenuItem(value: p, child: Text(supportPriorityLabel(p, l10n)))).toList(),
+                        child: AppBadge(text: supportPriorityLabel(ticket.priority, l10n), tone: _priorityTones[ticket.priority] ?? BadgeTone.neutral),
+                      )
+                    else if (ticket.priority != 'normal')
+                      AppBadge(text: supportPriorityLabel(ticket.priority, l10n), tone: _priorityTones[ticket.priority] ?? BadgeTone.neutral),
+                  ],
+                ),
+              ),
               if (ticket.description != null && ticket.description!.trim().isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -177,6 +236,22 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                   child: Text(
                     l10n.supportTicketDetailResolvedBy(ticket.resolvedByName!, DateFormat('dd MMM yyyy').format(ticket.resolvedAt!)),
                     style: AppTheme.sans(11, color: Neutral.c500),
+                  ),
+                ),
+              // Round 188: the member's own reopen action — only offered on
+              // her own already-resolved/closed ticket. Staff already has
+              // this same transition available via the status PopupMenuButton
+              // above (unlocked since round ~44), so this is member-only.
+              if (!isStaff && SupabaseService.isConfigured && (ticket.status == 'resolved' || ticket.status == 'closed') && ticket.memberId == memberId)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: _changingStatus ? null : _reopen,
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                      label: Text(l10n.supportTicketDetailReopenAction),
+                    ),
                   ),
                 ),
               const Divider(height: 1),

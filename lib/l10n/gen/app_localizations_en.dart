@@ -2239,6 +2239,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not delete this course. Please try again.';
 
   @override
+  String get adminTrainingCoursesDeleteHasProgressError =>
+      'This course can\'t be deleted — at least one member has already made progress or earned a certification from it.';
+
+  @override
   String get adminDashboardTrainingTile => 'Training';
 
   @override
@@ -2427,6 +2431,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String supportTicketDetailResolvedBy(String name, String date) {
     return 'Resolved by $name on $date';
   }
+
+  @override
+  String get supportTicketDetailReopenAction => 'Reopen ticket';
+
+  @override
+  String get supportTicketDetailPriorityLabel => 'Priority';
+
+  @override
+  String get supportCategoryGeneral => 'General';
+
+  @override
+  String get supportCategorySavings => 'Savings';
+
+  @override
+  String get supportCategoryLoans => 'Loans';
+
+  @override
+  String get supportCategoryMeetings => 'Meetings';
+
+  @override
+  String get supportCategoryLivelihood => 'Livelihood';
+
+  @override
+  String get supportCategoryMarketplace => 'Marketplace';
+
+  @override
+  String get supportCategoryPayments => 'Payments';
+
+  @override
+  String get supportCategoryAccount => 'Account';
+
+  @override
+  String get supportCategoryOther => 'Other';
+
+  @override
+  String get supportPriorityLow => 'Low';
+
+  @override
+  String get supportPriorityNormal => 'Normal';
+
+  @override
+  String get supportPriorityHigh => 'High';
+
+  @override
+  String get supportPriorityUrgent => 'Urgent';
+
+  @override
+  String get supportTicketFormCategoryLabel => 'Category';
+
+  @override
+  String get supportChatSearchHint => 'Search tickets or member names';
+
+  @override
+  String get supportChatFilterAll => 'All';
 
   @override
   String get supportTicketFormTitle => 'Raise a Ticket';
@@ -3422,6 +3480,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String adminAuditLogDecisionLabel(String decision) {
     return 'decision: $decision';
   }
+
+  @override
+  String get adminAuditLogActiveValue => 'Active';
+
+  @override
+  String get adminAuditLogInactiveValue => 'Deactivated';
 
   @override
   String get adminAuditLogUnknownActor => 'Unknown';

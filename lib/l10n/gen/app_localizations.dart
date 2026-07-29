@@ -3892,6 +3892,12 @@ abstract class AppLocalizations {
   /// **'Could not delete this course. Please try again.'**
   String get adminTrainingCoursesDeleteErrorMessage;
 
+  /// No description provided for @adminTrainingCoursesDeleteHasProgressError.
+  ///
+  /// In en, this message translates to:
+  /// **'This course can\'t be deleted — at least one member has already made progress or earned a certification from it.'**
+  String get adminTrainingCoursesDeleteHasProgressError;
+
   /// No description provided for @adminDashboardTrainingTile.
   ///
   /// In en, this message translates to:
@@ -4227,6 +4233,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resolved by {name} on {date}'**
   String supportTicketDetailResolvedBy(String name, String date);
+
+  /// No description provided for @supportTicketDetailReopenAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen ticket'**
+  String get supportTicketDetailReopenAction;
+
+  /// No description provided for @supportTicketDetailPriorityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get supportTicketDetailPriorityLabel;
+
+  /// No description provided for @supportCategoryGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get supportCategoryGeneral;
+
+  /// No description provided for @supportCategorySavings.
+  ///
+  /// In en, this message translates to:
+  /// **'Savings'**
+  String get supportCategorySavings;
+
+  /// No description provided for @supportCategoryLoans.
+  ///
+  /// In en, this message translates to:
+  /// **'Loans'**
+  String get supportCategoryLoans;
+
+  /// No description provided for @supportCategoryMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetings'**
+  String get supportCategoryMeetings;
+
+  /// No description provided for @supportCategoryLivelihood.
+  ///
+  /// In en, this message translates to:
+  /// **'Livelihood'**
+  String get supportCategoryLivelihood;
+
+  /// No description provided for @supportCategoryMarketplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Marketplace'**
+  String get supportCategoryMarketplace;
+
+  /// No description provided for @supportCategoryPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments'**
+  String get supportCategoryPayments;
+
+  /// No description provided for @supportCategoryAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get supportCategoryAccount;
+
+  /// No description provided for @supportCategoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get supportCategoryOther;
+
+  /// No description provided for @supportPriorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get supportPriorityLow;
+
+  /// No description provided for @supportPriorityNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get supportPriorityNormal;
+
+  /// No description provided for @supportPriorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get supportPriorityHigh;
+
+  /// No description provided for @supportPriorityUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get supportPriorityUrgent;
+
+  /// No description provided for @supportTicketFormCategoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get supportTicketFormCategoryLabel;
+
+  /// No description provided for @supportChatSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tickets or member names'**
+  String get supportChatSearchHint;
+
+  /// No description provided for @supportChatFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get supportChatFilterAll;
 
   /// No description provided for @supportTicketFormTitle.
   ///
@@ -5961,6 +6075,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'decision: {decision}'**
   String adminAuditLogDecisionLabel(String decision);
+
+  /// No description provided for @adminAuditLogActiveValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get adminAuditLogActiveValue;
+
+  /// No description provided for @adminAuditLogInactiveValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivated'**
+  String get adminAuditLogInactiveValue;
 
   /// No description provided for @adminAuditLogUnknownActor.
   ///

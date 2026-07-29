@@ -218,7 +218,12 @@ GoRouter buildRouter(AppState appState) {
 
       // Fully onboarded but this screen is restricted to other roles.
       for (final (prefix, allowedRoles) in _roleRestrictedPrefixes) {
-        if (state.matchedLocation.startsWith(prefix) && !allowedRoles.contains(appState.user.role)) {
+        // Segment-boundary match, not raw startsWith — a future route whose
+        // path happens to share a restricted prefix as a string (e.g. a
+        // hypothetical `/app/loans/approval-history` next to the restricted
+        // `/app/loans/approval`) must not silently inherit its restriction.
+        final matches = state.matchedLocation == prefix || state.matchedLocation.startsWith('$prefix/');
+        if (matches && !allowedRoles.contains(appState.user.role)) {
           return Paths.dashboard;
         }
       }

@@ -27,13 +27,20 @@ String _actionLabel(AppLocalizations l10n, String action) => switch (action) {
 // rather than showing nothing for a meta shape this page doesn't
 // specifically recognize.
 String _metaSummary(AppLocalizations l10n, Map<String, dynamic> meta) {
+  // `is_active` is a raw boolean, unlike every other old->new pair here
+  // (short human-readable enum strings) — rendered via the generic
+  // `'${old} → ${new}'` join it printed the unlocalized Dart booleans
+  // `true`/`false` verbatim on an otherwise fully hi/te-localized page.
+  if (meta.containsKey('old_is_active')) {
+    String label(dynamic v) => v == true ? l10n.adminAuditLogActiveValue : l10n.adminAuditLogInactiveValue;
+    return '${label(meta['old_is_active'])} → ${label(meta['new_is_active'])}';
+  }
   final pairs = <String>[];
   const knownPairs = [
     ('old_role', 'new_role'),
     ('old_grade', 'new_grade'),
     ('old_status', 'new_status'),
     ('old_revenue', 'new_revenue'),
-    ('old_is_active', 'new_is_active'),
     ('old_shg_id', 'new_shg_id'),
   ];
   for (final (oldKey, newKey) in knownPairs) {

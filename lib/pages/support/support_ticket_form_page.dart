@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
+import '../../models/support.dart';
 import '../../repositories/support_repository.dart';
 import '../../routes/paths.dart';
 import '../../services/supabase_service.dart';
@@ -24,6 +25,7 @@ class _SupportTicketFormPageState extends State<SupportTicketFormPage> {
   final _repo = SupportRepository();
   bool _saving = false;
   String? _error;
+  String _category = 'general';
 
   @override
   void dispose() {
@@ -48,6 +50,7 @@ class _SupportTicketFormPageState extends State<SupportTicketFormPage> {
         memberId: appState.profile?.id,
         subject: _subject.text.trim(),
         description: _description.text.trim(),
+        category: _category,
       );
       if (!mounted) return;
       // Navigate first, then show on the captured messenger — showing
@@ -88,6 +91,33 @@ class _SupportTicketFormPageState extends State<SupportTicketFormPage> {
                     style: AppTheme.sans(14),
                     decoration: InputDecoration(border: InputBorder.none, hintText: l10n.supportTicketFormSubjectHint, counterText: ''),
                     onChanged: (_) => setState(() => _error = null),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.supportTicketFormCategoryLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: supportCategories.map((c) {
+                      final selected = c == _category;
+                      return ChoiceChip(
+                        label: Text(supportCategoryLabel(c, l10n)),
+                        selected: selected,
+                        onSelected: (_) => setState(() => _category = c),
+                        selectedColor: Brand.c50,
+                        labelStyle: AppTheme.sans(12, weight: FontWeight.w600, color: selected ? Brand.c700 : Neutral.c600),
+                        backgroundColor: Colors.white,
+                        side: BorderSide(color: selected ? Brand.c500 : Neutral.c200),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      );
+                    }).toList(),
                   ),
                 ],
               ),

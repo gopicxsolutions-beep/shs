@@ -939,31 +939,46 @@ is a harmless no-op.
 ### 3.13 Support / Helpdesk (`support/`)
 
 **How it works.** A user raises a ticket (subject required, description
-optional) — status defaults to `open` at the database level and is never set
-explicitly by the client. The ticket becomes a threaded, chat-style
+optional, plus a `category` picked from a fixed 9-value list — general,
+savings, loans, meetings, livelihood, marketplace, payments, account, other)
+— status defaults to `open` at the database level and is never set explicitly
+by the client, and `priority` (low/normal/high/urgent) defaults to `normal`
+and stays staff-only to change. The ticket becomes a threaded, chat-style
 conversation (`support_messages`, a flat append-only table rendered as chat
-bubbles) with no realtime subscription — a reply from the other party appears
-only on the next reload, not live. **Visibility is enforced twice**: the
-client shapes its query differently for staff (no member filter — sees every
-ticket platform-wide, capped at 500) versus a member (filtered to her own),
-and — independently, as the actual boundary — RLS restricts a non-staff
-caller's read to her own tickets regardless of what query shape the client
-sends. Status changes (open/in_progress/resolved/closed) are staff-only, both
-in the UI and at the RLS layer — closing a gap where a member could otherwise
-self-close her own complaint via a direct API call even though no UI ever
-exposed that action. Moving a ticket to `resolved`/`closed` records which
-staff account did it and when (`resolved_by`/`resolved_at`, mirroring
-`shg_join_requests.decided_by` and `scheme_applications.decided_by`/
-`decided_at`) — the timestamp is stamped server-side by a trigger rather than
-trusted from the client, and reopening an already-resolved ticket (moving it
-back to `open`/`in_progress`) is an explicitly supported workflow even when
-done by a different staff member than the one who resolved it.
-`resolved_by` can only ever be set to the calling staff account's own id (or
-left at whatever it already was, covering reopen/other-status-change
-updates) — a staff account cannot attribute a resolution to a colleague who
-never touched the ticket (migration `0058`; live-confirmed round 128, after
-an earlier, simpler pin shipped and was reverted in migration `0053` for
-incorrectly also blocking the reopen workflow above).
+bubbles, capped at 500 chars per message and rate-limited to 20 messages per
+10 minutes) with no realtime subscription — a reply from the other party
+appears only on the next reload, not live. **Visibility is enforced twice**:
+the client shapes its query differently for staff (no member filter — sees
+every ticket platform-wide, capped at 500, with a search box + status-filter
+row to narrow that list) versus a member (filtered to her own), and —
+independently, as the actual boundary — RLS restricts a non-staff caller's
+read to her own tickets regardless of what query shape the client sends.
+Moving a ticket to `resolved`/`closed` — or changing `priority` — is
+staff-only, both in the UI and at the RLS layer — closing a gap where a
+member could otherwise self-close her own complaint via a direct API call
+even though no UI ever exposed that action. The list is ordered by
+`updated_at` (bumped by any ticket-field change AND by any new message on it,
+via a security-definer trigger — a reply alone doesn't otherwise touch
+`support_tickets`), not `created_at`, so a resolved-then-replied-to ticket
+resurfaces at the top of the staff queue instead of staying buried at its
+original creation time. **The ticket's own filer can reopen it**: moving
+`resolved`/`closed` back to `open` is a member-writable transition (round
+188/migration `0093`) — but only that one direction; a member can never move
+a ticket directly to `resolved`/`closed`, which stays exclusively staff's to
+set, and every other column (subject/description/category/priority/
+member_id/resolved_by) stays locked on the member's own reopen branch.
+Moving a ticket to `resolved`/`closed` records which staff account did it and
+when (`resolved_by`/`resolved_at`, mirroring `shg_join_requests.decided_by`
+and `scheme_applications.decided_by`/`decided_at`) — the timestamp is
+stamped server-side by a trigger rather than trusted from the client, and
+staff reopening an already-resolved ticket is likewise supported even when
+done by a different staff member than the one who resolved it. `resolved_by`
+can only ever be set to the calling staff account's own id (or left at
+whatever it already was, covering reopen/other-status-change updates) — a
+staff account cannot attribute a resolution to a colleague who never touched
+the ticket (migration `0058`; live-confirmed round 128, after an earlier,
+simpler pin shipped and was reverted in migration `0053` for incorrectly also
+blocking the reopen workflow above).
 
 FAQs are fully static content, not backed by any table. Voice Support follows
 the same "record → transcribe → answer" state machine as the AI Voice
@@ -975,10 +990,10 @@ real/mock pattern.
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-SUP-1 | Any user browses static FAQ content | All |
-| FR-SUP-2 | Any user raises a ticket and follows a threaded (non-realtime) chat conversation | All |
+| FR-SUP-2 | Any user raises a categorized ticket and follows a threaded (non-realtime) chat conversation | All |
 | FR-SUP-3 | Any user accesses voice-based support (real on-device STT/TTS in live mode, mocked in demo mode, real underlying data where applicable) | All |
-| FR-SUP-4 | A member sees only her own tickets; staff see all tickets platform-wide (capped at 500) — enforced independently at the RLS layer | Member vs. CRP/CLF/Admin |
-| FR-SUP-5 | Ticket status changes are staff-only, both client-side and at RLS | Staff |
+| FR-SUP-4 | A member sees only her own tickets; staff see all tickets platform-wide (capped at 500, with search/status-filter) — enforced independently at the RLS layer | Member vs. CRP/CLF/Admin |
+| FR-SUP-5 | Resolving/closing a ticket and changing its priority are staff-only, both client-side and at RLS; a member may only reopen her own resolved/closed ticket back to `open` | Member (reopen only) vs. Staff |
 
 ### 3.14 AI Advisory (`ai/`)
 

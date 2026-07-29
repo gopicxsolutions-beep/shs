@@ -1532,6 +1532,8 @@
 
   "adminTrainingCoursesDeleteErrorMessage": "Could not delete this course. Please try again.",
 
+  "adminTrainingCoursesDeleteHasProgressError": "This course can't be deleted — at least one member has already made progress or earned a certification from it.",
+
   "adminDashboardTrainingTile": "Training",
 
   "servicesManageTrainingLabel": "Manage Training",
@@ -1664,6 +1666,31 @@
       "date": {"type": "String"}
     }
   },
+
+  "supportTicketDetailReopenAction": "Reopen ticket",
+
+  "supportTicketDetailPriorityLabel": "Priority",
+
+  "supportCategoryGeneral": "General",
+  "supportCategorySavings": "Savings",
+  "supportCategoryLoans": "Loans",
+  "supportCategoryMeetings": "Meetings",
+  "supportCategoryLivelihood": "Livelihood",
+  "supportCategoryMarketplace": "Marketplace",
+  "supportCategoryPayments": "Payments",
+  "supportCategoryAccount": "Account",
+  "supportCategoryOther": "Other",
+
+  "supportPriorityLow": "Low",
+  "supportPriorityNormal": "Normal",
+  "supportPriorityHigh": "High",
+  "supportPriorityUrgent": "Urgent",
+
+  "supportTicketFormCategoryLabel": "Category",
+
+  "supportChatSearchHint": "Search tickets or member names",
+
+  "supportChatFilterAll": "All",
 
   "supportTicketFormTitle": "Raise a Ticket",
 
@@ -2357,6 +2384,8 @@
   "adminAuditLogActionDeactivation": "Account status change",
   "adminAuditLogActionShgReassignment": "SHG reassignment",
   "adminAuditLogDecisionLabel": "decision: {decision}",
+  "adminAuditLogActiveValue": "Active",
+  "adminAuditLogInactiveValue": "Deactivated",
   "@adminAuditLogDecisionLabel": {
     "placeholders": {
       "decision": {"type": "String"}

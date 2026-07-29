@@ -82,11 +82,19 @@ class TrainingRepository {
     await _client.from('training_courses').update({'title': title, 'topic': topic, 'format': format, 'duration': duration}).eq('id', id);
   }
 
-  /// Deleting a course cascades to its quiz questions and every member's
-  /// progress row (`on delete cascade` on both `quiz_questions.course_id`
-  /// and `course_progress.course_id`, migrations 0001/0041) — real content
-  /// removal, not a soft-delete, matching this repository's course-catalog
-  /// scope (no "archive instead of delete" concept exists here today).
+  /// Deleting a course still cascades to its own quiz question bank
+  /// (`quiz_questions.course_id on delete cascade`, migration 0041) — real
+  /// content removal, matching this repository's course-catalog scope (no
+  /// "archive instead of delete" concept exists here today). It no longer
+  /// cascades to member progress: `course_progress.course_id` was changed
+  /// to `on delete restrict` (round 187's `0091`) specifically so deleting
+  /// a course can never silently destroy a member's already-earned
+  /// certification history — once any member has engaged with a course at
+  /// all, this call fails with a foreign-key-violation instead (surfaced
+  /// to the admin via `AdminTrainingCoursesPage`'s existing generic error
+  /// toast). There is currently no admin path to force-delete or archive a
+  /// course past that point — a real, deliberately-deferred gap, not an
+  /// oversight.
   Future<void> deleteCourse(String id) async {
     if (!_live) {
       _locallyAddedCourses.removeWhere((c) => c.id == id);

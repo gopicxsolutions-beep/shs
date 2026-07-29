@@ -1151,6 +1151,8 @@
 
   "adminTrainingCoursesDeleteErrorMessage": "इस कोर्स को हटाया नहीं जा सका। कृपया फिर से कोशिश करें।",
 
+  "adminTrainingCoursesDeleteHasProgressError": "यह कोर्स हटाया नहीं जा सकता — कम से कम एक सदस्य ने इसमें प्रगति की है या प्रमाणपत्र प्राप्त किया है।",
+
   "adminDashboardTrainingTile": "प्रशिक्षण",
 
   "servicesManageTrainingLabel": "प्रशिक्षण प्रबंधित करें",
@@ -1277,6 +1279,31 @@
   "supportTicketDetailSendTooltip": "संदेश भेजें",
 
   "supportTicketDetailResolvedBy": "{name} द्वारा {date} को हल किया गया",
+
+  "supportTicketDetailReopenAction": "टिकट फिर से खोलें",
+
+  "supportTicketDetailPriorityLabel": "प्राथमिकता",
+
+  "supportCategoryGeneral": "सामान्य",
+  "supportCategorySavings": "बचत",
+  "supportCategoryLoans": "ऋण",
+  "supportCategoryMeetings": "बैठकें",
+  "supportCategoryLivelihood": "आजीविका",
+  "supportCategoryMarketplace": "बाज़ार",
+  "supportCategoryPayments": "भुगतान",
+  "supportCategoryAccount": "खाता",
+  "supportCategoryOther": "अन्य",
+
+  "supportPriorityLow": "कम",
+  "supportPriorityNormal": "सामान्य",
+  "supportPriorityHigh": "उच्च",
+  "supportPriorityUrgent": "अत्यावश्यक",
+
+  "supportTicketFormCategoryLabel": "श्रेणी",
+
+  "supportChatSearchHint": "टिकट या सदस्य के नाम खोजें",
+
+  "supportChatFilterAll": "सभी",
 
   "supportTicketFormTitle": "टिकट दर्ज करें",
 
@@ -1843,6 +1870,8 @@
   "adminAuditLogActionDeactivation": "खाता स्थिति परिवर्तन",
   "adminAuditLogActionShgReassignment": "SHG पुनः असाइनमेंट",
   "adminAuditLogDecisionLabel": "निर्णय: {decision}",
+  "adminAuditLogActiveValue": "सक्रिय",
+  "adminAuditLogInactiveValue": "निष्क्रिय किया गया",
   "@adminAuditLogDecisionLabel": {
     "placeholders": {
       "decision": {"type": "String"}

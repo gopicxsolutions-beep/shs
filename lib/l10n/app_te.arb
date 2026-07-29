@@ -1151,6 +1151,8 @@
 
   "adminTrainingCoursesDeleteErrorMessage": "ఈ కోర్సును తొలగించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
 
+  "adminTrainingCoursesDeleteHasProgressError": "ఈ కోర్సును తొలగించలేము — కనీసం ఒక సభ్యురాలు దీనిలో పురోగతి సాధించారు లేదా సర్టిఫికేషన్ పొందారు.",
+
   "adminDashboardTrainingTile": "శిక్షణ",
 
   "servicesManageTrainingLabel": "శిక్షణను నిర్వహించండి",
@@ -1277,6 +1279,31 @@
   "supportTicketDetailSendTooltip": "సందేశం పంపండి",
 
   "supportTicketDetailResolvedBy": "{name} ద్వారా {date}న పరిష్కరించబడింది",
+
+  "supportTicketDetailReopenAction": "టికెట్‌ను తిరిగి తెరవండి",
+
+  "supportTicketDetailPriorityLabel": "ప్రాధాన్యత",
+
+  "supportCategoryGeneral": "సాధారణ",
+  "supportCategorySavings": "పొదుపు",
+  "supportCategoryLoans": "రుణాలు",
+  "supportCategoryMeetings": "సమావేశాలు",
+  "supportCategoryLivelihood": "జీవనోపాధి",
+  "supportCategoryMarketplace": "మార్కెట్‌ప్లేస్",
+  "supportCategoryPayments": "చెల్లింపులు",
+  "supportCategoryAccount": "ఖాతా",
+  "supportCategoryOther": "ఇతర",
+
+  "supportPriorityLow": "తక్కువ",
+  "supportPriorityNormal": "సాధారణ",
+  "supportPriorityHigh": "అధిక",
+  "supportPriorityUrgent": "అత్యవసరం",
+
+  "supportTicketFormCategoryLabel": "వర్గం",
+
+  "supportChatSearchHint": "టికెట్లు లేదా సభ్యుల పేర్లను వెతకండి",
+
+  "supportChatFilterAll": "అన్నీ",
 
   "supportTicketFormTitle": "టికెట్ నమోదు చేయండి",
 
@@ -1843,6 +1870,8 @@
   "adminAuditLogActionDeactivation": "ఖాతా స్థితి మార్పు",
   "adminAuditLogActionShgReassignment": "SHG తిరిగి కేటాయింపు",
   "adminAuditLogDecisionLabel": "నిర్ణయం: {decision}",
+  "adminAuditLogActiveValue": "క్రియాశీలం",
+  "adminAuditLogInactiveValue": "నిష్క్రియం చేయబడింది",
   "@adminAuditLogDecisionLabel": {
     "placeholders": {
       "decision": {"type": "String"}
