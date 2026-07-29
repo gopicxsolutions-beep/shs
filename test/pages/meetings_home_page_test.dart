@@ -243,6 +243,12 @@ void main() {
         expect(find.textContaining('SHG: Sneha SHG'), findsOneWidget);
         expect(find.byTooltip('Schedule meeting'), findsNothing, reason: 'there is no SHG to schedule a platform-wide meeting against');
         expect(tester.takeException(), isNull);
+        // Gap-hunt iteration 27: platform-wide staff has no SHG of her own
+        // to personally attend a meeting for — syncing local reminders
+        // against the full cross-SHG feed used to schedule a "starts in an
+        // hour" buzz for every upcoming meeting on the entire platform.
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(fake.scheduled, isEmpty, reason: 'platform-wide staff must never get local reminders for meetings across every SHG');
       });
     }
 

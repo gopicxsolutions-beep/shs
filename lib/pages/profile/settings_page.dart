@@ -47,6 +47,15 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _notifySavings = true;
   bool _notifyAnnouncements = true;
   bool _switchingRole = false;
+  // Reentrancy guards for the 3 notification toggles below, matching
+  // `_switchingRole`'s existing pattern — without these, rapid double-
+  // tapping a switch (off then on before the first toggle's cancel/sync
+  // chain resolves) starts two overlapping async chains whose completion
+  // order isn't guaranteed, so the final saved preference and the final
+  // actually-scheduled/cancelled OS reminders could disagree.
+  bool _meetingsToggleBusy = false;
+  bool _savingsToggleBusy = false;
+  bool _announcementsToggleBusy = false;
 
   late final NotificationService _notifications = widget.notificationService ?? LocalNotificationService.instance;
   late final MeetingRepository _meetingRepository = widget.meetingRepository ?? MeetingRepository();
@@ -133,31 +142,37 @@ class _SettingsPageState extends State<SettingsPage> {
   // several async gaps, and re-resolving AppLocalizations.of(context) that
   // late risks touching a BuildContext the widget tree has since disposed.
   Future<void> _onMeetingsToggle(bool value, String? shgId, AppLocalizations l10n) async {
-    await _setPref(_notifyMeetingsKey, value, (val) => _notifyMeetings = val);
-    await _requestPermissionIfEnabling(value);
-    if (value) {
-      await setMeetingCancelPending(false);
+    if (_meetingsToggleBusy) return;
+    setState(() => _meetingsToggleBusy = true);
+    try {
+      await _setPref(_notifyMeetingsKey, value, (val) => _notifyMeetings = val);
+      await _requestPermissionIfEnabling(value);
+      if (value) {
+        await setMeetingCancelPending(false);
+        try {
+          final meetings = await _meetingRepository.fetchForShg(shgId);
+          await syncMeetingReminders(_notifications, meetings, l10n);
+        } catch (_) {
+          /* best-effort, see doc comment above */
+        }
+        return;
+      }
+      await setMeetingCancelPending(true);
       try {
         final meetings = await _meetingRepository.fetchForShg(shgId);
-        await syncMeetingReminders(_notifications, meetings, l10n);
+        await cancelAllMeetingReminders(_notifications, meetings);
+        await setMeetingCancelPending(false);
       } catch (_) {
-        /* best-effort, see doc comment above */
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.settingsNotifCancelPendingError)),
+          );
+        }
+        // Left pending on purpose — see doc comment above: MeetingsHomePage
+        // retries this the next time it loads instead of it being lost.
       }
-      return;
-    }
-    await setMeetingCancelPending(true);
-    try {
-      final meetings = await _meetingRepository.fetchForShg(shgId);
-      await cancelAllMeetingReminders(_notifications, meetings);
-      await setMeetingCancelPending(false);
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.settingsNotifCancelPendingError)),
-        );
-      }
-      // Left pending on purpose — see doc comment above: MeetingsHomePage
-      // retries this the next time it loads instead of it being lost.
+    } finally {
+      if (mounted) setState(() => _meetingsToggleBusy = false);
     }
   }
 
@@ -168,31 +183,37 @@ class _SettingsPageState extends State<SettingsPage> {
   /// SHG the way meetings/announcements are).
   // Same reasoning as _onMeetingsToggle's doc comment for [l10n].
   Future<void> _onSavingsToggle(bool value, String? memberId, AppLocalizations l10n) async {
-    await _setPref(_notifySavingsKey, value, (val) => _notifySavings = val);
-    await _requestPermissionIfEnabling(value);
-    if (value) {
-      await setLoanCancelPending(false);
+    if (_savingsToggleBusy) return;
+    setState(() => _savingsToggleBusy = true);
+    try {
+      await _setPref(_notifySavingsKey, value, (val) => _notifySavings = val);
+      await _requestPermissionIfEnabling(value);
+      if (value) {
+        await setLoanCancelPending(false);
+        try {
+          final loans = await _loanRepository.fetchForMember(memberId);
+          await syncLoanDueReminders(_notifications, loans, l10n);
+        } catch (_) {
+          /* best-effort, see _onMeetingsToggle's doc comment */
+        }
+        return;
+      }
+      await setLoanCancelPending(true);
       try {
         final loans = await _loanRepository.fetchForMember(memberId);
-        await syncLoanDueReminders(_notifications, loans, l10n);
+        await cancelAllLoanDueReminders(_notifications, loans);
+        await setLoanCancelPending(false);
       } catch (_) {
-        /* best-effort, see _onMeetingsToggle's doc comment */
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.settingsNotifCancelPendingError)),
+          );
+        }
+        // Left pending on purpose — LoansHomePage retries this the next
+        // time it loads instead of it being lost.
       }
-      return;
-    }
-    await setLoanCancelPending(true);
-    try {
-      final loans = await _loanRepository.fetchForMember(memberId);
-      await cancelAllLoanDueReminders(_notifications, loans);
-      await setLoanCancelPending(false);
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.settingsNotifCancelPendingError)),
-        );
-      }
-      // Left pending on purpose — LoansHomePage retries this the next time
-      // it loads instead of it being lost.
+    } finally {
+      if (mounted) setState(() => _savingsToggleBusy = false);
     }
   }
 
@@ -203,8 +224,14 @@ class _SettingsPageState extends State<SettingsPage> {
   /// dates are. So beyond saving the preference and (dis)arming the OS
   /// permission, there's nothing further to do here on toggle.
   Future<void> _onAnnouncementsToggle(bool value) async {
-    await _setPref(_notifyAnnouncementsKey, value, (val) => _notifyAnnouncements = val);
-    await _requestPermissionIfEnabling(value);
+    if (_announcementsToggleBusy) return;
+    setState(() => _announcementsToggleBusy = true);
+    try {
+      await _setPref(_notifyAnnouncementsKey, value, (val) => _notifyAnnouncements = val);
+      await _requestPermissionIfEnabling(value);
+    } finally {
+      if (mounted) setState(() => _announcementsToggleBusy = false);
+    }
   }
 
   Future<void> _switchRole(AppState appState, Role role) async {
@@ -241,11 +268,11 @@ class _SettingsPageState extends State<SettingsPage> {
                   padded: false,
                   child: Column(
                     children: [
-                      _toggleRow(l10n.settingsNotifMeetingReminders, _notifyMeetings, (v) => _onMeetingsToggle(v, appState.profile?.shgId, l10n)),
+                      _toggleRow(l10n.settingsNotifMeetingReminders, _notifyMeetings, _meetingsToggleBusy ? null : (v) => _onMeetingsToggle(v, appState.profile?.shgId, l10n)),
                       const Divider(height: 1, color: Neutral.c100),
-                      _toggleRow(l10n.settingsNotifPaymentAlerts, _notifySavings, (v) => _onSavingsToggle(v, appState.profile?.id, l10n)),
+                      _toggleRow(l10n.settingsNotifPaymentAlerts, _notifySavings, _savingsToggleBusy ? null : (v) => _onSavingsToggle(v, appState.profile?.id, l10n)),
                       const Divider(height: 1, color: Neutral.c100),
-                      _toggleRow(l10n.settingsNotifAnnouncements, _notifyAnnouncements, (v) => _onAnnouncementsToggle(v)),
+                      _toggleRow(l10n.settingsNotifAnnouncements, _notifyAnnouncements, _announcementsToggleBusy ? null : (v) => _onAnnouncementsToggle(v)),
                     ],
                   ),
                 ),
@@ -310,11 +337,20 @@ class _SettingsPageState extends State<SettingsPage> {
 
   String _languageLabel(Language l) => switch (l) { Language.en => 'English', Language.te => 'తెలుగు', Language.hi => 'हिंदी' };
 
-  Widget _toggleRow(String label, bool value, ValueChanged<bool> onChanged) => Padding(
+  Widget _toggleRow(String label, bool value, ValueChanged<bool>? onChanged) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Row(children: [
-          Expanded(child: Text(label, style: AppTheme.sans(13, weight: FontWeight.w600))),
-          Switch(value: value, onChanged: onChanged, activeThumbColor: Brand.c600),
-        ]),
+        // Without this, a screen reader landing directly on the `Switch`
+        // (e.g. TalkBack's "explore by touch") announces only "On/Off,
+        // switch" with no indication of which of the 3 preferences it is —
+        // MergeSemantics folds the label and the switch's own live value
+        // into one announced node, matching the pattern already used
+        // elsewhere in this app (e.g. language_page.dart's row) for the
+        // identical label-next-to-control shape.
+        child: MergeSemantics(
+          child: Row(children: [
+            Expanded(child: Text(label, style: AppTheme.sans(13, weight: FontWeight.w600))),
+            Switch(value: value, onChanged: onChanged, activeThumbColor: Brand.c600),
+          ]),
+        ),
       );
 }

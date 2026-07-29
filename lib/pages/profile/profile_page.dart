@@ -38,9 +38,25 @@ class _ProfilePageState extends State<ProfilePage> {
   final _shgRepo = ShgRepository();
   final GlobalKey<AppAsyncBuilderState<ShgProfile?>> _key = GlobalKey();
   bool _signingOut = false;
+  bool _editing = false;
 
   Future<void> _editProfile(Profile? profile) async {
-    if (profile == null) return;
+    if (profile == null || _editing) return;
+    // The dialog itself closes synchronously on tap (before the network
+    // call below even starts), so without this guard a re-tap of the edit
+    // icon while `updateProfile()`/`refreshProfile()` was still in flight
+    // could open a second dialog pre-filled from the still-stale
+    // `AppState.profile` and fire a second, overlapping write — matching
+    // this page's own existing `_signingOut` guard pattern.
+    setState(() => _editing = true);
+    try {
+      await _doEditProfile(profile);
+    } finally {
+      if (mounted) setState(() => _editing = false);
+    }
+  }
+
+  Future<void> _doEditProfile(Profile profile) async {
     final l10n = AppLocalizations.of(context)!;
     final name = TextEditingController(text: profile.name);
     final village = TextEditingController(text: profile.village ?? '');
@@ -125,7 +141,15 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: PageHeader(
         title: l10n.profileTitle,
-        right: IconButton(icon: const Icon(Icons.edit_rounded, color: Brand.c600), tooltip: l10n.profileEditProfile, onPressed: () => _editProfile(profile)),
+        right: IconButton(
+          icon: const Icon(Icons.edit_rounded, color: Brand.c600),
+          tooltip: l10n.profileEditProfile,
+          // Disabled (not just a silent no-op) while the profile hasn't
+          // loaded yet or a previous edit is still saving — matches this
+          // file's own established standard of not leaving a tappable
+          // control that does nothing with no feedback.
+          onPressed: profile == null || _editing ? null : () => _editProfile(profile),
+        ),
       ),
       body: AppAsyncBuilder<ShgProfile?>(
         key: _key,

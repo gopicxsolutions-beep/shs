@@ -546,6 +546,18 @@ class AppState extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(kSeenAnnouncementIdsPrefKey);
+      // Same cross-account-leakage concern, for the 3 notification-
+      // preference toggles themselves: without this, a second, different
+      // account signing in on the same device silently inherits whichever
+      // on/off choice the FIRST account left these switches at, instead of
+      // the documented "defaults to on" behavior for a genuinely new
+      // session — and the cancel-pending flags could otherwise carry a
+      // stale retry over to an account that never even toggled anything.
+      await prefs.remove(kNotifyMeetingsPrefKey);
+      await prefs.remove(kNotifyPaymentsPrefKey);
+      await prefs.remove(kNotifyAnnouncementsPrefKey);
+      await prefs.remove(kNotifyMeetingsCancelPendingKey);
+      await prefs.remove(kNotifyPaymentsCancelPendingKey);
     } catch (_) {
       // Best-effort only — see above.
     }

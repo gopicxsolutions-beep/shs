@@ -493,7 +493,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsNotifLocalOnly.
   ///
   /// In en, this message translates to:
-  /// **'Reminders are scheduled on this device only — not sent by a server. They won\'t reach you if you use a different phone or reinstall the app. If a meeting is cancelled, only this device\'s own reminder is cancelled right away — another member\'s phone may still show a stale reminder for it until she reopens the Meetings tab.'**
+  /// **'Reminders are scheduled on this device only — not sent by a server. They won\'t reach you if you use a different phone or reinstall the app, and restarting your phone can clear them too — reopening the Meetings or Loans tab brings them back in line. If a meeting is cancelled, only this device\'s own reminder is cancelled right away — another member\'s phone may still show a stale reminder for it until she reopens the Meetings tab.'**
   String get settingsNotifLocalOnly;
 
   /// No description provided for @notificationMeetingReminderTitle.

@@ -77,7 +77,7 @@
   "settingsNotifMeetingReminders": "Meeting reminders",
   "settingsNotifPaymentAlerts": "Payment alerts",
   "settingsNotifAnnouncements": "Announcements",
-  "settingsNotifLocalOnly": "Reminders are scheduled on this device only — not sent by a server. They won't reach you if you use a different phone or reinstall the app. If a meeting is cancelled, only this device's own reminder is cancelled right away — another member's phone may still show a stale reminder for it until she reopens the Meetings tab.",
+  "settingsNotifLocalOnly": "Reminders are scheduled on this device only — not sent by a server. They won't reach you if you use a different phone or reinstall the app, and restarting your phone can clear them too — reopening the Meetings or Loans tab brings them back in line. If a meeting is cancelled, only this device's own reminder is cancelled right away — another member's phone may still show a stale reminder for it until she reopens the Meetings tab.",
 
   "notificationMeetingReminderTitle": "Meeting reminder",
   "notificationMeetingReminderBodyNoVenue": "Your SHG meeting starts in about an hour.",

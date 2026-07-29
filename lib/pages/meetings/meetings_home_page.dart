@@ -67,7 +67,20 @@ class MeetingsHomePage extends StatelessWidget {
   /// render immediately no matter how long (or whether) that ever resolves.
   Future<List<Meeting>> _loadAndSyncReminders(MeetingRepository repo, bool platformWide, String? shgId, NotificationService notifications, AppLocalizations l10n) async {
     final meetings = await (platformWide ? repo.fetchAllForStaff() : repo.fetchForShg(shgId));
-    unawaited(_syncReminders(notifications, meetings, l10n));
+    // Unlike the on-screen feed (which platform-wide staff correctly sees
+    // in full, via `fetchAllForStaff()`), local reminders must NOT be
+    // synced against that same platform-wide list — a crp/clf/admin
+    // account has no SHG of her own to personally attend a meeting for,
+    // so scheduling "starts in an hour" reminders for every upcoming
+    // meeting across every SHG on the platform is pure notification spam,
+    // not a personal reminder. `LoansHomePage`'s equivalent staff path
+    // avoids this the same way, by only ever syncing reminders against
+    // `fetchForMember(memberId)` (which is naturally empty for a staff
+    // account with no personal loan) rather than its own platform-wide
+    // display feed — mirrored here by simply not syncing reminders at all
+    // for the platform-wide case, since meetings have no analogous
+    // "staff's own" subset to fall back to.
+    if (!platformWide) unawaited(_syncReminders(notifications, meetings, l10n));
     return meetings;
   }
 

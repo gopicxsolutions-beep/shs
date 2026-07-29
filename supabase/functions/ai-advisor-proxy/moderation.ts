@@ -110,11 +110,26 @@ export function normalizeLanguage(raw: unknown): Language {
 //     broadly: Hindi/Telugu legitimately use Mn combining vowel signs
 //     (matras/vottulu) in every real word in those scripts, so a blanket
 //     Mn strip would corrupt real self-harm/hate-speech phrases typed in
-//     either language rather than closing a bypass. Any future edit to
-//     these three pattern arrays, or to the invisible-character handling,
-//     MUST re-run the full sweep in moderation.test.ts, not just eyeball
-//     the diff — cherry-picked examples are exactly how five consecutive
-//     "complete" claims on this file went out wrong.
+//     either language rather than closing a bypass.
+//   6th pass (gap-hunt iteration 27, this one): dogfooding round 199's own
+//     "complete" claim found 3 MORE bypass characters the 5th pass's
+//     `\p{Cf}` fix still missed: U+034F COMBINING GRAPHEME JOINER (a
+//     genuinely glyph-less character, category Mn — deliberately
+//     special-cased rather than broadening the Mn exclusion, since a real
+//     Hindi/Telugu combining mark always has a visible effect on its base
+//     letter and CGJ never does); U+E0100-U+E01EF, the Variation Selectors
+//     SUPPLEMENT block (category Mn — the BASE FE00-FE0F block was
+//     already handled, this sibling supplementary-plane block was
+//     missed, the exact same "one block instead of the family" mistake as
+//     before); and U+2800 BRAILLE PATTERN BLANK (category So, a known
+//     real-world moderation-bypass character — deliberately only this one
+//     code point, NOT the whole U+2800-U+28FF block, which contains real
+//     braille text with visible dot patterns that must not be stripped).
+//     Any future edit to these three pattern arrays, or to the
+//     invisible-character handling, MUST re-run the full sweep in
+//     moderation.test.ts, not just eyeball the diff — cherry-picked
+//     examples are exactly how six consecutive "complete" claims on this
+//     file went out wrong.
 const SEP = '[\\s._-]+';
 const SEP_OPT = '[\\s._-]*';
 
@@ -135,7 +150,7 @@ const SEP_OPT = '[\\s._-]*';
 // SEP's `+` quantifier (at least one separator) then fails to match;
 // replacing with a space turns it into "kill myself", which every pattern
 // already matches.
-const INVISIBLE_CHARS_RE = new RegExp('[\\p{Cf}\\uFE00-\\uFE0F]', 'gu');
+const INVISIBLE_CHARS_RE = new RegExp('[\\p{Cf}\\uFE00-\\uFE0F\\u034F\\u{E0100}-\\u{E01EF}\\u2800]', 'gu');
 
 function stripInvisibleChars(text: string): string {
   return text.replace(INVISIBLE_CHARS_RE, ' ');

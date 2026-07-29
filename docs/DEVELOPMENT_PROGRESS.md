@@ -18075,3 +18075,166 @@ restriction being corrected and re-verified within the same round.
 cleanly. Browser-preview UI verification succeeded: preview server
 restarted, tab fronted, landing page confirmed rendering correctly via
 screenshot on the rebuilt live-mode bundle.
+
+## Update (round 200) — Gap-hunting loop iteration 27: 2 more HIGH RLS gaps found by dogfooding (scheme_applications decided_by forgery, marketplace staff-as-seller bypass), a 6th moderation.ts bypass round, notification-spam fix, plus 8 more gaps
+
+Four parallel audits: dogfooding round 199, Notifications system full
+sweep, Admin Monitoring/Reports full sweep, Profile/Settings full sweep.
+
+**Dogfooding round 199 (3 new findings; 4 other claims confirmed holding)**
+1. **[HIGH]** `profiles_select_scheme_decider` (migration 0111, last round)
+   is only safe if `decided_by` can never be set by anyone but a real
+   staff decision — but `scheme_applications_insert_self` never locked
+   `decided_by`/`decided_at` at all. A direct REST call (bypassing the
+   Flutter client) could submit a member's own, otherwise-legitimate
+   application with `decided_by` pointed at an arbitrary profile uuid,
+   instantly granting the submitter permanent `profiles` SELECT access
+   (name, mobile, role, shg_id) on that target via last round's new
+   policy. The exact bug class already fixed twice elsewhere in this
+   schema (`shg_join_requests_insert_self`, migration 0027; `loans`,
+   migration 0088) — never mirrored here because, until last round wired
+   a profiles-visibility grant to it, nothing read `decided_by` for
+   anything but display. Fixed by adding `decided_by is null and
+   decided_at is null` to the INSERT check, mirroring 0027's exact shape.
+   Live-verified: a forged `decided_by` on a self-INSERT now raises
+   `42501`; a legitimate application (no `decided_by`) still succeeds.
+2. **[HIGH]** Last round's `marketplace_orders_update_seller_or_staff` fix
+   only excluded the staff-as-BUYER self-dealing angle. Since
+   `marketplace_products_insert_seller_or_staff` already lets a staff
+   account legitimately sell her own product, a staff-seller's own order
+   from a genuine third-party buyer still satisfied the unrestricted staff
+   branch — she could force that order straight to `'delivered'` with none
+   of the one-step-transition guard, without ever shipping. Fixed by also
+   excluding orders on a product the staff account herself sells from the
+   unrestricted staff branch, forcing that case through the same
+   one-step-guarded seller branch every other seller must obey.
+   Live-verified: a staff-seller's direct jump to `'delivered'` now raises
+   `42501`; her legitimate one-step transition still succeeds; staff
+   managing a genuinely different seller's order (dispute resolution)
+   still succeeds unrestricted.
+3. **[MEDIUM]** `moderation.ts`'s `\p{Cf}` invisible-character fix (last
+   round) still missed 3 characters: U+034F (COMBINING GRAPHEME JOINER,
+   category Mn but genuinely glyph-less, unlike a real Hindi/Telugu
+   combining mark), the Variation Selectors SUPPLEMENT block U+E0100-
+   U+E01EF (the base FE00-FE0F block was already handled, this sibling
+   supplementary-plane block wasn't), and U+2800 BRAILLE PATTERN BLANK (a
+   known real-world moderation-bypass character). Fixed by adding all
+   three explicitly (not broadening the `Mn` exclusion, which would
+   corrupt real Hindi/Telugu text). **Self-caught mid-fix, again**: the
+   first attempt at this exact fix repeated last round's backslash-
+   doubling mistake in a different spot, which would have silently broken
+   the baseline "kill myself" case again — caught immediately by running
+   `deno test` before moving on, not by trusting the change looked right.
+   Extended the exhaustive sweep from 9 to 12 separators. 55/55 passed.
+   Redeployed.
+4. Also confirmed holding, no regression: `meeting_action_items_update_
+   self_or_leader`'s post-correction shape (migration 0112), `place_
+   marketplace_order`'s NULL-seller handling, `livelihood_detail_page.
+   dart`'s `isStaff`/ownership timing, and `AdminRepository.
+   updateUserRole()`'s `shg_id`-clearing (every downstream read site
+   already treated it as nullable).
+
+**Notifications system full sweep (2 HIGH findings, 1 fixed + 1
+documented; RLS/i18n/permission-UX all re-confirmed clean)**
+1. **[HIGH, fixed]** `MeetingsHomePage`'s local-reminder sync used the
+   SAME platform-wide meetings list a crp/clf/admin account sees on
+   screen — since that account has no SHG of her own, every upcoming
+   meeting across every SHG on the platform got a scheduled "starts in an
+   hour" local notification, real notification spam for the normal
+   (not edge-case) state of every staff account. `LoansHomePage`'s
+   equivalent staff path avoids this by only ever syncing reminders
+   against `fetchForMember(memberId)` (naturally empty for staff, who
+   have no personal loan); meetings have no analogous "staff's own"
+   subset, so the fix is simply to skip reminder-sync entirely for the
+   platform-wide case. Added a test assertion (the existing round-168
+   platform-wide-staff test never checked scheduled reminders at all,
+   only the on-screen feed) confirming zero reminders are scheduled for
+   that case going forward.
+2. **[HIGH, documented not fixed]** Scheduled reminders do not survive an
+   Android reboot — `AlarmManager` (what local notification scheduling is
+   built on) clears all pending alarms on reboot, and this app declares no
+   `RECEIVE_BOOT_COMPLETED` receiver to reschedule them, relying only on
+   opportunistic re-sync the next time the relevant tab loads. Implementing
+   a boot receiver is native-platform work this session's environment
+   (Flutter web preview, no real Android device/emulator) cannot properly
+   exercise — per this project's own verification standard, an unverified
+   native fix is worse than an honestly-disclosed gap. Added the caveat to
+   `settingsNotifLocalOnly` (all 3 languages) instead, alongside the
+   existing cross-device/reinstall disclosure it already carried.
+3. **[MEDIUM, documented not fixed]** No tap-through/deep-link on any
+   scheduled notification (no payload attached, no response handler
+   registered) — tapping a meeting/loan/announcement reminder always opens
+   the app to its default route. A real gap, but a feature addition rather
+   than a regression; deferred given this round's already-large scope.
+4. **[LOW, documented not fixed]** Possible false "permission denied" on
+   Android <13, where `requestNotificationsPermission()`'s return value
+   for the "no such permission exists" case couldn't be confirmed without
+   a real low-API device — flagged for on-device verification, not
+   asserted as certain.
+
+**Admin Monitoring/Reports full sweep (no new CRITICAL/HIGH; re-confirms
+an already-documented deferred item)**
+- `AnalyticsRepository.fetchPlatformKpis()` and `ReportRepository.
+  fetchVillageWiseShgs()` remain unbounded platform-wide scans, the same
+  "fetch every row to compute one aggregate" pattern `training_completion_
+  stats()` (migration 0110) was just converted away from for its sibling.
+  Already documented as a deliberate deferral needing a server-side
+  aggregate RPC (`docs/DEVELOPMENT_PROGRESS.md` ~line 15503); re-surfaced
+  as the obvious next target rather than fixed this round, given the size
+  of this round's other findings. `training_completion_stats()` itself was
+  re-verified correct line-by-line (no numerator/denominator asymmetry, no
+  double-counting, correct grant hygiene).
+
+**Profile/Settings full sweep (5 findings, all fixed)**
+1. **[MEDIUM/LOW]** `ProfilePage._editProfile` had no reentrancy guard —
+   the edit dialog closes synchronously before the network call starts, so
+   a re-tap could open a second dialog pre-filled from stale `AppState.
+   profile` and fire an overlapping write. Added an `_editing` guard
+   matching this page's own existing `_signingOut` pattern; the edit
+   button is now also disabled (not silently no-op) while the profile
+   hasn't loaded yet.
+2. **[LOW/MEDIUM]** The 3 notification-preference `Switch`es had no
+   reentrancy guard (unlike `_switchRole`'s existing `_switchingRole`
+   pattern) — rapid double-toggling could start two overlapping
+   cancel/sync chains with no guaranteed completion order. Added a busy
+   flag per toggle.
+3. **[MEDIUM]** The 3 notification-preference keys and their 2
+   cancel-pending flags were never cleared on sign-out — a second,
+   different account signing in on the same device silently inherited
+   whichever on/off choice the first account left them at, instead of the
+   documented "defaults to on" behavior for a genuinely new session. Fixed
+   by clearing all 5 keys in `AppState.signOut()`, alongside the existing
+   `kSeenAnnouncementIdsPrefKey` clear it already does for the identical
+   reason.
+4. **[LOW/MEDIUM]** The 3 toggle rows in `SettingsPage._toggleRow` had no
+   merged semantics — a screen reader landing directly on the `Switch`
+   announced only "On/Off, switch" with no indication of which preference
+   it was. Wrapped in `MergeSemantics`, matching `language_page.dart`'s
+   existing pattern for the identical label-next-to-control shape.
+5. Re-confirmed NOT a bug: `profile_page.dart`'s own edit dialog does not
+   have the village-blanking bug class fixed 2 rounds ago in
+   `profile_setup_page.dart` — this page always posts the village field
+   back verbatim via `updateProfile()` (which, unlike `upsertMyProfile`,
+   always writes whatever it's given), with no "leave unset, fall back to
+   something else" code path for accidental blanking to hide in.
+
+**Migration `0113_iteration27_scheme_decider_forgery_and_marketplace_
+seller_bypass.sql`** (both changes individually live-verified for the
+negative/blocked case and the positive/still-legitimate case, using
+committed `__TEST__` fixtures cleaned up and re-queried to confirm 0 rows
+remain): `scheme_applications_insert_self` now locks `decided_by`/
+`decided_at` to null; `marketplace_orders_update_seller_or_staff`'s staff
+branch now also excludes orders on the staff account's own products.
+
+**Verification:** `flutter analyze` — 0 issues. `flutter test` —
+1039/1039 passed (including a new assertion that platform-wide staff gets
+zero scheduled meeting reminders). `deno test` (ai-advisor-proxy) — 55/55
+passed after the moderation.ts fix (including the self-caught, second
+backslash-doubling bug, caught before it shipped), redeployed. Migration
+0113 pushed to the linked live project; both RLS-shape changes
+live-verified for negative and positive cases (including staff correctly
+retaining unrestricted management of orders/applications she isn't
+self-dealing on). `flutter build web --release --dart-define-from-file=
+.env.json` rebuilt cleanly. Browser-preview UI verification succeeded:
+preview server restarted, tab fronted, landing page confirmed rendering
+correctly via screenshot on the rebuilt live-mode bundle.
