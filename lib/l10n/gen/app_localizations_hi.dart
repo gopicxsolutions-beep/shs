@@ -179,6 +179,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get profileShgNotYetApproved => 'अभी स्वीकृत नहीं हुआ';
 
   @override
+  String get profileShgNotApplicable => 'लागू नहीं';
+
+  @override
   String get profileName => 'नाम';
 
   @override
@@ -398,6 +401,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get noShgsFound => 'कोई SHG नहीं मिला';
+
+  @override
+  String get shgSearchLoadError =>
+      'SHG लोड नहीं हो सके। कृपया पुनः प्रयास करें।';
 
   @override
   String get roleSelectTitle => 'इस रूप में जारी रखें';
@@ -1029,6 +1036,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get memberReportTitle => 'मेरी रिपोर्ट्स';
 
   @override
+  String get reportPeriodAllTime => 'सभी समय';
+
+  @override
   String get memberReportTotalSavingsLabel => 'कुल बचत';
 
   @override
@@ -1115,7 +1125,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get shgPerformanceReportTitle => 'प्रदर्शन रिपोर्ट';
 
   @override
-  String get shgPerformanceAvgAttendanceLabel => 'औसत उपस्थिति';
+  String get shgPerformanceAvgAttendanceLabel => 'औसत उपस्थिति (पिछले 6 महीने)';
 
   @override
   String get shgPerformanceActiveLoansLabel => 'सक्रिय ऋण';
@@ -3196,6 +3206,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get analyticsShgDetailNotFound => 'यह SHG नहीं मिल सका';
 
   @override
+  String get shgReportShgNotFound =>
+      'यह SHG नहीं मिल सका — इसे हटा दिया गया हो सकता है';
+
+  @override
   String get analyticsShgDetailMembersLabel => 'सदस्य';
 
   @override
@@ -3214,6 +3228,13 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get analyticsShgDetailMembersLinkSubtitle =>
       'इस SHG की पूरी सदस्य सूची';
+
+  @override
+  String get analyticsShgDetailJoinRequestsLinkTitle => 'जॉइन अनुरोध';
+
+  @override
+  String get analyticsShgDetailJoinRequestsLinkSubtitle =>
+      'इस SHG में शामिल होने की प्रतीक्षा कर रहे सदस्य';
 
   @override
   String get analyticsShgListTitle => 'SHG निगरानी';

@@ -136,7 +136,9 @@ class AdminRepository {
       return query.trim().isEmpty || demoShg.name.toLowerCase().contains(query.trim().toLowerCase()) ? [demoShg] : const [];
     }
     final builder = _client.from('shg_directory').select();
-    final rows = await (query.trim().isEmpty ? builder.limit(20) : builder.ilike('name', '%${query.trim()}%').limit(20));
+    // Same fix as ProfileRepository.searchShgs — an unordered query gives no
+    // guarantee of stable result ordering between calls.
+    final rows = await (query.trim().isEmpty ? builder.order('name').limit(20) : builder.ilike('name', '%${query.trim()}%').order('name').limit(20));
     return (rows as List).map((r) => ShgSearchResult.fromMap(r as Map<String, dynamic>)).toList();
   }
 

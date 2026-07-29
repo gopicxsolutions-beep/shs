@@ -82,9 +82,18 @@ class _ProfilePageState extends State<ProfilePage> {
         content: Text(SupabaseService.isConfigured ? l10n.profileUpdated : l10n.profileUpdateDemoMode),
       ));
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.profileUpdateError)));
-      }
+      if (!mounted) return;
+      // A silent-no-op RLS rejection (a leader/admin deactivated this
+      // account mid-session, while AppState.profile is still the stale
+      // pre-deactivation copy) surfaces here as the same generic exception
+      // as any other write failure. Re-checking the account's real current
+      // status distinguishes "you were deactivated" from an actual
+      // transient error, instead of always showing the opaque generic
+      // message for both.
+      await context.read<AppState>().refreshProfile().catchError((_) {});
+      if (!mounted) return;
+      final deactivated = SupabaseService.isConfigured && context.read<AppState>().profile?.isActive == false;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(deactivated ? l10n.accountDeactivatedMessage : l10n.profileUpdateError)));
     }
   }
 
@@ -127,7 +136,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const Divider(height: 20),
                     _row(Icons.location_on_rounded, l10n.profileVillage, user.village),
                     const Divider(height: 20),
-                    _row(Icons.groups_rounded, l10n.profileSHG, shg?.name ?? (SupabaseService.isConfigured ? l10n.profileShgNotYetApproved : user.shgName)),
+                    _row(Icons.groups_rounded, l10n.profileSHG, shg?.name ?? _shgFallbackText(user, l10n)),
                   ],
                 ),
               ),
@@ -174,11 +183,22 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  // `ShgRepository.fetchShg` returns null both while a member/leader is
+  // still awaiting approval AND, by design, for any crp/clf/admin (staff
+  // legitimately has no SHG of its own — see that method's own doc
+  // comment). The old unconditional "Not yet approved" fallback told every
+  // staff account viewing her own Profile tab that her onboarding was
+  // incomplete, which was never true.
+  String _shgFallbackText(AppUser user, AppLocalizations l10n) {
+    if (!SupabaseService.isConfigured) return user.shgName;
+    return (user.role == Role.member || user.role == Role.leader) ? l10n.profileShgNotYetApproved : l10n.profileShgNotApplicable;
+  }
+
   Widget _row(IconData icon, String label, String value) => Row(
         children: [
           Icon(icon, size: 16, color: Neutral.c400),
           const SizedBox(width: 10),
-          Text(label, style: AppTheme.sans(12, color: Neutral.c500)),
+          Flexible(child: Text(label, style: AppTheme.sans(12, color: Neutral.c500))),
           const Spacer(),
           Flexible(child: Text(value, textAlign: TextAlign.end, style: AppTheme.sans(13, weight: FontWeight.w600))),
         ],

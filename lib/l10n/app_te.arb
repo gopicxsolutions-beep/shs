@@ -65,6 +65,7 @@
   "profileSHG": "SHG",
 
   "profileShgNotYetApproved": "ఇంకా ఆమోదించబడలేదు",
+  "profileShgNotApplicable": "వర్తించదు",
   "profileName": "పేరు",
   "profileUpdated": "ప్రొఫైల్ నవీకరించబడింది",
   "profileUpdateDemoMode": "డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
@@ -148,6 +149,7 @@
   "findYourShg": "మీ SHGని కనుగొనండి",
   "searchShgHint": "SHG పేరు ద్వారా వెతకండి",
   "noShgsFound": "SHGలు కనుగొనబడలేదు",
+  "shgSearchLoadError": "SHGలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
 
   "roleSelectTitle": "ఇలా కొనసాగించండి",
   "roleSelectSubtitle": "అనుకూలీకరించిన అనుభవం కోసం SHG వ్యవస్థలో మీ పాత్రను ఎంచుకోండి",
@@ -474,6 +476,7 @@
   "loanStatementDisbursedOn": "పంపిణీ చేయబడింది {date}",
 
   "memberReportTitle": "నా నివేదికలు",
+  "reportPeriodAllTime": "అన్ని సమయాలు",
 
   "memberReportTotalSavingsLabel": "మొత్తం పొదుపు",
 
@@ -525,7 +528,7 @@
 
   "shgPerformanceReportTitle": "పనితీరు నివేదిక",
 
-  "shgPerformanceAvgAttendanceLabel": "సగటు హాజరు",
+  "shgPerformanceAvgAttendanceLabel": "సగటు హాజరు (గత 6 నెలలు)",
 
   "shgPerformanceActiveLoansLabel": "క్రియాశీల రుణాలు",
 
@@ -1747,6 +1750,7 @@
   "analyticsShgDetailTitle": "SHG అనలిటిక్స్",
 
   "analyticsShgDetailNotFound": "ఈ SHG కనుగొనబడలేదు",
+  "shgReportShgNotFound": "ఈ SHG కనుగొనబడలేదు — ఇది తీసివేయబడి ఉండవచ్చు",
 
   "analyticsShgDetailMembersLabel": "సభ్యులు",
 
@@ -1759,6 +1763,8 @@
   "analyticsShgDetailMembersLinkTitle": "సభ్యులను చూడండి",
 
   "analyticsShgDetailMembersLinkSubtitle": "ఈ SHG యొక్క పూర్తి సభ్యుల జాబితా",
+  "analyticsShgDetailJoinRequestsLinkTitle": "చేరిక అభ్యర్థనలు",
+  "analyticsShgDetailJoinRequestsLinkSubtitle": "ఈ SHGలో చేరడానికి వేచి ఉన్న సభ్యులు",
 
   "analyticsShgListTitle": "SHG పర్యవేక్షణ",
 

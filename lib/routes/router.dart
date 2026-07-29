@@ -410,6 +410,10 @@ GoRouter buildRouter(AppState appState) {
             path: '/app/analytics/shg/:id/members',
             builder: (context, state) => ShgMembersPage(key: ValueKey(state.pathParameters['id']), shgId: state.pathParameters['id']!, shgName: state.uri.queryParameters['name']),
           ),
+          GoRoute(
+            path: '/app/analytics/shg/:id/join-requests',
+            builder: (context, state) => ShgJoinRequestsPage(key: ValueKey(state.pathParameters['id']), shgId: state.pathParameters['id']!, shgName: state.uri.queryParameters['name']),
+          ),
         ],
       ),
     ],

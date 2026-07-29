@@ -43,7 +43,7 @@ class _AnalyticsShgListPageState extends State<AnalyticsShgListPage> {
     if (_loadingMore || !_hasMore || _shgs.isEmpty) return;
     setState(() => _loadingMore = true);
     try {
-      final page = await _repo.fetchShgList(afterName: _shgs.last.name);
+      final page = await _repo.fetchShgList(afterName: _shgs.last.name, afterId: _shgs.last.id);
       setState(() {
         _shgs = [..._shgs, ...page.items];
         _hasMore = page.hasMore;

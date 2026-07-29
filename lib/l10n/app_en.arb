@@ -65,6 +65,7 @@
   "profileSHG": "SHG",
 
   "profileShgNotYetApproved": "Not yet approved",
+  "profileShgNotApplicable": "Not applicable",
   "profileName": "Name",
   "profileUpdated": "Profile updated",
   "profileUpdateDemoMode": "Demo mode — not saved (connect Supabase to persist)",
@@ -153,6 +154,7 @@
   "findYourShg": "Find your SHG",
   "searchShgHint": "Search by SHG name",
   "noShgsFound": "No SHGs found",
+  "shgSearchLoadError": "Could not load SHGs. Please try again.",
 
   "roleSelectTitle": "Continue as",
   "roleSelectSubtitle": "Choose your role in the SHG ecosystem to see a tailored experience",
@@ -679,6 +681,7 @@
   },
 
   "memberReportTitle": "My Reports",
+  "reportPeriodAllTime": "All time",
 
   "memberReportTotalSavingsLabel": "Total Savings",
 
@@ -747,7 +750,7 @@
 
   "shgPerformanceReportTitle": "Performance Report",
 
-  "shgPerformanceAvgAttendanceLabel": "Avg. Attendance",
+  "shgPerformanceAvgAttendanceLabel": "Avg. Attendance (last 6 months)",
 
   "shgPerformanceActiveLoansLabel": "Active Loans",
 
@@ -2240,6 +2243,7 @@
   "analyticsShgDetailTitle": "SHG Analytics",
 
   "analyticsShgDetailNotFound": "This SHG could not be found",
+  "shgReportShgNotFound": "This SHG could not be found — it may have been removed",
 
   "analyticsShgDetailMembersLabel": "Members",
 
@@ -2252,6 +2256,8 @@
   "analyticsShgDetailMembersLinkTitle": "View Members",
 
   "analyticsShgDetailMembersLinkSubtitle": "Full roster of this SHG",
+  "analyticsShgDetailJoinRequestsLinkTitle": "Join Requests",
+  "analyticsShgDetailJoinRequestsLinkSubtitle": "Pending members waiting to join this SHG",
 
   "analyticsShgListTitle": "SHGs Monitoring",
 

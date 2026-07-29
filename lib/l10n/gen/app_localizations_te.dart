@@ -181,6 +181,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get profileShgNotYetApproved => 'ఇంకా ఆమోదించబడలేదు';
 
   @override
+  String get profileShgNotApplicable => 'వర్తించదు';
+
+  @override
   String get profileName => 'పేరు';
 
   @override
@@ -402,6 +405,10 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get noShgsFound => 'SHGలు కనుగొనబడలేదు';
+
+  @override
+  String get shgSearchLoadError =>
+      'SHGలను లోడ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
 
   @override
   String get roleSelectTitle => 'ఇలా కొనసాగించండి';
@@ -1051,6 +1058,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get memberReportTitle => 'నా నివేదికలు';
 
   @override
+  String get reportPeriodAllTime => 'అన్ని సమయాలు';
+
+  @override
   String get memberReportTotalSavingsLabel => 'మొత్తం పొదుపు';
 
   @override
@@ -1141,7 +1151,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get shgPerformanceReportTitle => 'పనితీరు నివేదిక';
 
   @override
-  String get shgPerformanceAvgAttendanceLabel => 'సగటు హాజరు';
+  String get shgPerformanceAvgAttendanceLabel => 'సగటు హాజరు (గత 6 నెలలు)';
 
   @override
   String get shgPerformanceActiveLoansLabel => 'క్రియాశీల రుణాలు';
@@ -3256,6 +3266,10 @@ class AppLocalizationsTe extends AppLocalizations {
   String get analyticsShgDetailNotFound => 'ఈ SHG కనుగొనబడలేదు';
 
   @override
+  String get shgReportShgNotFound =>
+      'ఈ SHG కనుగొనబడలేదు — ఇది తీసివేయబడి ఉండవచ్చు';
+
+  @override
   String get analyticsShgDetailMembersLabel => 'సభ్యులు';
 
   @override
@@ -3274,6 +3288,13 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get analyticsShgDetailMembersLinkSubtitle =>
       'ఈ SHG యొక్క పూర్తి సభ్యుల జాబితా';
+
+  @override
+  String get analyticsShgDetailJoinRequestsLinkTitle => 'చేరిక అభ్యర్థనలు';
+
+  @override
+  String get analyticsShgDetailJoinRequestsLinkSubtitle =>
+      'ఈ SHGలో చేరడానికి వేచి ఉన్న సభ్యులు';
 
   @override
   String get analyticsShgListTitle => 'SHG పర్యవేక్షణ';

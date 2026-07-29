@@ -36,7 +36,11 @@ class MemberReportPage extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(r.period, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
+              // `r.period` is always the literal English string 'All time'
+              // (ReportRepository never sets any other value) — rendering it
+              // directly bypassed AppLocalizations entirely, unlike every
+              // other label on this page.
+              Text(l10n.reportPeriodAllTime, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(child: StatCard(label: l10n.memberReportTotalSavingsLabel, value: '₹${NumberFormat('#,##,##0', 'en_IN').format(r.totalSavings)}', tone: StatTone.brand, trend: l10n.memberReportEntriesTrend(r.savingsEntryCount), icon: Icons.account_balance_wallet_rounded)),

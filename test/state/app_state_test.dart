@@ -24,7 +24,7 @@ class _FakeProfileRepository extends ProfileRepository {
   Future<Profile?> fetchMyProfile() => _responses[_calls++]();
 
   @override
-  Future<Profile> upsertMyProfile({required String name, String? mobile, String role = 'member', String? shgId, String? village}) async => _upsertResponse!;
+  Future<Profile> upsertMyProfile({required String name, String? mobile, String role = 'member', String? shgId, String? village, String? mandal, String? district}) async => _upsertResponse!;
 }
 
 class _FakeAuthService extends AuthService {

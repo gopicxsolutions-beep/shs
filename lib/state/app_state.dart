@@ -424,6 +424,8 @@ class AppState extends ChangeNotifier {
       mobile: _session?.user.phone,
       role: 'member',
       village: village,
+      mandal: mandal,
+      district: district,
     );
     // Flip the routing flags and notify BEFORE the (separate) join-request
     // submit — if that submit fails, the router still sees a consistent
@@ -435,7 +437,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     if (isNewProfile) await _persistRoleSelectionPending(_profile!.id, true);
     if (_pendingShg != null) {
-      await _joinRequestRepository.submit(memberId: _profile!.id, shgId: _pendingShg!.id);
+      await _joinRequestRepository.submit(shgId: _pendingShg!.id);
     }
   }
 

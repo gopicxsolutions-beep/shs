@@ -111,6 +111,8 @@ class Paths {
       Uri(path: '/app/analytics/shg/$id/performance', queryParameters: name == null ? null : {'name': name}).toString();
   static String analyticsShgMembers(String id, {String? name}) =>
       Uri(path: '/app/analytics/shg/$id/members', queryParameters: name == null ? null : {'name': name}).toString();
+  static String analyticsShgJoinRequests(String id, {String? name}) =>
+      Uri(path: '/app/analytics/shg/$id/join-requests', queryParameters: name == null ? null : {'name': name}).toString();
 
   static const profileSettings = '/app/profile/settings';
   static const profileLanguage = '/app/profile/language';

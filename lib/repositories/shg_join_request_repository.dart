@@ -9,20 +9,23 @@ class ShgJoinRequestRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
   bool get _live => SupabaseService.isConfigured;
 
-  Future<void> submit({required String memberId, required String shgId}) async {
+  Future<void> submit({required String shgId}) async {
     if (!_live) return;
-    // Replace any existing PENDING request instead of colliding with the
+    // Was a raw DELETE-then-INSERT (two separate network calls) — an
+    // interruption between them (dropped connection, backgrounded tab)
+    // could leave a member with zero pending rows and no clear way back in.
+    // `submit_shg_join_request` (migration 0105) wraps both statements in
+    // one plpgsql function body, giving them the same atomicity a single
+    // transaction would — SECURITY INVOKER (the default), so RLS still
+    // applies exactly as it did for the two separate client calls. Replaces
+    // any existing PENDING request instead of colliding with the
     // one-pending-per-member unique index (0004) — a member can reach this
     // call a second time while still awaiting a decision (e.g.
     // ShgApprovalPendingPage's "Choose a different SHG", offered in the
-    // pending state too, not just rejected — see 0033), and without this
-    // the insert below throws a raw constraint-violation error instead of
-    // letting her actually change her mind. Already-decided (approved/
-    // rejected) rows never match this filter, so a leader's/staff's past
-    // decision is never touched — matches the delete policy 0033 backs
-    // this with (`status = 'pending'` only).
-    await _client.from('shg_join_requests').delete().eq('member_id', memberId).eq('status', 'pending');
-    await _client.from('shg_join_requests').insert({'member_id': memberId, 'shg_id': shgId});
+    // pending state too, not just rejected — see 0033). Already-decided
+    // (approved/rejected) rows never match the delete filter inside the
+    // function, so a leader's/staff's past decision is never touched.
+    await _client.rpc('submit_shg_join_request', params: {'p_shg_id': shgId});
   }
 
   /// The member's own most recent request (so the pending-approval page can

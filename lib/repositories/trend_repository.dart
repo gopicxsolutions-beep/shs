@@ -21,15 +21,25 @@ class TrendRepository {
     // not yet reconciled by an SHG leader (same reasoning as ReportRepository/
     // AnalyticsRepository's totals, kept consistent with this trend chart).
     var query = _client.from('savings_entries').select('amount, entry_date').eq('status', 'verified');
-    final rows = shgId != null ? await query.eq('shg_id', shgId) : await query;
-    return _bucketByMonth(rows as List, dateKey: 'entry_date', valueKey: 'amount');
+    final rows = (shgId != null ? await query.eq('shg_id', shgId) : await query) as List;
+    // An empty result means this SHG/federation has genuinely never
+    // recorded a single verified entry — distinct from "recorded activity,
+    // but none of it falls in the last 6 months". `_bucketByMonth` always
+    // zero-fills 6 points regardless, which made a brand-new SHG's chart
+    // render as a flat zero line (readable as "activity dropped to zero")
+    // instead of the "no data yet" empty state the analytics/reports pages
+    // already have and correctly show only for genuinely empty series.
+    if (rows.isEmpty) return const [];
+    return _bucketByMonth(rows, dateKey: 'entry_date', valueKey: 'amount');
   }
 
   Future<List<MonthlyPoint>> loanTrend({String? shgId}) async {
     if (!_live) return _mockTrend(const [15000, 22000, 18000, 26000, 30000, 24000]);
     var query = _client.from('loans').select('amount, created_at').inFilter('status', ['active', 'overdue', 'closed']);
-    final rows = shgId != null ? await query.eq('shg_id', shgId) : await query;
-    return _bucketByMonth(rows as List, dateKey: 'created_at', valueKey: 'amount');
+    final rows = (shgId != null ? await query.eq('shg_id', shgId) : await query) as List;
+    // See savingsTrend's identical fix above.
+    if (rows.isEmpty) return const [];
+    return _bucketByMonth(rows, dateKey: 'created_at', valueKey: 'amount');
   }
 
   /// Federation-wide only — Marketplace orders aren't scoped to a single
@@ -37,8 +47,10 @@ class TrendRepository {
   /// the only caller (Analytics) is a staff-only, platform-wide view.
   Future<List<MonthlyPoint>> revenueTrend() async {
     if (!_live) return _mockTrend(const [8000, 12000, 9500, 14000, 16000, 13000]);
-    final rows = await _client.from('marketplace_orders').select('amount, order_date');
-    return _bucketByMonth(rows as List, dateKey: 'order_date', valueKey: 'amount');
+    final rows = await _client.from('marketplace_orders').select('amount, order_date') as List;
+    // See savingsTrend's identical fix above.
+    if (rows.isEmpty) return const [];
+    return _bucketByMonth(rows, dateKey: 'order_date', valueKey: 'amount');
   }
 
   /// Attendance rate per month = present rows / total attendance rows

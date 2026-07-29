@@ -5,6 +5,7 @@ import '../../layout/page_header.dart';
 import '../../models/report.dart';
 import '../../models/trend.dart';
 import '../../repositories/report_repository.dart';
+import '../../repositories/shg_repository.dart';
 import '../../repositories/trend_repository.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -29,7 +30,8 @@ class ShgPerformanceReportPage extends StatelessWidget {
   final String? shgName;
   const ShgPerformanceReportPage({super.key, this.shgId, this.shgName});
 
-  Future<_PerformanceData> _load(String? shgId) async {
+  Future<_PerformanceData?> _load(String? shgId) async {
+    if (shgId != null && !(await ShgRepository().shgExists(shgId))) return null;
     final reportRepo = ReportRepository();
     final trendRepo = TrendRepository();
     final report = await reportRepo.fetchShgReport(shgId);
@@ -44,9 +46,12 @@ class ShgPerformanceReportPage extends StatelessWidget {
 
     return Scaffold(
       appBar: PageHeader(title: l10n.shgPerformanceReportTitle, subtitle: shgName),
-      body: AppAsyncBuilder<_PerformanceData>(
+      body: AppAsyncBuilder<_PerformanceData?>(
         future: () => _load(resolvedShgId),
         builder: (context, data) {
+          if (data == null) {
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.shgReportShgNotFound);
+          }
           final r = data.report;
           return ListView(
             padding: const EdgeInsets.all(16),

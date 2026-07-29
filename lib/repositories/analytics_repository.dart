@@ -110,14 +110,26 @@ class AnalyticsRepository {
   // batched member/savings/meeting/attendance queries below are scoped to
   // just this page's [shgIds], which also bounds THEIR `inFilter` list sizes
   // (previously unbounded too, since they inherited the full shgIds list).
-  Future<PagedResult<ShgHealth>> fetchShgList({String? afterName, int pageSize = 100}) async {
+  Future<PagedResult<ShgHealth>> fetchShgList({String? afterName, String? afterId, int pageSize = 100}) async {
     if (!_live) {
       final list = mock.shgsForMonitoring.map((g) => ShgHealth(id: g.id, name: g.name, village: g.village, grade: g.grade, memberCount: g.members, totalSavings: g.savings, healthScore: g.health.toDouble())).toList();
       return PagedResult(items: list, hasMore: false);
     }
+    // `shgs.name` has no unique constraint (generic names like "Jai Bhavani
+    // SHG" realistically repeat across villages) — a `name`-only cursor
+    // (`gt('name', afterName)`) silently skips every remaining SHG sharing
+    // the page-boundary row's exact name once it jumps past that name
+    // value, since none of them satisfy a strict `>`. [afterId] (the
+    // boundary row's own id) resolves the tie: "after this exact row", not
+    // just "after this name" — ordering by (name, id) makes that a stable,
+    // well-defined cursor.
     var builder = _client.from('shgs').select('id, name, village, grade');
-    if (afterName != null) builder = builder.gt('name', afterName);
-    final shgs = await builder.order('name').limit(pageSize + 1);
+    if (afterName != null && afterId != null) {
+      builder = builder.or('name.gt.$afterName,and(name.eq.$afterName,id.gt.$afterId)');
+    } else if (afterName != null) {
+      builder = builder.gt('name', afterName);
+    }
+    final shgs = await builder.order('name').order('id').limit(pageSize + 1);
     final allRows = (shgs as List).cast<Map<String, dynamic>>();
     final hasMore = allRows.length > pageSize;
     final shgRows = hasMore ? allRows.sublist(0, pageSize) : allRows;

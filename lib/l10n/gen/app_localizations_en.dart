@@ -179,6 +179,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileShgNotYetApproved => 'Not yet approved';
 
   @override
+  String get profileShgNotApplicable => 'Not applicable';
+
+  @override
   String get profileName => 'Name';
 
   @override
@@ -396,6 +399,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noShgsFound => 'No SHGs found';
+
+  @override
+  String get shgSearchLoadError => 'Could not load SHGs. Please try again.';
 
   @override
   String get roleSelectTitle => 'Continue as';
@@ -1044,6 +1050,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get memberReportTitle => 'My Reports';
 
   @override
+  String get reportPeriodAllTime => 'All time';
+
+  @override
   String get memberReportTotalSavingsLabel => 'Total Savings';
 
   @override
@@ -1137,7 +1146,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shgPerformanceReportTitle => 'Performance Report';
 
   @override
-  String get shgPerformanceAvgAttendanceLabel => 'Avg. Attendance';
+  String get shgPerformanceAvgAttendanceLabel =>
+      'Avg. Attendance (last 6 months)';
 
   @override
   String get shgPerformanceActiveLoansLabel => 'Active Loans';
@@ -3256,6 +3266,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get analyticsShgDetailNotFound => 'This SHG could not be found';
 
   @override
+  String get shgReportShgNotFound =>
+      'This SHG could not be found — it may have been removed';
+
+  @override
   String get analyticsShgDetailMembersLabel => 'Members';
 
   @override
@@ -3273,6 +3287,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get analyticsShgDetailMembersLinkSubtitle => 'Full roster of this SHG';
+
+  @override
+  String get analyticsShgDetailJoinRequestsLinkTitle => 'Join Requests';
+
+  @override
+  String get analyticsShgDetailJoinRequestsLinkSubtitle =>
+      'Pending members waiting to join this SHG';
 
   @override
   String get analyticsShgListTitle => 'SHGs Monitoring';

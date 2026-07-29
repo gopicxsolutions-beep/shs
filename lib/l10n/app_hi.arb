@@ -65,6 +65,7 @@
   "profileSHG": "SHG",
 
   "profileShgNotYetApproved": "अभी स्वीकृत नहीं हुआ",
+  "profileShgNotApplicable": "लागू नहीं",
   "profileName": "नाम",
   "profileUpdated": "प्रोफ़ाइल अपडेट हो गई",
   "profileUpdateDemoMode": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
@@ -148,6 +149,7 @@
   "findYourShg": "अपना SHG खोजें",
   "searchShgHint": "SHG नाम से खोजें",
   "noShgsFound": "कोई SHG नहीं मिला",
+  "shgSearchLoadError": "SHG लोड नहीं हो सके। कृपया पुनः प्रयास करें।",
 
   "roleSelectTitle": "इस रूप में जारी रखें",
   "roleSelectSubtitle": "अनुकूलित अनुभव देखने के लिए SHG तंत्र में अपनी भूमिका चुनें",
@@ -474,6 +476,7 @@
   "loanStatementDisbursedOn": "वितरित {date}",
 
   "memberReportTitle": "मेरी रिपोर्ट्स",
+  "reportPeriodAllTime": "सभी समय",
 
   "memberReportTotalSavingsLabel": "कुल बचत",
 
@@ -525,7 +528,7 @@
 
   "shgPerformanceReportTitle": "प्रदर्शन रिपोर्ट",
 
-  "shgPerformanceAvgAttendanceLabel": "औसत उपस्थिति",
+  "shgPerformanceAvgAttendanceLabel": "औसत उपस्थिति (पिछले 6 महीने)",
 
   "shgPerformanceActiveLoansLabel": "सक्रिय ऋण",
 
@@ -1747,6 +1750,7 @@
   "analyticsShgDetailTitle": "SHG एनालिटिक्स",
 
   "analyticsShgDetailNotFound": "यह SHG नहीं मिल सका",
+  "shgReportShgNotFound": "यह SHG नहीं मिल सका — इसे हटा दिया गया हो सकता है",
 
   "analyticsShgDetailMembersLabel": "सदस्य",
 
@@ -1759,6 +1763,8 @@
   "analyticsShgDetailMembersLinkTitle": "सदस्य देखें",
 
   "analyticsShgDetailMembersLinkSubtitle": "इस SHG की पूरी सदस्य सूची",
+  "analyticsShgDetailJoinRequestsLinkTitle": "जॉइन अनुरोध",
+  "analyticsShgDetailJoinRequestsLinkSubtitle": "इस SHG में शामिल होने की प्रतीक्षा कर रहे सदस्य",
 
   "analyticsShgListTitle": "SHG निगरानी",
 

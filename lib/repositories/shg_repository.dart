@@ -227,6 +227,22 @@ class ShgRepository {
     return row == null ? null : ShgProfile.fromMap(row);
   }
 
+  // Used by ShgFinancialSummaryPage/ShgPerformanceReportPage, reachable via
+  // a bookmarked/deep-linked shgId (e.g. from AnalyticsShgDetailPage) — if
+  // an admin later deletes that SHG, ReportRepository.fetchShgReport just
+  // returns an all-zero report for the nonexistent id (every underlying
+  // query is a simple filter that matches zero rows), which rendered a
+  // fully populated-looking "0 members, ₹0 savings, 0% attendance" page
+  // indistinguishable from a genuinely brand-new, empty SHG. `shg_directory`
+  // is readable by any authenticated user (it's the same view onboarding
+  // search uses), so this works for both a leader's own SHG and any SHG a
+  // staff account looks up.
+  Future<bool> shgExists(String shgId) async {
+    if (!_live) return true;
+    final row = await _client.from('shg_directory').select('id').eq('id', shgId).maybeSingle();
+    return row != null;
+  }
+
   // Mock data's role field ('President'/'Secretary'/'Treasurer'/'Member')
   // doesn't match the DB's role vocabulary ('leader'/'member'/etc.) that
   // AppBadge's role-tone lookup (shg_members_page.dart/member_detail_page.dart)

@@ -5,6 +5,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/report.dart';
 import '../../repositories/report_repository.dart';
+import '../../repositories/shg_repository.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -30,13 +31,21 @@ class ShgFinancialSummaryPage extends StatelessWidget {
 
     return Scaffold(
       appBar: PageHeader(title: l10n.shgFinancialSummaryTitle, subtitle: shgName),
-      body: AppAsyncBuilder<ShgReportData>(
-        future: () => repo.fetchShgReport(resolvedShgId),
+      body: AppAsyncBuilder<ShgReportData?>(
+        future: () async {
+          if (resolvedShgId != null && !(await ShgRepository().shgExists(resolvedShgId))) return null;
+          return repo.fetchShgReport(resolvedShgId);
+        },
         builder: (context, r) {
+          if (r == null) {
+            return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.shgReportShgNotFound);
+          }
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(r.period, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
+              // See member_report_page.dart's identical fix — `r.period` is
+              // always the literal English string 'All time'.
+              Text(l10n.reportPeriodAllTime, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c500)),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(child: StatCard(label: l10n.shgFinancialSummaryMembersLabel, value: '${r.memberCount}', tone: StatTone.ink, icon: Icons.groups_rounded)),

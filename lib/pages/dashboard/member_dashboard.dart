@@ -246,7 +246,10 @@ class _MemberDashboardBody extends StatelessWidget {
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('₹${NumberFormat('#,##,##0', 'en_IN').format(report.totalSavings)}', style: AppTheme.display(22)),
-                    Text(report.period, style: AppTheme.sans(11, color: Neutral.c500)),
+                    // See reports/member_report_page.dart's identical fix —
+                    // `report.period` is always the literal English string
+                    // 'All time'.
+                    Text(l10n.reportPeriodAllTime, style: AppTheme.sans(11, color: Neutral.c500)),
                   ]),
                 ]),
                 const SizedBox(height: 12),

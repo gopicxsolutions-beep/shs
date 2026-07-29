@@ -67,7 +67,7 @@ class _ShgSearchSheetState extends State<_ShgSearchSheet> {
       final results = await widget.search(value);
       if (mounted && generation == _searchGeneration) setState(() => _results = results);
     } catch (_) {
-      if (mounted && generation == _searchGeneration) setState(() => _error = 'Could not load SHGs. Please try again.');
+      if (mounted && generation == _searchGeneration) setState(() => _error = AppLocalizations.of(context)!.shgSearchLoadError);
     } finally {
       if (mounted && generation == _searchGeneration) setState(() => _loading = false);
     }

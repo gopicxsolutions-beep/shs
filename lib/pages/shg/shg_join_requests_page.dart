@@ -13,11 +13,17 @@ import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 
-/// Leader-only screen: approve or reject members requesting to join their
-/// SHG (spec: "Step 2: SHG Mapping — Member → Select SHG → Approval by
-/// Leader").
+/// Leader screen (own SHG) — also reachable by crp/clf/admin for a chosen
+/// SHG via [shgId]/[shgName], mirroring `ShgMembersPage`'s override pattern.
+/// `approve_shg_join_request` (RLS) already authorizes staff platform-wide
+/// (`is_staff()`), but until this override existed there was no route that
+/// ever passed a non-null shgId here — staff could legally decide any
+/// request but had no way to ever reach one (spec: "Step 2: SHG Mapping —
+/// Member → Select SHG → Approval by Leader", now also staff oversight).
 class ShgJoinRequestsPage extends StatefulWidget {
-  const ShgJoinRequestsPage({super.key});
+  final String? shgId;
+  final String? shgName;
+  const ShgJoinRequestsPage({super.key, this.shgId, this.shgName});
   @override
   State<ShgJoinRequestsPage> createState() => _ShgJoinRequestsPageState();
 }
@@ -49,11 +55,11 @@ class _ShgJoinRequestsPageState extends State<ShgJoinRequestsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final shgId = context.watch<AppState>().profile?.shgId;
+    final shgId = widget.shgId ?? context.watch<AppState>().profile?.shgId;
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: PageHeader(title: l10n.shgJoinRequestsTitle),
+      appBar: PageHeader(title: l10n.shgJoinRequestsTitle, subtitle: widget.shgName),
       body: AppAsyncBuilder<List<ShgJoinRequest>>(
         key: _key,
         future: () => _repo.fetchPendingForShg(shgId),

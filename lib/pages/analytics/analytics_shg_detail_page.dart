@@ -104,6 +104,18 @@ class AnalyticsShgDetailPage extends StatelessWidget {
                 subtitle: l10n.analyticsShgDetailMembersLinkSubtitle,
                 onTap: () => context.go(Paths.analyticsShgMembers(shgId, name: g.name)),
               ),
+              const SizedBox(height: 8),
+              // `approve_shg_join_request` (RLS) already authorizes
+              // crp/clf/admin platform-wide — this was previously
+              // undiscoverable from anywhere in the app (see
+              // `ShgJoinRequestsPage`'s own doc comment), even though the
+              // backend fully supported it.
+              _ReportLinkCard(
+                icon: Icons.person_add_alt_1_rounded,
+                title: l10n.analyticsShgDetailJoinRequestsLinkTitle,
+                subtitle: l10n.analyticsShgDetailJoinRequestsLinkSubtitle,
+                onTap: () => context.go(Paths.analyticsShgJoinRequests(shgId, name: g.name)),
+              ),
             ],
           );
         },

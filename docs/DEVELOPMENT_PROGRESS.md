@@ -16849,3 +16849,220 @@ known incidents (`GET /v1/projects/{ref}/functions`) — confirmed
 handler` incorrectly `true` but dormant (documented above, not fixed).
 `flutter build web --release --dart-define-from-file=.env.json` rebuilt
 cleanly in live mode.
+
+## Update (round 193) — Gap-hunting loop iteration 20: 4 fresh audits (dogfooding round 192, SHG Directory + Join Requests, Profile/Settings, Reports/Analytics UI), 26 unique confirmed gaps fixed including a CRITICAL self-dealing ledger-forgery bug
+
+Four parallel background audits, each independently confirmed live (RLS text
+pulled via `pg_policies`/`pg_proc`, not read from migration files):
+
+**Dogfooding round 192's own new work (9 findings)**
+1. **[CRITICAL]** `financial_ledger_update_staff` was bare `is_staff()` in
+   both `USING` and `WITH CHECK` — no self-exclusion, no column lock. Round
+   192's own migration 0104 fixed this exact table's DELETE policy but
+   missed the UPDATE policy sitting right next to it. Any crp/clf/admin
+   could forge any ledger row via direct REST, including her own entries.
+2. **[HIGH]** `marketplace_reviews_moderate_staff` had `with_check = null`
+   — Postgres reuses `USING` as the check when `WITH CHECK` is omitted, so
+   this was fully unrestricted self-moderation.
+3. **[HIGH]** `marketplace_reviews_delete_staff` — same self-service gap
+   for deletion.
+4. **[HIGH]** `livelihood_update_self_leader_or_staff`'s `WITH CHECK` had a
+   bare `is_staff() OR (...)` top-level disjunct — a promoted member could
+   freely rewrite her own historical activity's status/revenue via her new
+   staff role, with none of the transition-limit/revenue-lock restrictions
+   the member/leader branch enforces.
+5. **[MEDIUM]** `livelihood_delete_staff` — no self-exclusion despite a
+   `member_id` column.
+6. **[MEDIUM]** `marketplace_products_delete_staff` — no self-exclusion
+   despite a `seller_id` column.
+7. **[LOW]** `support_tickets_update_staff_or_self_reopen`'s staff branch —
+   no self-exclusion; a staff account could resolve/reassign her own
+   pre-promotion complaint unchecked.
+8. **[MEDIUM]** SHG Join Requests was completely unreachable by staff
+   despite `approve_shg_join_request` explicitly authorizing crp/clf/admin
+   platform-wide — no route ever passed a non-null `shgId` to the page, and
+   the page itself hardcoded `appState.profile?.shgId` (always null for
+   staff) with no override param, unlike the sibling `ShgMembersPage`.
+9. **[MEDIUM]** `shg_search_sheet.dart:70` hardcoded English error string —
+   independently found by the SHG Directory audit too (see below), a
+   strong confirmation signal.
+
+**SHG Directory + Join Requests (6 findings)**
+1. **[MEDIUM]** `shg_join_requests_insert_self` had no `profile_is_active()`
+   gate — a deactivated member could still file a fresh join request
+   directly via REST.
+2. **[MEDIUM]** `approve_shg_join_request` never checked the REQUESTER's
+   `is_active` — a leader/staff could approve a deactivated member into an
+   SHG, polluting the roster.
+3. **[MEDIUM]** SHG directory search had no `ORDER BY` in either
+   `ProfileRepository.searchShgs()` or `AdminRepository.searchShgs()` —
+   undefined/unstable result ordering.
+4. **[LOW-MEDIUM]** `ShgJoinRequestRepository.submit()` did a non-atomic
+   DELETE-then-INSERT (two separate network calls) — an interruption
+   between them could orphan a member with zero pending join-request rows.
+5. **[LOW]** `shg_search_sheet.dart` hardcoded English error string (same
+   as dogfood finding #9 above).
+6. **[LOW]** No rate-limit/cooldown on sequential join requests to
+   different SHGs — deliberately deferred, see below.
+
+**Profile/Settings (6 findings)**
+1. **[HIGH]** Mandal/District, collected on the onboarding form since v1,
+   were never persisted anywhere — `profiles` had no such columns, and
+   `AppState.completeProfileSetup`'s live branch never forwarded them to
+   `upsertMyProfile`. A member filled these in, tapped Continue, got no
+   error, and the data silently vanished.
+2. **[MEDIUM]** `profiles_update_self_or_admin`'s self branch could still
+   be satisfied by a deactivated member/leader whose `shg_id` was already
+   null (deactivated before SHG approval) — `current_role()`/
+   `current_shg_id()` return NULL for any deactivated caller, but
+   `current_shg_id() IS NULL` and `shg_id is not distinct from NULL` both
+   evaluate true regardless, so the self-edit still succeeded, contradicting
+   the policy's own "blanket lockout" intent.
+3. **[MEDIUM]** No path anywhere (self-service or admin) to ever change a
+   member's registered mobile number — documented as a deferred limitation,
+   see below.
+4. **[MEDIUM]** `ProfilePage`'s SHG row showed "Not yet approved" for
+   CRP/CLF/Admin accounts, which is factually wrong — staff legitimately
+   has no SHG by design, not a pending-approval state.
+5. **[MEDIUM]** `profile_page.dart`'s `_row` helper was missing the
+   `Flexible`-on-both-sides overflow protection its sibling
+   `member_detail_page.dart`/`shg_home_page.dart` already got.
+6. **[LOW]** A deactivated member's profile-edit failure surfaced the same
+   generic error as any other write failure, instead of distinguishing
+   "you were deactivated" from a transient error.
+
+**Reports export + Analytics UI (6 findings)**
+1. **[MEDIUM]** `report.period` was a raw hardcoded English string
+   (`'All time'`) rendered directly via `Text(r.period, ...)` in 3 places,
+   completely bypassing `AppLocalizations`.
+2. **[MEDIUM]** The identical rolling-6-month attendance figure was
+   labeled inconsistently across two sibling report pages — Financial
+   Summary correctly said "(last 6 months)" (round 187's own fix) but
+   Performance Report's `shgPerformanceAvgAttendanceLabel` still said plain
+   "Avg. Attendance", re-opening the exact misleading-time-window bug class
+   that fix was meant to close.
+3. **[MEDIUM]** A deleted-SHG deep link (`/app/analytics/shg/<id>/...`)
+   silently rendered a fully populated-looking "0 members, ₹0 savings, 0%
+   attendance" report instead of a "not found" state — `fetchShgReport`
+   just returns zeroed data for a nonexistent id, indistinguishable from a
+   genuinely brand-new, empty SHG.
+4. **[MEDIUM]** `AnalyticsRepository.fetchShgList`'s pagination cursor
+   (`gt('name', afterName)`) had no tie-breaker — `shgs.name` has no
+   unique constraint, so two SHGs sharing an identical name could silently
+   drop from the federation-wide monitoring list once the cursor passed
+   that name value.
+5. **[LOW-MEDIUM]** `TrendRepository.savingsTrend`/`loanTrend`/`revenueTrend`
+   always returned exactly 6 zero-filled points, never `[]` — the "no data
+   yet" empty state 3 of 4 Analytics dashboard charts already check for
+   (`points.isEmpty`) was structurally unreachable for these three trends,
+   so a brand-new SHG's chart read as "activity dropped to zero" instead.
+6. **[LOW]** `TrendChart`'s screen-reader semantic label computed a
+   *relative percent change* even for charts whose own values are already
+   percentages (attendance) — a move from 2% to 80% announced as "up 3900%
+   overall," nonsensical to a screen-reader user.
+
+**Fixes — migration `0105_iteration20_critical_rls_hardening.sql`** (all
+individually live-verified via rolled-back `__TEST__` transactions):
+locked and self-excluded `financial_ledger_update_staff` (new
+`financial_ledger_locked_fields()` helper, every column locked — no
+`.update()` call site exists in `lib/` yet, same reasoning round 192 used
+for `payments_update_staff`); locked and self-excluded
+`marketplace_reviews_moderate_staff` (new
+`marketplace_reviews_locked_fields()`, rating/comment stay staff-editable)
+and `marketplace_reviews_delete_staff`; rewrote
+`livelihood_update_self_leader_or_staff`'s `WITH CHECK` so staff editing
+someone else's row stays fully unrestricted but staff editing their OWN
+row now falls through to the same transition-limit/revenue-lock branch a
+member/leader must obey; self-excluded `livelihood_delete_staff` and
+`marketplace_products_delete_staff`; self-excluded
+`support_tickets_update_staff_or_self_reopen`'s staff branch (both `qual`
+and `with_check`); added `profile_is_active(member_id)` to
+`shg_join_requests_insert_self`; added a deactivated-requester check to
+`approve_shg_join_request` (raises `'requester account is deactivated'`);
+added an explicit `is_active` assertion to `profiles_update_self_or_admin`'s
+self branch; added nullable `mandal`/`district` columns to `profiles`
+(neither existing policy references them, so no policy change needed for
+self-service writes); added `submit_shg_join_request(p_shg_id)` RPC
+(SECURITY INVOKER) wrapping the delete-then-insert in one atomic
+plpgsql-function transaction.
+
+**Dart-side fixes**: `AppState.completeProfileSetup`/`ProfileRepository.
+upsertMyProfile` now actually forward `mandal`/`district`;
+`ShgJoinRequestRepository.submit()` calls the new atomic RPC;
+`ProfileRepository.searchShgs()`/`AdminRepository.searchShgs()` both added
+`.order('name')`; `shg_search_sheet.dart`'s error string localized
+(`shgSearchLoadError`); `ProfilePage._row` given `Flexible` on both sides,
+its SHG-row fallback now branches on role (`profileShgNotApplicable` for
+staff, unchanged copy for member/leader), and its edit-failure handler now
+re-checks the account's real `isActive` after a failed write and shows
+`accountDeactivatedMessage` instead of the generic error when that's the
+real cause; `ShgJoinRequestsPage` given the same `shgId`/`shgName` override
+pattern as `ShgMembersPage`, wired to a new
+`/app/analytics/shg/:id/join-requests` route and a new "Join Requests"
+link card on `AnalyticsShgDetailPage` — the platform-wide staff capability
+`approve_shg_join_request` already granted is now actually reachable;
+`member_report_page.dart`/`shg_financial_summary_page.dart`/
+`member_dashboard.dart` all now render `l10n.reportPeriodAllTime` instead
+of the repository's raw string; `shgPerformanceAvgAttendanceLabel` given
+the same "(last 6 months)" qualifier as its Financial Summary sibling (all
+3 languages); `ShgRepository.shgExists()` added and wired into both
+`ShgFinancialSummaryPage`/`ShgPerformanceReportPage` to show
+`shgReportShgNotFound` instead of a zeroed report for a deleted SHG;
+`AnalyticsRepository.fetchShgList` given a compound `(name, id)` cursor
+(new `afterId` param, `.or('name.gt.$afterName,and(name.eq.$afterName,id.gt.$afterId)')`)
+so same-named SHGs can no longer be skipped at a page boundary;
+`TrendRepository.savingsTrend`/`loanTrend`/`revenueTrend` now return `[]`
+when the underlying query found zero rows, instead of always zero-filling
+6 months; `TrendChart`'s semantic label now reports a plain percentage-point
+difference for `suffix == '%'` charts instead of a relative percent change.
+
+**Documented, deliberately not fixed this round**:
+- **No rate-limit/cooldown on sequential join requests to different SHGs**
+  (SHG audit finding #6) — only a partial unique index blocks concurrent
+  duplicates to the *same* SHG. A genuine feature addition (a cooldown
+  window/attempt counter), not a bug fix; lower severity (a harassment
+  vector against approval queues, not a data-integrity or privilege issue).
+- **No path anywhere to change a member's registered mobile number**
+  (Profile/Settings finding #3) — `profiles.mobile` is a one-time signup
+  copy, permanently locked from client edits by `profiles_locked_fields()`,
+  with no admin-driven "reassign phone number" flow that would also
+  re-sync `auth.users.phone`. Building that flow safely (avoiding a
+  can't-sign-in / wrong-number-displayed split) is a real feature, not a
+  quick fix — flagged for a future round.
+- All items already carried forward from round 192 (`payment-webhook-
+  handler`'s `verify_jwt`, `generate-report-snapshots`' missing
+  `cron_secret` Vault entry and `is_active` filter gap,
+  `financial_ledger`'s direct-INSERT race condition,
+  `livelihood_repository.dart`'s missing `.limit()`, the AI-advisor
+  history/timeout/malformed-response gaps) remain open and unchanged.
+
+**Verification:** `flutter analyze` — 0 issues (one test fixture,
+`test/state/app_state_test.dart`'s `_FakeProfileRepository.upsertMyProfile`
+override, needed the new `mandal`/`district` params added to stay a valid
+override — fixed, then re-verified clean). `flutter test` — 1038/1038
+passed, including the exact `trend_chart_accessibility_test.dart` and
+`livelihood_home_page_test.dart`/`meeting_detail_page_test.dart` cases
+this round's changes touch. `deno test` — 51/51 passed (ai-advisor-proxy
+suite, unaffected by this round but re-run for regression coverage).
+Migration 0105 pushed to the linked live project; all 12 of its
+changes individually live-verified via rolled-back `__TEST__`
+transactions/direct RPC calls against real fixture rows, each confirmed to
+either succeed (mandal/district persist, RPC exists) or fail with the
+expected RLS violation / raised exception (staff self-edits, deactivated
+join requests, deactivated profile self-edits) — re-queried/rolled back
+to confirm zero footprint. `flutter build web --release --dart-define-
+from-file=.env.json` rebuilt cleanly (94.7s, pre-existing wasm-dry-run
+warnings from `flutter_tts` unrelated to this round). **Browser-preview UI
+verification was attempted but blocked by a session-level issue distinct
+from any previously-documented cause**: after fronting the tab (both the
+original tab and a freshly created one), `document.visibilityState`
+stayed `'hidden'` and `document.hasFocus()` stayed `false` even
+immediately after `navigate`, and `computer{screenshot}` explicitly
+reported "the Browser pane is not displayed, so the page is not
+compositing frames" — the Browser pane itself was never surfaced in this
+resumed session's UI, unlike the `flt-glass-pane`/backgrounded-tab/
+debug-vs-release causes catalogued in CLAUDE.md, all of which assume the
+pane is at least displayed. Did not repeat the same diagnostic loop a
+third time; falling back to the live-DB verification and full
+analyze/test suite pass above, honestly documented as UI-unverified this
+round rather than claimed as visually confirmed.

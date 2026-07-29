@@ -424,6 +424,12 @@ abstract class AppLocalizations {
   /// **'Not yet approved'**
   String get profileShgNotYetApproved;
 
+  /// No description provided for @profileShgNotApplicable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not applicable'**
+  String get profileShgNotApplicable;
+
   /// No description provided for @profileName.
   ///
   /// In en, this message translates to:
@@ -819,6 +825,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No SHGs found'**
   String get noShgsFound;
+
+  /// No description provided for @shgSearchLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load SHGs. Please try again.'**
+  String get shgSearchLoadError;
 
   /// No description provided for @roleSelectTitle.
   ///
@@ -1876,6 +1888,12 @@ abstract class AppLocalizations {
   /// **'My Reports'**
   String get memberReportTitle;
 
+  /// No description provided for @reportPeriodAllTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All time'**
+  String get reportPeriodAllTime;
+
   /// No description provided for @memberReportTotalSavingsLabel.
   ///
   /// In en, this message translates to:
@@ -2029,7 +2047,7 @@ abstract class AppLocalizations {
   /// No description provided for @shgPerformanceAvgAttendanceLabel.
   ///
   /// In en, this message translates to:
-  /// **'Avg. Attendance'**
+  /// **'Avg. Attendance (last 6 months)'**
   String get shgPerformanceAvgAttendanceLabel;
 
   /// No description provided for @shgPerformanceActiveLoansLabel.
@@ -5680,6 +5698,12 @@ abstract class AppLocalizations {
   /// **'This SHG could not be found'**
   String get analyticsShgDetailNotFound;
 
+  /// No description provided for @shgReportShgNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This SHG could not be found — it may have been removed'**
+  String get shgReportShgNotFound;
+
   /// No description provided for @analyticsShgDetailMembersLabel.
   ///
   /// In en, this message translates to:
@@ -5715,6 +5739,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Full roster of this SHG'**
   String get analyticsShgDetailMembersLinkSubtitle;
+
+  /// No description provided for @analyticsShgDetailJoinRequestsLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join Requests'**
+  String get analyticsShgDetailJoinRequestsLinkTitle;
+
+  /// No description provided for @analyticsShgDetailJoinRequestsLinkSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending members waiting to join this SHG'**
+  String get analyticsShgDetailJoinRequestsLinkSubtitle;
 
   /// No description provided for @analyticsShgListTitle.
   ///

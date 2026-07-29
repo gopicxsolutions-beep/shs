@@ -19,8 +19,20 @@ class TrendChart extends StatelessWidget {
     final parts = points.map((p) => '${p.month} ${p.value.toStringAsFixed(0)}$suffix').join(', ');
     final first = points.first.value;
     final last = points.last.value;
-    final trend = first == 0 ? null : ((last - first) / first * 100);
-    final trendText = trend == null ? '' : ', ${trend >= 0 ? 'up' : 'down'} ${trend.abs().toStringAsFixed(0)}% overall';
+    String trendText;
+    if (suffix == '%') {
+      // For a chart whose own values are already percentages (e.g.
+      // attendance), announcing a *relative* percent change of those
+      // percentages reads as nonsense — a move from 2% to 80% announced as
+      // "up 3900% overall" can't be disambiguated by a screen-reader user
+      // from a plain point change. Report the point difference instead,
+      // matching what a sighted user reads directly off the chart.
+      final pointDiff = last - first;
+      trendText = pointDiff == 0 ? '' : ', ${pointDiff >= 0 ? 'up' : 'down'} ${pointDiff.abs().toStringAsFixed(0)} percentage points overall';
+    } else {
+      final trend = first == 0 ? null : ((last - first) / first * 100);
+      trendText = trend == null ? '' : ', ${trend >= 0 ? 'up' : 'down'} ${trend.abs().toStringAsFixed(0)}% overall';
+    }
     return 'Trend chart: $parts$trendText';
   }
 

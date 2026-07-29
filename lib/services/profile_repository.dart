@@ -19,6 +19,8 @@ class ProfileRepository {
     String role = 'member',
     String? shgId,
     String? village,
+    String? mandal,
+    String? district,
   }) async {
     final uid = _client.auth.currentUser!.id;
     final row = await _client
@@ -30,6 +32,8 @@ class ProfileRepository {
           'role': role,
           'shg_id': ?shgId,
           'village': ?village,
+          'mandal': ?mandal,
+          'district': ?district,
         })
         .select()
         .single();
@@ -57,7 +61,10 @@ class ProfileRepository {
 
   Future<List<ShgSearchResult>> searchShgs(String query) async {
     final builder = _client.from('shg_directory').select();
-    final rows = await (query.trim().isEmpty ? builder.limit(20) : builder.ilike('name', '%${query.trim()}%').limit(20));
+    // Without an explicit order, PostgREST doesn't guarantee row order —
+    // results could shuffle between an empty-query browse and a re-search,
+    // unlike ShgRepository.fetchAllShgs's own `.order('name')`.
+    final rows = await (query.trim().isEmpty ? builder.order('name').limit(20) : builder.ilike('name', '%${query.trim()}%').order('name').limit(20));
     return (rows as List).map((r) => ShgSearchResult.fromMap(r as Map<String, dynamic>)).toList();
   }
 }
