@@ -724,10 +724,16 @@ carries "My Purchases" and "My Sales" tabs, backed by
 own order status; there is no buyer-initiated cancellation yet (would need a
 new `'cancelled'` status plus a stock-restore RPC).
 
-**Order status** (`new → packed → shipped → delivered`) is a free-form chip
-row the seller (or staff) can set to *any* value at *any* time, including
-backward — this is an intentional "correct a mistake" design, not a bug, and
-is not guarded by any lock/RPC the way the loan/scheme decision flows are.
+**Order status** (`new → packed → shipped → delivered`) is set by the seller
+(or staff) via a chip row in the UI, but — unlike this section's own earlier
+description — is guarded server-side since round 194: the seller's own RLS
+`WITH CHECK` permits only a one-step forward-or-back transition per update
+(a genuine "correct a mistake" design, not free-form), while staff retains
+an unrestricted override for dispute resolution, gated only by a
+self-exclusion (a staff account cannot force-transition her own purchase,
+closed in round 199 after an audit found staff could otherwise force any
+order straight to `'delivered'` and immediately post a "verified purchase"
+review with no real fulfillment wait).
 
 **Review eligibility is enforced at the database layer, not the UI**: posting
 a review requires an existing order for that exact product under the
@@ -744,7 +750,7 @@ shipped.
 | FR-MKT-1 | Member/seller lists a product (name, description, price, stock, category) | Member, Leader |
 | FR-MKT-2 | Any user browses the cross-SHG product catalog and product detail | All |
 | FR-MKT-3 | Any user places an order; stock decrement and price-locking happen atomically | All |
-| FR-MKT-4 | Seller (or staff) freely sets order status to any of the 4 values, including backward, without a locking RPC | Member, Leader (seller), staff |
+| FR-MKT-4 | Seller sets order status one step forward/back at a time (RLS-guarded); staff may override to any value for a dispute they don't personally own | Member, Leader (seller), staff |
 | FR-MKT-5 | Only a verified past buyer of the specific product may post a review; one review per reviewer per product | All |
 | FR-MKT-6 | Review moderation (edit/delete another user's review) is staff-only | Staff |
 

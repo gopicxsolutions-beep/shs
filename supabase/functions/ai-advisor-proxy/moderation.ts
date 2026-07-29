@@ -82,41 +82,60 @@ export function normalizeLanguage(raw: unknown): Language {
 //     pattern × multiple separator types), not hand-picked example
 //     phrases — see the "the REST of..." and dedicated dotAll/self-harm/
 //     incitement-verb tests in moderation.test.ts.
-//   4th pass (gap-hunt iteration 25, this one): a DISTINCT bypass class,
-//     found by dogfooding round 197's own "complete" claim above — a
-//     zero-width Unicode character (e.g. U+200B ZERO WIDTH SPACE) inserted
-//     between letters is not whitespace at all, so no amount of widening
-//     `\s` ever catches it ("kill" + U+200B + "myself" slipped through
-//     even with every fix above applied); separately, ordinary word-joining
-//     punctuation typed in place of a space ("kill.myself",
-//     "kill_myself") also isn't `\s`. Fixed by (i) stripping known
-//     zero-width/invisible characters from the query before matching
-//     (`stripInvisibleChars`, below) rather than trying to match around
-//     them, and (ii) widening every multi-word pattern's separator from a
-//     bare `\s+`/`\s*` to the shared `SEP`/`SEP_OPT` fragments (which also
-//     accept `.`/`_`/`-`). Any future edit to these three pattern arrays
-//     MUST re-run the full sweep in moderation.test.ts (now covering both
-//     whitespace AND zero-width/punctuation separators), not just eyeball
-//     the diff — cherry-picked examples are exactly how the first three
-//     "complete" claims went out wrong.
+//   4th pass: a DISTINCT bypass class, found by dogfooding round 197's own
+//     "complete" claim above — a zero-width Unicode character (e.g.
+//     U+200B ZERO WIDTH SPACE) inserted between letters is not whitespace
+//     at all, so no amount of widening `\s` ever catches it ("kill" +
+//     U+200B + "myself" slipped through even with every fix above
+//     applied); separately, ordinary word-joining punctuation typed in
+//     place of a space ("kill.myself", "kill_myself") also isn't `\s`.
+//     Fixed by (i) neutralizing zero-width/invisible characters before
+//     matching (`stripInvisibleChars`, below) rather than trying to match
+//     around them, and (ii) widening every multi-word pattern's separator
+//     from a bare `\s+`/`\s*` to the shared `SEP`/`SEP_OPT` fragments
+//     (which also accept `.`/`_`/`-`).
+//   5th pass (gap-hunt iteration 26, this one): the 4th pass's invisible-
+//     character strip used a hand-picked, finite 5-character list — the
+//     exact same "enumerate examples instead of the actual rule" mistake
+//     that caused 3 rounds of whitespace-bypass failures above, just
+//     applied to a new bug class. Found by dogfooding round 198's own
+//     "complete" claim: U+180E (Mongolian vowel separator), the FE00-FE0F
+//     variation-selector block, U+2061-2064 (invisible math operators),
+//     and U+00AD (soft hyphen) all bypassed it. Replaced the finite list
+//     with Unicode's own `\p{Cf}` (Format) general category — the actual
+//     rule "characters the standard itself defines as invisible
+//     formatting," not one round's guess at an example list — plus the
+//     FE00-FE0F range explicitly (variation selectors are category Mn,
+//     not Cf). Deliberately does NOT strip `\p{Mn}` (combining marks)
+//     broadly: Hindi/Telugu legitimately use Mn combining vowel signs
+//     (matras/vottulu) in every real word in those scripts, so a blanket
+//     Mn strip would corrupt real self-harm/hate-speech phrases typed in
+//     either language rather than closing a bypass. Any future edit to
+//     these three pattern arrays, or to the invisible-character handling,
+//     MUST re-run the full sweep in moderation.test.ts, not just eyeball
+//     the diff — cherry-picked examples are exactly how five consecutive
+//     "complete" claims on this file went out wrong.
 const SEP = '[\\s._-]+';
 const SEP_OPT = '[\\s._-]*';
 
-// Neutralizes zero-width/invisible Unicode characters (ZERO WIDTH SPACE,
-// ZERO WIDTH NON-JOINER, ZERO WIDTH JOINER, WORD JOINER, ZERO WIDTH NO-BREAK
-// SPACE/BOM) before any pattern below ever sees the query — these render as
-// nothing to a human reading the text but silently split a word for regex
-// purposes, defeating every pattern above regardless of how the separator
-// character class is widened. Replaced with an ordinary space, NOT deleted
+// Neutralizes zero-width/invisible Unicode characters before any pattern
+// below ever sees the query — these render as nothing to a human reading
+// the text but silently split a word for regex purposes, defeating every
+// pattern above regardless of how the separator character class is
+// widened. `\p{Cf}` (requires the `u` flag) matches Unicode's own "Format"
+// general category — every character the standard itself defines as
+// invisible formatting (zero-width space/joiners, word joiner, BOM,
+// Mongolian vowel separator, bidi control characters, invisible math
+// operators, soft hyphen, and more) — rather than a hand-picked list that
+// can only ever cover the examples one round happened to think of.
+// FE00-FE0F (variation selectors) is added explicitly since that block is
+// category Mn, not Cf. Replaced with an ordinary space, NOT deleted
 // outright — deleting it from "kill" + U+200B + "myself" collapses the
 // query to "killmyself" with zero characters between the words, which
 // SEP's `+` quantifier (at least one separator) then fails to match;
 // replacing with a space turns it into "kill myself", which every pattern
-// already matches. Built with `new RegExp` from explicit `\uXXXX` escapes
-// (not a regex literal containing the raw invisible characters themselves)
-// so the bypass characters this guards against aren't silently sitting
-// un-reviewably in the source file.
-const INVISIBLE_CHARS_RE = new RegExp('[\u200B\u200C\u200D\u2060\uFEFF]', 'g');
+// already matches.
+const INVISIBLE_CHARS_RE = new RegExp('[\\p{Cf}\\uFE00-\\uFE0F]', 'gu');
 
 function stripInvisibleChars(text: string): string {
   return text.replace(INVISIBLE_CHARS_RE, ' ');

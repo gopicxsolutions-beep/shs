@@ -241,7 +241,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(children: [
-                                  Text(r.reviewerName, style: AppTheme.sans(12, weight: FontWeight.w700)),
+                                  Flexible(child: Text(r.reviewerName, style: AppTheme.sans(12, weight: FontWeight.w700), overflow: TextOverflow.ellipsis)),
                                   const SizedBox(width: 8),
                                   Semantics(
                                     label: l10n.productDetailReviewRatingSemantics(r.rating),

@@ -17893,3 +17893,185 @@ deleted within the same round, re-queried to confirm 0 rows remain.
 cleanly. Browser-preview UI verification succeeded: preview server
 restarted, tab fronted, landing page confirmed rendering correctly via
 screenshot on the rebuilt live-mode bundle.
+
+## Update (round 199) — Gap-hunting loop iteration 26: 2 more HIGH staff-bypass RLS gaps (meeting_action_items, marketplace_orders force-delivered fraud), a 5th moderation.ts bypass class, a self-caught RLS over-restriction, and 9 more gaps
+
+Four parallel audits: dogfooding round 198, Livelihood Activities full
+sweep, Scheme Catalog/Applications full sweep, Marketplace full sweep.
+
+**Dogfooding round 198 (2 new findings, 1 re-confirmed still-open)**
+1. **[HIGH]** `meeting_action_items_update_self_or_leader` had the
+   identical unconditional-staff-bypass bug round 198 explicitly fixed for
+   two OTHER tables in the SAME "Meetings/Attendance/Minutes" audit area —
+   `is_staff()` was a bare top-level `or`, never ANDed with the
+   locked-fields check, so any staff account could rewrite
+   `meeting_id`/`owner_id`/`task`/`due_date` on any action item with no
+   scope or identity restriction. Fixed by ANDing the locked-fields check
+   onto the staff branch, matching 0110's own shape for the sibling
+   tables.
+2. **[HIGH]** `moderation.ts`'s zero-width/invisible-character strip
+   (round 198) used a hand-picked, finite 5-character list — the exact
+   same "enumerate examples instead of the actual rule" mistake that
+   caused 3 rounds of whitespace-bypass failures, just applied to a new
+   bug class. U+180E (Mongolian vowel separator), the FE00-FE0F
+   variation-selector block, U+2061-2064 (invisible math operators), and
+   U+00AD (soft hyphen) all bypassed it. Replaced the finite list with
+   Unicode's own `\p{Cf}` (Format) general category plus the FE00-FE0F
+   range explicitly (variation selectors are category Mn, not Cf) —
+   deliberately does NOT strip `\p{Mn}` broadly, since Hindi/Telugu
+   legitimately use Mn combining vowel signs in every real word in those
+   scripts, and a blanket Mn strip would corrupt real self-harm/hate-speech
+   phrases in either language rather than closing a bypass. **Self-caught
+   mid-fix**: the first attempt at this fix silently broke even the plain
+   "kill myself" case, because passing `\p{Cf}` as a plain (undoubled)
+   backslash sequence inside a JS string literal gets consumed by the
+   string literal's own escape processing before `new RegExp()` ever sees
+   it — the runtime regex ended up matching the literal characters
+   `p`,`{`,`C`,`f`,`}` instead of the Unicode property, silently stripping
+   any `f`/`C` character out of every query. Caught immediately by running
+   the full `deno test` suite (17 failures, including the baseline
+   self-harm test) rather than trusting the standalone sanity check;
+   fixed by properly doubling the backslashes so the runtime string
+   retains a single backslash for the regex engine to interpret. Extended
+   the exhaustive sweep from 7 to 9 separators (added soft hyphen and a
+   variation selector). 55/55 `deno test` passed. Redeployed.
+3. Re-confirmed still accurate, not new: `meetings_update_leader_or_staff`'s
+   `status` column remains unrestricted for staff (pre-existing design
+   from migration 0042, unchanged by round 198) — flagged by the audit as
+   in tension with round 198's own self-dealing reasoning elsewhere, but a
+   deliberate prior architectural choice, not something to silently change
+   without a human decision.
+
+**Livelihood Activities full sweep (1 MEDIUM finding + 1 cross-cutting
+finding fixed; RLS/business-logic/UI otherwise fully re-confirmed clean)**
+1. **[MEDIUM]** `livelihood_detail_page.dart`'s `isStaff` flag (governing
+   which status transitions the UI even offers) was computed from role
+   alone, not ownership — RLS (`livelihood_update_self_leader_or_staff`,
+   migration 0105) only leaves the unrestricted staff branch open when
+   `member_id <> auth.uid()`; a staff account editing HER OWN activity
+   falls through to the same one-step-at-a-time restricted branch a plain
+   member must obey. The role-only UI check offered every status as
+   reachable regardless, so a 2-step jump submitted and was rejected with
+   only the generic save error. Fixed: `isStaff` now also requires
+   `activity.memberId != appState.profile?.id`.
+2. **[Cross-cutting, fixed]** `AdminRepository.updateUserRole()` never
+   cleared a promoted member's `shg_id` — crp/clf/admin roles carry no
+   `shg_id` of their own throughout this schema, but promotion only ever
+   updated `role`. A promoted member kept her pre-promotion `shg_id`,
+   which silently broke every `isPlatformWideStaff` (`shgId == null`)
+   check across the Savings/Loans/Livelihood/Financial-Ledger home pages —
+   the newly-promoted staff account saw only her old SHG's data instead of
+   the platform-wide view the role is supposed to unlock, with no error.
+   Confirmed the admin RLS branch (`profiles_update_self_or_admin`) already
+   permits setting `shg_id` to null unrestricted — a pure Dart-side fix.
+3. Re-confirmed clean: the `reachableOptions` one-step-transition
+   computation itself is correct for every starting status; the
+   "revenue frozen once completed" and "deactivated-member UPDATE
+   self-branch has no is_active gate" gaps are both already documented,
+   deliberate deferrals from earlier rounds, not new.
+
+**Scheme Catalog/Applications full sweep (1 MEDIUM finding; deadline
+enforcement, double-decision guard, self-decision block, eligibility
+honesty all re-confirmed solid)**
+1. **[MEDIUM]** `scheme_applications.decided_by` (migration 0050)
+   attributes every staff decision to a real profile, surfaced as "Decided
+   by {name}" on the applicant's own tracking page — but no `profiles`
+   SELECT policy ever granted the applicant visibility into the DECIDER's
+   row when the decider is staff. `profiles_select_self_shg_or_staff`
+   (0002) evaluates `is_staff()`/`shg_id` against the CALLER (the
+   applicant), not the target row, and crp/clf/admin accounts have no
+   `shg_id` of their own — so the embed silently returned `null` rather
+   than erroring, for the realistic case (a staff-decided application).
+   The exact bug shape migration 0045 already fixed once for
+   `shg_join_requests`' decider visibility, never mirrored here. Fixed
+   with a new `profiles_select_scheme_decider` policy: an applicant may
+   see the profile of whoever decided HER OWN application. Live-verified:
+   applicant now sees the real decider name; a different, unrelated member
+   still sees 0 rows for that same profile.
+2. Re-confirmed still accurate, not new: the admin scheme-catalog form has
+   no UI for deadline or free-text eligibility (already documented in two
+   earlier rounds) — every scheme created through the live admin UI still
+   gets `deadline = null` and empty eligibility criteria.
+
+**Marketplace full sweep (2 HIGH/MEDIUM RLS/RPC findings + 1 MEDIUM UI
+finding + 1 LOW; column locks, review eligibility, stock atomicity all
+re-confirmed solid)**
+1. **[HIGH]** `marketplace_orders_update_seller_or_staff`'s `is_staff()`
+   branch had no self-exclusion — unlike every other staff branch this
+   table family has needed fixed this session (products delete, reviews
+   moderate/delete, financial_ledger delete, course_progress,
+   livelihood). A staff account could buy a product (from another
+   seller), then directly force her own order's `status` straight to
+   `'delivered'` with none of the seller branch's one-step-transition
+   guard, then immediately post a "verified purchase" review with zero
+   real fulfillment wait — exactly the fraud vector the delivered-order
+   review requirement exists to prevent. Fixed by adding
+   `buyer_id is distinct from auth.uid()` to the staff branch; staff
+   retains its broader unrestricted-transition capability for managing
+   OTHER buyers'/sellers' orders (dispute resolution), only self-dealing
+   is blocked. Live-verified: staff force-delivering her own order now
+   raises `42501`; staff managing a different buyer's order still
+   succeeds.
+2. **[MEDIUM]** `place_marketplace_order` never blocked a seller from
+   buying her own listing — a gap migration 0048 itself disclosed but only
+   ever closed the reviewing half (self-review). Combined with finding #1,
+   this was the missing first step of the fake-review fraud chain. Fixed
+   at the source: the RPC now raises if `seller_id = auth.uid()`.
+   Live-verified: a seller ordering her own product now raises the new
+   exception; a genuine third-party buyer's order still succeeds.
+3. **[MEDIUM]** `product_detail_page.dart`'s review-name `Row` had no
+   `Flexible` (unlike the functionally identical text already fixed in
+   `marketplace_reviews_page.dart`) — a long reviewer name at 1.3x-2x text
+   scale next to 5 star icons risked overflow. Fixed.
+4. **[LOW]** `MarketplaceRepository.fetchMyProducts()` was unbounded,
+   unlike every other list query in the same file — currently dead code
+   (no UI call site yet), but would silently reintroduce the exact problem
+   this file's own comments describe fixing everywhere else once a "My
+   Listings" screen is built. Capped at 500 now, matching the rest of the
+   file.
+5. `docs/SRS.md`'s FR-MKT-4 and surrounding prose were stale, still
+   describing order-status as "free-form... not guarded by any lock/RPC"
+   — true pre-0068, false since round 194 folded the one-step guard into
+   RLS itself. Corrected to describe the actual current (and now further
+   self-exclusion-hardened) behavior.
+
+**Self-caught mid-round: an over-restrictive first attempt at the
+meeting_action_items fix.** The first version of the fix (in migration
+0111) locked ALL FOUR columns (meeting_id/task/owner_id/due_date) for the
+staff branch, copying the SELF-branch's lock list instead of the intended
+shape — the leader branch has never locked `task`/`due_date` (a leader can
+freely correct a task's text or deadline), so locking all four for staff
+was over-restrictive, not just closing the forgery gap. Caught immediately
+by this round's own live verification: a staff account correcting only
+`task` text (no retargeting at all) was rejected with a bare RLS
+violation. Corrected in a same-round follow-up migration (0112) to lock
+only `meeting_id`/`owner_id` — the identity/scope columns — leaving
+`task`/`due_date` as freely staff-editable as they already are for leader,
+matching the narrower shape 0110 used for `meeting_attendance`/`meetings`
+(only identity/scope columns locked, not every column). Live-verified
+after the correction: retargeting still blocked, legitimate task/due_date
+correction now succeeds.
+
+**Migrations `0111_iteration26_staff_bypass_and_visibility_closures.sql`
+and `0112_iteration26_meeting_action_items_staff_lock_correction.sql`**
+(every RLS-shape change individually live-verified for both the blocked
+case and the still-legitimate case, using committed `__TEST__` fixtures
+cleaned up and re-queried to confirm 0 rows remain):
+`meeting_action_items_update_self_or_leader`'s staff branch locked to
+`meeting_id`/`owner_id` only (corrected from an over-broad first attempt);
+`marketplace_orders_update_seller_or_staff`'s staff branch self-excluded;
+`place_marketplace_order` blocks self-purchase; `course_progress_select_
+related` (redundant with 0110's replacement policy) dropped; new
+`profiles_select_scheme_decider` policy.
+
+**Verification:** `flutter analyze` — 0 issues. `flutter test` —
+1039/1039 passed. `deno test` (ai-advisor-proxy) — 55/55 passed after the
+moderation.ts fix (including the self-caught backslash-doubling bug),
+redeployed. Migrations 0111/0112 pushed to the linked live project; every
+RLS-shape change live-verified for both the negative (blocked) and
+positive (still-legitimate) case, including the self-caught over-
+restriction being corrected and re-verified within the same round.
+`flutter build web --release --dart-define-from-file=.env.json` rebuilt
+cleanly. Browser-preview UI verification succeeded: preview server
+restarted, tab fronted, landing page confirmed rendering correctly via
+screenshot on the rebuilt live-mode bundle.

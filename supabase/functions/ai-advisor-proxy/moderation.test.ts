@@ -167,11 +167,11 @@ Deno.test('pre-filter blocks the REST of the jailbreak/hate-speech patterns acro
 // phrase for every single pattern in SELF_HARM_PATTERNS/HATE_SPEECH_PATTERNS/
 // JAILBREAK_PATTERNS (25 patterns total, cross-checked 1:1 against the
 // arrays in moderation.ts by array position), and mechanically substitutes
-// every space in each phrase with 7 different separators (newline, tab,
-// triple-space, CRLF, zero-width space, period, underscore) — so adding a
-// 26th pattern without adding its canonical phrase here is the only way to
-// under-cover this test, not a human forgetting to think of the right
-// adversarial example.
+// every space in each phrase with 9 different separators (newline, tab,
+// triple-space, CRLF, zero-width space, period, underscore, soft hyphen,
+// a variation selector) — so adding a 26th pattern without adding its
+// canonical phrase here is the only way to under-cover this test, not a
+// human forgetting to think of the right adversarial example.
 Deno.test('pre-filter: EVERY pattern in all 3 arrays blocks across every whitespace/zero-width/punctuation separator, not just a plain space', () => {
   const canonicalPhrases = [
     // SELF_HARM_PATTERNS (9) — array order in moderation.ts
@@ -208,7 +208,7 @@ Deno.test('pre-filter: EVERY pattern in all 3 arrays blocks across every whitesp
   // to a human, not whitespace to a regex) and ordinary word-joining
   // punctuation (a period/underscore typed in place of a space) both slipped
   // through every prior "complete" fix. '​' is ZERO WIDTH SPACE.
-  const separators = ['\n', '\t', '   ', '\r\n', '\u200b', '.', '_'];
+  const separators = ['\n', '\t', '   ', '\r\n', '\u200b', '.', '_', '\u00ad', '\ufe0f'];
   for (const phrase of canonicalPhrases) {
     // Sanity check: the plain-space canonical phrase itself must block —
     // if it doesn't, the phrase was written wrong, not a real regex bug.

@@ -94,7 +94,21 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
                 AppButton(
                   label: l10n.livelihoodDetailUpdateProgressButton,
                   fullWidth: true,
-                  onPressed: () => _updateProgress(context, activity, isStaff: appState.user.role != Role.member && appState.user.role != Role.leader),
+                  // `isStaff` here must also require non-ownership — RLS
+                  // (`livelihood_update_self_leader_or_staff`, migration
+                  // 0105) only leaves the fully-unrestricted staff branch
+                  // open when `member_id <> auth.uid()`; a staff account
+                  // editing HER OWN activity falls through to the same
+                  // one-step-at-a-time restricted branch a plain member
+                  // must obey. A role-only check here (as before) offered
+                  // every status as reachable regardless, so picking a
+                  // 2-step jump submitted and was rejected by the DB with
+                  // only the generic save error, not pre-filtered out.
+                  onPressed: () => _updateProgress(
+                    context,
+                    activity,
+                    isStaff: appState.user.role != Role.member && appState.user.role != Role.leader && activity.memberId != appState.profile?.id,
+                  ),
                 ),
               ],
             ],

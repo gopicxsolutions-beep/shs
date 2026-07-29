@@ -300,29 +300,17 @@ class LoanRepository {
     // statement/transaction, so a concurrent second payment on the same
     // loan correctly computes from the post-first-payment balance instead
     // of the same stale snapshot both callers happened to load.
-    try {
-      await _client.rpc('record_loan_payment', params: {'p_loan_id': loanId, 'p_amount': amount});
-    } on PostgrestException catch (e) {
-      // 'PGRST202' = PostgREST's "function not found in schema cache" —
-      // the migration above hasn't been deployed yet. Falls back to the
-      // old non-atomic behavior (same race this fix closes) rather than
-      // hard-failing every payment in the gap before the migration runs;
-      // remove once the migration is confirmed deployed everywhere this
-      // app runs. (Checking 'PGRST202', not the raw Postgres '42883' —
-      // this session shipped that exact wrong check once already on the
-      // marketplace fix and had to live-debug it; see that fix's comment
-      // for the full story.)
-      if (e.code != 'PGRST202') rethrow;
-      await _client.from('loan_payments').insert({'loan_id': loanId, 'amount': amount});
-      await _client.from('loans').update({
-        'outstanding': newOutstanding,
-        if (newOutstanding <= 0) 'status': 'closed',
-        // Mirrors the RPC's own fix (migration 0073) — was previously
-        // omitted here too, leaving next_due_date frozen at its
-        // approval-time value forever.
-        'next_due_date': newOutstanding <= 0 ? null : DateTime.now().add(const Duration(days: 30)).toIso8601String().split('T').first,
-      }).eq('id', loanId);
-    }
+    //
+    // No PGRST202 (RPC-not-found) fallback here, unlike this file's
+    // history — migrations apply strictly in order, so any deployment
+    // with `loan_payments_insert_related` dropped (migration 0110, which
+    // retired the direct-insert forgery path this fallback used) is
+    // guaranteed to also already have the far-earlier `record_loan_payment`
+    // RPC (0011). A fallback insert would now fail outright (no INSERT
+    // policy grants it) rather than silently working, so it was dead code
+    // kept alive only by not being removed — removed rather than left as
+    // a trap for a future round to rediscover as "broken."
+    await _client.rpc('record_loan_payment', params: {'p_loan_id': loanId, 'p_amount': amount});
   }
 
   Stream<List<Loan>> watchForShg(String shgId) {

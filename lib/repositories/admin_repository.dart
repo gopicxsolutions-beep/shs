@@ -85,7 +85,19 @@ class AdminRepository {
       _locallyUpdatedRoles[userId] = role;
       return;
     }
-    await _client.from('profiles').update({'role': role}).eq('id', userId);
+    final update = <String, dynamic>{'role': role};
+    // Staff roles are never SHG-scoped (crp/clf/admin have no `shgId` of
+    // their own — see docs/SRS.md). Without this, a promoted member kept
+    // her pre-promotion `shg_id`, which silently broke every
+    // `isPlatformWideStaff` (`shgId == null`) check across the Savings/
+    // Loans/Livelihood/Financial-Ledger home pages: the newly-promoted
+    // crp/clf/admin saw only her old SHG's data instead of the
+    // platform-wide view the role is supposed to unlock, with no error or
+    // indication anything was wrong.
+    if (role == 'crp' || role == 'clf' || role == 'admin') {
+      update['shg_id'] = null;
+    }
+    await _client.from('profiles').update(update).eq('id', userId);
   }
 
   // Same demo-mode local-tracking shape as _locallyUpdatedRoles, above.
@@ -229,8 +241,13 @@ class AdminRepository {
     // `.limit()` since capping the underlying rows would silently make the
     // computed percentage wrong rather than merely show fewer rows.
     // `training_completion_stats()` (migration 0110) computes the exact
-    // same three aggregates server-side in one round trip.
-    final row = await _client.rpc('training_completion_stats').single();
+    // same three aggregates server-side in one round trip. It's gated to
+    // `is_staff()` and returns zero rows (not an error) for anyone else —
+    // `maybeSingle()` (not `single()`, which throws on 0 rows) so a caller
+    // reached via a mid-session role downgrade before the router redirects
+    // away degrades to 0% instead of an uncaught PostgrestException.
+    final row = await _client.rpc('training_completion_stats').maybeSingle();
+    if (row == null) return 0;
     final progressSum = (row['progress_sum'] as num).toInt();
     final totalMembers = (row['total_members'] as num).toInt();
     final totalCourses = (row['total_courses'] as num).toInt();

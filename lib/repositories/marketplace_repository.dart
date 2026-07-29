@@ -57,7 +57,7 @@ class MarketplaceRepository {
   Future<List<Product>> fetchMyProducts(String? sellerId) async {
     if (!_live) return [..._locallyAddedProducts.reversed, ..._mockProducts()];
     if (sellerId == null) return [];
-    final rows = await _client.from('marketplace_products').select('*, profiles(name)').eq('seller_id', sellerId).order('created_at', ascending: false);
+    final rows = await _client.from('marketplace_products').select('*, profiles(name)').eq('seller_id', sellerId).order('created_at', ascending: false).limit(500);
     return (rows as List).map((r) => Product.fromMap(r as Map<String, dynamic>)).toList();
   }
 
