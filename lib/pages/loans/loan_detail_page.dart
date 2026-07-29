@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/loan.dart';
@@ -233,12 +234,31 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                         await _repo.recordPayment(loan.id, amount, newOutstanding);
                         loanClosed = newOutstanding <= 0;
                         if (context.mounted) Navigator.of(context).pop(true);
-                      } catch (_) {
+                      } catch (e) {
+                        // The client-side check above only guards against
+                        // the amount typed exceeding THIS dialog's own,
+                        // possibly-stale `loan.outstanding` snapshot — if
+                        // another leader/staff recorded a payment moments
+                        // earlier, `record_loan_payment()` (migration 0098)
+                        // independently re-checks the CURRENT balance and
+                        // rejects with `'payment amount (%) exceeds
+                        // outstanding balance (%)'`. That used to collapse
+                        // into the exact same generic "could not record"
+                        // message as any other failure, with no reload —
+                        // so retrying the identical (now genuinely invalid)
+                        // amount against the same stale `loan` object failed
+                        // identically forever until the member manually
+                        // navigated away and back.
+                        final isStaleBalance = e is PostgrestException && e.message.contains('exceeds outstanding balance');
                         if (context.mounted) {
                           setState(() {
                             submitting = false;
-                            error = l10n.loanDetailRecordErrorMessage;
+                            error = isStaleBalance ? l10n.loanDetailBalanceChangedErrorMessage : l10n.loanDetailRecordErrorMessage;
                           });
+                        }
+                        if (isStaleBalance) {
+                          _key.currentState?.reload();
+                          _paymentsKey.currentState?.reload();
                         }
                       }
                     },

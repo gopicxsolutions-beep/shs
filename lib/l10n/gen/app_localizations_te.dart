@@ -443,10 +443,20 @@ class AppLocalizationsTe extends AppLocalizations {
       'మీ SHG నాయకుడు ఈ అభ్యర్థనను ఆమోదించలేదు. మీరు వేరే SHGని ఎంచుకుని మళ్ళీ ప్రయత్నించవచ్చు.';
 
   @override
+  String get shgApprovalNoneTitle => 'ఇంకా SHG ఎంచుకోలేదు';
+
+  @override
+  String get shgApprovalNoneMessage =>
+      'ప్రస్తుతం మీకు SHGలో చేరడానికి పెండింగ్‌లో ఉన్న అభ్యర్థన లేదు. ప్రారంభించడానికి ఒక SHGని ఎంచుకోండి.';
+
+  @override
   String get unknownShg => 'తెలియని SHG';
 
   @override
   String get chooseDifferentShg => 'వేరే SHGని ఎంచుకోండి';
+
+  @override
+  String get chooseAnShg => 'ఒక SHGని ఎంచుకోండి';
 
   @override
   String get checkingStatus => 'తనిఖీ చేస్తోంది…';
@@ -454,6 +464,23 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get shgApprovalCheckError =>
       'స్థితిని తనిఖీ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get shgApprovalWithdrawButton => 'అభ్యర్థనను ఉపసంహరించుకోండి';
+
+  @override
+  String get shgApprovalWithdrawing => 'ఉపసంహరిస్తోంది…';
+
+  @override
+  String get shgApprovalWithdrawConfirmTitle => 'అభ్యర్థనను ఉపసంహరించుకోవాలా?';
+
+  @override
+  String get shgApprovalWithdrawConfirmMessage =>
+      'ఇది మీ పెండింగ్ అభ్యర్థనను రద్దు చేస్తుంది. మీరు ఎప్పుడైనా మళ్ళీ ఒక SHGని ఎంచుకోవచ్చు.';
+
+  @override
+  String get shgApprovalWithdrawError =>
+      'అభ్యర్థనను ఉపసంహరించుకోలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
   String get voiceNoLoans => 'మీ పేరు మీద ఎలాంటి రుణాలు లేవు.';
@@ -2227,6 +2254,10 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఈ వీడియో చాలా పెద్దది. దయచేసి 200 MB కంటే చిన్న ఫైల్‌ను ఎంచుకోండి.';
 
   @override
+  String get adminTrainingCoursesVideoDemoModeNotice =>
+      'డెమో మోడ్‌లో నిజమైన స్టోరేజ్ లేదు — ఈ వీడియో నిజంగా జోడించబడదు.';
+
+  @override
   String get adminTrainingCoursesTitleRequiredError => 'కోర్సు శీర్షిక అవసరం.';
 
   @override
@@ -2873,6 +2904,13 @@ class AppLocalizationsTe extends AppLocalizations {
       'మీరు ఈ కోర్సు కోసం సర్టిఫికెట్ పొందారు!';
 
   @override
+  String get courseDetailFullyComplete => '100% పూర్తయింది';
+
+  @override
+  String get courseDetailVideoUnavailable =>
+      'ఈ కోర్సుకు ఇంకా వీడియో జోడించలేదు.';
+
+  @override
   String get courseQuizTitle => 'కోర్సు క్విజ్';
 
   @override
@@ -3298,6 +3336,10 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get loanDetailRecordErrorMessage =>
       'ఈ చెల్లింపును నమోదు చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get loanDetailBalanceChangedErrorMessage =>
+      'ఈ లోన్ తెరిచినప్పటి నుండి బాకీ మొత్తం మారింది — ఎవరైనా ఇప్పుడే చెల్లింపు నమోదు చేసి ఉండవచ్చు. మళ్ళీ ప్రయత్నించే ముందు దీన్ని మూసివేసి తాజా బాకీని చూడండి.';
 
   @override
   String get loanDetailPaymentRecordedMessage => 'చెల్లింపు నమోదైంది';

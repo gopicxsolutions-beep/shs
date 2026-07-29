@@ -324,6 +324,44 @@ real microphone access — so, consistent with §3.1's existing testing
 caveat, a real device/browser should confirm the recognizer actually now
 listens in the selected language before this is treated as fully verified.
 
+### 3.5 Two more real bugs found dogfooding §3.4's own fix (gap-hunt iteration 28)
+
+The very next gap-hunt loop iteration deliberately re-audited this fix's own
+code rather than assuming it was settled once shipped — and found two more
+genuine bugs in it:
+
+**Bug 1 (HIGH) — subtag-boundary false positive**: `resolveVoiceLocaleId`'s
+matching used a bare `id.startsWith(code)` on the 2-letter language code,
+with no check that `code` is actually the locale's whole primary subtag. A
+device reporting `tet-TL` (Tetum) or `hil-PH` (Hiligaynon) — real BCP-47
+locale ids that merely happen to start with "te"/"hi" — would silently
+match against Telugu/Hindi respectively, with no error at all. This is
+worse than the empty-list case §3.4 fixed: that one at least fails in a
+handled, expected way, while this one silently listens in the wrong
+language and looks like it worked. Fixed by splitting each candidate locale
+id on the BCP-47 subtag delimiter (`-`/`_`) and comparing only the primary
+subtag for equality, instead of a prefix check.
+
+**Bug 2 (MEDIUM) — stale-attempt hijack via the shared `onError` callback**:
+`onError` is registered once for the service instance's whole lifetime, not
+per-`listen()` call, and the `speech_to_text` plugin gives it no id
+correlating an error back to which attempt raised it — it just resolves
+whatever `_pendingCompleter` currently is when it fires. If a superseded
+attempt's native session were to emit a delayed error after a newer
+`listen()` call has already started (e.g. web's `SpeechRecognition.onerror`
+firing asynchronously just after `stop()` was already issued for the old
+session), it would resolve the NEW attempt's completer instead, silently
+discarding whatever real transcript that attempt was about to produce. The
+page's own busy-disabled mic button should normally prevent two overlapping
+`listen()` calls from existing at once, but `listen()` now also forces any
+stray still-pending completer to a clean `stop()` before starting a new
+attempt, closing the overlap window at the service layer too rather than
+relying solely on the caller never double-invoking it.
+
+Both fixed in the same file, with 3 additional regression tests for the
+subtag-boundary case. See `docs/DEVELOPMENT_PROGRESS.md`'s "Gap-hunting loop
+iteration 28" entry for the full write-up.
+
 ---
 
 ## 4. Logging and audit

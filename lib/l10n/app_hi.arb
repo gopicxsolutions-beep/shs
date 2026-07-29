@@ -162,9 +162,17 @@
   "shgApprovalWaitingMessage": "आपका जुड़ने का अनुरोध आपके SHG लीडर को भेज दिया गया है। स्वीकृति मिलते ही आपको पहुंच मिल जाएगी।",
   "shgApprovalRejectedTitle": "अनुरोध स्वीकृत नहीं हुआ",
   "shgApprovalRejectedMessage": "आपके SHG लीडर ने इस अनुरोध को स्वीकृत नहीं किया। आप कोई दूसरा SHG चुनकर फिर से कोशिश कर सकते हैं।",
+  "shgApprovalNoneTitle": "अभी तक कोई SHG चयनित नहीं",
+  "shgApprovalNoneMessage": "फ़िलहाल आपका किसी SHG से जुड़ने का कोई लंबित अनुरोध नहीं है। शुरू करने के लिए एक SHG चुनें।",
   "unknownShg": "अज्ञात SHG",
   "chooseDifferentShg": "दूसरा SHG चुनें",
+  "chooseAnShg": "एक SHG चुनें",
   "checkingStatus": "जांच हो रही है…",
+  "shgApprovalWithdrawButton": "अनुरोध वापस लें",
+  "shgApprovalWithdrawing": "वापस लिया जा रहा है…",
+  "shgApprovalWithdrawConfirmTitle": "अनुरोध वापस लें?",
+  "shgApprovalWithdrawConfirmMessage": "इससे आपका लंबित अनुरोध रद्द हो जाएगा। आप कभी भी दोबारा कोई SHG चुन सकते हैं।",
+  "shgApprovalWithdrawError": "अनुरोध वापस नहीं लिया जा सका। कृपया फिर से कोशिश करें।",
   "shgApprovalCheckError": "स्थिति जांच नहीं हो सकी। कृपया फिर से कोशिश करें।",
 
   "voiceNoLoans": "आपके नाम कोई ऋण नहीं है।",
@@ -1137,6 +1145,8 @@
 
   "adminTrainingCoursesVideoTooLarge": "यह वीडियो बहुत बड़ी है। कृपया 200 MB से छोटी फ़ाइल चुनें।",
 
+  "adminTrainingCoursesVideoDemoModeNotice": "डेमो मोड में कोई असली स्टोरेज नहीं है — यह वीडियो वास्तव में नहीं जुड़ेगा।",
+
   "adminTrainingCoursesTitleRequiredError": "कोर्स शीर्षक आवश्यक है।",
 
   "adminTrainingCoursesAddedMessage": "कोर्स जोड़ा गया",
@@ -1514,6 +1524,10 @@
 
   "courseDetailCertificateEarned": "आपने इस कोर्स के लिए सर्टिफिकेट पा लिया है!",
 
+  "courseDetailFullyComplete": "100% पूर्ण",
+
+  "courseDetailVideoUnavailable": "इस कोर्स के लिए अभी कोई वीडियो नहीं जोड़ा गया है।",
+
   "courseQuizTitle": "कोर्स क्विज़",
 
   "courseQuizScoreResult": "आपको {score}/{total} अंक मिले। पास करने के लिए फिर से कोशिश करें।",
@@ -1749,6 +1763,8 @@
   "loanDetailRecordButton": "दर्ज करें",
 
   "loanDetailRecordErrorMessage": "यह भुगतान दर्ज नहीं हो सका। कृपया फिर से कोशिश करें।",
+
+  "loanDetailBalanceChangedErrorMessage": "यह लोन खोले जाने के बाद बकाया राशि बदल गई है — हो सकता है किसी और ने अभी भुगतान दर्ज किया हो। दोबारा कोशिश करने से पहले इसे बंद करके नई बकाया राशि देखें।",
 
   "loanDetailPaymentRecordedMessage": "भुगतान दर्ज हो गया",
 

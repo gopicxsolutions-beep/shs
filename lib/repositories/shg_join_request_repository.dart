@@ -89,4 +89,15 @@ class ShgJoinRequestRepository {
     if (!_live) return;
     await _client.rpc('approve_shg_join_request', params: {'p_request_id': requestId, 'p_approve': approve, 'p_as_leader': asLeader});
   }
+
+  /// Cancels the member's own still-pending request outright, with no
+  /// replacement SHG picked (unlike [submit], which replaces one pending
+  /// row with another). RLS-provisioned since migration 0033
+  /// (`shg_join_requests_delete_self_pending`) but had no UI entry point
+  /// until now — `ShgApprovalPendingPage` only ever offered "Choose a
+  /// different SHG", with no way to just stop waiting.
+  Future<void> withdraw(String requestId) async {
+    if (!_live) return;
+    await _client.from('shg_join_requests').delete().eq('id', requestId);
+  }
 }

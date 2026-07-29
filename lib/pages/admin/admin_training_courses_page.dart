@@ -112,6 +112,14 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
                 _pickedVideo = file;
                 _removeVideo = false;
               });
+              // The picked file's name is shown in the button as if it will
+              // be attached, but `_addCourse`/`_editCourse` only ever
+              // upload `if (SupabaseService.isConfigured)` — demo mode has
+              // no real storage bucket. Previously this was silently
+              // dropped with no explanation at all.
+              if (!SupabaseService.isConfigured && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminTrainingCoursesVideoDemoModeNotice)));
+              }
             },
             icon: const Icon(Icons.video_file_outlined, size: 18),
             label: Text(label, overflow: TextOverflow.ellipsis),
@@ -219,10 +227,16 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
     setState(() => _busy = true);
     try {
       var videoUrl = _removeVideo ? null : _existingVideoUrl;
+      // Tracks the old object so it can be cleaned up from storage once the
+      // course row itself has successfully pointed away from it — see
+      // TrainingRepository.deleteCourseVideo's doc comment for why this
+      // wasn't happening at all before.
+      final oldVideoToDelete = (_pickedVideo != null || _removeVideo) ? _existingVideoUrl : null;
       if (_pickedVideo != null && SupabaseService.isConfigured) {
         videoUrl = await _repo.uploadCourseVideo(bytes: _pickedVideo!.bytes!, fileName: _pickedVideo!.name, contentType: _contentTypeForVideo(_pickedVideo!.extension));
       }
       await _repo.updateCourse(c.id, title: _title.text.trim(), topic: _topic.text.trim(), format: _format, duration: _duration.text.trim().isEmpty ? null : _duration.text.trim(), videoUrl: videoUrl);
+      if (oldVideoToDelete != null) await _repo.deleteCourseVideo(oldVideoToDelete);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(SupabaseService.isConfigured ? l10n.adminTrainingCoursesUpdatedMessage : l10n.adminTrainingCoursesDemoModeMessage)));
         _key.currentState?.reload();
@@ -251,6 +265,10 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
     setState(() => _busy = true);
     try {
       await _repo.deleteCourse(c.id);
+      // Only reached once the course row itself is actually gone (an
+      // FK-blocked delete below never gets here) — see
+      // TrainingRepository.deleteCourseVideo's doc comment.
+      if (c.videoUrl != null) await _repo.deleteCourseVideo(c.videoUrl!);
       if (mounted) {
         _key.currentState?.reload();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(SupabaseService.isConfigured ? l10n.adminTrainingCoursesDeletedMessage : l10n.adminTrainingCoursesDeleteDemoModeMessage)));

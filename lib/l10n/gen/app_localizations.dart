@@ -886,6 +886,18 @@ abstract class AppLocalizations {
   /// **'Your SHG leader did not approve this request. You can pick a different SHG and try again.'**
   String get shgApprovalRejectedMessage;
 
+  /// No description provided for @shgApprovalNoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No SHG selected yet'**
+  String get shgApprovalNoneTitle;
+
+  /// No description provided for @shgApprovalNoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t currently have a pending request to join an SHG. Choose one to get started.'**
+  String get shgApprovalNoneMessage;
+
   /// No description provided for @unknownShg.
   ///
   /// In en, this message translates to:
@@ -898,6 +910,12 @@ abstract class AppLocalizations {
   /// **'Choose a different SHG'**
   String get chooseDifferentShg;
 
+  /// No description provided for @chooseAnShg.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an SHG'**
+  String get chooseAnShg;
+
   /// No description provided for @checkingStatus.
   ///
   /// In en, this message translates to:
@@ -909,6 +927,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not check status. Please try again.'**
   String get shgApprovalCheckError;
+
+  /// No description provided for @shgApprovalWithdrawButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw request'**
+  String get shgApprovalWithdrawButton;
+
+  /// No description provided for @shgApprovalWithdrawing.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawing…'**
+  String get shgApprovalWithdrawing;
+
+  /// No description provided for @shgApprovalWithdrawConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw request?'**
+  String get shgApprovalWithdrawConfirmTitle;
+
+  /// No description provided for @shgApprovalWithdrawConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This cancels your pending request. You can choose an SHG again anytime.'**
+  String get shgApprovalWithdrawConfirmMessage;
+
+  /// No description provided for @shgApprovalWithdrawError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not withdraw the request. Please try again.'**
+  String get shgApprovalWithdrawError;
 
   /// No description provided for @voiceNoLoans.
   ///
@@ -3880,6 +3928,12 @@ abstract class AppLocalizations {
   /// **'This video is too large. Please choose a file under 200 MB.'**
   String get adminTrainingCoursesVideoTooLarge;
 
+  /// No description provided for @adminTrainingCoursesVideoDemoModeNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode has no real storage — this video won\'t actually be attached.'**
+  String get adminTrainingCoursesVideoDemoModeNotice;
+
   /// No description provided for @adminTrainingCoursesTitleRequiredError.
   ///
   /// In en, this message translates to:
@@ -5044,6 +5098,18 @@ abstract class AppLocalizations {
   /// **'You earned a certificate for this course!'**
   String get courseDetailCertificateEarned;
 
+  /// No description provided for @courseDetailFullyComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'100% complete'**
+  String get courseDetailFullyComplete;
+
+  /// No description provided for @courseDetailVideoUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No video is attached to this course yet.'**
+  String get courseDetailVideoUnavailable;
+
   /// No description provided for @courseQuizTitle.
   ///
   /// In en, this message translates to:
@@ -5751,6 +5817,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not record this payment. Please try again.'**
   String get loanDetailRecordErrorMessage;
+
+  /// No description provided for @loanDetailBalanceChangedErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The outstanding balance changed since this loan was opened — someone else may have just recorded a payment. Close this and check the latest balance before trying again.'**
+  String get loanDetailBalanceChangedErrorMessage;
 
   /// No description provided for @loanDetailPaymentRecordedMessage.
   ///

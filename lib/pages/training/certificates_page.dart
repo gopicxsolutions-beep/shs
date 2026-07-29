@@ -31,15 +31,17 @@ class CertificatesPage extends StatelessWidget {
       appBar: PageHeader(title: l10n.certificatesTitle),
       body: AppAsyncBuilder<List<_CertificateData>>(
         future: () async {
-          final courses = await repo.fetchCertificates(memberId);
-          // `CourseProgress.completedOn` (`course_progress.completed_on`)
-          // was parsed by `TrainingRepository.fetchMyProgress()` but never
-          // displayed anywhere — `fetchCertificates()` itself drops the
-          // progress data entirely, returning bare `Course`s. Re-fetching
-          // progress here (same call `CourseDetailPage` already makes) lets
-          // this page show when each certificate was actually earned.
+          // `fetchCertificates()` internally calls `fetchMyProgress()` and
+          // then throws its result away, returning bare `Course`s — and
+          // `CourseProgress.completedOn` was never displayed anywhere, so a
+          // second, separate `fetchMyProgress()` call here used to fetch
+          // the exact same `course_progress` rows all over again just to
+          // recover the one field `fetchCertificates()` had discarded. One
+          // fetch now serves both.
           final progress = await repo.fetchMyProgress(memberId);
-          return courses.map((c) => _CertificateData(c, progress[c.id]?.completedOn)).toList();
+          final courses = await repo.fetchCourses();
+          final certified = courses.where((c) => progress[c.id]?.certified == true);
+          return certified.map((c) => _CertificateData(c, progress[c.id]?.completedOn)).toList();
         },
         builder: (context, certificates) {
           if (certificates.isEmpty) {

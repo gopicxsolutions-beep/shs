@@ -311,25 +311,37 @@ boundary:
      where a brand-new signup could `POST` a profile already carrying
      `role:'admin'`.
    - `profiles_update_self_or_admin`: a non-admin self-update may only move
-     `role` between `member`/`leader`, and only while `shg_id` stays `NULL` —
-     i.e. only during onboarding, before any real SHG linkage exists. Once
-     `shg_id` is non-null, `role` is frozen for self-service; only
-     `current_role() = 'admin'` unlocks further changes. This remains a real,
-     independent guard against a raw REST `PATCH` even though the client no
-     longer offers a Leader self-selection UI at all.
-   - `approve_shg_join_request()` (migration `0116`) — the RPC that links a
-     member to an SHG, and the *only* path by which any account ever becomes
-     `'leader'`. Takes an explicit `p_as_leader` param from the approver; the
-     resulting `role` is derived **solely** from that parameter, never from
-     whatever value happens to already be sitting in `profiles.role` (unlike
-     the earlier version of this RPC, which reactively reset a self-declared
-     `'leader'` back to `'member'` on approval). This is a strict
-     improvement, not just a rename: it structurally can't be defeated by a
-     pre-set `role` value on the row (e.g. via the `profiles_update_self_or_
-     admin` path above), because the RPC never reads that column when
-     deciding the outcome. `p_as_leader = true` additionally requires
-     `is_staff()` — a peer leader approving her own SHG's queue can only
-     grant `member`, never mint a co-leader.
+     `role` to `'member'`, and only while `shg_id` stays `NULL` — i.e. only
+     during onboarding, before any real SHG linkage exists. Once `shg_id` is
+     non-null, `role` is frozen for self-service; only `current_role() =
+     'admin'` unlocks further changes. **`'leader'` was removed from this
+     self-settable set in migration `0117`** (gap-hunt iteration 28) — the
+     original migration `0116` version still allowed self-setting `role` to
+     either `'member'` OR `'leader'` while unlinked, reasoning (documented in
+     that migration's own comment) that this was harmless since nothing
+     "reacted" to a self-set leader role anymore. That reasoning missed
+     `AdminRepository.assignShg()` (the "Assign SHG" admin remedy for an
+     unlinked account, unconditional on role): a member could self-PATCH
+     `role:'leader'` via raw REST while unlinked (RLS-permitted), then have
+     an admin later use the ordinary "Assign SHG" fix on her profile with no
+     idea it implied anything about role — granting real, RLS-backed leader
+     authority with `approve_shg_join_request`/`is_staff()` never in the
+     loop. Only `'member'` has any legitimate self-set caller now.
+   - `approve_shg_join_request()` (migration `0116`, hardened by `0117`) —
+     the RPC that links a member to an SHG, and the *only* legitimate path
+     by which any account becomes `'leader'`. Takes an explicit `p_as_leader`
+     param from the approver; the resulting `role` is derived **solely**
+     from that parameter, never from whatever value happens to already be
+     sitting in `profiles.role` (unlike the earlier version of this RPC,
+     which reactively reset a self-declared `'leader'` back to `'member'` on
+     approval). `p_as_leader = true` additionally requires `is_staff()` — a
+     peer leader approving her own SHG's queue can only grant `member`,
+     never mint a co-leader. Migration `0117` also closed a second gap: the
+     RPC didn't re-validate the requester was still `role='member' and
+     shg_id is null` at decision time, so a stale pending request could
+     silently overwrite whatever an unrelated admin action had set on that
+     profile in the meantime — it now re-asserts that state immediately
+     before applying the decision, raising a clear exception otherwise.
 
 This sequence (client fix → still-exploitable-via-REST → DB fix → adversarial
 re-audit finds a second path → second DB fix) is the project's own history,

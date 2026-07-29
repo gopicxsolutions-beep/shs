@@ -56,6 +56,17 @@ class _SavingsLedgerPageState extends State<SavingsLedgerPage> {
   // never a regression, since `_resolveName` only overrides when the map
   // actually has an entry for that member id.
   Map<String, String> _memberNames = const {};
+  // Only meaningful for the non-realtime (`else`) branch below — the live
+  // StreamBuilder branch self-updates on its own. Without this, a
+  // crp/clf/admin verifying or rejecting an entry in the cross-SHG queue
+  // got no visible feedback: the row kept showing "Verify"/"Pending"
+  // indefinitely (only navigating away and back refreshed it), and
+  // re-tapping an already-verified row then threw the generic
+  // already-verified error — reading as a bug on a prior *successful*
+  // action. `LoanApprovalPage` (the equivalent Loans feature) already
+  // holds a key and reloads after every approve/reject; this page's
+  // platform-wide branch was the one place that convention was skipped.
+  final GlobalKey<AppAsyncBuilderState<List<SavingsEntry>>> _platformWideKey = GlobalKey();
 
   @override
   void initState() {
@@ -150,8 +161,16 @@ class _SavingsLedgerPageState extends State<SavingsLedgerPage> {
               },
             )
           : AppAsyncBuilder<List<SavingsEntry>>(
+              key: _platformWideKey,
               future: () => isPlatformWide ? repo.fetchAllForStaff() : repo.fetchForShg(shgId),
-              builder: (context, entries) => _LedgerList(entries: entries, repo: repo, memberNames: _memberNames, isPlatformWide: isPlatformWide, viewerId: viewerId),
+              builder: (context, entries) => _LedgerList(
+                entries: entries,
+                repo: repo,
+                memberNames: _memberNames,
+                isPlatformWide: isPlatformWide,
+                viewerId: viewerId,
+                onChanged: () => _platformWideKey.currentState?.reload(),
+              ),
             ),
     );
   }
@@ -163,7 +182,11 @@ class _LedgerList extends StatefulWidget {
   final Map<String, String> memberNames;
   final bool isPlatformWide;
   final String? viewerId;
-  const _LedgerList({required this.entries, required this.repo, required this.memberNames, required this.isPlatformWide, required this.viewerId});
+  // Called after a successful verify/reject — null for the live/realtime
+  // branch, which already refreshes itself via the stream. See this
+  // widget's owning `_platformWideKey` field for the full explanation.
+  final VoidCallback? onChanged;
+  const _LedgerList({required this.entries, required this.repo, required this.memberNames, required this.isPlatformWide, required this.viewerId, this.onChanged});
 
   @override
   State<_LedgerList> createState() => _LedgerListState();
@@ -196,6 +219,7 @@ class _LedgerListState extends State<_LedgerList> {
     setState(() => _rejecting.add(e.id));
     try {
       await widget.repo.deletePendingEntry(e.id);
+      widget.onChanged?.call();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.savingsLedgerRejectError)));
@@ -259,6 +283,7 @@ class _LedgerListState extends State<_LedgerList> {
                                   setState(() => _verifying.add(e.id));
                                   try {
                                     await repo.verifyEntry(e.id);
+                                    widget.onChanged?.call();
                                   } catch (_) {
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(

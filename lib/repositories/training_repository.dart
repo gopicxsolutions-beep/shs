@@ -98,6 +98,26 @@ class TrainingRepository {
     return _client.storage.from('training-videos').getPublicUrl(path);
   }
 
+  /// Best-effort cleanup for a video's storage object once it's replaced or
+  /// removed — `uploadCourseVideo` only ever adds, it never overwrote or
+  /// deleted a prior object, so every replace/remove left the old file
+  /// permanently reachable at its old public URL and permanently consuming
+  /// bucket quota. Failures are swallowed: a missed cleanup just leaves one
+  /// orphaned object, which is far less harmful than letting a storage
+  /// hiccup block the course update/delete itself that's already succeeded.
+  Future<void> deleteCourseVideo(String videoUrl) async {
+    if (!_live) return;
+    const marker = '/training-videos/';
+    final idx = videoUrl.indexOf(marker);
+    if (idx == -1) return;
+    final path = videoUrl.substring(idx + marker.length);
+    try {
+      await _client.storage.from('training-videos').remove([path]);
+    } catch (_) {
+      // Best-effort — see doc comment above.
+    }
+  }
+
   /// Deleting a course still cascades to its own quiz question bank
   /// (`quiz_questions.course_id on delete cascade`, migration 0041) — real
   /// content removal, matching this repository's course-catalog scope (no

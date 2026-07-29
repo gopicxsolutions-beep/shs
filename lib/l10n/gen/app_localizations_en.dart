@@ -436,10 +436,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your SHG leader did not approve this request. You can pick a different SHG and try again.';
 
   @override
+  String get shgApprovalNoneTitle => 'No SHG selected yet';
+
+  @override
+  String get shgApprovalNoneMessage =>
+      'You don\'t currently have a pending request to join an SHG. Choose one to get started.';
+
+  @override
   String get unknownShg => 'Unknown SHG';
 
   @override
   String get chooseDifferentShg => 'Choose a different SHG';
+
+  @override
+  String get chooseAnShg => 'Choose an SHG';
 
   @override
   String get checkingStatus => 'Checking…';
@@ -447,6 +457,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get shgApprovalCheckError =>
       'Could not check status. Please try again.';
+
+  @override
+  String get shgApprovalWithdrawButton => 'Withdraw request';
+
+  @override
+  String get shgApprovalWithdrawing => 'Withdrawing…';
+
+  @override
+  String get shgApprovalWithdrawConfirmTitle => 'Withdraw request?';
+
+  @override
+  String get shgApprovalWithdrawConfirmMessage =>
+      'This cancels your pending request. You can choose an SHG again anytime.';
+
+  @override
+  String get shgApprovalWithdrawError =>
+      'Could not withdraw the request. Please try again.';
 
   @override
   String get voiceNoLoans => 'You have no loans on record.';
@@ -2229,6 +2256,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'This video is too large. Please choose a file under 200 MB.';
 
   @override
+  String get adminTrainingCoursesVideoDemoModeNotice =>
+      'Demo mode has no real storage — this video won\'t actually be attached.';
+
+  @override
   String get adminTrainingCoursesTitleRequiredError =>
       'Course title is required.';
 
@@ -2876,6 +2907,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'You earned a certificate for this course!';
 
   @override
+  String get courseDetailFullyComplete => '100% complete';
+
+  @override
+  String get courseDetailVideoUnavailable =>
+      'No video is attached to this course yet.';
+
+  @override
   String get courseQuizTitle => 'Course Quiz';
 
   @override
@@ -3298,6 +3336,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get loanDetailRecordErrorMessage =>
       'Could not record this payment. Please try again.';
+
+  @override
+  String get loanDetailBalanceChangedErrorMessage =>
+      'The outstanding balance changed since this loan was opened — someone else may have just recorded a payment. Close this and check the latest balance before trying again.';
 
   @override
   String get loanDetailPaymentRecordedMessage => 'Payment recorded';

@@ -162,9 +162,17 @@
   "shgApprovalWaitingMessage": "మీ చేరిక అభ్యర్థన మీ SHG నాయకుడికి పంపబడింది. ఆమోదం లభించిన తర్వాత మీకు యాక్సెస్ లభిస్తుంది.",
   "shgApprovalRejectedTitle": "అభ్యర్థన ఆమోదించబడలేదు",
   "shgApprovalRejectedMessage": "మీ SHG నాయకుడు ఈ అభ్యర్థనను ఆమోదించలేదు. మీరు వేరే SHGని ఎంచుకుని మళ్ళీ ప్రయత్నించవచ్చు.",
+  "shgApprovalNoneTitle": "ఇంకా SHG ఎంచుకోలేదు",
+  "shgApprovalNoneMessage": "ప్రస్తుతం మీకు SHGలో చేరడానికి పెండింగ్‌లో ఉన్న అభ్యర్థన లేదు. ప్రారంభించడానికి ఒక SHGని ఎంచుకోండి.",
   "unknownShg": "తెలియని SHG",
   "chooseDifferentShg": "వేరే SHGని ఎంచుకోండి",
+  "chooseAnShg": "ఒక SHGని ఎంచుకోండి",
   "checkingStatus": "తనిఖీ చేస్తోంది…",
+  "shgApprovalWithdrawButton": "అభ్యర్థనను ఉపసంహరించుకోండి",
+  "shgApprovalWithdrawing": "ఉపసంహరిస్తోంది…",
+  "shgApprovalWithdrawConfirmTitle": "అభ్యర్థనను ఉపసంహరించుకోవాలా?",
+  "shgApprovalWithdrawConfirmMessage": "ఇది మీ పెండింగ్ అభ్యర్థనను రద్దు చేస్తుంది. మీరు ఎప్పుడైనా మళ్ళీ ఒక SHGని ఎంచుకోవచ్చు.",
+  "shgApprovalWithdrawError": "అభ్యర్థనను ఉపసంహరించుకోలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
   "shgApprovalCheckError": "స్థితిని తనిఖీ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
 
   "voiceNoLoans": "మీ పేరు మీద ఎలాంటి రుణాలు లేవు.",
@@ -1137,6 +1145,8 @@
 
   "adminTrainingCoursesVideoTooLarge": "ఈ వీడియో చాలా పెద్దది. దయచేసి 200 MB కంటే చిన్న ఫైల్‌ను ఎంచుకోండి.",
 
+  "adminTrainingCoursesVideoDemoModeNotice": "డెమో మోడ్‌లో నిజమైన స్టోరేజ్ లేదు — ఈ వీడియో నిజంగా జోడించబడదు.",
+
   "adminTrainingCoursesTitleRequiredError": "కోర్సు శీర్షిక అవసరం.",
 
   "adminTrainingCoursesAddedMessage": "కోర్సు జోడించబడింది",
@@ -1514,6 +1524,10 @@
 
   "courseDetailCertificateEarned": "మీరు ఈ కోర్సు కోసం సర్టిఫికెట్ పొందారు!",
 
+  "courseDetailFullyComplete": "100% పూర్తయింది",
+
+  "courseDetailVideoUnavailable": "ఈ కోర్సుకు ఇంకా వీడియో జోడించలేదు.",
+
   "courseQuizTitle": "కోర్సు క్విజ్",
 
   "courseQuizScoreResult": "మీకు {score}/{total} స్కోరు వచ్చింది. పాస్ అవ్వడానికి మళ్ళీ ప్రయత్నించండి.",
@@ -1749,6 +1763,8 @@
   "loanDetailRecordButton": "నమోదు చేయండి",
 
   "loanDetailRecordErrorMessage": "ఈ చెల్లింపును నమోదు చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+
+  "loanDetailBalanceChangedErrorMessage": "ఈ లోన్ తెరిచినప్పటి నుండి బాకీ మొత్తం మారింది — ఎవరైనా ఇప్పుడే చెల్లింపు నమోదు చేసి ఉండవచ్చు. మళ్ళీ ప్రయత్నించే ముందు దీన్ని మూసివేసి తాజా బాకీని చూడండి.",
 
   "loanDetailPaymentRecordedMessage": "చెల్లింపు నమోదైంది",
 

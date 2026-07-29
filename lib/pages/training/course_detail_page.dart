@@ -102,14 +102,36 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
               if (course.videoUrl != null) ...[
                 const SizedBox(height: 20),
                 TrainingVideoPlayer(key: ValueKey(course.videoUrl), videoUrl: course.videoUrl!),
+              ] else if (course.format == 'Video') ...[
+                // Every course in the live catalog can be authored with
+                // format='Video' before staff ever attaches a real file —
+                // this used to just omit the video section entirely with
+                // no indication, so a member saw a "Video" label/icon
+                // promising content that silently never appeared.
+                const SizedBox(height: 20),
+                AppCard(
+                  child: Row(children: [
+                    Icon(Icons.videocam_off_outlined, color: Neutral.c400, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(l10n.courseDetailVideoUnavailable, style: AppTheme.sans(12, color: Neutral.c500))),
+                  ]),
+                ),
               ],
               const SizedBox(height: 20),
               if (!certified) ...[
                 AppButton(
-                  label: _updating ? l10n.courseDetailSaving : (pct == 0 ? l10n.courseDetailStartCourse : l10n.courseDetailContinue),
+                  label: _updating
+                      ? l10n.courseDetailSaving
+                      : (pct >= 100 ? l10n.courseDetailFullyComplete : (pct == 0 ? l10n.courseDetailStartCourse : l10n.courseDetailContinue)),
                   fullWidth: true,
                   size: ButtonSize.lg,
-                  onPressed: _updating ? null : () => _continueCourse(pct, memberId),
+                  // Reaching 100% without yet passing the quiz used to leave
+                  // this button enabled forever — each tap was a real,
+                  // pointless network round-trip since updateProgress
+                  // already clamps at 100. Disabling once there's genuinely
+                  // nothing left to record makes that state visible instead
+                  // of silently doing nothing on every further tap.
+                  onPressed: (_updating || pct >= 100) ? null : () => _continueCourse(pct, memberId),
                 ),
                 const SizedBox(height: 12),
                 AppButton(

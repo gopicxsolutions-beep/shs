@@ -439,10 +439,20 @@ class AppLocalizationsHi extends AppLocalizations {
       'आपके SHG लीडर ने इस अनुरोध को स्वीकृत नहीं किया। आप कोई दूसरा SHG चुनकर फिर से कोशिश कर सकते हैं।';
 
   @override
+  String get shgApprovalNoneTitle => 'अभी तक कोई SHG चयनित नहीं';
+
+  @override
+  String get shgApprovalNoneMessage =>
+      'फ़िलहाल आपका किसी SHG से जुड़ने का कोई लंबित अनुरोध नहीं है। शुरू करने के लिए एक SHG चुनें।';
+
+  @override
   String get unknownShg => 'अज्ञात SHG';
 
   @override
   String get chooseDifferentShg => 'दूसरा SHG चुनें';
+
+  @override
+  String get chooseAnShg => 'एक SHG चुनें';
 
   @override
   String get checkingStatus => 'जांच हो रही है…';
@@ -450,6 +460,23 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get shgApprovalCheckError =>
       'स्थिति जांच नहीं हो सकी। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get shgApprovalWithdrawButton => 'अनुरोध वापस लें';
+
+  @override
+  String get shgApprovalWithdrawing => 'वापस लिया जा रहा है…';
+
+  @override
+  String get shgApprovalWithdrawConfirmTitle => 'अनुरोध वापस लें?';
+
+  @override
+  String get shgApprovalWithdrawConfirmMessage =>
+      'इससे आपका लंबित अनुरोध रद्द हो जाएगा। आप कभी भी दोबारा कोई SHG चुन सकते हैं।';
+
+  @override
+  String get shgApprovalWithdrawError =>
+      'अनुरोध वापस नहीं लिया जा सका। कृपया फिर से कोशिश करें।';
 
   @override
   String get voiceNoLoans => 'आपके नाम कोई ऋण नहीं है।';
@@ -2192,6 +2219,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'यह वीडियो बहुत बड़ी है। कृपया 200 MB से छोटी फ़ाइल चुनें।';
 
   @override
+  String get adminTrainingCoursesVideoDemoModeNotice =>
+      'डेमो मोड में कोई असली स्टोरेज नहीं है — यह वीडियो वास्तव में नहीं जुड़ेगा।';
+
+  @override
   String get adminTrainingCoursesTitleRequiredError =>
       'कोर्स शीर्षक आवश्यक है।';
 
@@ -2839,6 +2870,13 @@ class AppLocalizationsHi extends AppLocalizations {
       'आपने इस कोर्स के लिए सर्टिफिकेट पा लिया है!';
 
   @override
+  String get courseDetailFullyComplete => '100% पूर्ण';
+
+  @override
+  String get courseDetailVideoUnavailable =>
+      'इस कोर्स के लिए अभी कोई वीडियो नहीं जोड़ा गया है।';
+
+  @override
   String get courseQuizTitle => 'कोर्स क्विज़';
 
   @override
@@ -3238,6 +3276,10 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get loanDetailRecordErrorMessage =>
       'यह भुगतान दर्ज नहीं हो सका। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get loanDetailBalanceChangedErrorMessage =>
+      'यह लोन खोले जाने के बाद बकाया राशि बदल गई है — हो सकता है किसी और ने अभी भुगतान दर्ज किया हो। दोबारा कोशिश करने से पहले इसे बंद करके नई बकाया राशि देखें।';
 
   @override
   String get loanDetailPaymentRecordedMessage => 'भुगतान दर्ज हो गया';

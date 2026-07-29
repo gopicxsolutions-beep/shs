@@ -18670,3 +18670,215 @@ environment** — the sandboxed Browser pane blocks real microphone/
 round), so end-to-end recognition accuracy still needs confirming on a real
 device/browser before this is treated as fully proven, consistent with this
 feature's existing testing caveat in `AI_MODULES.md` §3.1.
+
+## Gap-hunting loop iteration 28: a CRITICAL leader-privilege-escalation chain defeating this session's own onboarding redesign, a live __TEST__ fixture in production, a second real AI Voice Assistant bug, and 15+ more gaps across 4 fresh audits
+
+Four parallel audits: dogfooding round 200's fixes plus this session's 3
+most-recently-shipped features (leader onboarding redesign, training video
+upload, AI Voice Assistant locale fix), Training/Quiz/Certification full
+sweep, Savings/Loans full lifecycle re-sweep, SHG creation/join-request/
+approval workflow deep dive.
+
+**Dogfooding pass + SHG workflow deep dive - 1 CRITICAL, 1 HIGH (both fixed
+in migration 0117; independently found by two separate audits, a strong
+confirming signal)**
+
+1. **[CRITICAL]** `profiles_update_self_or_admin`'s self-update branch
+   (migration 0105) still let any still-unlinked (`shg_id is null`) caller
+   self-PATCH her own `role` directly to `'leader'` via raw REST -
+   migration 0116's own comment explicitly noted and dismissed this as
+   harmless, reasoning that nothing "reacts" to a self-set leader role
+   anymore since `approve_shg_join_request` no longer resets it on
+   approval. That reasoning missed a second, ordinary action that DOES
+   react to it: `AdminRepository.assignShg()` (the "Assign SHG" button in
+   Admin > Users - the documented, encouraged remedy for exactly this
+   profile shape, an unlinked leader/member) is a bare `update({shg_id})`
+   with no role check at all. Chained: (1) a member self-PATCHes
+   `role:'leader'` while unlinked - RLS-permitted; (2) an admin later
+   clicks the ordinary "Assign SHG" remedy on her profile, unaware it
+   implies anything about role; (3) she now has real, RLS-backed leader
+   authority over that SHG - obtained without `approve_shg_join_request`
+   or `is_staff()` ever being involved, fully defeating this session's
+   "approver-chosen role, never self-declared" redesign. Fixed by removing
+   `'leader'` from the self-settable role array entirely (only `'member'`
+   has any remaining legitimate self-set caller, since Role Select no
+   longer offers a self-declared Leader choice in live mode).
+2. **[HIGH]** `approve_shg_join_request` never re-validated the requester's
+   CURRENT profile state at decision time, only that the request row
+   itself was still `'pending'`. A pending request filed while
+   role='member'/shg_id=null can sit unresolved while an unrelated admin
+   action (staff promotion, a manual `assignShg`) changes the profile in
+   the meantime; the eventual approve/reject then silently overwrote
+   whatever that later action set, with no warning to either party. Fixed
+   by re-asserting the requester is still `role='member' and shg_id is
+   null` immediately before applying the decision, raising a clear
+   exception otherwise instead of silently clobbering.
+
+**SHG workflow deep dive - 2 more UX findings (both fixed)**
+
+3. **[MEDIUM]** `ShgApprovalPendingPage` showed the exact same "still
+   waiting for approval" copy when no join-request row existed at all as
+   when one was genuinely pending - reachable because `needsShgApproval`
+   only checks profile state (`role='member' && shgId==null`), not whether
+   a request row exists, and `shg_join_requests_delete_self_pending`
+   (migration 0033/0109) already lets a member self-withdraw her pending
+   row via direct REST. Added a distinct "no SHG selected yet" state with
+   accurate copy and a "Choose an SHG" action.
+4. **[LOW]** That same self-withdraw RLS capability had zero UI entry
+   point - the only in-app recourse was "Choose a different SHG" (replace,
+   not cancel). Added a genuine "Withdraw request" button/confirmation
+   dialog and `ShgJoinRequestRepository.withdraw()`, wiring the capability
+   into a real feature instead of leaving it REST-only.
+
+**Training/Quiz/Certification full sweep (12 findings; 6 fixed, rest
+documented)**
+
+5. **[HIGH, fixed live]** A `__TEST__`-prefixed fixture course
+   ("__TEST__ Financial Literacy Basics") was live in the production
+   catalog, readable by every real user and counted in
+   `training_completion_stats()`'s denominator - a direct violation of this
+   project's own test-data-hygiene rule. Deleted from the live project
+   (course + its one `course_progress` row) and re-queried to confirm zero
+   rows remain.
+6. **[MEDIUM, fixed]** Neither `uploadCourseVideo` nor the admin edit/
+   delete flow ever called `storage.remove()` on replace/remove/delete -
+   only the DB `video_url` column changed, so a "replaced" or "deleted"
+   video stayed publicly downloadable forever at its old permanent URL and
+   permanently consumed bucket quota. Added `TrainingRepository.
+   deleteCourseVideo()` (best-effort, swallows failures) and wired it into
+   `_editCourse`'s replace/remove paths and `_deleteCourse` (only once the
+   course row itself is confirmed gone, so an FK-blocked delete never
+   orphans a video that's still attached).
+7. **[MEDIUM, fixed]** `TrainingVideoPlayer` only handled an init-time
+   failure - no listener watched for a MID-playback failure (dropped
+   connection, video deleted while playing, decode error), leaving no
+   defined UI state for it. Added a controller listener checking
+   `value.hasError` that transitions to the same error state init-failure
+   already gets.
+8. **[MEDIUM, fixed]** Every course in the live catalog can be authored
+   `format='Video'` before a real file is ever attached - `CourseDetailPage`
+   simply omitted the video section with no indication when this happens
+   (confirmed live: 100% of the real catalog was in exactly this state).
+   Added a "no video attached yet" card in that case.
+9. **[LOW, fixed]** `CourseDetailPage`'s Continue button never disabled at
+   100%-uncertified - `updateProgress` already clamps at 100, so every
+   further tap was a real, pointless network round-trip. Disabled the
+   button and relabeled it "100% complete" once there's genuinely nothing
+   left to record.
+10. **[LOW, fixed]** `CertificatesPage` fetched `course_progress` twice per
+    load - once inside `fetchCertificates()` (then discarded the result)
+    and again directly to recover `completedOn`. Now fetches once.
+11. **[LOW, fixed]** Demo mode's video picker let staff pick a file and see
+    its name in the button as if it would attach, but `_addCourse`/
+    `_editCourse` only ever upload when Supabase is configured - silently
+    dropped with no explanation. Added an immediate snackbar notice.
+12. **[MEDIUM, documented, not changed]** `training_completion_stats()`'s
+    `active_members` CTE is `role = 'member'` only, excluding leader/staff
+    `course_progress` rows from the "Training Completion" KPI entirely -
+    live-confirmed this currently drops real rows (a crp and an admin
+    account with real progress). The function's own return column is named
+    `total_members`, and this app's other federation KPIs are consistently
+    member-scoped, so this reads as an intentional "member training
+    engagement" metric rather than an oversight - left unchanged rather
+    than silently redefining an existing admin-facing KPI without product
+    signoff, but flagging here since it wasn't previously written down as
+    a deliberate scoping choice.
+13. **[MEDIUM/LOW, documented, not fixed - real but lower-priority]**
+    MIME/extension validation for video upload is entirely client-asserted
+    (bounded to staff-only accounts); the storage key has no filename
+    sanitization or per-uploader scoping (unlike `uploadProductImage`);
+    `TrainingVideoPlayer`/Chewie's controls have no localized `Semantics`;
+    `didUpdateWidget`'s dispose/re-init branch in that same file is dead
+    code since `CourseDetailPage` always remounts via `ValueKey`; no
+    proactive "N attempts remaining today" display before a member is
+    already blocked; no duplicate-course-title guard or catalog search/
+    filter; duplicate navigation affordances (row-tap and quiz-icon both
+    open "Manage Quiz") in `AdminTrainingCoursesPage`; a live course with
+    zero authored quiz questions is a content gap, not a code defect.
+
+**Savings/Loans full lifecycle re-sweep (4 findings, all fixed) - backend/
+RLS layer re-confirmed solid via live rolled-back-transaction tests
+(cross-tenant isolation, self-approval/self-verification blocks, overpayment
+rejection, double-submit-after-close rejection all held); every new finding
+was in the Dart/UI layer**
+
+14. **[MEDIUM-HIGH, fixed]** The platform-wide (crp/clf/admin) Savings
+    verification queue never refreshed after a successful Verify/Reject -
+    unlike the realtime leader-own-SHG branch, this one-shot fetch had no
+    `GlobalKey`/reload call, so a staff verifying an entry got no visible
+    feedback (the row stayed "Pending" until an unrelated navigation
+    refreshed it), and re-tapping an already-verified row then threw the
+    generic error, reading as a bug on a prior *successful* action.
+    `LoanApprovalPage` already got this right; mirrored the same pattern
+    here (`GlobalKey` + reload after verify/reject).
+15. **[MEDIUM, fixed]** `LoanDetailPage._recordPayment`'s blanket
+    `catch (_)` swallowed `record_loan_payment()`'s specific rejection
+    message and never refreshed the stale `loan` snapshot on failure - a
+    legitimate concurrent-payment race (another leader recording a payment
+    moments earlier) made the RPC's own re-check reject a payment the
+    client-side check had already approved, but the dialog kept showing
+    the same generic error and the same stale balance, so retrying the
+    identical (now genuinely invalid) amount failed identically forever
+    until the member manually navigated away and back. Now detects the
+    specific "exceeds outstanding balance" rejection, shows an actionable
+    "balance changed, check the latest amount" message, and reloads the
+    page's loan/payment data.
+16. **[LOW, fixed, migration 0118]** `loans_tenure_months_check` only
+    enforced `> 0` - the UI only ever offers 6/12/18/24 via fixed chips,
+    but a direct REST insert could set an arbitrary `tenure_months`.
+    Bounded to `<= 60` to match the UI's intended range (cosmetic/
+    data-integrity only - `emi` is set independently by the approving
+    leader, not derived from tenure).
+17. **[LOW, fixed, migration 0118, defense-in-depth]** `anon` still held
+    full table-level grants on loans/loan_payments/savings_entries/
+    financial_ledger - currently harmless since every RLS policy on these
+    tables is built on `auth.uid()`/`current_shg_id()`/`is_staff()`, all of
+    which resolve to null/false for an anonymous request, but inconsistent
+    with this schema's other anon-grant-hygiene sweeps (0096/0097, which
+    only ever revoked function EXECUTE, never the base table grants).
+    Revoked for consistency and audit-surface reduction; RLS remains the
+    real boundary either way.
+
+**Dogfooding pass - 2 more real AI Voice Assistant bugs found in the fix
+shipped earlier this same session (commit cf9719f)**
+
+18. **[HIGH, fixed]** `resolveVoiceLocaleId`'s matching used a bare
+    `startsWith(code)` on the 2-letter language code with no subtag-
+    boundary check - a real device reporting a locale like `tet-TL` (Tetum)
+    or `hil-PH` (Hiligaynon) would false-positive-match against `'te'`/
+    `'hi'` respectively, silently selecting the wrong recognizer language
+    with no error at all - worse than the empty-list fallback case this
+    fix originally targeted, which at least fails in an expected, handled
+    way. Fixed by splitting on the BCP-47 subtag delimiter and comparing
+    the primary subtag exactly; added 3 regression tests.
+19. **[MEDIUM, fixed]** The shared `onError` callback (registered once for
+    the service's whole lifetime, not per-`listen()` call) has no way to
+    tell a stale prior attempt's late-arriving error apart from the
+    current attempt's own - it just resolves whatever `_pendingCompleter`
+    happens to be set to when it fires. A delayed native error from a
+    just-superseded attempt (e.g. web's `SpeechRecognition.onerror` firing
+    asynchronously just after `stop()` was already issued for it) could
+    silently hijack a newer, still-legitimate attempt's completer,
+    discarding a real transcript. The page's own busy-disabled mic button
+    should normally prevent overlapping `listen()` calls, but added an
+    explicit guard forcing any stray in-flight completer to a clean stop
+    before a new attempt begins, removing the overlap window at the
+    service layer too rather than relying solely on the caller.
+20. Re-verified round 200's fixes, the leader-onboarding RPC's core
+    authorization logic, moderation.ts's 6th-round fix, and the
+    notification-spam guard - all confirmed still holding via live,
+    rolled-back SQL transactions and direct code inspection; no
+    regressions.
+
+**Verification**: `flutter analyze` - 0 issues across every file touched.
+`flutter test` - full suite passing. Live: migrations 0117 (leader-
+escalation RLS fix + stale join-request re-check) and 0118 (tenure bound +
+anon grant hygiene) deployed via `supabase db push`. Live-verified via
+rolled-back/direct queries: a member with `shg_id is null` self-PATCHing
+`role:'leader'` now raises `42501` (confirmed the fixture's `role` was
+untouched afterward); `loans_tenure_months_check`'s new definition confirmed
+live; `anon`'s grants on all 4 tables confirmed empty; the deployed
+`approve_shg_join_request` body confirmed to include the new stale-state
+check. The stray `__TEST__` training course and its one dependent
+`course_progress` row were deleted from the live project and re-queried to
+confirm zero remain.

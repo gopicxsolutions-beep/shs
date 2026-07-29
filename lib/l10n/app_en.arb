@@ -167,10 +167,18 @@
   "shgApprovalWaitingMessage": "Your request to join has been sent to your SHG leader. You will get access once it is approved.",
   "shgApprovalRejectedTitle": "Request not approved",
   "shgApprovalRejectedMessage": "Your SHG leader did not approve this request. You can pick a different SHG and try again.",
+  "shgApprovalNoneTitle": "No SHG selected yet",
+  "shgApprovalNoneMessage": "You don't currently have a pending request to join an SHG. Choose one to get started.",
   "unknownShg": "Unknown SHG",
   "chooseDifferentShg": "Choose a different SHG",
+  "chooseAnShg": "Choose an SHG",
   "checkingStatus": "Checking…",
   "shgApprovalCheckError": "Could not check status. Please try again.",
+  "shgApprovalWithdrawButton": "Withdraw request",
+  "shgApprovalWithdrawing": "Withdrawing…",
+  "shgApprovalWithdrawConfirmTitle": "Withdraw request?",
+  "shgApprovalWithdrawConfirmMessage": "This cancels your pending request. You can choose an SHG again anytime.",
+  "shgApprovalWithdrawError": "Could not withdraw the request. Please try again.",
 
   "voiceNoLoans": "You have no loans on record.",
   "voiceNoActiveLoans": "You have no active loans out of {count} on record.",
@@ -1518,6 +1526,8 @@
 
   "adminTrainingCoursesVideoTooLarge": "This video is too large. Please choose a file under 200 MB.",
 
+  "adminTrainingCoursesVideoDemoModeNotice": "Demo mode has no real storage — this video won't actually be attached.",
+
   "adminTrainingCoursesTitleRequiredError": "Course title is required.",
 
   "adminTrainingCoursesAddedMessage": "Course added",
@@ -1922,6 +1932,10 @@
 
   "courseDetailCertificateEarned": "You earned a certificate for this course!",
 
+  "courseDetailFullyComplete": "100% complete",
+
+  "courseDetailVideoUnavailable": "No video is attached to this course yet.",
+
   "courseQuizTitle": "Course Quiz",
 
   "courseQuizScoreResult": "You scored {score}/{total}. Try again to pass.",
@@ -2242,6 +2256,8 @@
   "loanDetailRecordButton": "Record",
 
   "loanDetailRecordErrorMessage": "Could not record this payment. Please try again.",
+
+  "loanDetailBalanceChangedErrorMessage": "The outstanding balance changed since this loan was opened — someone else may have just recorded a payment. Close this and check the latest balance before trying again.",
 
   "loanDetailPaymentRecordedMessage": "Payment recorded",
 

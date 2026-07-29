@@ -57,10 +57,24 @@ class _TrainingVideoPlayerState extends State<TrainingVideoPlayer> {
       controller.dispose();
       return;
     }
+    // `initialize()`'s own try/catch only covers a failure to START
+    // playback — a MID-playback failure (dropped connection, the video
+    // deleted from storage while playing, a transient decode error) has no
+    // listener at all otherwise, unlike this exact init-time path, so it
+    // silently leaves the player stuck rather than showing the same error
+    // state a startup failure already gets.
+    controller.addListener(_onVideoControllerUpdate);
     setState(() {
       _videoController = controller;
       _chewieController = ChewieController(videoPlayerController: controller, aspectRatio: controller.value.aspectRatio, autoPlay: false, looping: false);
     });
+  }
+
+  void _onVideoControllerUpdate() {
+    if (_videoController?.value.hasError == true && mounted && !_failed) {
+      _disposeControllers();
+      setState(() => _failed = true);
+    }
   }
 
   void _disposeControllers() {

@@ -43,6 +43,26 @@ void main() {
     test('returns null (let the engine use its own default) when locales exist but none match the requested language', () {
       expect(resolveVoiceLocaleId(Language.te, ['en-US', 'hi-IN']), isNull);
     });
+
+    // Gap-hunt iteration 28 (dogfooding round): a bare `startsWith(code)`
+    // on the 2-letter code, with no subtag-boundary check, false-positive
+    // matched an unrelated language whose primary subtag merely starts with
+    // the same two letters — e.g. Tetum (`tet-TL`) against Telugu ('te'),
+    // or Hiligaynon (`hil-PH`) against Hindi ('hi'). A device reporting one
+    // of these would silently recognize in the wrong language with no error
+    // at all, worse than the empty-list case above (which at least fails
+    // in a handled way).
+    test('does not false-positive-match an unrelated language sharing the same 2-letter prefix (tet-TL vs te)', () {
+      expect(resolveVoiceLocaleId(Language.te, ['tet-TL']), isNull);
+    });
+
+    test('does not false-positive-match an unrelated language sharing the same 2-letter prefix (hil-PH vs hi)', () {
+      expect(resolveVoiceLocaleId(Language.hi, ['hil-PH']), isNull);
+    });
+
+    test('still matches the real language when both a false-positive-prefix locale and a genuine one are present', () {
+      expect(resolveVoiceLocaleId(Language.te, ['tet-TL', 'te-IN']), 'te-IN');
+    });
   });
 
   group('isUnavailableVoiceError', () {

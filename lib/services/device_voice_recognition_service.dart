@@ -50,10 +50,19 @@ String? resolveVoiceLocaleId(Language language, List<String> availableLocaleIds)
     Language.hi => 'hi',
     Language.en => 'en',
   };
+  // A bare `startsWith(code)` on the 2-letter language code (no subtag
+  // boundary check) false-positive-matches any locale whose primary subtag
+  // merely starts with the same two letters but is a different language
+  // entirely — e.g. `tet-TL` (Tetum) or `teo-KE` (Teso) both start with
+  // "te", as does `hil-PH` (Hiligaynon) with "hi". A real device reporting
+  // one of these would silently pick the wrong recognizer language with no
+  // error at all — worse than the empty-list fallback case above, which at
+  // least fails in an expected, handled way. Splitting on the BCP-47
+  // subtag delimiter and comparing the primary subtag exactly closes this.
+  bool matchesLanguage(String id) => id.toLowerCase().split(RegExp('[-_]')).first == code;
   for (final preferIndianRegion in [true, false]) {
     for (final id in availableLocaleIds) {
-      final lower = id.toLowerCase();
-      if (lower.startsWith(code) && (!preferIndianRegion || lower.contains('in'))) return id;
+      if (matchesLanguage(id) && (!preferIndianRegion || id.toLowerCase().contains('in'))) return id;
     }
   }
   if (availableLocaleIds.isEmpty) {
@@ -121,6 +130,24 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
     }
     if (!_available) {
       throw const VoiceRecognitionUnavailableException();
+    }
+
+    // `onError` above is registered ONCE for this instance's whole
+    // lifetime, not per-`listen()` call, and the plugin gives it no id
+    // correlating an error back to which attempt raised it — it just
+    // resolves whatever `_pendingCompleter` happens to be set to at the
+    // moment it fires. If a previous attempt's completer were still live
+    // here, a late/delayed native error from THAT old attempt (e.g. web's
+    // `SpeechRecognition.onerror` firing asynchronously just after a
+    // `stop()` was already issued for it) could resolve THIS new attempt's
+    // completer instead, silently discarding whatever real transcript this
+    // attempt was about to produce. The page-level UI already disables the
+    // mic button while an attempt is in flight, so this shouldn't normally
+    // be reachable — but forcing a clean stop of any stray prior completer
+    // first removes the overlap window entirely rather than relying only
+    // on the caller never invoking `listen()` twice concurrently.
+    if (_pendingCompleter != null) {
+      await stop();
     }
 
     final localeId = await _resolveLocaleId(language);
