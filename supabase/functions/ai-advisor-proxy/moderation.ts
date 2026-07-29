@@ -52,17 +52,39 @@ export function normalizeLanguage(raw: unknown): Language {
 // "life insurance" / "life cover" questions, which are exactly the kind of
 // legitimate query this advisor exists to answer. This is a cheap block on
 // the most obvious cases, not a clinical crisis-detection system.
-// Every multi-word pattern in this file (SELF_HARM/HATE_SPEECH/JAILBREAK)
-// uses `\s+` (not a literal single space) between words — a literal space
-// fails to match a newline/tab/double-space, which a live gap-hunt round
-// found trivially defeats a pattern (e.g. "kill\nmyself" or "kill  myself"
-// slipped through unblocked, "kill myself" did not). The FIRST fix pass
-// only converted SELF_HARM_PATTERNS and 3 of 12 JAILBREAK_PATTERNS entries,
-// and incorrectly asserted HATE_SPEECH_PATTERNS was already fully correct
-// (it wasn't — "ethnic cleansing" was still a literal space) — a
-// dogfooding round caught the incomplete first pass and adversarially
-// verified all 3 pattern sets are now actually clean, not just the ones
-// the commit message claimed.
+// WHITESPACE-BYPASS HISTORY (3 rounds to actually close, read this before
+// touching these patterns again): a live gap-hunt round found that a
+// literal space between words in a pattern fails to match a
+// newline/tab/double-space ("kill myself" blocked, "kill\nmyself" did not).
+// Three separate follow-up rounds each claimed to have fixed this
+// completely and were each wrong about a DIFFERENT sub-case, which is why
+// this history is spelled out in full instead of summarized:
+//   1st pass: converted SELF_HARM_PATTERNS and only 3 of 12
+//     JAILBREAK_PATTERNS entries; claimed HATE_SPEECH_PATTERNS needed no
+//     change, which was false ("ethnic cleansing" was still literal).
+//   2nd pass: converted the remaining JAILBREAK_PATTERNS entries and
+//     "ethnic cleansing", and claimed all 3 pattern sets were now clean —
+//     also false, and false in THREE further distinct ways that a
+//     find-literal-spaces search alone doesn't catch:
+//     (a) `/\bself[- ]?harm.../` used a single-character class matching
+//         at most ONE space/hyphen, not `\s+`/`\s*` — still defeated by
+//         "self  harm" or "self\nharm".
+//     (b) `INCITEMENT_VERBS`'s "wipe out" had a hardcoded literal space
+//         baked into a *string* (not a regex literal), invisible to a
+//         search for regex-only whitespace bugs.
+//     (c) Three JAILBREAK_PATTERNS entries use `.{0,N}` as a "verb ...
+//         qualifier" gap — JS/TS `.` does NOT match a line terminator
+//         without the `s` (dotAll) flag, which none of them had, so
+//         "reveal\nyour system prompt" bypassed the pattern even though
+//         every literal space in it had already been converted to `\s+`.
+//   3rd pass (this one): fixed (a)/(b)/(c) above, added the `s` flag to
+//     every `.{0,N}` gap pattern, and verified with a systematic sweep
+//     (every pattern × multiple separator types), not hand-picked example
+//     phrases — see the "the REST of..." and dedicated dotAll/self-harm/
+//     incitement-verb tests in moderation.test.ts. Any future edit to
+//     these three pattern arrays MUST re-run that sweep, not just eyeball
+//     the diff — cherry-picked examples are exactly how the first two
+//     "complete" claims went out wrong.
 const SELF_HARM_PATTERNS: RegExp[] = [
   /\bkill(ing)?\s+myself\b/i,
   /\bsuicid(e|al)\b/i,
@@ -71,7 +93,7 @@ const SELF_HARM_PATTERNS: RegExp[] = [
   /\bdon'?t\s+want\s+to\s+(live|be\s+alive)\b/i,
   /\bno\s+reason\s+to\s+live\b/i,
   /\bnot\s+worth\s+living\b/i,
-  /\bself[- ]?harm(ing)?\b/i,
+  /\bself[\s-]*harm(ing)?\b/i,
   /\b(hurt(ing)?|cutting|cut)\s+myself\b/i,
 ];
 
@@ -92,7 +114,7 @@ const SELF_HARM_REASON: Record<Language, string> = {
 // sellers (e.g. "how do I kill all the pests on my crop") — matching on any
 // noun after "kill all" would false-positive on exactly that kind of
 // question.
-const INCITEMENT_VERBS = '(kill|exterminate|eliminate|slaughter|wipe out)';
+const INCITEMENT_VERBS = '(kill|exterminate|eliminate|slaughter|wipe\\s+out)';
 const GROUP_TERMS =
   '(jews?|muslims?|hindus?|christians?|sikhs?|buddhists?|dalits?|gays?|lesbians?|immigrants?|refugees?|blacks?|whites?|asians?|foreigners?)';
 const HATE_SPEECH_PATTERNS: RegExp[] = [
@@ -126,11 +148,11 @@ const JAILBREAK_PATTERNS: RegExp[] = [
   /\bignore\s+(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(previous|prior|above|earlier)\s+instructions?\b/i,
   /\bdisregard\s+(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(previous|prior|above|earlier)\s+instructions?\b/i,
   /\bforget\s+(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(previous|prior|above|earlier)\s*instructions?\b/i,
-  /\b(reveal|show|print|repeat|output)\b.{0,20}\b(your\s+|the\s+)?system\s+prompt\b/i,
+  /\b(reveal|show|print|repeat|output)\b.{0,20}\b(your\s+|the\s+)?system\s+prompt\b/is,
   /\bwhat\s+(is|are)\s+your\s+(system\s+prompt|instructions)\b/i,
   /\brepeat\s+(the\s+words|everything|the\s+text)\s+(above|before\s+this)\b/i,
-  /\bact\s+as\b.{0,30}\b(no\s+restrictions|unfiltered|jailbroken|without\s+(any\s+)?limits)\b/i,
-  /\bpretend\s+(you\s+are|to\s+be)\b.{0,20}\b(dan|jailbroken|unrestricted)\b/i,
+  /\bact\s+as\b.{0,30}\b(no\s+restrictions|unfiltered|jailbroken|without\s+(any\s+)?limits)\b/is,
+  /\bpretend\s+(you\s+are|to\s+be)\b.{0,20}\b(dan|jailbroken|unrestricted)\b/is,
   /\bdeveloper\s+mode\b/i,
   /\bjailbreak(ing)?\b/i,
   /\bdan\s+mode\b/i,

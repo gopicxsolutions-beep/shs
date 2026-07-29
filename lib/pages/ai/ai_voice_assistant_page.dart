@@ -371,9 +371,18 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text(
-                          _transcript!,
-                          style: AppTheme.sans(15, weight: FontWeight.w600),
+                        // Was a plain Text with no live region — the state
+                        // label above only announces "Listening/Thinking/
+                        // Answered", not this card's actual content, so a
+                        // screen-reader user had no way to hear what she
+                        // was transcribed as saying without manually
+                        // re-exploring the screen after each turn.
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            _transcript!,
+                            style: AppTheme.sans(15, weight: FontWeight.w600),
+                          ),
                         ),
                       ],
                     ),
@@ -405,9 +414,17 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text(
-                          _answer!,
-                          style: AppTheme.sans(14, color: Neutral.c700),
+                        // Same fix as the "You said" card above — the state
+                        // label doesn't announce the answer content itself,
+                        // which matters most if TTS silently fails (see
+                        // `_speak()`'s own doc comment on a missing voice
+                        // pack for the member's selected language).
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            _answer!,
+                            style: AppTheme.sans(14, color: Neutral.c700),
+                          ),
                         ),
                       ],
                     ),

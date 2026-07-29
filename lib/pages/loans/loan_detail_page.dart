@@ -137,8 +137,9 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                            Text(DateFormat('dd MMM yyyy').format(p.paidOn), style: AppTheme.sans(13, weight: FontWeight.w600)),
-                            Text('₹${NumberFormat('#,##,##0', 'en_IN').format(p.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600)),
+                            Flexible(child: Text(DateFormat('dd MMM yyyy').format(p.paidOn), style: AppTheme.sans(13, weight: FontWeight.w600))),
+                            const SizedBox(width: 8),
+                            Flexible(child: Text('₹${NumberFormat('#,##,##0', 'en_IN').format(p.amount)}', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600))),
                           ]),
                         );
                       }).toList(),
@@ -175,7 +176,8 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: Text(l10n.loanDetailRecordPaymentDialogTitle),
-          content: Column(
+          content: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -192,6 +194,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                 Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
               ],
             ],
+            ),
           ),
           actions: [
             TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),

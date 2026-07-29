@@ -103,7 +103,8 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: Text(l10n.announcementsHomeDialogTitle),
-          content: Column(
+          content: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -130,6 +131,7 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
                 style: AppTheme.sans(11, color: Neutral.c500),
               ),
             ],
+            ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),

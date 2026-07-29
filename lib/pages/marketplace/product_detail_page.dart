@@ -52,30 +52,32 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(l10n.productDetailWriteReviewTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  5,
-                  (i) => IconButton(
-                    icon: Icon(i < rating ? Icons.star_rounded : Icons.star_border_rounded, color: Gold.c500, size: 28),
-                    onPressed: () => setDialogState(() => rating = i + 1),
-                    tooltip: l10n.productDetailStarTooltip(i + 1),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    5,
+                    (i) => IconButton(
+                      icon: Icon(i < rating ? Icons.star_rounded : Icons.star_border_rounded, color: Gold.c500, size: 28),
+                      onPressed: () => setDialogState(() => rating = i + 1),
+                      tooltip: l10n.productDetailStarTooltip(i + 1),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _commentController,
-                maxLength: 300,
-                maxLines: 3,
-                textInputAction: TextInputAction.done,
-                decoration: InputDecoration(hintText: l10n.productDetailReviewHint),
-              ),
-            ],
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _commentController,
+                  maxLength: 300,
+                  maxLines: 3,
+                  textInputAction: TextInputAction.done,
+                  decoration: InputDecoration(hintText: l10n.productDetailReviewHint),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),

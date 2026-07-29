@@ -188,7 +188,8 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: Text(l10n.loanApprovalDialogTitle),
-          content: Column(
+          content: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -207,6 +208,7 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
                 Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
               ],
             ],
+            ),
           ),
           actions: [
             TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(null), child: Text(l10n.actionCancel)),

@@ -186,7 +186,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(_error!, style: AppTheme.sans(12, color: Accent.red600)),
+                Semantics(liveRegion: true, child: Text(_error!, style: AppTheme.sans(12, color: Accent.red600))),
               ],
               const SizedBox(height: 24),
               AppButton(

@@ -138,7 +138,8 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: Text(l10n.livelihoodDetailDialogTitle),
-          content: Column(
+          content: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -162,6 +163,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
                 Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
               ],
             ],
+            ),
           ),
           actions: [
             TextButton(onPressed: submitting ? null : () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),

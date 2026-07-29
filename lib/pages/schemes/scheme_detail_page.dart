@@ -188,7 +188,8 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
                       // otherwise has flex. Same pattern as the EMI-due
                       // badge fix in loan_tracking_page.dart.
                       return AppCard(child: Row(children: [
-                        Text(l10n.schemeDetailApplicationStatusLabel, style: AppTheme.sans(13)),
+                        Flexible(child: Text(l10n.schemeDetailApplicationStatusLabel, style: AppTheme.sans(13))),
+                        const SizedBox(width: 8),
                         Flexible(child: AppBadge(text: _schemeStatusLabel(l10n, app.status), tone: BadgeTone.brand)),
                       ]));
                     }

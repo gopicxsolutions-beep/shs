@@ -419,10 +419,19 @@ class AppState extends ChangeNotifier {
     // the redo, silently escaping the pending-approval workflow they were
     // already in the middle of.
     final isNewProfile = _profile == null;
+    // `role: 'member'` unconditionally was correct for a genuinely new
+    // profile (self-service signup can only ever start as a member — see
+    // `profiles_insert_self`'s RLS), but this method is ALSO the "Choose a
+    // different SHG" retry path (see the `isNewProfile` guard on
+    // `_needsRoleSelection` below) — a hardcoded literal here silently
+    // clobbered an already-role-selected Leader back down to Member on
+    // every retry submission, with no warning and no way back except a
+    // manual admin promotion, since `_needsRoleSelection` is deliberately
+    // never re-flipped true for this same retry case.
     _profile = await _profileRepository.upsertMyProfile(
       name: name,
       mobile: _session?.user.phone,
-      role: 'member',
+      role: isNewProfile ? 'member' : _profile!.role,
       village: village,
       mandal: mandal,
       district: district,

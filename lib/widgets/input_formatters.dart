@@ -32,6 +32,12 @@ class _DecimalAmountFormatter extends TextInputFormatter {
 /// silently truncates a pasted multi-digit code (e.g. copied whole from an
 /// SMS) down to its first character; this formatter instead detects a
 /// paste and distributes the extra digits across the following boxes.
+///
+/// Also handles backspace-to-previous-box navigation — previously nothing
+/// moved focus backward at all (only [onChanged]'s forward-advance on a
+/// digit typed in existed), so clearing a wrong digit and continuing to
+/// backspace left the user stuck needing to manually tap into each earlier
+/// box instead of a natural single "hold backspace" retype.
 class OtpBoxFormatter extends TextInputFormatter {
   OtpBoxFormatter({required this.index, required this.controllers, required this.focusNodes, required this.onFilled});
   final int index;
@@ -42,6 +48,12 @@ class OtpBoxFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     final digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty && oldValue.text.isNotEmpty && index > 0) {
+      // Backspace cleared this box — jump back to the previous one so
+      // repeated backspace naturally walks left through the whole code,
+      // instead of stalling on an empty box the moment it's reached.
+      Future.microtask(() => focusNodes[index - 1].requestFocus());
+    }
     if (digits.length <= 1) {
       return TextEditingValue(text: digits, selection: TextSelection.collapsed(offset: digits.length));
     }

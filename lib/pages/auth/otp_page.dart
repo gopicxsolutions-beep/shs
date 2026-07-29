@@ -133,7 +133,16 @@ class _OtpPageState extends State<OtpPage> {
     } catch (e) {
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
+        // Was left as-is on failure — all 6 boxes still held the rejected
+        // code, `_filled` stayed true, and "Verify & Continue" re-enabled
+        // immediately, so a re-tap just resubmitted the identical wrong
+        // code. Clearing every box and refocusing the first one makes
+        // retry actually require typing a (hopefully correct) new code.
+        for (final c in _digits) {
+          c.clear();
+        }
         setState(() => _error = isNetworkError(e) ? l10n.asyncErrorNetwork : l10n.otpVerifyError);
+        if (_focus.isNotEmpty) _focus.first.requestFocus();
       }
     } finally {
       if (mounted) setState(() => _verifying = false);
@@ -211,7 +220,7 @@ class _OtpPageState extends State<OtpPage> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(_error!, style: AppTheme.sans(11, color: Accent.red600)),
+                Semantics(liveRegion: true, child: Text(_error!, style: AppTheme.sans(11, color: Accent.red600))),
               ],
               const SizedBox(height: 20),
               InkWell(

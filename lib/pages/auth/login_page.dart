@@ -124,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: 8),
-                Align(alignment: Alignment.centerLeft, child: Text(_error!, style: AppTheme.sans(11, color: Accent.red600))),
+                Align(alignment: Alignment.centerLeft, child: Semantics(liveRegion: true, child: Text(_error!, style: AppTheme.sans(11, color: Accent.red600)))),
               ],
               const SizedBox(height: 16),
               AppButton(

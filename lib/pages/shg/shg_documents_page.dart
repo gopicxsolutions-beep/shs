@@ -101,7 +101,8 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(l10n.shgDocumentsAddDialogTitle),
-          content: Column(
+          content: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -124,6 +125,7 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
                 label: Text(picked == null ? l10n.shgDocumentsChooseFile : picked!.name, overflow: TextOverflow.ellipsis),
               ),
             ],
+            ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),

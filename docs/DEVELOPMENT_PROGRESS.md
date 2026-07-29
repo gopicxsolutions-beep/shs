@@ -17575,3 +17575,129 @@ all 3 policy-shape changes. `flutter build web --release --dart-define-
 from-file=.env.json` rebuilt cleanly (69.8s). Browser-preview UI
 verification succeeded (preview server restarted, tab fronted, landing
 page confirmed rendering via screenshot).
+
+## Update (round 197) — Gap-hunting loop iteration 24: a THIRD, finally-complete pass on the moderation.ts whitespace bug (with a systematic exhaustive test to stop a 4th regression), a HIGH onboarding role-clobber bug, plus an accessibility sweep across 8 more gaps
+
+Four parallel audits: dogfooding round 196's own new work, an Auth/OTP/
+Onboarding full sweep, an AI Advisor/Voice Assistant accessibility sweep,
+and a codebase-wide AlertDialog/Row overflow sweep.
+
+**Dogfooding round 196 — moderation.ts, 3rd pass (most urgent finding)**
+1. **[HIGH, fixed immediately]** Round 196's own "complete" whitespace fix
+   to `moderation.ts` was itself still incomplete, in 3 ways a plain
+   literal-space search doesn't catch: (a) `/\bself[- ]?harm(ing)?\b/i`
+   used a single-character class matching at most one space/hyphen, not
+   `\s+`; (b) `INCITEMENT_VERBS`'s `"wipe out"` was a hardcoded literal
+   space baked into a plain JS *string*, invisible to a regex-focused
+   search; (c) 3 `JAILBREAK_PATTERNS` entries used `.{0,N}` as a gap, and
+   JS/TS `.` does not match a newline without the `s` (dotAll) flag — none
+   had it, so a newline inside the gap bypassed the pattern even with
+   every literal space already converted. This is the third consecutive
+   round this exact file was declared "fixed"/"complete" and proven false
+   by the very next round's independent re-derivation (rounds 195, 196,
+   now 197). Fixed all 3 remaining issues, rewrote the file's header
+   comment into an explicit "WHITESPACE-BYPASS HISTORY" documenting all 3
+   rounds' distinct failures verbatim (so a future editor cannot repeat the
+   same mistake by eyeballing a diff), and replaced the hand-picked
+   example-phrase tests with one systematic, exhaustive test: 25 canonical
+   minimally-matching phrases — one per pattern, 1:1 position-matched
+   against `SELF_HARM_PATTERNS`/`HATE_SPEECH_PATTERNS`/`JAILBREAK_PATTERNS`
+   — each tried against 4 separators (`\n`, `\t`, triple-space, `\r\n`),
+   plus a dedicated `INCITEMENT_VERBS` "wipe out" case. This restructures
+   the failure mode: adding a 26th pattern without adding its canonical
+   phrase to the parallel test array is now the only way to under-cover
+   the test, which is a far easier omission to catch in review than "a
+   human forgot to think of the right adversarial example." 55/55 `deno
+   test` passed (up from 54). Redeployed (`ai-advisor-proxy` correctly
+   uses `verify_jwt: true`, so this deploy carries none of the
+   `send-sms-hook`-class regression risk seen elsewhere this session).
+2. Everything else from round 196 (the `savings_entries_locked_fields()`
+   shg_id lock, the loan-deletion RESTRICT switch, the retired member
+   self-payment branch, the Dart-side viewer-id gating) was independently
+   re-verified live and confirmed correct.
+
+**Auth/OTP/Onboarding full sweep (4 findings)**
+1. **[HIGH]** `AppState.completeProfileSetup()` set `role: 'member'`
+   unconditionally on every call — but this method is also the "Choose a
+   different SHG" retry path reached from `ShgApprovalPendingPage`, where
+   Role Select already ran in an earlier session. A Leader (or CRP/CLF)
+   retrying her SHG selection silently got downgraded back to Member on
+   every retry, with no warning and no way back except a manual admin
+   promotion. Fixed: `role: isNewProfile ? 'member' : _profile!.role`.
+2. **[MEDIUM]** `OtpPage._submit()`'s catch block left all 6 digit boxes
+   holding the rejected code with `_filled` still true — a re-tap of
+   "Verify & Continue" just resubmitted the identical wrong code. Fixed:
+   clear all 6 controllers and refocus the first box on failure.
+3. **[LOW]** `OtpBoxFormatter` never moved focus backward on backspace —
+   deleting a digit left focus stuck in the now-empty box instead of
+   returning to the previous one. Fixed with a `Future.microtask` focus
+   hop, mirroring the existing forward-focus behavior.
+4. **[LOW, accessibility]** Login and Profile Setup's inline error `Text`
+   widgets had no live region — a screen-reader user got no announcement
+   when a validation/network error appeared, unlike OTP's error text
+   (already fixed in an earlier round). Wrapped both in
+   `Semantics(liveRegion: true, ...)`.
+
+**AI Advisor/Voice Assistant accessibility sweep (1 finding)**
+1. **[MEDIUM]** `ai_voice_assistant_page.dart` only gave a live region to
+   the state label (Listening/Thinking/Answered) — the "You said"
+   transcript and the "Answer" text itself had none, so a screen-reader
+   user whose TTS output failed or was interrupted had no way to hear the
+   actual answer content, only that an answer existed. Wrapped both in
+   `Semantics(liveRegion: true, ...)`.
+
+**Codebase-wide AlertDialog/Row overflow sweep (exhaustive, audit-only —
+no code changes from the audit itself)**
+1. **[MEDIUM x6]** 6 `AlertDialog`s with real `Column`-shaped content (star
+   rating + comment in `product_detail_page.dart`, category chips in
+   `announcements_home_page.dart`, file picker in `shg_documents_page.dart`,
+   amount fields in `loan_detail_page.dart`/`loan_approval_page.dart`,
+   revenue+status in `livelihood_detail_page.dart`) had no scroll
+   container — at the CLAUDE.md-mandated 1.3x-2x text-scale bar, any of
+   these could clip or overflow with no way to reach the Submit button.
+   Fixed: wrapped every `content:` in `SingleChildScrollView`.
+2. **[LOW x2]** Two `Row`s with unbounded-width label/value text had no
+   `Flexible`/`Expanded` on one side: the loan payment-history row (date +
+   amount) and the scheme application-status row (label was bare while the
+   badge was already `Flexible`) — both could overflow at scale. Fixed:
+   added `Flexible` to the previously-unwrapped side of each.
+3. **[Deferred, documented not fixed]** 11 lower-risk `AlertDialog`s with
+   single-`Text`-only content (`discard_changes_dialog.dart`,
+   `admin_shgs_page.dart`, `admin_schemes_page.dart`,
+   `admin_training_courses_page.dart`, `admin_training_quiz_page.dart`,
+   `admin_users_page.dart` x2, `savings_ledger_page.dart`,
+   `savings_history_page.dart`, `meeting_detail_page.dart`,
+   `meeting_schedule_page.dart`) carry the same theoretical risk but with
+   far less content to overflow — left for a future dedicated
+   accessibility round rather than rushed under this round's time budget.
+
+**Migration `0109_iteration24_join_request_delete_deactivated_gate.sql`**:
+added a `profile_is_active(member_id)` gate to
+`shg_join_requests_delete_self_pending` — a deactivated member could still
+withdraw her own pending join request via direct REST even though every
+other write path for a deactivated member has been progressively closed
+since round 191. Live-verified via a rolled-back `__TEST__` transaction:
+deactivated member's DELETE now correctly matches 0 rows; an active
+member's own pending-request DELETE still succeeds.
+
+**`docs/SRS.md` corrections (no code change)**: the Financial Ledger
+section's claim "no UI path or RLS policy permits editing or deleting an
+already-posted row" was inaccurate since round 193/194 introduced real,
+staff-only, self-excluded, latest-row-only `financial_ledger_update_staff`/
+`_delete_staff` RLS policies reachable via direct REST (no UI screen
+exposes them, but the RLS layer does allow them) — corrected to describe
+the actual boundary instead of a stronger claim than the code supports.
+
+**Verification:** `flutter analyze` — 0 issues. `flutter test` —
+1039/1039 passed (no new Dart tests added this round; the moderation.ts
+test additions are Deno-side). `deno test` (ai-advisor-proxy) — 55/55
+passed, both immediately after the moderation.ts completion fix and again
+as a final re-check before committing. Migration 0109 pushed to the
+linked live project and live-verified via a rolled-back `__TEST__`
+transaction (0 rows for the deactivated case, 1 row for the legitimate
+case). `flutter build web --release --dart-define-from-file=.env.json`
+rebuilt cleanly (132.5s; only pre-existing, unrelated wasm-compatibility
+warnings from the `flutter_tts` package). Browser-preview UI verification
+succeeded: preview server restarted, tab fronted, landing page and the
+Login page (carrying this round's liveRegion fix) both confirmed rendering
+correctly via screenshot, no visual regression.

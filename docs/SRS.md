@@ -514,11 +514,20 @@ independently re-derives and checks the same balance formula, so even a raw
 REST call bypassing the RPC can't post an arbitrary balance.
 
 All SHG members can read the ledger (transparency); only the SHG's leader can
-post new entries, and — critically — **no UI path or RLS policy permits
-editing or deleting an already-posted row** (update/delete is staff-only, and
-even staff editing a mid-sequence entry would desync every later row's chained
-balance with no trace, which is exactly what this design prevents by
-omission).
+post new entries. **Correction (round 197): the claim below this used to say
+"no UI path or RLS policy permits editing or deleting an already-posted row"
+— that was never accurate for the RLS layer** (per this project's own
+security model, "no UI path" only describes the app's screens, not what a
+direct REST call can do). No app screen exposes editing/deleting a ledger
+row, but `financial_ledger_update_staff`/`financial_ledger_delete_staff` are
+real, staff-only RLS policies reachable via direct REST: UPDATE locks every
+real column and self-excludes the author (round 193); DELETE self-excludes
+the author and, since round 194, is further restricted to only the single
+most-recent row in a `(shg_id, entry_type)` chain (via `financial_ledger_
+is_latest()`) — specifically because deleting a mid-sequence row would
+desync every later row's chained balance with no trace, exactly the scenario
+this paragraph's original wording described as structurally impossible when
+it was actually just unexploited.
 
 **Fixed (2026-07-26, round 168): crp/clf/admin (no `shgId` of their own) now
 see a real platform-wide feed across all four record types, same fix
