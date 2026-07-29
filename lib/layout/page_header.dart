@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../l10n/gen/app_localizations.dart';
+import '../routes/navigation_history.dart';
 import '../routes/paths.dart';
 import '../state/unsaved_changes.dart';
 import '../theme/app_theme.dart';
@@ -81,11 +82,16 @@ class PageHeader extends StatelessWidget implements PreferredSizeWidget {
   // Every route under the app's ShellRoute is a flat sibling reached via
   // `context.go()` (a full page-stack replace, not `context.push()`), so
   // there's almost never more than one page in the Navigator stack for
-  // `Navigator.maybePop()` to act on — tapping Back was a silent no-op on
-  // nearly every sub-page in the app. Fall back to the dashboard (the same
-  // destination as the bottom nav's Home tab) whenever there's genuinely
-  // nothing to pop, so the button always takes the user somewhere instead
-  // of doing nothing.
+  // `Navigator.maybePop()` to act on — `canPop()` was essentially always
+  // false, which made tapping Back jump to the dashboard from nearly every
+  // sub-page in the app instead of returning to wherever the user actually
+  // came from (a real, reported bug, not a hypothetical one). Fixed by
+  // consulting `NavigationHistory` (router.dart's `redirect` callback
+  // records every settled location there) instead of the Navigator, which
+  // has nothing useful to say under this app's routing style. Falls back
+  // to the dashboard (the same destination as the bottom nav's Home tab)
+  // only when there's genuinely no prior distinct page — a fresh app
+  // launch or deep link with no history yet.
   //
   // Checked first: `UnsavedChanges.dirty` — a form page currently being
   // edited raises this flag, and since this Back button is the single
@@ -99,11 +105,7 @@ class PageHeader extends StatelessWidget implements PreferredSizeWidget {
       UnsavedChanges.dirty = false;
     }
     if (!context.mounted) return;
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) {
-      navigator.pop();
-    } else {
-      context.go(Paths.dashboard);
-    }
+    final previous = NavigationHistory.popToPrevious();
+    context.go(previous ?? Paths.dashboard);
   }
 }

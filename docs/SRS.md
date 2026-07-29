@@ -1124,6 +1124,22 @@ querying the same view. See [ARCHITECTURE.md](ARCHITECTURE.md) §"Sensitive
 columns never in a broadly-readable view" for the full RLS design and the
 direct-base-table-bypass this table split closed.
 
+Federation info (Village Organisation/CLF/Mandal/formation date) and bank
+details (bank name/account/IFSC) were displayed on this page from the start
+but had **no write path anywhere in the app** until a live user bug report
+("my SHG page shows nothing") surfaced that every one of these fields was
+genuinely `null` for the app's SHG, with no way for any role to ever set
+them. Fixed with two write paths matching the RLS shape exactly:
+`AdminShgsPage`'s Add/Edit dialogs now cover all six fields (admin is the
+only role that can ever set `grade`/`clf`/`vo` — `shgs_update_leader_or_
+staff`'s `with check`, migration `0082`, locks those three to the row's
+current value for the leader branch); and a new leader-only self-service
+edit (pencil icon on "My SHG"'s header) lets the SHG's own leader set
+`mandal`/bank details herself, matching exactly what RLS already left open
+to her (everything except grade/clf/vo). A CRP/CLF never sees this icon —
+`shgs_update_leader_or_staff` has no branch for them at all, only
+leader-of-own-SHG or admin.
+
 Join-request approval is a leader-only screen; the underlying RPC
 (`approve_shg_join_request`) also accepts staff, even though the router
 restricts the *page* to leaders only. A rejected request's row is immutable —
@@ -1149,7 +1165,8 @@ above.
 | FR-SHG-2 | Leader views the member roster and per-member detail | Leader |
 | FR-SHG-3 | Leader (or staff, via the same RPC) approves/rejects join requests; a rejected request cannot be re-decided | Leader, staff |
 | FR-SHG-4 | Document repository requires and uploads a real file (PDF/JPEG/PNG/WEBP, 10 MB cap) to Supabase Storage; downloads via a short-lived signed URL | Leader, staff |
-| FR-SHG-5 | Bank account/IFSC are hidden from members in the UI, but not independently RLS-restricted from them at the table level — flagged for a deliberate decision, not currently a database-enforced boundary | — |
+| FR-SHG-5 | Bank account/IFSC are hidden from members in the UI **and** independently RLS-restricted from them at the table level (`shg_bank_details`, migration `0056`) — a direct `/rest/v1` query bypassing the client gets the same masking, not just a hidden UI section | — |
+| FR-SHG-6 | Leader edits her own SHG's Mandal/Bank Name/Account/IFSC via a self-service dialog; Admin edits all six SHG fields (adding VO/CLF/grade, which are leader-locked) via Manage SHGs | Leader, Admin |
 
 ### 3.17 Admin Console (`admin/`)
 
@@ -1187,10 +1204,19 @@ layer specifically (stricter than the SHG-creation policy, which is
 any-staff).
 
 System Monitoring shows **real row counts** from `profiles`/`shgs`/
-`savings_entries`/`loans` (not synthetic numbers), but is explicitly and
-visibly labeled in its own UI as placeholder metrics — "not real
-infrastructure metrics (uptime, latency, error rate)." This label must be
-preserved in any future redesign of this screen.
+`savings_entries`/`loans` (not synthetic numbers), plus real infrastructure
+metrics — uptime, average/p95 latency, and error rate over a rolling 24h
+window — from the `system-health-check` Edge Function (see
+`docs/ARCHITECTURE.md`'s Edge Functions section). That function runs a
+genuine synthetic database round-trip check, both on a pg_cron schedule
+(every 5 minutes) and on-demand every time an admin opens this page, and
+logs each result to `public.infra_health_checks`. The UI's own "About
+these metrics" note honestly scopes this as OUR OWN backend round-trip,
+not a full third-party APM's view of every layer of the stack (CDN, DNS,
+client rendering, etc.) — that broader claim would need a real APM vendor
+and remains out of scope. This honest-scope framing must be preserved in
+any future redesign of this screen, the same way the AI Advisor's own
+disclosed gaps are (`docs/AI_MODULES.md` §6).
 
 **Audit Log** (`AdminAuditLogPage`, `/app/admin/audit-log`) is the read
 side of `public.audit_log` — role changes, SHG grade changes, livelihood

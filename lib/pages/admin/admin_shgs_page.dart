@@ -48,6 +48,12 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
   final _name = TextEditingController();
   final _village = TextEditingController();
   final _district = TextEditingController();
+  final _mandal = TextEditingController();
+  final _vo = TextEditingController();
+  final _clf = TextEditingController();
+  final _bankName = TextEditingController();
+  final _bankAccount = TextEditingController();
+  final _ifsc = TextEditingController();
   // Formation date / grade form state (see `EligibilityCriteria` in
   // lib/models/scheme.dart) — plain fields rather than a form widget, reset
   // before each dialog opens and read back once confirmed, same pattern as
@@ -93,6 +99,12 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
     _name.dispose();
     _village.dispose();
     _district.dispose();
+    _mandal.dispose();
+    _vo.dispose();
+    _clf.dispose();
+    _bankName.dispose();
+    _bankAccount.dispose();
+    _ifsc.dispose();
     super.dispose();
   }
 
@@ -106,7 +118,9 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
       const SizedBox(height: 12),
       TextField(controller: _village, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminShgsVillageHint)),
       const SizedBox(height: 12),
-      TextField(controller: _district, maxLength: 100, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.adminShgsDistrictHint)),
+      TextField(controller: _district, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminShgsDistrictHint)),
+      const SizedBox(height: 12),
+      TextField(controller: _mandal, maxLength: 100, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.adminShgsMandalHint)),
       const SizedBox(height: 16),
       Text(l10n.adminShgsFormationDateLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
       const SizedBox(height: 4),
@@ -148,6 +162,20 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
         ],
         onChanged: (v) => setDialogState(() => _grade = v),
       ),
+      const SizedBox(height: 16),
+      Text(l10n.adminShgsFederationSectionLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+      const SizedBox(height: 8),
+      TextField(controller: _vo, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminShgsVoHint)),
+      const SizedBox(height: 12),
+      TextField(controller: _clf, maxLength: 100, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.adminShgsClfHint)),
+      const SizedBox(height: 16),
+      Text(l10n.adminShgsBankSectionLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+      const SizedBox(height: 8),
+      TextField(controller: _bankName, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminShgsBankNameHint)),
+      const SizedBox(height: 12),
+      TextField(controller: _bankAccount, maxLength: 30, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminShgsBankAccountHint)),
+      const SizedBox(height: 12),
+      TextField(controller: _ifsc, maxLength: 11, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.adminShgsIfscHint)),
     ];
   }
 
@@ -155,10 +183,20 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
     _name.clear();
     _village.clear();
     _district.clear();
+    _mandal.clear();
+    _vo.clear();
+    _clf.clear();
+    _bankName.clear();
+    _bankAccount.clear();
+    _ifsc.clear();
     _formationDate = null;
     _grade = null;
     final confirmed = await showDialog<bool>(
       context: context,
+      // See shg_home_page.dart's identical fix for why: an accidental tap
+      // just outside the dialog card otherwise silently discards every
+      // field typed so far, indistinguishable from a real save failing.
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(AppLocalizations.of(context)!.adminShgsAddTitle),
@@ -192,8 +230,14 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
         name: _name.text.trim(),
         village: _village.text.trim(),
         district: _district.text.trim(),
+        mandal: _mandal.text.trim().isEmpty ? null : _mandal.text.trim(),
         formationDate: _formationDate,
         grade: _grade,
+        vo: _vo.text.trim().isEmpty ? null : _vo.text.trim(),
+        clf: _clf.text.trim().isEmpty ? null : _clf.text.trim(),
+        bankName: _bankName.text.trim().isEmpty ? null : _bankName.text.trim(),
+        bankAccount: _bankAccount.text.trim().isEmpty ? null : _bankAccount.text.trim(),
+        ifsc: _ifsc.text.trim().isEmpty ? null : _ifsc.text.trim(),
       );
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
@@ -228,6 +272,23 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
     _name.text = s.name;
     _village.text = s.village ?? '';
     _district.text = s.district ?? '';
+    _mandal.text = s.mandal ?? '';
+    _vo.text = s.vo ?? '';
+    _clf.text = s.clf ?? '';
+    _bankName.text = s.bankName ?? '';
+    // `fetchAllShgs()` selects the base `shgs` table directly, which no
+    // longer even has bank_account/ifsc columns (migration 0056 moved them
+    // to `shg_bank_details`) — so `s` here never carries them regardless of
+    // role. `shg_own_masked` unmasks both for an `is_staff()` caller (every
+    // admin), so a second fetch through the same masked view this page's
+    // Edit dialog already trusts for everything else gets the admin the
+    // actual current values to edit, instead of either fabricating a blank
+    // prefill (looks like "no data" when there may be real data) or
+    // silently clobbering an existing value.
+    final withBankDetails = await _repo.fetchShg(s.id);
+    if (!mounted) return;
+    _bankAccount.text = withBankDetails?.bankAccount ?? '';
+    _ifsc.text = withBankDetails?.ifsc ?? '';
     _formationDate = s.formationDate;
     // Defensive fallback for a stored grade outside this dropdown's 5-item
     // vocabulary (e.g. written directly via SQL, bypassing this form —
@@ -237,6 +298,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
     _grade = _gradeOptions.contains(s.grade) ? s.grade : null;
     final confirmed = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(AppLocalizations.of(context)!.adminShgsEditTitle),
@@ -273,6 +335,7 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
       String gradeLabel(String? g) => g ?? l10n.adminShgsNotGradedOption;
       final gradeConfirmed = await showDialog<bool>(
         context: context,
+        barrierDismissible: false,
         builder: (context) => AlertDialog(
           title: Text(l10n.adminShgsGradeChangeConfirmTitle),
           content: Text(l10n.adminShgsGradeChangeConfirmMessage(s.name, gradeLabel(s.grade), gradeLabel(_grade))),
@@ -291,8 +354,14 @@ class _AdminShgsPageState extends State<AdminShgsPage> {
         name: _name.text.trim(),
         village: _village.text.trim(),
         district: _district.text.trim(),
+        mandal: _mandal.text.trim().isEmpty ? null : _mandal.text.trim(),
         formationDate: _formationDate,
         grade: _grade,
+        vo: _vo.text.trim().isEmpty ? null : _vo.text.trim(),
+        clf: _clf.text.trim().isEmpty ? null : _clf.text.trim(),
+        bankName: _bankName.text.trim().isEmpty ? null : _bankName.text.trim(),
+        bankAccount: _bankAccount.text.trim().isEmpty ? null : _bankAccount.text.trim(),
+        ifsc: _ifsc.text.trim().isEmpty ? null : _ifsc.text.trim(),
       );
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;

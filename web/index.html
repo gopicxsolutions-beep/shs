@@ -32,8 +32,56 @@
 
   <title>NavaSakhi</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    #app-loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      background: #0E8A66;
+      z-index: 9999;
+    }
+    #app-loading img {
+      width: 160px;
+      height: 160px;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    }
+    #app-loading .spinner {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #ffffff;
+      animation: app-loading-spin 0.8s linear infinite;
+    }
+    @keyframes app-loading-spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
+  <!--
+    Shown while the Flutter web engine downloads and initializes — this is
+    the actual "blank white screen" gap that existed before any Flutter
+    widget (including SplashPage) can render. Removed automatically on the
+    documented `flutter-first-frame` event, Flutter web's own signal that
+    the first real frame has painted.
+  -->
+  <div id="app-loading">
+    <img src="icons/Icon-512.png" alt="NavaSakhi">
+    <div class="spinner"></div>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      document.getElementById('app-loading')?.remove();
+    });
+  </script>
+
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

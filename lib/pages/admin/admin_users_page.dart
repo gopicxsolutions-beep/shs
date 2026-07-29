@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -34,6 +35,12 @@ class AdminUsersPage extends StatefulWidget {
 class _AdminUsersPageState extends State<AdminUsersPage> {
   final _repo = AdminRepository();
   final GlobalKey<AppAsyncBuilderState<PagedResult<Profile>>> _key = GlobalKey();
+  final _search = TextEditingController();
+  Timer? _debounce;
+  // null = no role filter ("All"). Combines with the search text — both are
+  // read fresh by `_loadFirstPage`/`_loadMore` on every call, so changing
+  // either and reloading always re-queries with the latest combination.
+  String? _roleFilter;
   String? _changingRoleFor;
   String? _assigningShgFor;
   String? _togglingActiveFor;
@@ -49,8 +56,10 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
   bool _hasMore = false;
   bool _loadingMore = false;
 
+  String? get _searchQuery => _search.text.trim().isEmpty ? null : _search.text.trim();
+
   Future<PagedResult<Profile>> _loadFirstPage() async {
-    final page = await _repo.fetchAllUsers();
+    final page = await _repo.fetchAllUsers(search: _searchQuery, role: _roleFilter);
     _users = page.items;
     _hasMore = page.hasMore;
     return page;
@@ -60,7 +69,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     if (_loadingMore || !_hasMore || _users.isEmpty) return;
     setState(() => _loadingMore = true);
     try {
-      final page = await _repo.fetchAllUsers(afterName: _users.last.name);
+      final page = await _repo.fetchAllUsers(afterName: _users.last.name, search: _searchQuery, role: _roleFilter);
       setState(() {
         _users = [..._users, ...page.items];
         _hasMore = page.hasMore;
@@ -72,6 +81,32 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     } finally {
       if (mounted) setState(() => _loadingMore = false);
     }
+  }
+
+  // Debounced so typing doesn't fire a network request per keystroke — same
+  // 300ms shape as `shg_search_sheet.dart`'s own search field. `reload()`
+  // swaps AppAsyncBuilder's `_future`, which Flutter's FutureBuilder always
+  // resubscribes to fresh (an in-flight older future's eventual completion
+  // is never shown once a newer one has replaced it), so a fast typist can't
+  // have a slower earlier response clobber a faster, later one.
+  void _onSearchChanged(String _) {
+    // `setState` here (not just inside the debounced callback below) is
+    // deliberate and immediate — the clear ("X") button's visibility reads
+    // `_search.text.isEmpty` directly in `build()`, and nothing else ever
+    // rebuilds this page's own State when the field's text changes
+    // (`reload()` below only rebuilds AppAsyncBuilder's internal State).
+    // Without this, the clear button stayed invisible/stale the entire
+    // time regardless of what was typed, since this widget's own build()
+    // was never re-run to notice the text had changed.
+    setState(() {});
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () => _key.currentState?.reload());
+  }
+
+  void _setRoleFilter(String? role) {
+    if (role == _roleFilter) return;
+    setState(() => _roleFilter = role);
+    _key.currentState?.reload();
   }
 
   Future<void> _changeRole(Profile user) async {
@@ -101,6 +136,12 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     final newLabel = roleInfoFor(selected).label;
     final confirmed = await showDialog<bool>(
       context: context,
+      // Same two-step caution as admin_shgs_page.dart's grade-change
+      // confirm: an accidental tap just outside the dialog card silently
+      // dismisses this like Cancel, which is safe here, but a role change
+      // is high-stakes enough (can grant/revoke admin access) that it
+      // shouldn't be left to an easily-mistaken outside tap either way.
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.adminUsersChangeRoleConfirmTitle),
         content: Text(AppLocalizations.of(context)!.adminUsersChangeRoleConfirmMessage(user.name, currentLabel, newLabel)),
@@ -185,6 +226,10 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
     final activating = !user.isActive;
     final confirmed = await showDialog<bool>(
       context: context,
+      // Same two-step caution as admin_shgs_page.dart's grade-change
+      // confirm: deactivating/reactivating a real account is high-stakes
+      // enough that it shouldn't be left to an easily-mistaken outside tap.
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text(activating ? l10n.adminUsersReactivateConfirmTitle : l10n.adminUsersDeactivateConfirmTitle),
         content: Text(activating ? l10n.adminUsersReactivateConfirmMessage(user.name) : l10n.adminUsersDeactivateConfirmMessage(user.name)),
@@ -232,27 +277,83 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
   }
 
   @override
+  void dispose() {
+    _debounce?.cancel();
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isAdmin = context.watch<AppState>().user.role == Role.admin;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: PageHeader(title: AppLocalizations.of(context)!.adminUsersManageTitle),
-      body: AppAsyncBuilder<PagedResult<Profile>>(
-        key: _key,
-        future: _loadFirstPage,
-        // Renders `_users`/`_hasMore` (this State's own appendable copy),
-        // not the `data` snapshot directly — see their doc comment above:
-        // `data` only ever reflects the single page this exact future
-        // resolved to, so re-rendering straight from it would silently
-        // drop anything a prior "Load more" tap had already appended.
-        builder: (context, data) {
-          if (_users.isEmpty) {
-            return AppEmptyState(icon: Icons.people_rounded, message: AppLocalizations.of(context)!.adminUsersNoUsersFoundMessage);
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _users.length + (_hasMore ? 1 : 0),
-            itemBuilder: (context, i) {
+      appBar: PageHeader(title: l10n.adminUsersManageTitle),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: TextField(
+              controller: _search,
+              onChanged: _onSearchChanged,
+              decoration: InputDecoration(
+                hintText: l10n.adminUsersSearchHint,
+                prefixIcon: const Icon(Icons.search_rounded),
+                // A search that's easy to start but has no obvious way to
+                // clear (short of manually deleting every character) is a
+                // small but real friction point on exactly the field an
+                // admin will use over and over.
+                suffixIcon: _search.text.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear_rounded),
+                        onPressed: () {
+                          _search.clear();
+                          setState(() {});
+                          _key.currentState?.reload();
+                        },
+                      ),
+                isDense: true,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(label: Text(l10n.adminUsersRoleFilterAll), selected: _roleFilter == null, onSelected: (_) => _setRoleFilter(null)),
+                ),
+                for (final r in roles)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(label: Text(r.shortLabel), selected: _roleFilter == r.id.name, onSelected: (_) => _setRoleFilter(r.id.name)),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: AppAsyncBuilder<PagedResult<Profile>>(
+              key: _key,
+              future: _loadFirstPage,
+              // Renders `_users`/`_hasMore` (this State's own appendable copy),
+              // not the `data` snapshot directly — see their doc comment above:
+              // `data` only ever reflects the single page this exact future
+              // resolved to, so re-rendering straight from it would silently
+              // drop anything a prior "Load more" tap had already appended.
+              builder: (context, data) {
+                if (_users.isEmpty) {
+                  return AppEmptyState(icon: Icons.people_rounded, message: l10n.adminUsersNoUsersFoundMessage);
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _users.length + (_hasMore ? 1 : 0),
+                  itemBuilder: (context, i) {
               if (i == _users.length) {
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
@@ -337,6 +438,9 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
           );
         },
       ),
+            ),
+          ],
+        ),
     );
   }
 }

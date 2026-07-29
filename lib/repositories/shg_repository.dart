@@ -72,6 +72,20 @@ class ShgRepository {
           district: mock.ShgInfo.district,
           state: mock.ShgInfo.state,
           grade: mock.ShgInfo.grade,
+          // Was missing entirely (this fix's own dogfooding caught it):
+          // AdminShgsPage's Edit dialog now seeds its Mandal/VO/CLF/Bank
+          // fields straight from this list's ShgProfile (not from
+          // fetchShg()), so a demo-mode admin opening Edit on the fixed
+          // demo SHG saw these fields render blank despite
+          // mock.ShgInfo.regNumber/vo/clf/bankName/bankAccount/ifsc having
+          // held real values all along — then Save would have silently
+          // wiped them to null on the first edit.
+          regNumber: mock.ShgInfo.regNumber,
+          vo: mock.ShgInfo.vo,
+          clf: mock.ShgInfo.clf,
+          bankName: mock.ShgInfo.bankName,
+          bankAccount: mock.ShgInfo.bankAccount,
+          ifsc: mock.ShgInfo.ifsc,
         ),
         ..._locallyAddedShgs,
       ].map((s) => _locallyUpdatedShgs[s.id] ?? s).toList();
@@ -100,6 +114,11 @@ class ShgRepository {
     String? state,
     DateTime? formationDate,
     String? grade,
+    String? vo,
+    String? clf,
+    String? bankName,
+    String? bankAccount,
+    String? ifsc,
   }) async {
     if (!_live) {
       _locallyAddedShgs.add(ShgProfile(
@@ -111,11 +130,16 @@ class ShgRepository {
         state: state,
         formationDate: formationDate,
         grade: grade,
+        vo: vo,
+        clf: clf,
+        bankName: bankName,
+        bankAccount: bankAccount,
+        ifsc: ifsc,
       ));
       return;
     }
     final formationDateStr = formationDate?.toIso8601String().split('T').first;
-    await _client.from('shgs').insert({
+    final inserted = await _client.from('shgs').insert({
       'name': name,
       'village': ?village,
       'mandal': ?mandal,
@@ -123,16 +147,31 @@ class ShgRepository {
       'state': ?state,
       'formation_date': ?formationDateStr,
       'grade': ?grade,
-    });
+      'vo': ?vo,
+      'clf': ?clf,
+      'bank_name': ?bankName,
+    }).select('id').single();
+    // `shg_bank_details` (migration 0056) is a separate table from `shgs`
+    // specifically so bank_account/ifsc can never leak via a plain `select *`
+    // against the base table — see that migration's own reasoning. Only
+    // insert a row here at all if the admin actually entered a value, same
+    // "don't write an all-null row just to have one" restraint as
+    // updateShg()'s upsert below.
+    if (bankAccount != null || ifsc != null) {
+      await _client.from('shg_bank_details').insert({'shg_id': inserted['id'] as String, 'bank_account': ?bankAccount, 'ifsc': ?ifsc});
+    }
   }
 
-  /// Edits an existing SHG's core profile fields — until now there was no
-  /// Edit-SHG UI anywhere in the app (see AdminShgsPage's Edit dialog), so an
-  /// SHG onboarded without a formation date/grade (or with a typo in its
-  /// name/village/district) had no in-app way to ever correct that. Scoped
-  /// to exactly the fields AdminShgsPage's Add/Edit dialogs manage — mandal/
-  /// state aren't exposed there (matching the pre-existing Add dialog), so
-  /// this deliberately never touches those columns, live or demo.
+  /// Edits an existing SHG's core profile fields — admin-only (RLS's
+  /// `shgs_update_leader_or_staff` WITH CHECK locks grade/clf/vo to the
+  /// row's current stored value for the leader branch, admin bypasses that
+  /// lock — see supabase/migrations/0082). Until this fix, `vo`/`clf`/
+  /// `bankName`/`bankAccount`/`ifsc` had NO write path anywhere in the app —
+  /// not here, not in [createShg], not in [updateShgLeaderFields] below —
+  /// so shg_home_page.dart's Federation/Bank Details sections were
+  /// permanently blank for every SHG ever created through the app,
+  /// regardless of role. Found from a genuine user bug report ("my SHG page
+  /// shows nothing"), not a synthetic audit.
   Future<void> updateShg(
     String id, {
     required String name,
@@ -140,12 +179,15 @@ class ShgRepository {
     String? district,
     DateTime? formationDate,
     String? grade,
+    String? mandal,
+    String? vo,
+    String? clf,
+    String? bankName,
+    String? bankAccount,
+    String? ifsc,
   }) async {
     if (!_live) {
       final addedIdx = _locallyAddedShgs.indexWhere((s) => s.id == id);
-      // Preserves every field this dialog doesn't manage (bank details,
-      // clf/vo, mandal/state, ...) by basing the update on the fullest
-      // record already known for this id, rather than silently wiping them.
       final base = addedIdx != -1 ? _locallyAddedShgs[addedIdx] : (_locallyUpdatedShgs[id] ?? await fetchShg(id) ?? ShgProfile(id: id, name: name));
       final updated = ShgProfile(
         id: id,
@@ -153,15 +195,15 @@ class ShgRepository {
         regNumber: base.regNumber,
         formationDate: formationDate,
         village: village,
-        mandal: base.mandal,
+        mandal: mandal,
         district: district,
         state: base.state,
-        bankName: base.bankName,
-        bankAccount: base.bankAccount,
-        ifsc: base.ifsc,
+        bankName: bankName,
+        bankAccount: bankAccount,
+        ifsc: ifsc,
         grade: grade,
-        clf: base.clf,
-        vo: base.vo,
+        clf: clf,
+        vo: vo,
       );
       if (addedIdx != -1) {
         _locallyAddedShgs[addedIdx] = updated;
@@ -176,7 +218,62 @@ class ShgRepository {
       'district': district,
       'formation_date': formationDate?.toIso8601String().split('T').first,
       'grade': grade,
+      'mandal': mandal,
+      'vo': vo,
+      'clf': clf,
+      'bank_name': bankName,
     }).eq('id', id);
+    await _upsertBankDetails(id, bankAccount: bankAccount, ifsc: ifsc);
+  }
+
+  /// Leader self-service edit, scoped to exactly the columns
+  /// `shgs_update_leader_or_staff`'s WITH CHECK leaves open to the leader
+  /// branch (everything except grade/clf/vo, which stay admin-only — see
+  /// [updateShg]'s doc comment) plus bank details
+  /// (`shg_bank_details_write_leader_or_staff` already permits leader-of-
+  /// own-SHG). Lets an SHG leader fill in her own SHG's mandal/bank details
+  /// directly instead of waiting on a platform admin to do it — the fields
+  /// exist and shg_home_page.dart already displays them, but had no
+  /// leader-reachable write path before this.
+  Future<void> updateShgLeaderFields(
+    String id, {
+    String? mandal,
+    DateTime? formationDate,
+    String? bankName,
+    String? bankAccount,
+    String? ifsc,
+  }) async {
+    if (!_live) {
+      final base = _locallyUpdatedShgs[id] ?? await fetchShg(id) ?? ShgProfile(id: id, name: '');
+      _locallyUpdatedShgs[id] = ShgProfile(
+        id: id,
+        name: base.name,
+        regNumber: base.regNumber,
+        formationDate: formationDate,
+        village: base.village,
+        mandal: mandal,
+        district: base.district,
+        state: base.state,
+        bankName: bankName,
+        bankAccount: bankAccount,
+        ifsc: ifsc,
+        grade: base.grade,
+        clf: base.clf,
+        vo: base.vo,
+      );
+      return;
+    }
+    await _client.from('shgs').update({
+      'mandal': mandal,
+      'formation_date': formationDate?.toIso8601String().split('T').first,
+      'bank_name': bankName,
+    }).eq('id', id);
+    await _upsertBankDetails(id, bankAccount: bankAccount, ifsc: ifsc);
+  }
+
+  Future<void> _upsertBankDetails(String shgId, {String? bankAccount, String? ifsc}) async {
+    if (bankAccount == null && ifsc == null) return;
+    await _client.from('shg_bank_details').upsert({'shg_id': shgId, 'bank_account': ?bankAccount, 'ifsc': ?ifsc});
   }
 
   Future<ShgProfile?> fetchShg(String? shgId) async {

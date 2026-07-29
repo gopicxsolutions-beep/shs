@@ -2674,6 +2674,35 @@ class AppLocalizationsTe extends AppLocalizations {
   String get shgHomeIfscLabel => 'IFSC';
 
   @override
+  String get shgHomeEditTooltip => 'ఫెడరేషన్ & బ్యాంక్ వివరాలను సవరించండి';
+
+  @override
+  String get shgHomeEditDialogTitle => 'SHG వివరాలను సవరించండి';
+
+  @override
+  String get shgHomeMandalHint => 'మండలం';
+
+  @override
+  String get shgHomeBankNameHint => 'బ్యాంక్ పేరు';
+
+  @override
+  String get shgHomeBankAccountHint => 'బ్యాంక్ ఖాతా సంఖ్య';
+
+  @override
+  String get shgHomeIfscHint => 'IFSC కోడ్';
+
+  @override
+  String get shgHomeDetailsUpdatedMessage => 'SHG వివరాలు నవీకరించబడ్డాయి';
+
+  @override
+  String get shgHomeDetailsUpdatedDemoMessage =>
+      'డెమో మోడ్ — వివరాలు సేవ్ కాలేదు (సేవ్ చేయడానికి Supabase కనెక్ట్ చేయండి)';
+
+  @override
+  String get shgHomeDetailsUpdateError =>
+      'మార్పులను సేవ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
   String get shgDocumentsTitle => 'పత్రాలు';
 
   @override
@@ -3614,11 +3643,29 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఫ్లాగ్ చేయబడిన సభ్యులు (7 రోజులు)';
 
   @override
-  String get adminMonitoringPlaceholderLabel => 'ప్లేస్‌హోల్డర్ మెట్రిక్స్';
+  String get adminMonitoringUptimeLabel => 'అప్‌టైమ్ (24గం)';
 
   @override
-  String get adminMonitoringPlaceholderDescription =>
-      'ఇవి కేవలం ప్రాథమిక రో కౌంట్‌లు మాత్రమే, నిజమైన ఇన్‌ఫ్రాస్ట్రక్చర్ మెట్రిక్స్ (అప్‌టైమ్, లేటెన్సీ, ఎర్రర్ రేట్) కాదు. నిజమైన మానిటరింగ్ కోసం ప్రత్యేక Edge Function లేదా బాహ్య సేవ అవసరం.';
+  String get adminMonitoringAvgLatencyLabel => 'సగటు లేటెన్సీ';
+
+  @override
+  String get adminMonitoringErrorRateLabel => 'ఎర్రర్ రేట్ (24గం)';
+
+  @override
+  String get adminMonitoringScheduledJobsLabel => 'షెడ్యూల్డ్ జాబ్‌లు';
+
+  @override
+  String get adminMonitoringScheduledJobsHealthy => 'ఆరోగ్యకరం';
+
+  @override
+  String get adminMonitoringScheduledJobsUnhealthy => 'అనారోగ్యకరం';
+
+  @override
+  String get adminMonitoringScopeLabel => 'ఈ మెట్రిక్స్ గురించి';
+
+  @override
+  String get adminMonitoringScopeDescription =>
+      'అప్‌టైమ్/లేటెన్సీ/ఎర్రర్ రేట్ ఒక నిజమైన డేటాబేస్ రౌండ్-ట్రిప్ చెక్ నుండి వస్తాయి, ఇది ప్రతి 5 నిమిషాలకు మరియు ఈ పేజీని సందర్శించిన ప్రతిసారీ నడుస్తుంది. ఇది మా స్వంత బ్యాకెండ్‌ను కొలుస్తుంది, మొత్తం స్టాక్‌లోని ప్రతి పొర యొక్క బాహ్య వీక్షణ కాదు.';
 
   @override
   String adminMonitoringCheckedAt(String date) {
@@ -4053,6 +4100,12 @@ class AppLocalizationsTe extends AppLocalizations {
   String get adminUsersNoUsersFoundMessage => 'వినియోగదారులు కనుగొనబడలేదు';
 
   @override
+  String get adminUsersSearchHint => 'పేరు లేదా మొబైల్ ద్వారా వెతకండి';
+
+  @override
+  String get adminUsersRoleFilterAll => 'అన్నీ';
+
+  @override
   String get adminUsersAssignShgTooltip => 'SHGని కేటాయించండి';
 
   @override
@@ -4156,6 +4209,30 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get adminShgsDistrictHint => 'జిల్లా';
+
+  @override
+  String get adminShgsMandalHint => 'మండలం (ఐచ్ఛికం)';
+
+  @override
+  String get adminShgsFederationSectionLabel => 'ఫెడరేషన్';
+
+  @override
+  String get adminShgsVoHint => 'గ్రామ సంస్థ (ఐచ్ఛికం)';
+
+  @override
+  String get adminShgsClfHint => 'CLF (ఐచ్ఛికం)';
+
+  @override
+  String get adminShgsBankSectionLabel => 'బ్యాంక్ వివరాలు';
+
+  @override
+  String get adminShgsBankNameHint => 'బ్యాంక్ పేరు (ఐచ్ఛికం)';
+
+  @override
+  String get adminShgsBankAccountHint => 'బ్యాంక్ ఖాతా సంఖ్య (ఐచ్ఛికం)';
+
+  @override
+  String get adminShgsIfscHint => 'IFSC కోడ్ (ఐచ్ఛికం)';
 
   @override
   String get adminShgsFormationDateNotSet => 'సెట్ చేయలేదు';

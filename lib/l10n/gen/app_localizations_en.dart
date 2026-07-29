@@ -2678,6 +2678,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shgHomeIfscLabel => 'IFSC';
 
   @override
+  String get shgHomeEditTooltip => 'Edit federation & bank details';
+
+  @override
+  String get shgHomeEditDialogTitle => 'Edit SHG details';
+
+  @override
+  String get shgHomeMandalHint => 'Mandal';
+
+  @override
+  String get shgHomeBankNameHint => 'Bank name';
+
+  @override
+  String get shgHomeBankAccountHint => 'Bank account number';
+
+  @override
+  String get shgHomeIfscHint => 'IFSC code';
+
+  @override
+  String get shgHomeDetailsUpdatedMessage => 'SHG details updated';
+
+  @override
+  String get shgHomeDetailsUpdatedDemoMessage =>
+      'Demo mode — details not saved (connect Supabase to persist)';
+
+  @override
+  String get shgHomeDetailsUpdateError =>
+      'Could not save changes. Please try again.';
+
+  @override
   String get shgDocumentsTitle => 'Documents';
 
   @override
@@ -3611,11 +3640,29 @@ class AppLocalizationsEn extends AppLocalizations {
       'Members Flagged (7d)';
 
   @override
-  String get adminMonitoringPlaceholderLabel => 'Placeholder metrics';
+  String get adminMonitoringUptimeLabel => 'Uptime (24h)';
 
   @override
-  String get adminMonitoringPlaceholderDescription =>
-      'These are basic row counts, not real infrastructure metrics (uptime, latency, error rate). Wiring real monitoring needs a dedicated Edge Function or an external service.';
+  String get adminMonitoringAvgLatencyLabel => 'Avg Latency';
+
+  @override
+  String get adminMonitoringErrorRateLabel => 'Error Rate (24h)';
+
+  @override
+  String get adminMonitoringScheduledJobsLabel => 'Scheduled Jobs';
+
+  @override
+  String get adminMonitoringScheduledJobsHealthy => 'Healthy';
+
+  @override
+  String get adminMonitoringScheduledJobsUnhealthy => 'Unhealthy';
+
+  @override
+  String get adminMonitoringScopeLabel => 'About these metrics';
+
+  @override
+  String get adminMonitoringScopeDescription =>
+      'Uptime/latency/error rate come from a real database round-trip check, run every 5 minutes and on every visit to this page. This measures our own backend, not a full third-party view of every layer of the stack.';
 
   @override
   String adminMonitoringCheckedAt(String date) {
@@ -4050,6 +4097,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminUsersNoUsersFoundMessage => 'No users found';
 
   @override
+  String get adminUsersSearchHint => 'Search by name or mobile';
+
+  @override
+  String get adminUsersRoleFilterAll => 'All';
+
+  @override
   String get adminUsersAssignShgTooltip => 'Assign SHG';
 
   @override
@@ -4151,6 +4204,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminShgsDistrictHint => 'District';
+
+  @override
+  String get adminShgsMandalHint => 'Mandal (optional)';
+
+  @override
+  String get adminShgsFederationSectionLabel => 'Federation';
+
+  @override
+  String get adminShgsVoHint => 'Village Organisation (optional)';
+
+  @override
+  String get adminShgsClfHint => 'CLF (optional)';
+
+  @override
+  String get adminShgsBankSectionLabel => 'Bank details';
+
+  @override
+  String get adminShgsBankNameHint => 'Bank name (optional)';
+
+  @override
+  String get adminShgsBankAccountHint => 'Bank account number (optional)';
+
+  @override
+  String get adminShgsIfscHint => 'IFSC code (optional)';
 
   @override
   String get adminShgsFormationDateNotSet => 'Not set';

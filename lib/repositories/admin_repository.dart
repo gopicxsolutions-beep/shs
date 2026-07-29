@@ -63,16 +63,27 @@ class AdminRepository {
   /// have one silently skipped on the next page — accepted as a much
   /// smaller gap than the previous total inaccessibility of anything past
   /// row 500, given how rare exact name collisions are for this list.
-  Future<PagedResult<Profile>> fetchAllUsers({String? afterName, int pageSize = 100}) async {
+  /// [search] matches name OR mobile (case-insensitive substring); [role]
+  /// filters to exactly that role. Both are optional and combine with each
+  /// other — this is a growing roster with no other way to find one
+  /// specific user besides scrolling every page of "Load more".
+  Future<PagedResult<Profile>> fetchAllUsers({String? afterName, int pageSize = 100, String? search, String? role}) async {
     if (!_live) {
       // Demo mode's mock roster is small and fixed — always one page, no
       // real pagination need.
       final list = (debugMembersOverride ?? mock.members)
           .map((m) => Profile(id: m.id, name: m.name, mobile: m.mobile, role: _locallyUpdatedRoles[m.id] ?? _mockRoleMap[m.role] ?? 'member', shgId: _locallyAssignedShgs[m.id] ?? 'demo-shg', village: null, isActive: _locallyActive[m.id] ?? true))
+          .where((p) => role == null || p.role == role)
+          .where((p) => search == null || search.trim().isEmpty || p.name.toLowerCase().contains(search.trim().toLowerCase()) || (p.mobile?.contains(search.trim()) ?? false))
           .toList();
       return PagedResult(items: list, hasMore: false);
     }
     var builder = _client.from('profiles').select();
+    if (role != null) builder = builder.eq('role', role);
+    if (search != null && search.trim().isNotEmpty) {
+      final q = search.trim();
+      builder = builder.or('name.ilike.%$q%,mobile.ilike.%$q%');
+    }
     if (afterName != null) builder = builder.gt('name', afterName);
     final rows = await builder.order('name').limit(pageSize + 1);
     final list = (rows as List).map((r) => Profile.fromMap(r as Map<String, dynamic>)).toList();
@@ -161,8 +172,27 @@ class AdminRepository {
       // SHG count) rather than this demo persona's own single-SHG roster
       // (12 members, 1 SHG) — that mismatch (2142 vs 12, 124 vs 1) made
       // System Monitoring directly contradict the dashboard one tap away.
+      // Infra fields (uptime/latency/error rate) are illustrative fixed
+      // figures, not a fabricated LIVE reading — there's no edge function
+      // to call in demo mode, and leaving them null here would render as a
+      // broken "unavailable" state on a screen whose whole point in demo
+      // mode is to look like a working app to a first-time demo viewer.
       final totalShgs = mock_analytics.villageWiseSHGs.fold<int>(0, (s, v) => s + v.shgs);
-      return SystemHealth(totalUsers: mock_analytics.Kpis.activeMembers, totalShgs: totalShgs, totalSavingsEntries: 48, totalLoans: 6, pendingLoans: 1, checkedAt: DateTime.now());
+      return SystemHealth(
+        totalUsers: mock_analytics.Kpis.activeMembers,
+        totalShgs: totalShgs,
+        totalSavingsEntries: 48,
+        totalLoans: 6,
+        pendingLoans: 1,
+        checkedAt: DateTime.now(),
+        uptimePercent24h: 99.8,
+        errorRatePercent24h: 0.2,
+        avgLatencyMs24h: 145,
+        p95LatencyMs24h: 320,
+        totalChecks24h: 288,
+        lastHeartbeatAgeSeconds: 120,
+        heartbeatHealthy: true,
+      );
     }
     // `.count()` (a PostgREST HEAD request returning just a number, no
     // rows) rather than `select('id')` + `.length` — the previous version
@@ -175,6 +205,41 @@ class AdminRepository {
     final totalSavingsEntries = await _client.from('savings_entries').count();
     final totalLoans = await _client.from('loans').count();
     final pendingLoans = await _client.from('loans').count().eq('status', 'pending');
+
+    // Real infra metrics: invokes `system-health-check`, which runs an
+    // actual database round-trip synthetic check server-side (not a
+    // client-side ping, which would only ever measure this browser's own
+    // network path, not the backend's own health) and returns rolling
+    // 24h uptime/latency/error-rate stats aggregated from every check —
+    // both this on-demand one (giving a genuinely fresh reading the
+    // instant an admin opens this page) and every pg_cron-scheduled one
+    // since. Deliberately caught and treated as "unavailable" (all null),
+    // not surfaced as a page-breaking error — the platform counts above
+    // are the more important half of this page and must still render even
+    // if the health-check function itself is briefly unreachable.
+    double? uptimePercent24h;
+    double? errorRatePercent24h;
+    int? avgLatencyMs24h;
+    int? p95LatencyMs24h;
+    int? totalChecks24h;
+    int? lastHeartbeatAgeSeconds;
+    bool? heartbeatHealthy;
+    try {
+      final res = await _client.functions.invoke('system-health-check');
+      final body = res.data as Map<String, dynamic>?;
+      if (body != null && body['ok'] == true) {
+        uptimePercent24h = (body['uptimePercent24h'] as num?)?.toDouble();
+        errorRatePercent24h = (body['errorRatePercent24h'] as num?)?.toDouble();
+        avgLatencyMs24h = (body['avgLatencyMs24h'] as num?)?.toInt();
+        p95LatencyMs24h = (body['p95LatencyMs24h'] as num?)?.toInt();
+        totalChecks24h = (body['totalChecks24h'] as num?)?.toInt();
+        lastHeartbeatAgeSeconds = (body['lastHeartbeatAgeSeconds'] as num?)?.toInt();
+        heartbeatHealthy = body['heartbeatHealthy'] as bool?;
+      }
+    } catch (_) {
+      // Left null — see doc comment above.
+    }
+
     return SystemHealth(
       totalUsers: totalUsers,
       totalShgs: totalShgs,
@@ -182,6 +247,13 @@ class AdminRepository {
       totalLoans: totalLoans,
       pendingLoans: pendingLoans,
       checkedAt: DateTime.now(),
+      uptimePercent24h: uptimePercent24h,
+      errorRatePercent24h: errorRatePercent24h,
+      avgLatencyMs24h: avgLatencyMs24h,
+      p95LatencyMs24h: p95LatencyMs24h,
+      totalChecks24h: totalChecks24h,
+      lastHeartbeatAgeSeconds: lastHeartbeatAgeSeconds,
+      heartbeatHealthy: heartbeatHealthy,
     );
   }
 

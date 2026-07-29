@@ -78,6 +78,10 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
     _format = _formatOptions.first;
     final confirmed = await showDialog<bool>(
       context: context,
+      // See shg_home_page.dart's identical fix for why: an accidental tap
+      // just outside the dialog card otherwise silently discards every
+      // field typed so far, indistinguishable from a real save failing.
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(l10n.adminTrainingCoursesAddDialogTitle),
@@ -118,6 +122,10 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
     _format = _formatOptions.contains(c.format) ? c.format : _formatOptions.first;
     final confirmed = await showDialog<bool>(
       context: context,
+      // See shg_home_page.dart's identical fix for why: an accidental tap
+      // just outside the dialog card otherwise silently discards every
+      // field typed so far, indistinguishable from a real save failing.
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(l10n.adminTrainingCoursesEditDialogTitle),

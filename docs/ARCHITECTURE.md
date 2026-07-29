@@ -420,6 +420,17 @@ for an uncooperative client to exploit.
     [QUALITY_MANAGEMENT.md](QUALITY_MANAGEMENT.md) §5).
   - `payment-webhook-handler` — inbound payment-gateway webhook handling;
     the real gateway itself is not wired (§7).
+  - `system-health-check` — real infra metrics (uptime/latency/error rate)
+    for the Admin Monitoring page: runs a genuine synthetic database
+    round-trip check, both pg_cron-scheduled (every 5 minutes) and on-demand
+    whenever an admin opens that page, logging each result to
+    `public.infra_health_checks` and returning rolling 24h aggregates. Two
+    valid callers, both authenticated inside the function itself (not at
+    the platform gateway, since the cron caller has no user JWT at all):
+    the same shared `x-cron-secret` header/`CRON_SECRET` value
+    `generate-report-snapshots` already uses, OR a real staff (crp/clf/
+    admin) session JWT, verified via `auth.getUser()` since `verify_jwt` is
+    disabled at the platform level for this function.
 
 ---
 

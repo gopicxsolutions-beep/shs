@@ -18238,3 +18238,190 @@ self-dealing on). `flutter build web --release --dart-define-from-file=
 .env.json` rebuilt cleanly. Browser-preview UI verification succeeded:
 preview server restarted, tab fronted, landing page confirmed rendering
 correctly via screenshot on the rebuilt live-mode bundle.
+
+## Update (round 201) — Direct user bug report: My SHG page permanently blank (missing write path, not a display bug), NavaSakhi logo/branding rollout, and full live-data seeding across every module
+
+Driven by a genuine user report ("my shg have soo many issues... they show
+nothing"), not a synthesized gap-hunt audit.
+
+1. **Root cause of the blank Federation/Bank Details sections on
+   `shg_home_page.dart`**: `vo`/`clf`/`mandal`/`bank_name`/`bank_account`/
+   `ifsc` are displayed on that page but had **no write path anywhere in
+   the app** — `ShgRepository.createShg()`/`updateShg()` never accepted
+   these fields as parameters, and no leader-facing edit UI existed at
+   all. Confirmed via direct query against the live "QA Test SHG" row:
+   every one of these columns was genuinely `null`, not a rendering bug
+   (the existing `?? '—'` fallbacks were working correctly the whole
+   time).
+2. **Fix**: extended `ShgRepository.createShg()`/`updateShg()` to accept
+   and write `mandal`/`vo`/`clf`/`bankName`/`bankAccount`/`ifsc` (the
+   latter two via an upsert into `shg_bank_details`, migration 0056's
+   split table); extended `AdminShgsPage`'s Add/Edit dialogs with fields
+   for all six (admin is the only role RLS lets set `grade`/`clf`/`vo` —
+   `shgs_update_leader_or_staff`'s WITH CHECK locks those to the leader
+   branch's current value, migration 0082). Added a **new leader
+   self-service capability**: `ShgRepository.updateShgLeaderFields()` plus
+   an edit (pencil) icon on `shg_home_page.dart`'s header card, gated to
+   `Role.leader` exactly matching the RLS branch that can actually write
+   `mandal`/bank details for her own SHG — a CRP/CLF never gets this icon,
+   since `shgs_update_leader_or_staff` has no branch for them at all
+   (only leader-of-own-SHG or admin).
+3. **Dogfooding own fix, same round**: `AdminShgsPage`'s Edit dialog
+   originally sourced its Mandal/VO/CLF/Bank prefill from `fetchAllShgs()`'s
+   list — which, in **demo mode**, never included those six fields at all
+   in its `ShgProfile` construction (only name/village/mandal/district/
+   state/grade), a latent gap distinct from the live-mode fix that would
+   have shown blank fields then silently wiped real mock values on first
+   save. Fixed by extending demo mode's `fetchAllShgs()` `ShgProfile` to
+   include `regNumber`/`vo`/`clf`/`bankName`/`bankAccount`/`ifsc` from
+   `mock.ShgInfo`, matching `fetchShg()`'s existing demo-mode shape.
+   Live-mode bank_account/ifsc prefill now goes through a dedicated
+   `fetchShg()` call (which unmasks them for `is_staff()`), since
+   `fetchAllShgs()` reads the base `shgs` table directly and those two
+   columns don't even exist there anymore post-migration-0056.
+4. **NavaSakhi logo rollout**: added the user-supplied logo as
+   `assets/images/navasakhi_logo.png`; replaced `splash_page.dart`'s
+   generic `Icons.eco_rounded` badge with the real logo; regenerated
+   `web/favicon.png` and all four `web/icons/Icon-*.png` PWA icons from
+   the same source. Added a branded loading screen to `web/index.html`
+   (logo + spinner), removed via Flutter web's documented
+   `flutter-first-frame` window event — closes the "blank white screen
+   while the JS bundle loads" gap that existed before any Flutter widget,
+   including the splash page itself, could ever render.
+5. **Live data seeding**: at the user's explicit request ("insert data
+   across all roles... then check every feature"), seeded realistic,
+   persistent (not `__TEST__`-scoped throwaway) data for the app's one
+   real SHG across every module: 4 new member profiles (Padma Devi,
+   Sunitha Rani, Anjali Kumari, Ramya Latha — `auth.users` + `profiles`,
+   mirroring the existing `__TEST__` fixture pattern for direct
+   phone-based `auth.users` rows), 2 real schemes + 2 real training
+   courses (previously only a stray `__TEST__` RLS-fixture scheme
+   existed), 9 savings entries (verified/pending mix), 4 loans (active/
+   closed/pending/overdue) with 5 payments, 4 meetings (2 completed with
+   11 attendance records + 2 action items, 1 upcoming) alongside the
+   pre-existing cancelled one, 3 livelihood activities, 2 new marketplace
+   products + 2 orders, 2 announcements, 2 scheme applications, 2 support
+   tickets, 3 course-progress records, 3 financial-ledger entries, 3
+   payments. Used fixed, greppable UUID prefixes (`a1`/`b2`/`b3`/`b4`/`b5`/
+   `b6`) instead of `__TEST__` naming, since this is meant to be lasting
+   content for the app's only real SHG, not a throwaway RLS-verification
+   fixture — deliberately NOT deleted after the round.
+
+**Regression coverage**: `shg_repository_test.dart`'s `updateShg` tests
+updated for the new intentional behavior (mandal/vo/clf/bank fields are
+now genuinely written, where before the test asserted they were
+deliberately preserved untouched) plus a new test asserting `state`
+still isn't writable anywhere (no dialog exposes it). `admin_shgs_page_
+test.dart`'s Add/Edit dialog tests fixed for the grown dialog needing
+`ensureVisible()` before tapping the now-off-screen grade dropdown, and
+reordered to select the grade before focusing the name field (entering
+text first was observed to re-shift the dialog's scroll position after
+`ensureVisible` had already settled it).
+
+**Live RLS verification** (isolated rolled-back transactions per this
+project's established multi-call pattern, since combining setup and
+verification in one call previously produced spurious violations):
+leader-of-own-SHG can update `mandal`/`bank_name` (1 row) and upsert
+`shg_bank_details` (1 row); leader attempting to change the RLS-locked
+`grade` column correctly raises a `WITH CHECK` violation (not a silent
+no-op, since `USING` permits the row); leader of the `__TEST__` fixture
+SHG cannot write to a different (real) SHG's row (0 rows); an ordinary
+member cannot write `shg_bank_details` or `shgs.mandal` at all (0 rows
+each). The shared `__TEST__` fixture SHG was confirmed byte-for-byte
+pristine afterward (all rollbacks verified to have left zero trace).
+
+**Verification:** `flutter analyze` — 0 issues. `flutter test` —
+1039/1039 passed. `flutter build web --release --dart-define-from-file=
+.env.json` rebuilt cleanly with the new asset registered (confirmed via
+byte search that the live Supabase URL/key and `shg_bank_details` string
+are present in the compiled bundle). Live preview verified end-to-end on
+the fully-controlled `flutter-web-release` static server (port 5002):
+loading screen correctly disappears via `flutter-first-frame`, logo
+renders in the splash badge, no stuck-loading regression. Root-caused a
+genuine "always shows loading, never opens" report from the user's own
+`flutter-web-live` dev-server session: that process had been started
+*before* the `pubspec.yaml` asset registration existed, so its running
+compile could never resolve `Image.asset('assets/images/
+navasakhi_logo.png')` — restarted the dev server after all file changes
+were saved, which re-resolved dependencies and picked up the new asset
+correctly. Confirmed the user's live account (`QA Leader Test`, leader of
+the real SHG) can see and use the new edit icon. Full seed data verified
+present via direct query (18-table row-count sweep, all non-zero).
+
+## Manage Users search/filter, real System Monitoring infra metrics, and the Back-navigation fix
+
+**Manage Users search + role filter**: `admin_users_page.dart` gained a
+debounced (300ms, matching `shg_search_sheet.dart`'s existing pattern)
+search field plus role `ChoiceChip` filters, threaded through
+`AdminRepository.fetchAllUsers()`'s new `search`/`role` params. Fixed a
+bug found while writing the widget test: typing never showed the
+search field's clear button, because the debounced reload rebuilds a
+*different* `AppAsyncBuilder` state object, not `_AdminUsersPageState`
+itself — `_onSearchChanged` now also calls an immediate `setState(() {})`
+so the `suffixIcon` conditional re-evaluates right away, independent of
+the debounced data reload.
+
+**Real System Monitoring infra metrics**: new `system-health-check` edge
+function (`supabase/functions/system-health-check/index.ts`) + table
+(`supabase/migrations/0114_infra_health_checks.sql`) computing genuine
+uptime/avg-latency/error-rate/scheduled-job stats from real request logs
+instead of the previous placeholder card. Callable two ways: by
+`pg_cron` (no user JWT — function runs with `verify_jwt: false` at the
+platform level) and by an authenticated admin from the UI (function
+manually verifies the bearer token via `anonClient.auth.getUser(token)`,
+since disabling the platform's own JWT gate means the function must do
+that verification itself). Both callers authenticate via a shared
+`CRON_SECRET` compared with `timingSafeEqual` (constant-time, copied
+from `generate-report-snapshots`' own established pattern) against a
+Supabase Vault secret. `admin_monitoring_page.dart` now renders 4 real
+stat cards (Uptime/Avg Latency/Error Rate/Scheduled Jobs) with an
+"About these metrics" disclosure card.
+
+**Side-effect fix**: discovered while wiring up the new function's cron
+secret that `generate-report-snapshots`' nightly cron job had been
+silently 401ing since the project's inception — its own migration
+(`0010_report_snapshots_cron_secret.sql`) documents a required one-time
+manual Vault setup step that had never actually been run in this live
+project (`select * from vault.decrypted_secrets where name =
+'cron_secret'` returned zero rows). Fixed by generating a fresh secret,
+`supabase secrets set CRON_SECRET=... --project-ref pccbwfmlhpvieetetrpx`
+(note: `--linked` is not a valid flag for `secrets set`), and creating
+the matching `vault.create_secret(...)` entry — verified matching via a
+direct decrypt-and-compare query. This also fixes the new health-check
+job's own auth, not just the pre-existing one.
+
+**Back-navigation bug fix**: user report — "back navigation button was
+not working, they navigating directly the home page instead of previous
+page." Root cause: every route in this app is a flat `ShellRoute`
+sibling reached via `context.go()` (a full stack *replace*, per this
+project's own architecture rule), so Flutter's real `Navigator` stack is
+almost always exactly one page deep — `Navigator.canPop()`, which
+`PageHeader._goBack` relied on, was essentially always `false`, so Back
+fell through to its `context.go(Paths.dashboard)` fallback from nearly
+every sub-page. Fixed with a new lightweight app-wide tracker,
+`lib/routes/navigation_history.dart`'s `NavigationHistory` class:
+`router.dart`'s `redirect` callback (refactored so its body is a
+top-level `_computeRedirect` function, with a thin wrapper that also
+calls `NavigationHistory.recordVisit()`) records every settled location,
+since `redirect` genuinely runs on every real navigation; `PageHeader.
+_goBack` now calls `NavigationHistory.popToPrevious()` instead of asking
+the Navigator, falling back to the dashboard only when there's truly no
+prior distinct page (fresh launch/deep link).
+
+**Regression coverage**: new test in `page_header_back_navigation_
+pattern_test.dart` seeds `NavigationHistory` with a 3-page visit chain
+and asserts Back returns to the actual previous page, not the dashboard
+— directly exercising the reported symptom, not just the pre-existing
+fallback case. `NavigationHistory.resetForTest()` added to that file's
+`setUp`/`tearDown` since the tracker is process-wide static state that
+would otherwise leak between tests.
+
+**Verification:** `flutter analyze` — 0 issues. `flutter test` —
+full suite passed (1047 tests, includes the 3 new/updated back-
+navigation tests). `flutter build web --release --dart-define-from-
+file=.env.json` rebuilt cleanly. Live preview verified end-to-end on
+the `flutter-web-release` static server (port 5002) logged in as admin
+(`venkat`): Manage Users list renders; navigated Dashboard → Manage
+Training Courses → a course's Quiz page (2 hops) and confirmed tapping
+Back returns to Manage Training Courses, not the dashboard — the exact
+symptom reported, reproduced as fixed.

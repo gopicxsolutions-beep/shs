@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shg_saathi/layout/page_header.dart';
+import 'package:shg_saathi/routes/navigation_history.dart';
 import 'package:shg_saathi/routes/paths.dart';
 import 'package:shg_saathi/state/unsaved_changes.dart';
 
@@ -33,8 +34,41 @@ GoRouter _buildTestRouter() {
 }
 
 void main() {
-  setUp(() => UnsavedChanges.dirty = false);
-  tearDown(() => UnsavedChanges.dirty = false);
+  setUp(() {
+    UnsavedChanges.dirty = false;
+    // NavigationHistory is process-wide static state (router.dart's
+    // `redirect` populates it in the real app); reset it so one test's
+    // recorded visits can't leak into the next.
+    NavigationHistory.resetForTest();
+  });
+  tearDown(() {
+    UnsavedChanges.dirty = false;
+    NavigationHistory.resetForTest();
+  });
+
+  testWidgets('with a recorded previous page, tapping PageHeader Back returns there instead of the dashboard', (tester) async {
+    // Simulates what router.dart's `redirect` callback does on every real
+    // navigation: record the settled location each time. Visiting the
+    // dashboard, then another page, then landing on /test-page mirrors a
+    // genuine Dashboard -> Other Page -> Test Page journey.
+    NavigationHistory.recordVisit(Paths.dashboard);
+    NavigationHistory.recordVisit('/other-page');
+    NavigationHistory.recordVisit('/test-page');
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: _buildTestRouter()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Test Page'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Dashboard Home'),
+      findsNothing,
+      reason: 'Back must return to the actual previous page (/other-page), not fall through to the dashboard',
+    );
+  });
 
   testWidgets('with nothing to pop, tapping PageHeader Back falls back to the dashboard instead of doing nothing', (tester) async {
     await tester.pumpWidget(MaterialApp.router(routerConfig: _buildTestRouter()));

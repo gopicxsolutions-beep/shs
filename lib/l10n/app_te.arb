@@ -1405,6 +1405,16 @@
 
   "shgHomeIfscLabel": "IFSC",
 
+  "shgHomeEditTooltip": "ఫెడరేషన్ & బ్యాంక్ వివరాలను సవరించండి",
+  "shgHomeEditDialogTitle": "SHG వివరాలను సవరించండి",
+  "shgHomeMandalHint": "మండలం",
+  "shgHomeBankNameHint": "బ్యాంక్ పేరు",
+  "shgHomeBankAccountHint": "బ్యాంక్ ఖాతా సంఖ్య",
+  "shgHomeIfscHint": "IFSC కోడ్",
+  "shgHomeDetailsUpdatedMessage": "SHG వివరాలు నవీకరించబడ్డాయి",
+  "shgHomeDetailsUpdatedDemoMessage": "డెమో మోడ్ — వివరాలు సేవ్ కాలేదు (సేవ్ చేయడానికి Supabase కనెక్ట్ చేయండి)",
+  "shgHomeDetailsUpdateError": "మార్పులను సేవ్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+
   "shgDocumentsTitle": "పత్రాలు",
 
   "shgDocumentsAddTooltip": "పత్రం జోడించండి",
@@ -1931,9 +1941,21 @@
 
   "adminMonitoringAiModerationMembersFlaggedLabel": "ఫ్లాగ్ చేయబడిన సభ్యులు (7 రోజులు)",
 
-  "adminMonitoringPlaceholderLabel": "ప్లేస్‌హోల్డర్ మెట్రిక్స్",
+  "adminMonitoringUptimeLabel": "అప్‌టైమ్ (24గం)",
 
-  "adminMonitoringPlaceholderDescription": "ఇవి కేవలం ప్రాథమిక రో కౌంట్‌లు మాత్రమే, నిజమైన ఇన్‌ఫ్రాస్ట్రక్చర్ మెట్రిక్స్ (అప్‌టైమ్, లేటెన్సీ, ఎర్రర్ రేట్) కాదు. నిజమైన మానిటరింగ్ కోసం ప్రత్యేక Edge Function లేదా బాహ్య సేవ అవసరం.",
+  "adminMonitoringAvgLatencyLabel": "సగటు లేటెన్సీ",
+
+  "adminMonitoringErrorRateLabel": "ఎర్రర్ రేట్ (24గం)",
+
+  "adminMonitoringScheduledJobsLabel": "షెడ్యూల్డ్ జాబ్‌లు",
+
+  "adminMonitoringScheduledJobsHealthy": "ఆరోగ్యకరం",
+
+  "adminMonitoringScheduledJobsUnhealthy": "అనారోగ్యకరం",
+
+  "adminMonitoringScopeLabel": "ఈ మెట్రిక్స్ గురించి",
+
+  "adminMonitoringScopeDescription": "అప్‌టైమ్/లేటెన్సీ/ఎర్రర్ రేట్ ఒక నిజమైన డేటాబేస్ రౌండ్-ట్రిప్ చెక్ నుండి వస్తాయి, ఇది ప్రతి 5 నిమిషాలకు మరియు ఈ పేజీని సందర్శించిన ప్రతిసారీ నడుస్తుంది. ఇది మా స్వంత బ్యాకెండ్‌ను కొలుస్తుంది, మొత్తం స్టాక్‌లోని ప్రతి పొర యొక్క బాహ్య వీక్షణ కాదు.",
 
   "adminMonitoringCheckedAt": "{date}న తనిఖీ చేయబడింది",
 
@@ -2158,6 +2180,8 @@
   "adminUsersAssignedToDemoMessage": "డెమో మోడ్ — కేటాయింపు సేవ్ చేయబడలేదు (సేవ్ చేయడానికి Supabaseను కనెక్ట్ చేయండి)",
   "adminUsersManageTitle": "వినియోగదారులను నిర్వహించండి",
   "adminUsersNoUsersFoundMessage": "వినియోగదారులు కనుగొనబడలేదు",
+  "adminUsersSearchHint": "పేరు లేదా మొబైల్ ద్వారా వెతకండి",
+  "adminUsersRoleFilterAll": "అన్నీ",
   "adminUsersAssignShgTooltip": "SHGని కేటాయించండి",
   "adminUsersDeactivateTooltip": "ఖాతాను నిష్క్రియం చేయండి",
   "adminUsersReactivateTooltip": "ఖాతాను తిరిగి సక్రియం చేయండి",
@@ -2198,6 +2222,14 @@
   "adminShgsNameHint": "SHG పేరు",
   "adminShgsVillageHint": "గ్రామం",
   "adminShgsDistrictHint": "జిల్లా",
+  "adminShgsMandalHint": "మండలం (ఐచ్ఛికం)",
+  "adminShgsFederationSectionLabel": "ఫెడరేషన్",
+  "adminShgsVoHint": "గ్రామ సంస్థ (ఐచ్ఛికం)",
+  "adminShgsClfHint": "CLF (ఐచ్ఛికం)",
+  "adminShgsBankSectionLabel": "బ్యాంక్ వివరాలు",
+  "adminShgsBankNameHint": "బ్యాంక్ పేరు (ఐచ్ఛికం)",
+  "adminShgsBankAccountHint": "బ్యాంక్ ఖాతా సంఖ్య (ఐచ్ఛికం)",
+  "adminShgsIfscHint": "IFSC కోడ్ (ఐచ్ఛికం)",
   "adminShgsFormationDateNotSet": "సెట్ చేయలేదు",
   "adminShgsGradeHint": "గ్రేడ్ (ఐచ్ఛికం)",
   "adminShgsClearFormationDateTooltip": "ఏర్పాటు తేదీని తొలగించండి",

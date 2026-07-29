@@ -173,6 +173,11 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
     var loanClosed = false;
     final recorded = await showDialog<bool>(
       context: context,
+      // See shg_home_page.dart's identical fix for why: an accidental tap
+      // just outside the dialog card otherwise silently discards the
+      // payment amount typed so far, indistinguishable from a real save
+      // failing.
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: Text(l10n.loanDetailRecordPaymentDialogTitle),

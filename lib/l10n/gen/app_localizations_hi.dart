@@ -2639,6 +2639,35 @@ class AppLocalizationsHi extends AppLocalizations {
   String get shgHomeIfscLabel => 'IFSC';
 
   @override
+  String get shgHomeEditTooltip => 'फ़ेडरेशन और बैंक विवरण संपादित करें';
+
+  @override
+  String get shgHomeEditDialogTitle => 'SHG विवरण संपादित करें';
+
+  @override
+  String get shgHomeMandalHint => 'मंडल';
+
+  @override
+  String get shgHomeBankNameHint => 'बैंक का नाम';
+
+  @override
+  String get shgHomeBankAccountHint => 'बैंक खाता संख्या';
+
+  @override
+  String get shgHomeIfscHint => 'IFSC कोड';
+
+  @override
+  String get shgHomeDetailsUpdatedMessage => 'SHG विवरण अपडेट किया गया';
+
+  @override
+  String get shgHomeDetailsUpdatedDemoMessage =>
+      'डेमो मोड — विवरण सहेजा नहीं गया (सहेजने के लिए Supabase कनेक्ट करें)';
+
+  @override
+  String get shgHomeDetailsUpdateError =>
+      'बदलाव सहेजे नहीं जा सके। कृपया पुनः प्रयास करें।';
+
+  @override
   String get shgDocumentsTitle => 'दस्तावेज़';
 
   @override
@@ -3544,11 +3573,29 @@ class AppLocalizationsHi extends AppLocalizations {
       'फ़्लैग किए गए सदस्य (7 दिन)';
 
   @override
-  String get adminMonitoringPlaceholderLabel => 'प्लेसहोल्डर मेट्रिक्स';
+  String get adminMonitoringUptimeLabel => 'अपटाइम (24 घं.)';
 
   @override
-  String get adminMonitoringPlaceholderDescription =>
-      'ये सिर्फ बुनियादी रो काउंट हैं, असली इन्फ्रास्ट्रक्चर मेट्रिक्स (अपटाइम, लेटेंसी, एरर रेट) नहीं। असली मॉनिटरिंग जोड़ने के लिए एक अलग Edge Function या बाहरी सेवा की ज़रूरत होगी।';
+  String get adminMonitoringAvgLatencyLabel => 'औसत लेटेंसी';
+
+  @override
+  String get adminMonitoringErrorRateLabel => 'एरर रेट (24 घं.)';
+
+  @override
+  String get adminMonitoringScheduledJobsLabel => 'शेड्यूल्ड जॉब्स';
+
+  @override
+  String get adminMonitoringScheduledJobsHealthy => 'स्वस्थ';
+
+  @override
+  String get adminMonitoringScheduledJobsUnhealthy => 'अस्वस्थ';
+
+  @override
+  String get adminMonitoringScopeLabel => 'इन मेट्रिक्स के बारे में';
+
+  @override
+  String get adminMonitoringScopeDescription =>
+      'अपटाइम/लेटेंसी/एरर रेट एक वास्तविक डेटाबेस राउंड-ट्रिप जाँच से आते हैं, जो हर 5 मिनट में और इस पेज पर हर बार आने पर चलती है। यह हमारे अपने बैकएंड को मापता है, पूरे स्टैक की हर परत का बाहरी दृश्य नहीं।';
 
   @override
   String adminMonitoringCheckedAt(String date) {
@@ -3981,6 +4028,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminUsersNoUsersFoundMessage => 'कोई उपयोगकर्ता नहीं मिला';
 
   @override
+  String get adminUsersSearchHint => 'नाम या मोबाइल से खोजें';
+
+  @override
+  String get adminUsersRoleFilterAll => 'सभी';
+
+  @override
   String get adminUsersAssignShgTooltip => 'SHG असाइन करें';
 
   @override
@@ -4083,6 +4136,30 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get adminShgsDistrictHint => 'जिला';
+
+  @override
+  String get adminShgsMandalHint => 'मंडल (वैकल्पिक)';
+
+  @override
+  String get adminShgsFederationSectionLabel => 'फ़ेडरेशन';
+
+  @override
+  String get adminShgsVoHint => 'ग्राम संगठन (वैकल्पिक)';
+
+  @override
+  String get adminShgsClfHint => 'CLF (वैकल्पिक)';
+
+  @override
+  String get adminShgsBankSectionLabel => 'बैंक विवरण';
+
+  @override
+  String get adminShgsBankNameHint => 'बैंक का नाम (वैकल्पिक)';
+
+  @override
+  String get adminShgsBankAccountHint => 'बैंक खाता संख्या (वैकल्पिक)';
+
+  @override
+  String get adminShgsIfscHint => 'IFSC कोड (वैकल्पिक)';
 
   @override
   String get adminShgsFormationDateNotSet => 'सेट नहीं है';

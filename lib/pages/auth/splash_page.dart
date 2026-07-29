@@ -34,10 +34,9 @@ class SplashPage extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Container(
-                              width: 44, height: 44,
-                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(16)),
-                              child: const Icon(Icons.eco_rounded, color: Colors.white),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.asset('assets/images/navasakhi_logo.png', width: 44, height: 44, fit: BoxFit.cover),
                             ),
                             const SizedBox(width: 8),
                             Flexible(

@@ -8,6 +8,7 @@ import 'package:shg_saathi/pages/admin/admin_users_page.dart';
 import 'package:shg_saathi/repositories/admin_repository.dart';
 import 'package:shg_saathi/services/supabase_service.dart';
 import 'package:shg_saathi/state/app_state.dart';
+import 'package:shg_saathi/widgets/app_card.dart';
 
 /// Regression coverage for the "Load more" keyset-pagination fix on
 /// `AdminRepository.fetchAllUsers` — see that method's doc comment for the
@@ -83,5 +84,88 @@ void main() {
     final page = await AdminRepository().fetchAllUsers(afterName: 'Zzz');
     expect(page.hasMore, isFalse);
     expect(page.items, isNotEmpty);
+  });
+
+  group('search and role filter (added for the "add search to Manage Users" request)', () {
+    test('AdminRepository.fetchAllUsers demo mode filters by name/mobile search', () async {
+      final byName = await AdminRepository().fetchAllUsers(search: 'Padma');
+      expect(byName.items.map((p) => p.name), ['Padma Reddy']);
+
+      final byMobile = await AdminRepository().fetchAllUsers(search: '98765 43210');
+      expect(byMobile.items.map((p) => p.name), ['Lakshmi Devi']);
+
+      final noMatch = await AdminRepository().fetchAllUsers(search: 'Nobody Named This');
+      expect(noMatch.items, isEmpty);
+    });
+
+    test('AdminRepository.fetchAllUsers demo mode filters by role', () async {
+      // Mock roster maps President/Secretary/Treasurer -> leader, everything
+      // else -> member (see `_mockRoleMap`) — no crp/clf/admin mock members
+      // exist, so this only exercises the leader/member split.
+      final leaders = await AdminRepository().fetchAllUsers(role: 'leader');
+      expect(leaders.items, isNotEmpty);
+      expect(leaders.items.every((p) => p.role == 'leader'), isTrue);
+
+      final members = await AdminRepository().fetchAllUsers(role: 'member');
+      expect(members.items, isNotEmpty);
+      expect(members.items.every((p) => p.role == 'member'), isTrue);
+    });
+
+    test('AdminRepository.fetchAllUsers demo mode combines search and role filter', () async {
+      // "Lakshmi Devi" is a leader (President) — searching her name while
+      // filtered to 'member' should find nothing, proving the two filters
+      // are actually ANDed, not one silently overriding the other.
+      final wrongRole = await AdminRepository().fetchAllUsers(search: 'Lakshmi', role: 'member');
+      expect(wrongRole.items, isEmpty);
+
+      final rightRole = await AdminRepository().fetchAllUsers(search: 'Lakshmi', role: 'leader');
+      expect(rightRole.items.map((p) => p.name), ['Lakshmi Devi']);
+    });
+
+    testWidgets('typing in the search field filters the visible roster', (tester) async {
+      await boot(tester);
+      expect(find.text('Lakshmi Devi'), findsOneWidget);
+      expect(find.text('Padma Reddy'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).first, 'Padma');
+      // Search is debounced 300ms so a fast typist doesn't fire a query per
+      // keystroke — wait past that window before expecting the reload.
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Padma Reddy'), findsOneWidget);
+      expect(find.text('Lakshmi Devi'), findsNothing);
+    });
+
+    testWidgets('selecting a role chip filters the visible roster', (tester) async {
+      await boot(tester);
+      // Not asserting a specific member's initial visibility here — the
+      // roster is a lazily-built ListView, so which of the 12 mock rows
+      // are actually built (vs merely scrolled-off) depends on the test
+      // surface's height, unrelated to the filter feature under test.
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Leader'));
+      await tester.pumpAndSettle();
+
+      // Only the 3 mock members mapped to 'leader' (President/Secretary/
+      // Treasurer — see `_mockRoleMap`) remain; all 3 fit on screen at once
+      // now that the other 9 are filtered out, so this is a reliable count.
+      expect(find.byType(AppCard), findsNWidgets(3));
+      expect(find.text('Lakshmi Devi'), findsOneWidget);
+      expect(find.text('Anasuya'), findsNothing);
+    });
+
+    testWidgets('clearing the search field restores the full roster', (tester) async {
+      await boot(tester);
+      await tester.enterText(find.byType(TextField).first, 'Padma');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(find.text('Lakshmi Devi'), findsNothing);
+
+      await tester.tap(find.byIcon(Icons.clear_rounded));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Lakshmi Devi'), findsOneWidget);
+      expect(find.text('Padma Reddy'), findsOneWidget);
+    });
   });
 }

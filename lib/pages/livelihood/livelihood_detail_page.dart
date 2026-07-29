@@ -149,6 +149,11 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
     var submitting = false;
     final saved = await showDialog<bool>(
       context: context,
+      // See shg_home_page.dart's identical fix for why: an accidental tap
+      // just outside the dialog card otherwise silently discards the
+      // revenue/status entered so far, indistinguishable from a real save
+      // failing.
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: Text(l10n.livelihoodDetailDialogTitle),

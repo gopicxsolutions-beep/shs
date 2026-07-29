@@ -93,12 +93,25 @@ void main() {
       await tester.tap(find.byTooltip('Add SHG'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.widgetWithText(TextField, 'SHG name'), '__TEST__ Widget SHG');
+      // The dialog grew (Mandal/VO/CLF/Bank fields added below the grade
+      // dropdown) — it's now off the initial viewport of the dialog's
+      // SingleChildScrollView, so a bare tap misses it without first
+      // scrolling it into view. Selecting the grade BEFORE focusing the
+      // name field, specifically: entering text first shifts focus onto
+      // the name TextField, and that focus change was observed to move the
+      // scroll position again after `ensureVisible` already settled it,
+      // reintroducing the same off-screen miss.
+      await tester.ensureVisible(find.byType(DropdownButtonFormField<String?>));
+      await tester.pumpAndSettle();
       await tester.tap(find.byType(DropdownButtonFormField<String?>));
       await tester.pumpAndSettle();
       await tester.tap(find.text('B+').last);
       await tester.pumpAndSettle();
 
+      await tester.enterText(find.widgetWithText(TextField, 'SHG name'), '__TEST__ Widget SHG');
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Add'));
       await tester.tap(find.text('Add'));
       await tester.pumpAndSettle();
 
@@ -123,6 +136,8 @@ void main() {
 
       expect(find.text('Edit SHG'), findsOneWidget);
 
+      await tester.ensureVisible(find.byType(DropdownButtonFormField<String?>));
+      await tester.pumpAndSettle();
       await tester.tap(find.byType(DropdownButtonFormField<String?>));
       await tester.pumpAndSettle();
       await tester.tap(find.text('C').last);

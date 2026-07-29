@@ -4690,6 +4690,60 @@ abstract class AppLocalizations {
   /// **'IFSC'**
   String get shgHomeIfscLabel;
 
+  /// No description provided for @shgHomeEditTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit federation & bank details'**
+  String get shgHomeEditTooltip;
+
+  /// No description provided for @shgHomeEditDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit SHG details'**
+  String get shgHomeEditDialogTitle;
+
+  /// No description provided for @shgHomeMandalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Mandal'**
+  String get shgHomeMandalHint;
+
+  /// No description provided for @shgHomeBankNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank name'**
+  String get shgHomeBankNameHint;
+
+  /// No description provided for @shgHomeBankAccountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank account number'**
+  String get shgHomeBankAccountHint;
+
+  /// No description provided for @shgHomeIfscHint.
+  ///
+  /// In en, this message translates to:
+  /// **'IFSC code'**
+  String get shgHomeIfscHint;
+
+  /// No description provided for @shgHomeDetailsUpdatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG details updated'**
+  String get shgHomeDetailsUpdatedMessage;
+
+  /// No description provided for @shgHomeDetailsUpdatedDemoMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — details not saved (connect Supabase to persist)'**
+  String get shgHomeDetailsUpdatedDemoMessage;
+
+  /// No description provided for @shgHomeDetailsUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save changes. Please try again.'**
+  String get shgHomeDetailsUpdateError;
+
   /// No description provided for @shgDocumentsTitle.
   ///
   /// In en, this message translates to:
@@ -6304,17 +6358,53 @@ abstract class AppLocalizations {
   /// **'Members Flagged (7d)'**
   String get adminMonitoringAiModerationMembersFlaggedLabel;
 
-  /// No description provided for @adminMonitoringPlaceholderLabel.
+  /// No description provided for @adminMonitoringUptimeLabel.
   ///
   /// In en, this message translates to:
-  /// **'Placeholder metrics'**
-  String get adminMonitoringPlaceholderLabel;
+  /// **'Uptime (24h)'**
+  String get adminMonitoringUptimeLabel;
 
-  /// No description provided for @adminMonitoringPlaceholderDescription.
+  /// No description provided for @adminMonitoringAvgLatencyLabel.
   ///
   /// In en, this message translates to:
-  /// **'These are basic row counts, not real infrastructure metrics (uptime, latency, error rate). Wiring real monitoring needs a dedicated Edge Function or an external service.'**
-  String get adminMonitoringPlaceholderDescription;
+  /// **'Avg Latency'**
+  String get adminMonitoringAvgLatencyLabel;
+
+  /// No description provided for @adminMonitoringErrorRateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Error Rate (24h)'**
+  String get adminMonitoringErrorRateLabel;
+
+  /// No description provided for @adminMonitoringScheduledJobsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled Jobs'**
+  String get adminMonitoringScheduledJobsLabel;
+
+  /// No description provided for @adminMonitoringScheduledJobsHealthy.
+  ///
+  /// In en, this message translates to:
+  /// **'Healthy'**
+  String get adminMonitoringScheduledJobsHealthy;
+
+  /// No description provided for @adminMonitoringScheduledJobsUnhealthy.
+  ///
+  /// In en, this message translates to:
+  /// **'Unhealthy'**
+  String get adminMonitoringScheduledJobsUnhealthy;
+
+  /// No description provided for @adminMonitoringScopeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'About these metrics'**
+  String get adminMonitoringScopeLabel;
+
+  /// No description provided for @adminMonitoringScopeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Uptime/latency/error rate come from a real database round-trip check, run every 5 minutes and on every visit to this page. This measures our own backend, not a full third-party view of every layer of the stack.'**
+  String get adminMonitoringScopeDescription;
 
   /// No description provided for @adminMonitoringCheckedAt.
   ///
@@ -7052,6 +7142,18 @@ abstract class AppLocalizations {
   /// **'No users found'**
   String get adminUsersNoUsersFoundMessage;
 
+  /// No description provided for @adminUsersSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or mobile'**
+  String get adminUsersSearchHint;
+
+  /// No description provided for @adminUsersRoleFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get adminUsersRoleFilterAll;
+
   /// No description provided for @adminUsersAssignShgTooltip.
   ///
   /// In en, this message translates to:
@@ -7237,6 +7339,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'District'**
   String get adminShgsDistrictHint;
+
+  /// No description provided for @adminShgsMandalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Mandal (optional)'**
+  String get adminShgsMandalHint;
+
+  /// No description provided for @adminShgsFederationSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Federation'**
+  String get adminShgsFederationSectionLabel;
+
+  /// No description provided for @adminShgsVoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Village Organisation (optional)'**
+  String get adminShgsVoHint;
+
+  /// No description provided for @adminShgsClfHint.
+  ///
+  /// In en, this message translates to:
+  /// **'CLF (optional)'**
+  String get adminShgsClfHint;
+
+  /// No description provided for @adminShgsBankSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank details'**
+  String get adminShgsBankSectionLabel;
+
+  /// No description provided for @adminShgsBankNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank name (optional)'**
+  String get adminShgsBankNameHint;
+
+  /// No description provided for @adminShgsBankAccountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank account number (optional)'**
+  String get adminShgsBankAccountHint;
+
+  /// No description provided for @adminShgsIfscHint.
+  ///
+  /// In en, this message translates to:
+  /// **'IFSC code (optional)'**
+  String get adminShgsIfscHint;
 
   /// No description provided for @adminShgsFormationDateNotSet.
   ///

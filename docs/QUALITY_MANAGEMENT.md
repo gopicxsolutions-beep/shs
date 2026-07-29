@@ -22,9 +22,12 @@ reasoned about. It is done when:
 - [ ] It was actually exercised — a real UI click-through or a real query
       against real RLS — not merely read and reasoned about (see
       [TESTING_STRATEGY.md](TESTING_STRATEGY.md) §1 for why this line exists).
-- [ ] Any intentional placeholder (admin system-monitoring row counts, the
-      system-uptime figure on the Admin dashboard) is documented as a
+- [ ] Any intentional placeholder (the Admin dashboard's own narrower
+      `system_heartbeats`-derived uptime figure) is documented as a
       placeholder in-code and in the docs, not presented as authoritative.
+      (The Admin **Monitoring** page's uptime/latency/error-rate stats are
+      no longer a placeholder — see §1's note below and `docs/SRS.md`
+      §3.17 — but stay honestly scoped to what they actually measure.)
 
 If any box can't be checked — no live preview available, a dependency wasn't
 testable — that must be stated explicitly, not silently skipped.

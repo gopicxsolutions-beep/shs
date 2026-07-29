@@ -64,4 +64,25 @@ void main() {
     expect(find.text('Total Users'), findsOneWidget);
     expect(find.text('Total SHGs'), findsOneWidget);
   });
+
+  group('real infra metrics (uptime/latency/error rate — added to close the "placeholder metrics" gap)', () {
+    testWidgets('renders illustrative (not fabricated-as-real) uptime/latency/error-rate/scheduled-jobs stats in demo mode', (tester) async {
+      await boot(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Uptime (24h)'), findsOneWidget);
+      expect(find.text('99.8%'), findsOneWidget);
+      expect(find.text('Avg Latency'), findsOneWidget);
+      expect(find.text('145ms'), findsOneWidget);
+      expect(find.text('Error Rate (24h)'), findsOneWidget);
+      expect(find.text('0.20%'), findsOneWidget);
+      expect(find.text('Scheduled Jobs'), findsOneWidget);
+      expect(find.text('Healthy'), findsOneWidget);
+    });
+
+    testWidgets('the old "Placeholder metrics" disclaimer is gone, replaced by a scoped "About these metrics" note', (tester) async {
+      await boot(tester);
+      expect(find.text('Placeholder metrics'), findsNothing);
+      expect(find.text('About these metrics'), findsOneWidget);
+    });
+  });
 }

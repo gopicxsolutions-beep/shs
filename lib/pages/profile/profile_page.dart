@@ -69,6 +69,10 @@ class _ProfilePageState extends State<ProfilePage> {
     final district = TextEditingController(text: profile.district ?? '');
     final saved = await showDialog<bool>(
       context: context,
+      // See shg_home_page.dart's identical fix for why: an accidental tap
+      // just outside the dialog card otherwise silently discards every
+      // field typed so far, indistinguishable from a real save failing.
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text(l10n.profileEditProfile),
         content: SingleChildScrollView(

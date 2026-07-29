@@ -88,6 +88,11 @@ void main() {
       final repo = ShgRepository();
       final demoShg = (await repo.fetchAllShgs()).items.firstWhere((s) => s.id == 'demo-shg');
 
+      // AdminShgsPage's Edit dialog always prefetches and resubmits the
+      // current bank details (via fetchShg(), which unmasks them for an
+      // is_staff() caller) — mirrored here so this test reflects how the
+      // one real caller actually uses updateShg(), not a partial-field call
+      // shape nothing in the app produces.
       await repo.updateShg(
         demoShg.id,
         name: demoShg.name,
@@ -95,6 +100,9 @@ void main() {
         district: demoShg.district,
         formationDate: DateTime(2015, 1, 1),
         grade: 'C',
+        bankName: demoShg.bankName,
+        bankAccount: demoShg.bankAccount,
+        ifsc: demoShg.ifsc,
       );
 
       final afterAll = (await repo.fetchAllShgs()).items.firstWhere((s) => s.id == 'demo-shg');
@@ -108,21 +116,46 @@ void main() {
       final afterFetch = await repo.fetchShg('demo-shg');
       expect(afterFetch?.grade, 'C');
       expect(afterFetch?.formationDate, DateTime(2015, 1, 1));
-      // Fields this dialog doesn't manage (bank details in particular) must
+      // Bank details, explicitly resubmitted above (see comment), must
       // survive the edit untouched, not get silently wiped.
       expect(afterFetch?.bankName, isNotNull);
       expect(afterFetch?.bankAccount, isNotNull);
     });
 
-    test('editing never touches mandal/state, which the Add/Edit SHG dialogs do not expose', () async {
+    // Regression coverage for the "my SHG page shows nothing" bug report:
+    // until this fix, updateShg() had no parameters for mandal/vo/clf/bank
+    // details at all, so shg_home_page.dart's Federation/Bank Details
+    // sections were permanently blank for every SHG, regardless of role —
+    // see ShgRepository.updateShg()'s own doc comment.
+    test('editing now persists mandal/vo/clf/bank details, but still never touches state (which no dialog exposes)', () async {
       final repo = ShgRepository();
       await repo.createShg(name: '__TEST__ Mandal SHG', mandal: 'Original Mandal', state: 'Original State');
       final created = (await repo.fetchAllShgs()).items.firstWhere((s) => s.name == '__TEST__ Mandal SHG');
 
-      await repo.updateShg(created.id, name: created.name, village: 'V', district: 'D', formationDate: null, grade: null);
+      await repo.updateShg(
+        created.id,
+        name: created.name,
+        village: 'V',
+        district: 'D',
+        formationDate: null,
+        grade: 'A',
+        mandal: 'New Mandal',
+        vo: 'New VO',
+        clf: 'New CLF',
+        bankName: 'New Bank',
+        bankAccount: '1234567890',
+        ifsc: 'TEST0001234',
+      );
 
       final updated = (await repo.fetchAllShgs()).items.firstWhere((s) => s.id == created.id);
-      expect(updated.mandal, 'Original Mandal');
+      expect(updated.mandal, 'New Mandal');
+      expect(updated.vo, 'New VO');
+      expect(updated.clf, 'New CLF');
+      expect(updated.bankName, 'New Bank');
+      expect(updated.bankAccount, '1234567890');
+      expect(updated.ifsc, 'TEST0001234');
+      // `state` still isn't a parameter anywhere in this app's write path —
+      // deliberately unchanged.
       expect(updated.state, 'Original State');
     });
   });

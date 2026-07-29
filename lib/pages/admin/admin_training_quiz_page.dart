@@ -155,6 +155,10 @@ class _AdminTrainingQuizPageState extends State<AdminTrainingQuizPage> {
     _correctAnswerUnreadable = false;
     final confirmed = await showDialog<bool>(
       context: context,
+      // See shg_home_page.dart's identical fix for why: an accidental tap
+      // just outside the dialog card otherwise silently discards every
+      // field typed so far, indistinguishable from a real save failing.
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(l10n.adminTrainingQuizAddDialogTitle),
@@ -194,6 +198,10 @@ class _AdminTrainingQuizPageState extends State<AdminTrainingQuizPage> {
     _correctAnswerUnreadable = q.correctIndex == null;
     final confirmed = await showDialog<bool>(
       context: context,
+      // See shg_home_page.dart's identical fix for why: an accidental tap
+      // just outside the dialog card otherwise silently discards every
+      // field typed so far, indistinguishable from a real save failing.
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(l10n.adminTrainingQuizEditDialogTitle),

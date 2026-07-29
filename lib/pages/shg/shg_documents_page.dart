@@ -98,6 +98,11 @@ class _ShgDocumentsPageState extends State<ShgDocumentsPage> {
     PlatformFile? picked;
     final confirmed = await showDialog<bool>(
       context: context,
+      // See shg_home_page.dart's identical fix for why: an accidental tap
+      // just outside the dialog card otherwise silently discards the name
+      // typed and the file picked so far, indistinguishable from a real
+      // save failing.
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(l10n.shgDocumentsAddDialogTitle),

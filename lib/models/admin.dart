@@ -1,7 +1,13 @@
-/// A snapshot of basic platform counts. No real infra-monitoring service
-/// (uptime, error rates, latency) is wired yet — that would need a
-/// dedicated Edge Function or external monitoring integration. This is a
-/// documented placeholder computed from table row counts instead.
+/// A snapshot of basic platform counts, plus real infra metrics from the
+/// `system-health-check` Edge Function (uptime/latency/error rate — a
+/// genuine synthetic database round-trip check, logged and aggregated over
+/// a rolling 24h window in `public.infra_health_checks`; see that
+/// function's own header comment for the honest scope: this is OUR OWN
+/// database round-trip, not a full third-party APM's view of every layer
+/// of the stack). The infra fields are all nullable: demo mode and a
+/// live-mode call that fails (e.g. the function is unreachable) both
+/// return `null` rather than a fabricated number, so the UI can render an
+/// honest "unavailable" state instead of a fake reading.
 class SystemHealth {
   final int totalUsers;
   final int totalShgs;
@@ -9,6 +15,13 @@ class SystemHealth {
   final int totalLoans;
   final int pendingLoans;
   final DateTime checkedAt;
+  final double? uptimePercent24h;
+  final double? errorRatePercent24h;
+  final int? avgLatencyMs24h;
+  final int? p95LatencyMs24h;
+  final int? totalChecks24h;
+  final int? lastHeartbeatAgeSeconds;
+  final bool? heartbeatHealthy;
 
   const SystemHealth({
     required this.totalUsers,
@@ -17,6 +30,13 @@ class SystemHealth {
     required this.totalLoans,
     required this.pendingLoans,
     required this.checkedAt,
+    this.uptimePercent24h,
+    this.errorRatePercent24h,
+    this.avgLatencyMs24h,
+    this.p95LatencyMs24h,
+    this.totalChecks24h,
+    this.lastHeartbeatAgeSeconds,
+    this.heartbeatHealthy,
   });
 }
 

@@ -1797,6 +1797,16 @@
 
   "shgHomeIfscLabel": "IFSC",
 
+  "shgHomeEditTooltip": "Edit federation & bank details",
+  "shgHomeEditDialogTitle": "Edit SHG details",
+  "shgHomeMandalHint": "Mandal",
+  "shgHomeBankNameHint": "Bank name",
+  "shgHomeBankAccountHint": "Bank account number",
+  "shgHomeIfscHint": "IFSC code",
+  "shgHomeDetailsUpdatedMessage": "SHG details updated",
+  "shgHomeDetailsUpdatedDemoMessage": "Demo mode — details not saved (connect Supabase to persist)",
+  "shgHomeDetailsUpdateError": "Could not save changes. Please try again.",
+
   "shgDocumentsTitle": "Documents",
 
   "shgDocumentsAddTooltip": "Add document",
@@ -2457,9 +2467,21 @@
 
   "adminMonitoringAiModerationMembersFlaggedLabel": "Members Flagged (7d)",
 
-  "adminMonitoringPlaceholderLabel": "Placeholder metrics",
+  "adminMonitoringUptimeLabel": "Uptime (24h)",
 
-  "adminMonitoringPlaceholderDescription": "These are basic row counts, not real infrastructure metrics (uptime, latency, error rate). Wiring real monitoring needs a dedicated Edge Function or an external service.",
+  "adminMonitoringAvgLatencyLabel": "Avg Latency",
+
+  "adminMonitoringErrorRateLabel": "Error Rate (24h)",
+
+  "adminMonitoringScheduledJobsLabel": "Scheduled Jobs",
+
+  "adminMonitoringScheduledJobsHealthy": "Healthy",
+
+  "adminMonitoringScheduledJobsUnhealthy": "Unhealthy",
+
+  "adminMonitoringScopeLabel": "About these metrics",
+
+  "adminMonitoringScopeDescription": "Uptime/latency/error rate come from a real database round-trip check, run every 5 minutes and on every visit to this page. This measures our own backend, not a full third-party view of every layer of the stack.",
 
   "adminMonitoringCheckedAt": "Checked {date}",
   "@adminMonitoringCheckedAt": {
@@ -2776,6 +2798,8 @@
   "adminUsersAssignedToDemoMessage": "Demo mode — assignment not saved (connect Supabase to persist)",
   "adminUsersManageTitle": "Manage Users",
   "adminUsersNoUsersFoundMessage": "No users found",
+  "adminUsersSearchHint": "Search by name or mobile",
+  "adminUsersRoleFilterAll": "All",
   "adminUsersAssignShgTooltip": "Assign SHG",
   "adminUsersDeactivateTooltip": "Deactivate account",
   "adminUsersReactivateTooltip": "Reactivate account",
@@ -2826,6 +2850,14 @@
   "adminShgsNameHint": "SHG name",
   "adminShgsVillageHint": "Village",
   "adminShgsDistrictHint": "District",
+  "adminShgsMandalHint": "Mandal (optional)",
+  "adminShgsFederationSectionLabel": "Federation",
+  "adminShgsVoHint": "Village Organisation (optional)",
+  "adminShgsClfHint": "CLF (optional)",
+  "adminShgsBankSectionLabel": "Bank details",
+  "adminShgsBankNameHint": "Bank name (optional)",
+  "adminShgsBankAccountHint": "Bank account number (optional)",
+  "adminShgsIfscHint": "IFSC code (optional)",
   "adminShgsFormationDateNotSet": "Not set",
   "adminShgsGradeHint": "Grade (optional)",
   "adminShgsClearFormationDateTooltip": "Clear formation date",

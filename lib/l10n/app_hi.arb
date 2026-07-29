@@ -1405,6 +1405,16 @@
 
   "shgHomeIfscLabel": "IFSC",
 
+  "shgHomeEditTooltip": "फ़ेडरेशन और बैंक विवरण संपादित करें",
+  "shgHomeEditDialogTitle": "SHG विवरण संपादित करें",
+  "shgHomeMandalHint": "मंडल",
+  "shgHomeBankNameHint": "बैंक का नाम",
+  "shgHomeBankAccountHint": "बैंक खाता संख्या",
+  "shgHomeIfscHint": "IFSC कोड",
+  "shgHomeDetailsUpdatedMessage": "SHG विवरण अपडेट किया गया",
+  "shgHomeDetailsUpdatedDemoMessage": "डेमो मोड — विवरण सहेजा नहीं गया (सहेजने के लिए Supabase कनेक्ट करें)",
+  "shgHomeDetailsUpdateError": "बदलाव सहेजे नहीं जा सके। कृपया पुनः प्रयास करें।",
+
   "shgDocumentsTitle": "दस्तावेज़",
 
   "shgDocumentsAddTooltip": "दस्तावेज़ जोड़ें",
@@ -1931,9 +1941,21 @@
 
   "adminMonitoringAiModerationMembersFlaggedLabel": "फ़्लैग किए गए सदस्य (7 दिन)",
 
-  "adminMonitoringPlaceholderLabel": "प्लेसहोल्डर मेट्रिक्स",
+  "adminMonitoringUptimeLabel": "अपटाइम (24 घं.)",
 
-  "adminMonitoringPlaceholderDescription": "ये सिर्फ बुनियादी रो काउंट हैं, असली इन्फ्रास्ट्रक्चर मेट्रिक्स (अपटाइम, लेटेंसी, एरर रेट) नहीं। असली मॉनिटरिंग जोड़ने के लिए एक अलग Edge Function या बाहरी सेवा की ज़रूरत होगी।",
+  "adminMonitoringAvgLatencyLabel": "औसत लेटेंसी",
+
+  "adminMonitoringErrorRateLabel": "एरर रेट (24 घं.)",
+
+  "adminMonitoringScheduledJobsLabel": "शेड्यूल्ड जॉब्स",
+
+  "adminMonitoringScheduledJobsHealthy": "स्वस्थ",
+
+  "adminMonitoringScheduledJobsUnhealthy": "अस्वस्थ",
+
+  "adminMonitoringScopeLabel": "इन मेट्रिक्स के बारे में",
+
+  "adminMonitoringScopeDescription": "अपटाइम/लेटेंसी/एरर रेट एक वास्तविक डेटाबेस राउंड-ट्रिप जाँच से आते हैं, जो हर 5 मिनट में और इस पेज पर हर बार आने पर चलती है। यह हमारे अपने बैकएंड को मापता है, पूरे स्टैक की हर परत का बाहरी दृश्य नहीं।",
 
   "adminMonitoringCheckedAt": "{date} को जांचा गया",
 
@@ -2158,6 +2180,8 @@
   "adminUsersAssignedToDemoMessage": "डेमो मोड — असाइनमेंट सहेजा नहीं गया (सहेजने के लिए Supabase कनेक्ट करें)",
   "adminUsersManageTitle": "उपयोगकर्ता प्रबंधित करें",
   "adminUsersNoUsersFoundMessage": "कोई उपयोगकर्ता नहीं मिला",
+  "adminUsersSearchHint": "नाम या मोबाइल से खोजें",
+  "adminUsersRoleFilterAll": "सभी",
   "adminUsersAssignShgTooltip": "SHG असाइन करें",
   "adminUsersDeactivateTooltip": "खाता निष्क्रिय करें",
   "adminUsersReactivateTooltip": "खाता पुनः सक्रिय करें",
@@ -2198,6 +2222,14 @@
   "adminShgsNameHint": "SHG का नाम",
   "adminShgsVillageHint": "गांव",
   "adminShgsDistrictHint": "जिला",
+  "adminShgsMandalHint": "मंडल (वैकल्पिक)",
+  "adminShgsFederationSectionLabel": "फ़ेडरेशन",
+  "adminShgsVoHint": "ग्राम संगठन (वैकल्पिक)",
+  "adminShgsClfHint": "CLF (वैकल्पिक)",
+  "adminShgsBankSectionLabel": "बैंक विवरण",
+  "adminShgsBankNameHint": "बैंक का नाम (वैकल्पिक)",
+  "adminShgsBankAccountHint": "बैंक खाता संख्या (वैकल्पिक)",
+  "adminShgsIfscHint": "IFSC कोड (वैकल्पिक)",
   "adminShgsFormationDateNotSet": "सेट नहीं है",
   "adminShgsGradeHint": "ग्रेड (वैकल्पिक)",
   "adminShgsClearFormationDateTooltip": "गठन तिथि हटाएं",

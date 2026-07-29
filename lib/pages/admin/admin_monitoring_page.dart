@@ -85,6 +85,65 @@ class _AdminMonitoringPageState extends State<AdminMonitoringPage> {
                 ),
               ]),
               const SizedBox(height: 12),
+              // Real infra metrics from `system-health-check` (an actual
+              // synthetic database round-trip, logged and aggregated over a
+              // rolling 24h window — see that function's own header comment
+              // for the honest scope). Every field is nullable: a demo-mode
+              // session or a live call that couldn't reach the function both
+              // render "—" here rather than a fabricated reading — see
+              // AdminRepository.fetchSystemHealth()'s doc comment.
+              Row(children: [
+                Expanded(
+                  child: StatCard(
+                    label: l10n.adminMonitoringUptimeLabel,
+                    value: h.uptimePercent24h != null ? '${h.uptimePercent24h!.toStringAsFixed(1)}%' : '—',
+                    tone: h.uptimePercent24h == null
+                        ? StatTone.ink
+                        : h.uptimePercent24h! >= 99
+                            ? StatTone.brand
+                            : StatTone.danger,
+                    icon: Icons.monitor_heart_rounded,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: StatCard(
+                    label: l10n.adminMonitoringAvgLatencyLabel,
+                    value: h.avgLatencyMs24h != null ? '${h.avgLatencyMs24h}ms' : '—',
+                    tone: StatTone.ink,
+                    icon: Icons.speed_rounded,
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(
+                  child: StatCard(
+                    label: l10n.adminMonitoringErrorRateLabel,
+                    value: h.errorRatePercent24h != null ? '${h.errorRatePercent24h!.toStringAsFixed(2)}%' : '—',
+                    tone: h.errorRatePercent24h == null
+                        ? StatTone.ink
+                        : h.errorRatePercent24h! > 0
+                            ? StatTone.danger
+                            : StatTone.brand,
+                    icon: Icons.error_outline_rounded,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: StatCard(
+                    label: l10n.adminMonitoringScheduledJobsLabel,
+                    value: h.heartbeatHealthy == null ? '—' : (h.heartbeatHealthy! ? l10n.adminMonitoringScheduledJobsHealthy : l10n.adminMonitoringScheduledJobsUnhealthy),
+                    tone: h.heartbeatHealthy == null
+                        ? StatTone.ink
+                        : h.heartbeatHealthy!
+                            ? StatTone.brand
+                            : StatTone.danger,
+                    icon: Icons.schedule_rounded,
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 12),
               AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,11 +151,11 @@ class _AdminMonitoringPageState extends State<AdminMonitoringPage> {
                     Row(children: [
                       Icon(Icons.info_outline_rounded, size: 14, color: Neutral.c400),
                       const SizedBox(width: 6),
-                      Expanded(child: Text(l10n.adminMonitoringPlaceholderLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600))),
+                      Expanded(child: Text(l10n.adminMonitoringScopeLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600))),
                     ]),
                     const SizedBox(height: 6),
                     Text(
-                      l10n.adminMonitoringPlaceholderDescription,
+                      l10n.adminMonitoringScopeDescription,
                       style: AppTheme.sans(12, color: Neutral.c500),
                     ),
                     const SizedBox(height: 8),

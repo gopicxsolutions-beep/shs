@@ -94,6 +94,7 @@ import '../pages/training/course_quiz_page.dart';
 import '../pages/training/training_home_page.dart';
 import '../state/app_state.dart';
 import '../widgets/error_screen.dart';
+import 'navigation_history.dart';
 import 'paths.dart';
 
 const _leaderOrStaff = {Role.leader, Role.crp, Role.clf, Role.admin};
@@ -135,19 +136,17 @@ const _roleRestrictedPrefixes = <(String, Set<Role>)>[
   ('/app/training/manage', _federationStaff),
 ];
 
-GoRouter buildRouter(AppState appState) {
-  return GoRouter(
-    initialLocation: Paths.splash,
-    refreshListenable: appState,
-    errorBuilder: (context, state) => AppErrorScreen(
-      // Nullable, not `!` — see AppErrorScreen's own doc comment on why its
-      // callers fall back to English instead of asserting non-null here.
-      title: AppLocalizations.of(context)?.error404Title ?? 'Page not found',
-      message: AppLocalizations.of(context)?.error404Message ?? "The page you're looking for doesn't exist or may have moved.",
-      onRetry: () => context.go(Paths.dashboard),
-    ),
-    redirect: (context, state) {
-      // Segment-boundary match, not raw startsWith — the same fragility
+/// Split out of `buildRouter`'s `redirect:` parameter so the wrapper below
+/// can record the SETTLED destination of every navigation into
+/// [NavigationHistory] (see that class's own doc comment for why this
+/// exists — the app's flat `context.go()` routing leaves Flutter's real
+/// Navigator stack with nothing for `Navigator.canPop()` to act on, which
+/// used to make every PageHeader Back button silently fall through to the
+/// dashboard instead of the previous page). This function's own logic is
+/// unchanged from before that split — every early `return` below is
+/// exactly as it was when this lived inline as the `redirect:` closure.
+String? _computeRedirect(BuildContext context, GoRouterState state, AppState appState) {
+  // Segment-boundary match, not raw startsWith — the same fragility
       // the `_roleRestrictedPrefixes` loop below was hardened against
       // (round 188). Dormant today (no path collides), but this is the
       // single root boundary for "is this user inside the authenticated
@@ -235,7 +234,31 @@ GoRouter buildRouter(AppState appState) {
           return Paths.dashboard;
         }
       }
-      return null;
+  return null;
+}
+
+GoRouter buildRouter(AppState appState) {
+  return GoRouter(
+    initialLocation: Paths.splash,
+    refreshListenable: appState,
+    errorBuilder: (context, state) => AppErrorScreen(
+      // Nullable, not `!` — see AppErrorScreen's own doc comment on why its
+      // callers fall back to English instead of asserting non-null here.
+      title: AppLocalizations.of(context)?.error404Title ?? 'Page not found',
+      message: AppLocalizations.of(context)?.error404Message ?? "The page you're looking for doesn't exist or may have moved.",
+      onRetry: () => context.go(Paths.dashboard),
+    ),
+    redirect: (context, state) {
+      final result = _computeRedirect(context, state, appState);
+      // Records the SETTLED destination (whatever this evaluation actually
+      // resolves to), not `state.matchedLocation` unconditionally — a
+      // non-null `result` means GoRouter will immediately re-invoke this
+      // callback again for that new location anyway, so recording the
+      // pre-redirect location here would add a transient auth-flow hop
+      // (e.g. an expired-session bounce through `/login`) as its own Back
+      // stop instead of just the page the user actually lands on.
+      NavigationHistory.recordVisit(result ?? state.matchedLocation);
+      return result;
     },
     routes: [
       GoRoute(path: Paths.splash, builder: (context, state) => const SplashPage()),
