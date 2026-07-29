@@ -1084,6 +1084,7 @@
   "adminSchemesDeleteDemoModeMessage": "డెమో మోడ్ — సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
 
   "adminSchemesDeleteErrorMessage": "ఈ పథకాన్ని తొలగించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+  "adminSchemesDeleteHasApplicationsError": "ఈ పథకాన్ని తొలగించలేము — దీనికి దరఖాస్తులు నమోదై ఉన్నాయి.",
 
   "adminTrainingCoursesTitle": "శిక్షణ కోర్సులను నిర్వహించండి",
 
@@ -1586,6 +1587,12 @@
   "marketplaceCategoryAgriculture": "వ్యవసాయం",
 
   "marketplaceCategoryOther": "ఇతర",
+
+  "meetingStatusUpcoming": "రాబోయే",
+
+  "meetingStatusCompleted": "పూర్తయింది",
+
+  "meetingStatusCancelled": "రద్దు చేయబడింది",
 
   "savingsStatusPending": "పెండింగ్",
 
@@ -2125,6 +2132,10 @@
   "adminUsersChangeRoleConfirmButton": "మార్చండి",
   "adminUsersUpdateRoleError": "ఈ పాత్రను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
   "adminUsersAssignShgError": "ఈ SHGని కేటాయించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  "adminUsersRoleUpdatedMessage": "పాత్ర నవీకరించబడింది",
+  "adminUsersRoleUpdatedDemoMessage": "డెమో మోడ్ — పాత్ర సేవ్ చేయబడలేదు (సేవ్ చేయడానికి Supabaseను కనెక్ట్ చేయండి)",
+  "adminUsersAssignedToMessage": "{name}కి కేటాయించబడింది",
+  "adminUsersAssignedToDemoMessage": "డెమో మోడ్ — కేటాయింపు సేవ్ చేయబడలేదు (సేవ్ చేయడానికి Supabaseను కనెక్ట్ చేయండి)",
   "adminUsersManageTitle": "వినియోగదారులను నిర్వహించండి",
   "adminUsersNoUsersFoundMessage": "వినియోగదారులు కనుగొనబడలేదు",
   "adminUsersAssignShgTooltip": "SHGని కేటాయించండి",

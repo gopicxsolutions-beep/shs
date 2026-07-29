@@ -1,3 +1,26 @@
+import '../l10n/gen/app_localizations.dart';
+import '../widgets/app_badge.dart';
+
+/// Was independently copy-pasted in loans_home_page.dart, loan_detail_page.dart,
+/// and loan_tracking_page.dart — extracted here (round 190/iteration 18) before
+/// a 4th copy was about to be added in loan_statement_page.dart.
+String loanStatusLabel(String status, AppLocalizations l10n) => switch (status) {
+      'pending' => l10n.loanStatusPending,
+      'active' => l10n.loanStatusActive,
+      'overdue' => l10n.loanStatusOverdue,
+      'closed' => l10n.loanStatusClosed,
+      'rejected' => l10n.loanStatusRejected,
+      _ => status,
+    };
+
+const loanStatusTones = <String, BadgeTone>{
+  'pending': BadgeTone.warning,
+  'active': BadgeTone.brand,
+  'overdue': BadgeTone.danger,
+  'closed': BadgeTone.success,
+  'rejected': BadgeTone.neutral,
+};
+
 /// Mirrors a row in `public.loans` (joined with the member's name).
 class Loan {
   final String id;

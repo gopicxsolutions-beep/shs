@@ -97,7 +97,7 @@ void main() {
     await pumpDetail(tester, appState, meetingId);
 
     expect(find.text('Cancel Meeting'), findsNothing);
-    expect(find.text('upcoming'), findsOneWidget);
+    expect(find.text('Upcoming'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -125,7 +125,7 @@ void main() {
 
     // The action is only offered while the meeting is still 'upcoming'.
     expect(find.text('Cancel Meeting'), findsOneWidget);
-    expect(find.text('upcoming'), findsOneWidget);
+    expect(find.text('Upcoming'), findsOneWidget);
 
     // Opening the dialog and choosing "Keep Meeting" must not cancel it.
     await tester.tap(find.text('Cancel Meeting'));
@@ -133,7 +133,7 @@ void main() {
     expect(find.text('Cancel meeting?'), findsOneWidget);
     await tester.tap(find.text('Keep Meeting'));
     await tester.pumpAndSettle();
-    expect(find.text('upcoming'), findsOneWidget);
+    expect(find.text('Upcoming'), findsOneWidget);
     expect(find.text('Cancel Meeting'), findsOneWidget);
 
     // Now actually confirm the cancellation.
@@ -149,8 +149,8 @@ void main() {
     expect(find.text('Demo mode — cancelled for the rest of this session (connect Supabase to persist)'), findsOneWidget);
     // The badge flips to 'cancelled' and the action itself disappears (an
     // already-cancelled meeting has nothing left to cancel).
-    expect(find.text('cancelled'), findsOneWidget);
-    expect(find.text('upcoming'), findsNothing);
+    expect(find.text('Cancelled'), findsOneWidget);
+    expect(find.text('Upcoming'), findsNothing);
     expect(find.text('Cancel Meeting'), findsNothing);
     expect(tester.takeException(), isNull);
 
@@ -176,7 +176,7 @@ void main() {
     // Meetings rather than lingering under Upcoming.
     final row = find.ancestor(of: agendaText, matching: find.byType(AppListRow));
     expect(row, findsOneWidget);
-    expect(find.descendant(of: row, matching: find.text('cancelled')), findsOneWidget);
+    expect(find.descendant(of: row, matching: find.text('Cancelled')), findsOneWidget);
   });
 
   testWidgets('a leader cannot cancel a meeting whose scheduled date has already passed, even though its status is still "upcoming" (nothing in the app ever advances it to "completed")', (tester) async {
@@ -213,7 +213,7 @@ void main() {
     // The badge still legitimately reads 'upcoming' (status genuinely never
     // advanced) — but the Cancel Meeting action must not be offered, since
     // the meeting has already happened.
-    expect(find.text('upcoming'), findsOneWidget);
+    expect(find.text('Upcoming'), findsOneWidget);
     expect(find.text('Cancel Meeting'), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -237,7 +237,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Cancel Meeting'));
     await tester.pumpAndSettle();
 
-    expect(find.text('cancelled'), findsOneWidget);
+    expect(find.text('Cancelled'), findsOneWidget);
     expect(fake.cancelledMeetings, contains(meetingId));
     expect(tester.takeException(), isNull);
   });

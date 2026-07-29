@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/scheme.dart';
@@ -265,6 +266,13 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(SupabaseService.isConfigured ? l10n.adminSchemesDeletedMessage : l10n.adminSchemesDeleteDemoModeMessage),
         ));
+      }
+    } on PostgrestException catch (e) {
+      // '23503' = foreign-key violation — a scheme with real applications
+      // on file (0074's `on delete restrict`) always fails here, same
+      // class of error already handled for training courses.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.code == '23503' ? l10n.adminSchemesDeleteHasApplicationsError : l10n.adminSchemesDeleteErrorMessage)));
       }
     } catch (_) {
       if (mounted) {

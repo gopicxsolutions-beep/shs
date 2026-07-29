@@ -3754,6 +3754,12 @@ abstract class AppLocalizations {
   /// **'Could not delete this scheme. Please try again.'**
   String get adminSchemesDeleteErrorMessage;
 
+  /// No description provided for @adminSchemesDeleteHasApplicationsError.
+  ///
+  /// In en, this message translates to:
+  /// **'This scheme can\'t be deleted — it has applications on file.'**
+  String get adminSchemesDeleteHasApplicationsError;
+
   /// No description provided for @adminTrainingCoursesTitle.
   ///
   /// In en, this message translates to:
@@ -5193,6 +5199,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Other'**
   String get marketplaceCategoryOther;
+
+  /// No description provided for @meetingStatusUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get meetingStatusUpcoming;
+
+  /// No description provided for @meetingStatusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get meetingStatusCompleted;
+
+  /// No description provided for @meetingStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get meetingStatusCancelled;
 
   /// No description provided for @savingsStatusPending.
   ///
@@ -6877,6 +6901,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not assign this SHG. Please try again.'**
   String get adminUsersAssignShgError;
+
+  /// No description provided for @adminUsersRoleUpdatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Role updated'**
+  String get adminUsersRoleUpdatedMessage;
+
+  /// No description provided for @adminUsersRoleUpdatedDemoMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — role not saved (connect Supabase to persist)'**
+  String get adminUsersRoleUpdatedDemoMessage;
+
+  /// No description provided for @adminUsersAssignedToMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to {name}'**
+  String adminUsersAssignedToMessage(String name);
+
+  /// No description provided for @adminUsersAssignedToDemoMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — assignment not saved (connect Supabase to persist)'**
+  String get adminUsersAssignedToDemoMessage;
 
   /// No description provided for @adminUsersManageTitle.
   ///

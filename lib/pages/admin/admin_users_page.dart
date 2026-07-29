@@ -116,7 +116,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
       await _repo.updateUserRole(user.id, selected.name);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? 'Role updated' : 'Demo mode — role not saved (connect Supabase to persist)'),
+          content: Text(SupabaseService.isConfigured ? AppLocalizations.of(context)!.adminUsersRoleUpdatedMessage : AppLocalizations.of(context)!.adminUsersRoleUpdatedDemoMessage),
         ));
         _key.currentState?.reload();
         // The admin can appear in their own "Manage Users" list and change
@@ -156,7 +156,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
       await _repo.assignShg(user.id, selected.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? 'Assigned to ${selected.name}' : 'Demo mode — assignment not saved (connect Supabase to persist)'),
+          content: Text(SupabaseService.isConfigured ? AppLocalizations.of(context)!.adminUsersAssignedToMessage(selected.name) : AppLocalizations.of(context)!.adminUsersAssignedToDemoMessage),
         ));
         _key.currentState?.reload();
         // Same stale-cache risk as the self role-change case above: if the

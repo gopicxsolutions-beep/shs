@@ -2156,6 +2156,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not delete this scheme. Please try again.';
 
   @override
+  String get adminSchemesDeleteHasApplicationsError =>
+      'This scheme can\'t be deleted — it has applications on file.';
+
+  @override
   String get adminTrainingCoursesTitle => 'Manage Training Courses';
 
   @override
@@ -2964,6 +2968,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get marketplaceCategoryOther => 'Other';
+
+  @override
+  String get meetingStatusUpcoming => 'Upcoming';
+
+  @override
+  String get meetingStatusCompleted => 'Completed';
+
+  @override
+  String get meetingStatusCancelled => 'Cancelled';
 
   @override
   String get savingsStatusPending => 'Pending';
@@ -3948,6 +3961,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get adminUsersAssignShgError =>
       'Could not assign this SHG. Please try again.';
+
+  @override
+  String get adminUsersRoleUpdatedMessage => 'Role updated';
+
+  @override
+  String get adminUsersRoleUpdatedDemoMessage =>
+      'Demo mode — role not saved (connect Supabase to persist)';
+
+  @override
+  String adminUsersAssignedToMessage(String name) {
+    return 'Assigned to $name';
+  }
+
+  @override
+  String get adminUsersAssignedToDemoMessage =>
+      'Demo mode — assignment not saved (connect Supabase to persist)';
 
   @override
   String get adminUsersManageTitle => 'Manage Users';

@@ -173,7 +173,7 @@ class MeetingsHomePage extends StatelessWidget {
                           if ((m.agenda ?? m.venue) != null) (m.agenda ?? m.venue)!,
                           if (isPlatformWideStaff && m.shgName != null) l10n.meetingsHomeShgName(m.shgName!),
                         ].join(' · '),
-                        trailing: AppBadge(text: m.status, tone: _statusTones[m.status] ?? BadgeTone.neutral),
+                        trailing: AppBadge(text: meetingStatusLabel(m.status, l10n), tone: _statusTones[m.status] ?? BadgeTone.neutral),
                         onTap: () => context.go(Paths.meetingDetail(m.id)),
                       );
                     }).toList(),

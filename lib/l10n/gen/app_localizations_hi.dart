@@ -2118,6 +2118,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'इस योजना को हटाया नहीं जा सका। कृपया फिर से कोशिश करें।';
 
   @override
+  String get adminSchemesDeleteHasApplicationsError =>
+      'यह योजना हटाई नहीं जा सकती — इसके लिए आवेदन दर्ज हैं।';
+
+  @override
   String get adminTrainingCoursesTitle => 'प्रशिक्षण कोर्स प्रबंधित करें';
 
   @override
@@ -2915,6 +2919,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get marketplaceCategoryOther => 'अन्य';
+
+  @override
+  String get meetingStatusUpcoming => 'आगामी';
+
+  @override
+  String get meetingStatusCompleted => 'पूर्ण';
+
+  @override
+  String get meetingStatusCancelled => 'रद्द';
 
   @override
   String get savingsStatusPending => 'लंबित';
@@ -3879,6 +3892,22 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get adminUsersAssignShgError =>
       'यह SHG असाइन नहीं हो सका। कृपया फिर से प्रयास करें।';
+
+  @override
+  String get adminUsersRoleUpdatedMessage => 'भूमिका अपडेट की गई';
+
+  @override
+  String get adminUsersRoleUpdatedDemoMessage =>
+      'डेमो मोड — भूमिका सहेजी नहीं गई (सहेजने के लिए Supabase कनेक्ट करें)';
+
+  @override
+  String adminUsersAssignedToMessage(String name) {
+    return '$name को असाइन किया गया';
+  }
+
+  @override
+  String get adminUsersAssignedToDemoMessage =>
+      'डेमो मोड — असाइनमेंट सहेजा नहीं गया (सहेजने के लिए Supabase कनेक्ट करें)';
 
   @override
   String get adminUsersManageTitle => 'उपयोगकर्ता प्रबंधित करें';

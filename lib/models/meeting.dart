@@ -1,3 +1,15 @@
+import '../l10n/gen/app_localizations.dart';
+
+/// `upcoming`/`completed`/`cancelled` were shown as raw DB strings on both
+/// meeting screens — the one status-bearing module without a localized
+/// label helper, unlike loans/savings/marketplace/support/livelihood.
+String meetingStatusLabel(String status, AppLocalizations l10n) => switch (status) {
+      'upcoming' => l10n.meetingStatusUpcoming,
+      'completed' => l10n.meetingStatusCompleted,
+      'cancelled' => l10n.meetingStatusCancelled,
+      _ => status,
+    };
+
 /// Mirrors a row in `public.meetings`.
 class Meeting {
   final String id;

@@ -145,7 +145,7 @@ class _MeetingDetailPageState extends State<MeetingDetailPage> {
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                       Flexible(child: Text(DateFormat('dd MMM yyyy').format(meeting.date), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white))),
                       const SizedBox(width: 8),
-                      AppBadge(text: meeting.status, tone: _statusTones[meeting.status] ?? BadgeTone.neutral),
+                      AppBadge(text: meetingStatusLabel(meeting.status, l10n), tone: _statusTones[meeting.status] ?? BadgeTone.neutral),
                     ]),
                     const SizedBox(height: 6),
                     Text(meeting.agenda ?? l10n.meetingDetailDefaultTitle, style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.9))),

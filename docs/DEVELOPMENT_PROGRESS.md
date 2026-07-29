@@ -16336,3 +16336,234 @@ rebuilt cleanly. **Browser preview attempted again, still stuck** —
 fresh `preview_start`, identical `flt-glass-pane`-never-mounts symptom,
 zero console errors (the 15th consecutive such attempt across thirteen
 rounds). Relied on live-DB verification for every fix above instead.
+
+## Update (round 190) — Browser preview diagnostic root-caused after 15 straight false negatives; gap-hunting loop iteration 18: 4 fresh audits (dogfooding round 189, Savings, Admin, Schemes/Training), fixed 20 real gaps including 2 more self-caught HIGH RLS bugs
+
+**The single most consequential finding of this session so far isn't a
+product bug — it's that this session's own "is the browser preview
+stuck?" diagnostic was wrong, on every one of its 15 consecutive uses
+across 13 rounds.** At the user's explicit request to focus on live
+preview testing this round, the check was re-examined from scratch
+instead of repeated: `flt-glass-pane.children.length` staying `0` is
+**not** evidence of a stuck app for this build — this app renders with
+the CanvasKit renderer (a WebGL `<canvas>` surface), which paints pixels
+directly and never populates `flt-glass-pane`'s DOM children the way the
+HTML renderer would. A `computer{screenshot}` on the exact same tab
+showed a fully, correctly rendered landing page. Two more real
+contributing causes were found and fixed in the same pass: (1) a
+backgrounded/non-frontmost browser tab never receives its first
+`requestAnimationFrame` callback — `preview_start` opening a tab does not
+guarantee it's frontmost, and every prior round's check ran before
+explicitly confirming that; (2) `.claude/launch.json`'s `flutter-web`/
+`flutter-web-live` configs run `flutter run -d chrome`, a **debug**
+dev-server that spawns and waits (80s+) for its own separate Chrome
+instance to connect via a debug-service websocket — a different browser
+context than the Browser pane's tab, which can never complete that
+handshake. Switching to `flutter-web-release` (a plain static file
+server for a `flutter build web --release` output, no debug handshake
+needed) plus explicitly fronting the tab before judging it produced a
+fully working, fully interactive live preview: real navigation, a real
+phone-number form, and a real OTP dispatched against the live Supabase
+project with a live countdown timer — the first genuinely successful
+live-preview interaction in this entire session. CLAUDE.md's browser-
+troubleshooting section is rewritten with the corrected diagnostic (see
+the file itself) so this doesn't regress. Also caught, mid-session: a
+`flutter build web` invocation with no `--dart-define-from-file` flag
+silently produces a **demo-mode** build (`Env.supabaseUrl` reads empty
+via `String.fromEnvironment`) — every prior round's browser attempts this
+session that got as far as building were likely building demo mode, not
+live mode, without that being flagged. Documented as a required flag
+going forward for any live-mode verification.
+
+Per-role sign-in for the now-working preview needs a real SMS OTP for
+each test account — no bypass exists in this app by design. The
+established "temp-log the OTP inside `send-sms-hook`, deploy, read the
+log, revert" technique from earlier rounds was re-used at the user's
+explicit direction; the CLI turned out to have no `functions logs`
+subcommand in this version, so retrieving the already-dispatched OTP
+needs either a Management API token or the user checking the Supabase
+Dashboard directly — flagged back to the user, not force-worked-around.
+
+**Fixed, live-verified against the real Supabase project:**
+
+1. **[HIGH — self-caught via dogfooding] `savings_insert_self_leader_or_staff`'s
+   `is_staff()` branch had ZERO constraints beyond `profile_is_active`** —
+   unlike the leader/self branch, which pins `status='pending'`,
+   `entry_date=CURRENT_DATE`, `created_at=now()`, and the correct
+   `shg_id`. A crp/clf/admin could insert a savings entry with
+   `status='verified'` directly (skipping the leader-verification
+   workflow entirely), an arbitrary `shg_id` (corrupting that SHG's
+   totals), and fabricated dates — the exact "`is_staff()` branch left
+   completely open" pattern already fixed for loans/marketplace_orders/
+   marketplace_products, missed here. Fixed (`0101`) to match the leader
+   branch's shape. **First attempt live-verified broken before shipping**:
+   the fix initially reused `profile_shg_id()` for the staff branch too,
+   copying the leader branch immediately above it — but that helper only
+   ever matches against the CALLER's own `shg_id` (built for the leader's
+   "is this member in MY SHG" case) and always returns null for staff
+   (who have none of their own), so the "fixed" policy rejected every
+   staff insert, including legitimate ones. Caught by this round's own
+   live verification before considering it complete; hotfixed (`0102`)
+   to look up the target member's real `shg_id` directly instead.
+   **Live-verified**: the fabricated-verified/backdated insert is
+   blocked; the correctly-shaped legitimate staff insert succeeds.
+2. **[HIGH — self-caught via dogfooding] `savings_update_leader_or_staff`
+   had no `member_id <> auth.uid()` exclusion on the leader branch**
+   (neither `using` nor `with check`) — unlike `record_loan_payment`'s
+   explicit "cannot record a payment on your own loan" self-check. A
+   leader could deposit her own savings entry and immediately self-verify
+   it with no second party ever reviewing it; the UI's "Verify" button
+   wasn't even filtered by row ownership, so this was directly clickable,
+   not just a REST-only exploit. Fixed (`0101`) by adding the same
+   self-exclusion to both the leader and staff branches. **Live-verified**:
+   a leader self-verifying her own pending entry now matches 0 rows
+   (RLS-silent block, per this project's own row-count verification
+   convention); verifying a *different* member's entry still succeeds.
+3. **[MEDIUM-HIGH, Schemes audit] `scheme_applications_insert_self`
+   checked `member_id = auth.uid()` but never `current_role() = 'member'`**
+   — a crp/clf/admin account (structurally has no `shg_id`, not an SHG
+   member) could apply to any scheme lacking the "requires SHG membership"
+   checkbox (the default for every scheme, since `scheme_eligibility_met()`
+   short-circuits to `true` on an empty criteria object). The application
+   would land in the same shared staff review queue, where a *different*
+   staff account's self-decision guard doesn't stop approval of a benefit
+   meant for grassroots SHG members. Fixed (`0101`). **Live-verified**: a
+   CRP account applying is now blocked; a real member applying still
+   succeeds.
+4. **[MEDIUM, Schemes audit, forward-looking] `scheme_eligibility_met()`
+   silently ignored any `eligibility_criteria` key it didn't recognize**
+   — unreachable today, but a future criterion added to the Dart model
+   without a matching SQL update would let a direct REST/RPC call bypass
+   it silently while the UI still (correctly) blocks members. Fixed to
+   fail closed (deny) on any unrecognized key, matching this same
+   function's own existing fail-closed precedent for grade comparisons.
+   **Live-verified**: a scheme with an unknown criteria key now correctly
+   evaluates `eligible: false`.
+5. **[HIGH, Admin audit] Deleting an SHG or a member profile still
+   silently destroyed real financial/attendance/document/livelihood
+   history across 6 tables** — `shg_documents.shg_id`, `savings_entries.
+   shg_id`/`member_id`, `meetings.shg_id`, `livelihood_activities.shg_id`/
+   `member_id` were all still `on delete cascade`, the identical shape
+   migration `0063` already fixed for loans and never extended further.
+   Fixed (`0099`) to `on delete restrict`, matching the loans/
+   financial_ledger precedent exactly. **Live-verified**: deleting a real
+   `__TEST__` SHG with a real savings entry attached now raises a
+   foreign-key violation instead of silently cascading; zero footprint
+   left (the whole test transaction aborts on the violation).
+6. **[HIGH, independently found by the Savings audit, confirming finding
+   #5's class was real] A live sweep of every remaining FK to
+   `profiles(id)`/`shgs(id)` still on CASCADE found 14 more instances.**
+   Fixed the 5 unambiguously real historical/financial/certification ones
+   (`0100`): `meeting_attendance.member_id`, `scheme_applications.
+   member_id`, `course_progress.member_id` (the member-side of `0090`'s
+   own course_id-side fix, same reasoning), `payments.member_id`,
+   `marketplace_products.seller_id`. The remaining 9 (announcements,
+   announcement_reads, support_tickets, ai_advisor_logs, report_snapshots,
+   analytics_kpis, shg_join_requests ×2, shg_bank_details) are documented
+   below as deliberately deferred rather than blanket-RESTRICTed without
+   the underlying data-retention question being decided.
+7. **[MEDIUM, self-caught via dogfooding] 0096's anon-grant hygiene sweep
+   (round 189) missed a pre-existing `PUBLIC` grant** on
+   `marketplace_reviews_pin_reviewer_name()` (created in `0069`, before
+   this schema's default-privilege grant existed) — 0096 only ever
+   revoked `anon, authenticated` explicitly, never checked for a
+   standalone `PUBLIC` ACL entry. Not exploitable (a `returns trigger`
+   function can't be invoked outside trigger context; PostgREST excludes
+   it from RPC), but closes the sweep's own stated goal for real. Fixed
+   (`0101`).
+8. **[MEDIUM, i18n, Admin audit] Role-change and SHG-assignment success
+   toasts on `AdminUsersPage` were 100% hardcoded English** in both live
+   and demo-mode branches — no `.arb` keys existed for either message,
+   unlike every sibling success/demo-mode message elsewhere in the app.
+   Fixed with 4 new keys across all three `.arb` files.
+9. **[LOW-MEDIUM, Schemes audit] Deleting a scheme with existing
+   applications gave a misleading generic "try again" message** instead
+   of the accurate, already-established FK-violation message — `0074`
+   made this deletion permanently fail for any scheme with applications
+   on file, and the sibling training-course delete page already solved
+   this exact class of error (round 187); the fix was never mirrored to
+   schemes. Fixed to catch Postgrest `23503` the same way.
+10. **[MEDIUM, dogfooding] Meeting status (`upcoming`/`completed`/
+    `cancelled`) was never localized anywhere in the app** — the one
+    status-bearing module without a label helper, unlike loans/savings/
+    marketplace/support/livelihood. Added `meetingStatusLabel()` and
+    wired it into both meeting screens; updated `meeting_detail_page_test.
+    dart`'s assertions (previously checking the raw lowercase DB string)
+    to match the new localized display text.
+11. **[LOW-MEDIUM, dogfooding] Reports' Loan Statement showed the raw,
+    unlocalized loan status** — the one loan-status display in the app
+    not using the shared label helper, mixing raw English into an
+    otherwise fully localized formal statement document. Fixed, and used
+    as the trigger to finally extract the loan-status label/tone maps
+    (previously copy-pasted independently across `loans_home_page.dart`,
+    `loan_detail_page.dart`, and `loan_tracking_page.dart` — a 4th copy
+    was about to be added here) into a single shared `loanStatusLabel()`/
+    `loanStatusTones` in `lib/models/loan.dart`, closing a separately
+    flagged "triplication" finding from the same dogfooding pass.
+12-20. **[LOW-MEDIUM, i18n ×~15 keys]** every new user-facing string this
+    round (admin role/assignment toasts, the scheme delete-has-applications
+    error, 3 meeting status labels) added to all three `app_en.arb`/
+    `app_hi.arb`/`app_te.arb` files and regenerated via `flutter gen-l10n`
+    — grouped here rather than each counted as its own numbered gap,
+    consistent with prior rounds' convention.
+
+**Documented, deliberately not fixed this round** (real findings, larger
+scope or lower severity):
+
+- **9 more `ON DELETE CASCADE` FKs surfaced by the full sweep** (finding
+  #6's remainder) — each is either clearly-derived/regenerable analytics
+  data (`report_snapshots`, `analytics_kpis`), a read-receipt/workflow
+  record with no independent evidentiary value once its subject is gone
+  (`announcement_reads`, `shg_join_requests`), or a genuine data-retention
+  *policy* question rather than a bug (`support_tickets`/`ai_advisor_logs`
+  — should a deleted member's complaint/AI-chat history be retained for
+  staff oversight, or deleted with her account? — a deliberate product/
+  legal decision, not a default to make silently).
+- **Admin audit log covers only 6 of many privileged mutation types** —
+  SHG creation/rename, scheme CRUD, and training-course/quiz CRUD are
+  entirely invisible to it. A real, standalone feature gap (new triggers
+  needed on 3+ tables), too large to fold into this already-large round.
+- **Admin's scheme catalog form can never set a deadline or free-text
+  eligibility list** — `createScheme()`/`updateScheme()` always insert
+  `eligibility: []` with no deadline, so the real deadline-enforcement
+  security work in migrations 0030/0074 can never actually fire for any
+  scheme created through the app. Needs new UI (date picker + list
+  editor), not a quick patch.
+- **Savings entry submission has no idempotency/dedup protection** — a
+  realistic double-submit risk on this app's rural/flaky connections
+  (timeout after the insert actually succeeded, followed by a retry).
+  Needs a schema-level idempotency key design decision.
+- **`SavingsLedgerPage`'s realtime-stream error branch has zero recovery
+  affordance** (no Retry, no Sign-In-Again) beyond the already-documented
+  `isAuthExpiredError` gap — still open, unchanged.
+- **`AppProgressBar.semanticLabel` accessibility fix (round 189) covers
+  only 3 of ~13 call sites app-wide** — 8 more identified by this round's
+  dogfooding (reports/analytics/training pages) still show a bare "X%"
+  with no context to a screen reader. A mechanical but real gap across
+  many files; deferred as a dedicated future-round sweep rather than
+  rushed here.
+- **Savings amount/member-picker fields have no programmatic label** for
+  screen readers (hint-only `InputDecoration`, no `labelText`/`Semantics`)
+  — confirmed real, deferred alongside the progress-bar sweep above as
+  the same class of accessibility debt.
+- **Rejecting a pending savings entry leaves zero audit trail** — a hard
+  DELETE with no `audit_log` row, reasonable for pending-only entries per
+  the original round's stated reasoning, but still a genuine transparency
+  gap worth a conscious future call.
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1038/1038 — including 4 test assertions in `meeting_detail_page_test.
+dart` updated to match the new localized status text, not a regression)
+both clean. Migrations `0099`-`0102` all pushed to the linked live
+project; every RLS/FK claim above independently live-verified with real
+`__TEST__` fixture rows in rolled-back transactions (or a genuinely
+aborted transaction for the FK-violation cases), each re-queried
+afterward to confirm zero footprint. `flutter build web --release
+--dart-define-from-file=.env.json` rebuilt cleanly in live mode. **Browser
+preview verified genuinely working for the first time this session** —
+see the root-cause writeup above; a real screenshot, real navigation, and
+a real dispatched OTP with a live countdown all confirmed against the
+`flutter-web-release` static server with the tab explicitly fronted.
+Full per-role dashboard walkthroughs are still blocked on retrieving a
+real OTP (no bypass exists by design) — flagged to the user rather than
+worked around.

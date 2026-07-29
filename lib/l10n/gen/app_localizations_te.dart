@@ -2154,6 +2154,10 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఈ పథకాన్ని తొలగించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
+  String get adminSchemesDeleteHasApplicationsError =>
+      'ఈ పథకాన్ని తొలగించలేము — దీనికి దరఖాస్తులు నమోదై ఉన్నాయి.';
+
+  @override
   String get adminTrainingCoursesTitle => 'శిక్షణ కోర్సులను నిర్వహించండి';
 
   @override
@@ -2963,6 +2967,15 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get marketplaceCategoryOther => 'ఇతర';
+
+  @override
+  String get meetingStatusUpcoming => 'రాబోయే';
+
+  @override
+  String get meetingStatusCompleted => 'పూర్తయింది';
+
+  @override
+  String get meetingStatusCancelled => 'రద్దు చేయబడింది';
 
   @override
   String get savingsStatusPending => 'పెండింగ్';
@@ -3951,6 +3964,22 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get adminUsersAssignShgError =>
       'ఈ SHGని కేటాయించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get adminUsersRoleUpdatedMessage => 'పాత్ర నవీకరించబడింది';
+
+  @override
+  String get adminUsersRoleUpdatedDemoMessage =>
+      'డెమో మోడ్ — పాత్ర సేవ్ చేయబడలేదు (సేవ్ చేయడానికి Supabaseను కనెక్ట్ చేయండి)';
+
+  @override
+  String adminUsersAssignedToMessage(String name) {
+    return '$nameకి కేటాయించబడింది';
+  }
+
+  @override
+  String get adminUsersAssignedToDemoMessage =>
+      'డెమో మోడ్ — కేటాయింపు సేవ్ చేయబడలేదు (సేవ్ చేయడానికి Supabaseను కనెక్ట్ చేయండి)';
 
   @override
   String get adminUsersManageTitle => 'వినియోగదారులను నిర్వహించండి';

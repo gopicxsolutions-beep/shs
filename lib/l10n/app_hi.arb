@@ -1084,6 +1084,7 @@
   "adminSchemesDeleteDemoModeMessage": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
 
   "adminSchemesDeleteErrorMessage": "इस योजना को हटाया नहीं जा सका। कृपया फिर से कोशिश करें।",
+  "adminSchemesDeleteHasApplicationsError": "यह योजना हटाई नहीं जा सकती — इसके लिए आवेदन दर्ज हैं।",
 
   "adminTrainingCoursesTitle": "प्रशिक्षण कोर्स प्रबंधित करें",
 
@@ -1586,6 +1587,12 @@
   "marketplaceCategoryAgriculture": "कृषि",
 
   "marketplaceCategoryOther": "अन्य",
+
+  "meetingStatusUpcoming": "आगामी",
+
+  "meetingStatusCompleted": "पूर्ण",
+
+  "meetingStatusCancelled": "रद्द",
 
   "savingsStatusPending": "लंबित",
 
@@ -2125,6 +2132,10 @@
   "adminUsersChangeRoleConfirmButton": "बदलें",
   "adminUsersUpdateRoleError": "यह भूमिका अपडेट नहीं हो सकी। कृपया फिर से प्रयास करें।",
   "adminUsersAssignShgError": "यह SHG असाइन नहीं हो सका। कृपया फिर से प्रयास करें।",
+  "adminUsersRoleUpdatedMessage": "भूमिका अपडेट की गई",
+  "adminUsersRoleUpdatedDemoMessage": "डेमो मोड — भूमिका सहेजी नहीं गई (सहेजने के लिए Supabase कनेक्ट करें)",
+  "adminUsersAssignedToMessage": "{name} को असाइन किया गया",
+  "adminUsersAssignedToDemoMessage": "डेमो मोड — असाइनमेंट सहेजा नहीं गया (सहेजने के लिए Supabase कनेक्ट करें)",
   "adminUsersManageTitle": "उपयोगकर्ता प्रबंधित करें",
   "adminUsersNoUsersFoundMessage": "कोई उपयोगकर्ता नहीं मिला",
   "adminUsersAssignShgTooltip": "SHG असाइन करें",

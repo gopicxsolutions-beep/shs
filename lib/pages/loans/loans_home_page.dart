@@ -22,22 +22,6 @@ import '../../widgets/list_row.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stat_card.dart';
 
-const _statusTones = <String, BadgeTone>{
-  'pending': BadgeTone.warning,
-  'active': BadgeTone.brand,
-  'overdue': BadgeTone.danger,
-  'closed': BadgeTone.success,
-  'rejected': BadgeTone.neutral,
-};
-
-String _loanStatusLabel(AppLocalizations l10n, String status) => switch (status) {
-      'pending' => l10n.loanStatusPending,
-      'active' => l10n.loanStatusActive,
-      'overdue' => l10n.loanStatusOverdue,
-      'closed' => l10n.loanStatusClosed,
-      'rejected' => l10n.loanStatusRejected,
-      _ => status,
-    };
 
 class LoansHomePage extends StatelessWidget {
   // Injectable for tests (mirrors `SettingsPage`'s `notificationService`
@@ -236,7 +220,7 @@ class LoansHomePage extends StatelessWidget {
                         subtitle: isLeaderOrStaff
                             ? (isPlatformWideStaff && l.shgName != null ? l10n.loansHomePurposeAndShg(l.purpose, l.shgName!) : l.purpose)
                             : l10n.loansHomeOutstandingOfAmount(NumberFormat('#,##,##0', 'en_IN').format(l.outstanding), NumberFormat('#,##,##0', 'en_IN').format(l.amount)),
-                        trailing: AppBadge(text: _loanStatusLabel(l10n, l.status), tone: _statusTones[l.status] ?? BadgeTone.neutral),
+                        trailing: AppBadge(text: loanStatusLabel(l.status, l10n), tone: loanStatusTones[l.status] ?? BadgeTone.neutral),
                         onTap: () => context.go(Paths.loanDetail(l.id)),
                       );
                     }).toList(),

@@ -103,12 +103,43 @@ flow for hours because nobody executed the actual query path. Rules going forwar
   `read_page`/`javascript_tool` + `getBoundingClientRect` have been reliable even
   when `computer{screenshot}` visually misrenders text on a correctly-hydrated tab.
   Use screenshots for coarse sanity checks only, not for judging text-wrap/overflow.
-- If the Browser pane's Flutter web tab gets stuck (`flt-glass-pane` never gains
-  children — check `document.querySelector('flt-glass-pane').children.length`),
-  don't repeat the same diagnostic loop. Try: `preview_start` a server, then
-  immediately open a **fresh** tab and navigate it to that server's URL exactly
-  once, without touching the `preview_start`-opened tab. If still stuck, say so and
-  fall back to DB-level verification rather than silently giving up on
+- **Root-caused after 15 consecutive false "stuck" rounds (2026-07-29): the
+  `flt-glass-pane` children-count check is invalid for this app's build and must
+  never be used again.** This build renders with the CanvasKit renderer (WebGL
+  canvas), which paints pixels directly and never populates `flt-glass-pane`'s
+  DOM children the way the HTML renderer would — `children.length` stays `0`
+  forever even on a fully, correctly rendered page. Every prior round that
+  concluded "stuck" from this check alone was **wrong** and skipped real UI
+  verification that would have worked. **To verify Flutter web actually
+  rendered: take a `computer{screenshot}` or check `document.body.innerText`
+  for real page content — never `flt-glass-pane.children.length`.**
+- The second real cause of stuck-looking tabs: **a backgrounded/non-frontmost
+  tab never gets a first paint** — Flutter Web schedules its first frame via
+  `requestAnimationFrame`, which Chromium throttles to never-fires for a tab
+  with `document.visibilityState !== 'visible'`. `preview_start` opening a tab
+  does not guarantee it's the frontmost one. Always `tabs_select` the target
+  tab (or confirm `document.hasFocus()`/`visibilityState === 'visible'` via
+  `javascript_tool`) **before** judging whether it rendered, and prefer
+  navigating/reloading only after the tab is already fronted.
+- The third cause: **`.claude/launch.json`'s `flutter-web`/`flutter-web-live`
+  configs run `flutter run -d chrome`**, a debug dev-server that spawns and
+  waits (sometimes 80s+) for its own separate Chrome instance to connect via a
+  debug-service websocket — the Browser pane's tab is a different browser
+  context and never completes that handshake, so the app may never truly start
+  there even though the server log eventually shows "Supabase init completed"
+  (that success is for whatever browser Flutter itself launched, not the
+  Browser pane tab). **Use `flutter-web-release` instead** (`npx serve -l 5002
+  build/web`, a plain static file server, no debug handshake required) — run
+  `flutter build web --release --dart-define-from-file=.env.json` first for a
+  live-mode build (bare `flutter build web` with no dart-defines silently
+  produces a **demo-mode** build, since `Env.supabaseUrl`/`supabaseAnonKey`
+  read via `String.fromEnvironment` are empty without those flags — rebuild
+  with the flag any time you need to verify against the real backend, not just
+  UI/layout).
+- If, after fronting the tab and confirming a `flutter-web-release` build,
+  a screenshot genuinely shows a blank page with no console/network errors,
+  **then** treat it as actually stuck: don't repeat the same diagnostic loop,
+  and fall back to DB-level verification rather than silently giving up on
   verification entirely.
 
 ## Quality bar (why this file exists)

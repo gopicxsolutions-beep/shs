@@ -1465,6 +1465,7 @@
   "adminSchemesDeleteDemoModeMessage": "Demo mode — not saved (connect Supabase to persist)",
 
   "adminSchemesDeleteErrorMessage": "Could not delete this scheme. Please try again.",
+  "adminSchemesDeleteHasApplicationsError": "This scheme can't be deleted — it has applications on file.",
 
   "adminTrainingCoursesTitle": "Manage Training Courses",
 
@@ -2010,6 +2011,12 @@
   "marketplaceCategoryAgriculture": "Agriculture",
 
   "marketplaceCategoryOther": "Other",
+
+  "meetingStatusUpcoming": "Upcoming",
+
+  "meetingStatusCompleted": "Completed",
+
+  "meetingStatusCancelled": "Cancelled",
 
   "savingsStatusPending": "Pending",
 
@@ -2738,6 +2745,15 @@
   "adminUsersChangeRoleConfirmButton": "Change",
   "adminUsersUpdateRoleError": "Could not update this role. Please try again.",
   "adminUsersAssignShgError": "Could not assign this SHG. Please try again.",
+  "adminUsersRoleUpdatedMessage": "Role updated",
+  "adminUsersRoleUpdatedDemoMessage": "Demo mode — role not saved (connect Supabase to persist)",
+  "adminUsersAssignedToMessage": "Assigned to {name}",
+  "@adminUsersAssignedToMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "adminUsersAssignedToDemoMessage": "Demo mode — assignment not saved (connect Supabase to persist)",
   "adminUsersManageTitle": "Manage Users",
   "adminUsersNoUsersFoundMessage": "No users found",
   "adminUsersAssignShgTooltip": "Assign SHG",

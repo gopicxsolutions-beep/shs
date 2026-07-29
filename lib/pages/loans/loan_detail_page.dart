@@ -18,27 +18,6 @@ import '../../widgets/input_formatters.dart';
 import '../../widgets/progress_bar.dart';
 import '../../widgets/section_header.dart';
 
-String _loanStatusLabel(AppLocalizations l10n, String status) => switch (status) {
-      'pending' => l10n.loanStatusPending,
-      'active' => l10n.loanStatusActive,
-      'overdue' => l10n.loanStatusOverdue,
-      'closed' => l10n.loanStatusClosed,
-      'rejected' => l10n.loanStatusRejected,
-      _ => status,
-    };
-
-// Matches loans_home_page.dart's own `_statusTones` — the badge on this
-// page was hardcoded neutral regardless of status (round 189/iteration 17
-// audit), the one loan-status badge in the app not varying with the actual
-// status it names.
-const _statusTones = <String, BadgeTone>{
-  'pending': BadgeTone.warning,
-  'active': BadgeTone.brand,
-  'overdue': BadgeTone.danger,
-  'closed': BadgeTone.success,
-  'rejected': BadgeTone.neutral,
-};
-
 class LoanDetailPage extends StatefulWidget {
   final String loanId;
   const LoanDetailPage({super.key, required this.loanId});
@@ -96,7 +75,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                   children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                       Expanded(child: Text(loan.purpose, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white))),
-                      AppBadge(text: _loanStatusLabel(l10n, loan.status), tone: _statusTones[loan.status] ?? BadgeTone.neutral),
+                      AppBadge(text: loanStatusLabel(loan.status, l10n), tone: loanStatusTones[loan.status] ?? BadgeTone.neutral),
                     ]),
                     const SizedBox(height: 12),
                     Text('₹${NumberFormat('#,##,##0', 'en_IN').format(loan.outstanding)}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: Colors.white)),

@@ -14,14 +14,6 @@ import '../../widgets/app_badge.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 
-const _statusTones = <String, BadgeTone>{
-  'pending': BadgeTone.warning,
-  'active': BadgeTone.brand,
-  'overdue': BadgeTone.danger,
-  'closed': BadgeTone.success,
-  'rejected': BadgeTone.neutral,
-};
-
 class LoanStatementPage extends StatelessWidget {
   const LoanStatementPage({super.key});
 
@@ -100,7 +92,7 @@ class LoanStatementPage extends StatelessWidget {
                               children: [
                                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                   Expanded(child: Text(l.purpose, style: AppTheme.sans(13, weight: FontWeight.w700))),
-                                  AppBadge(text: l.status, tone: _statusTones[l.status] ?? BadgeTone.neutral),
+                                  AppBadge(text: loanStatusLabel(l.status, l10n), tone: loanStatusTones[l.status] ?? BadgeTone.neutral),
                                 ]),
                                 const SizedBox(height: 8),
                                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
