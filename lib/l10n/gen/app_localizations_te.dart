@@ -2828,6 +2828,10 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఈ అభ్యర్థనను ప్రాసెస్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
+  String get shgJoinRequestsProcessErrorStaleRequester =>
+      'ఈ అభ్యర్థనను ప్రాసెస్ చేయలేకపోయాము — సభ్యురాలు దరఖాస్తు చేసినప్పటి నుండి ఆమె ఖాతా మారింది (ఉదా. ఎవరైనా అడ్మిన్ ఆమె పాత్ర లేదా SHGని అప్‌డేట్ చేసారు). ఆమెను కొత్త అభ్యర్థన సమర్పించమని అడగండి.';
+
+  @override
   String get shgJoinRequestsTitle => 'చేరిక అభ్యర్థనలు';
 
   @override

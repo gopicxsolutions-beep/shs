@@ -197,11 +197,20 @@ class LocalNotificationService implements NotificationService {
     } catch (_) {
       // Device timezone lookup failed (unsupported platform, or a name the
       // bundled tz database doesn't recognise, or — in `flutter test` — no
-      // platform channel registered at all). Falls back to whatever
-      // `tz.local` already defaults to (UTC) rather than crashing; a
-      // reminder scheduled in this fallback would fire at the wrong
-      // wall-clock offset, but the app keeps working instead of the whole
-      // notification feature going down with it.
+      // platform channel registered at all). Gap-hunt iteration 35: this
+      // used to fall through to whatever `tz.local` already defaults to
+      // (UTC) — every real user of this app is in India, so a reminder
+      // scheduled under that fallback would fire ~5.5h off from the
+      // intended wall-clock time. `Asia/Kolkata` is a strictly safer
+      // fallback for an India-only app than UTC; still best-effort (the
+      // lookup below can itself throw on a truly bare `tz` database, e.g.
+      // in `flutter test`), so the app keeps working either way instead of
+      // the whole notification feature going down with it.
+      try {
+        tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
+      } catch (_) {
+        /* bare tz database (e.g. flutter test) — keep tz.local's own default */
+      }
     }
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false);
@@ -338,14 +347,25 @@ class LocalNotificationService implements NotificationService {
       // not necessarily at the exact minute) rather than dropping the
       // reminder entirely.
       if (e.code == 'exact_alarms_not_permitted') {
-        await _plugin.zonedSchedule(
-          id: id,
-          title: title,
-          body: body,
-          scheduledDate: scheduled,
-          notificationDetails: details,
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        );
+        // Gap-hunt iteration 35: this fallback call was itself unwrapped —
+        // if IT also threw, the exception escaped past this whole
+        // try/catch (a sibling `catch` clause doesn't protect code running
+        // inside another clause), aborting whichever sync loop called
+        // `scheduleMeetingReminder`/`scheduleLoanDueReminder` for every
+        // item still left to process. Best-effort like every other branch
+        // here — one meeting/loan's failure shouldn't take the rest down.
+        try {
+          await _plugin.zonedSchedule(
+            id: id,
+            title: title,
+            body: body,
+            scheduledDate: scheduled,
+            notificationDetails: details,
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          );
+        } catch (_) {
+          /* best-effort fallback; nothing further to recover */
+        }
       }
     } catch (_) {
       // No platform channel (test/unsupported target) — best-effort.
@@ -400,12 +420,20 @@ class LocalNotificationService implements NotificationService {
 /// the same notification id.
 Future<void> syncMeetingReminders(NotificationService service, List<Meeting> meetings, AppLocalizations l10n) async {
   for (final m in meetings) {
-    if (m.status == 'upcoming' && !m.hasPassed) {
-      final venue = m.venue ?? '';
-      final body = venue.trim().isEmpty ? l10n.notificationMeetingReminderBodyNoVenue : l10n.notificationMeetingReminderBodyWithVenue(venue);
-      await service.scheduleMeetingReminder(meetingId: m.id, meetingAt: m.scheduledAt, title: l10n.notificationMeetingReminderTitle, body: body);
-    } else {
-      await service.cancelMeetingReminder(m.id);
+    // Gap-hunt iteration 35: an uncaught exception scheduling/cancelling
+    // ONE meeting's reminder used to abort this whole loop, silently
+    // leaving every remaining meeting's reminder stale. Isolated per item
+    // so one failure can't take the rest down with it.
+    try {
+      if (m.status == 'upcoming' && !m.hasPassed) {
+        final venue = m.venue ?? '';
+        final body = venue.trim().isEmpty ? l10n.notificationMeetingReminderBodyNoVenue : l10n.notificationMeetingReminderBodyWithVenue(venue);
+        await service.scheduleMeetingReminder(meetingId: m.id, meetingAt: m.scheduledAt, title: l10n.notificationMeetingReminderTitle, body: body);
+      } else {
+        await service.cancelMeetingReminder(m.id);
+      }
+    } catch (_) {
+      /* best-effort; move on to the next meeting */
     }
   }
 }
@@ -415,12 +443,17 @@ Future<void> syncMeetingReminders(NotificationService service, List<Meeting> mee
 /// known `nextDueDate` has a real upcoming due date to remind about.
 Future<void> syncLoanDueReminders(NotificationService service, List<Loan> loans, AppLocalizations l10n) async {
   for (final l in loans) {
-    final due = l.nextDueDate;
-    if ((l.status == 'active' || l.status == 'overdue') && due != null) {
-      final body = l.emi > 0 ? l10n.notificationLoanDueBodyWithAmount(l.emi.round().toString()) : l10n.notificationLoanDueBodyNoAmount;
-      await service.scheduleLoanDueReminder(loanId: l.id, dueDate: due, title: l10n.notificationLoanDueTitle, body: body);
-    } else {
-      await service.cancelLoanDueReminder(l.id);
+    // See syncMeetingReminders' matching comment — same per-item isolation.
+    try {
+      final due = l.nextDueDate;
+      if ((l.status == 'active' || l.status == 'overdue') && due != null) {
+        final body = l.emi > 0 ? l10n.notificationLoanDueBodyWithAmount(l.emi.round().toString()) : l10n.notificationLoanDueBodyNoAmount;
+        await service.scheduleLoanDueReminder(loanId: l.id, dueDate: due, title: l10n.notificationLoanDueTitle, body: body);
+      } else {
+        await service.cancelLoanDueReminder(l.id);
+      }
+    } catch (_) {
+      /* best-effort; move on to the next loan */
     }
   }
 }

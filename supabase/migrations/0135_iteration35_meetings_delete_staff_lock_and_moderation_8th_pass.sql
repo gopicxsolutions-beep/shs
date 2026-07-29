@@ -1,0 +1,49 @@
+-- Gap-hunt iteration 35: dogfooding iteration 34's fixes found a CRITICAL
+-- gap the entire meetings cancel-guard hardening chain (0042, 0110, 0129,
+-- 0133, 0134) never touched — because it hardened the UPDATE path only.
+--
+-- `meetings_delete_staff` (migration 0026) has always been a bare
+-- `is_staff()`, no status check, no date bound — every round that closed
+-- a "retroactively erase an inconvenient historical meeting" hole did so
+-- by tightening the UPDATE-to-'cancelled' path, never once considering
+-- that staff can just DELETE the row outright. Since `meeting_attendance`/
+-- `meeting_minutes` both cascade-delete with the parent `meetings` row
+-- (0001's own FKs), this is a strictly WORSE outcome than every cancel-
+-- laundering exploit already closed: no row, no trace, not even a
+-- "cancelled" audit marker. Live-verified by this round's dogfooding pass:
+-- staff deleted a real completed meeting with 5 real attendance rows in
+-- one statement, cascading both away entirely.
+--
+-- Fixed by reusing the exact immutable anchor migration 0134 already
+-- introduced for this same table: staff may only delete a meeting whose
+-- `original_meeting_date` (stamped once at INSERT, never mutable
+-- afterward) is still today-or-future — i.e., one that was never actually
+-- held yet, so there is no real attendance/history to protect. A leader
+-- has no DELETE policy on `meetings` at all (staff-only since 0026), so
+-- this closes the hole for every non-admin-oversight actor; a genuinely
+-- historical meeting can now never be hard-deleted by anyone, matching
+-- the same standard already applied to every other governance/financial
+-- record in this schema (savings_entries, financial_ledger, loans).
+--
+-- Also 2 real gaps in `moderation.ts`'s 7th-pass fix (iteration 34), found
+-- by the same dogfooding pass:
+--
+-- 1. [HIGH] `CONFUSABLES` mapped U+04CF (Cyrillic Palochka) to `'i'` —
+-- per Unicode's own confusables data, U+04CF is the canonical lookalike
+-- of LATIN SMALL LETTER L, not I. Live-verified: "ki" + U+04CF + U+04CF +
+-- "myself" (visually "killmyself") was NOT blocked. Also no confusable
+-- existed for Latin 'w' at all — Cyrillic ѡ (U+0461) substituted for 'w'
+-- in "wipe out" also passed through unblocked. Fixed both.
+--
+-- 2. [HIGH] An 8th bypass class: `COMBINING_MARKS_RE` only covers
+-- U+0300-036F (Combining Diacritical Marks). Live-verified 3 sibling
+-- combining-mark blocks bypass it identically: U+1AB0-1AFF (Combining
+-- Diacritical Marks Extended), U+1DC0-1DFF (Combining Diacritical Marks
+-- Supplement), and U+FE20-FE2F (Combining Half Marks) — the exact "one
+-- block instead of the family" mistake this file's own 6th-pass history
+-- already names as a recurring failure mode for this codebase. Fixed by
+-- covering all 4 combining-mark blocks.
+
+drop policy if exists "meetings_delete_staff" on public.meetings;
+create policy "meetings_delete_staff" on public.meetings
+  for delete using (public.is_staff() and original_meeting_date >= current_date);

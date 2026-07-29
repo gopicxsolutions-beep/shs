@@ -2832,6 +2832,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not process this request. Please try again.';
 
   @override
+  String get shgJoinRequestsProcessErrorStaleRequester =>
+      'Could not process this request — the member\'s account has changed since she applied (e.g. her role or SHG was updated by an admin). Ask her to submit a new request.';
+
+  @override
   String get shgJoinRequestsTitle => 'Join Requests';
 
   @override

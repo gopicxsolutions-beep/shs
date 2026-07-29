@@ -19814,3 +19814,162 @@ direct query rather than trusting either flagged sub-agent's own account,
 that no real data was actually mutated by either of the process-note
 incidents above.
 
+## Gap-hunting loop iteration 35: dogfooding finds a CRITICAL — staff DELETE completely bypassed the entire 5-migration meetings cancel-guard hardening chain — plus a 9th moderation bypass class and a real village-report data-quality bug
+
+Iteration 35 launched 4 fresh audits: a dogfooding pass over iteration 34's
+fixes (migration 0134, moderation.ts 7th pass), plus fresh sweeps of
+Notifications/reminder-scheduling, Federation Reports/exports, and
+Router/Auth/session edge cases.
+
+**Fixed and live-verified this round:**
+
+1. **[CRITICAL]** Dogfooding found `meetings_delete_staff` (migration
+   0026) has ALWAYS been a bare `is_staff()` — no status check, no date
+   bound — completely untouched by every one of the 5 prior rounds (0042,
+   0110, 0129, 0133, 0134) that hardened the meetings cancel-guard
+   specifically because they only ever hardened the UPDATE path. Since
+   `meeting_attendance`/`meeting_minutes` both cascade-delete with their
+   parent `meetings` row, a staff account could just DELETE a historical
+   meeting outright — strictly worse than every "relabel as cancelled"
+   laundering exploit already closed, since it leaves no row and no trace
+   at all. Live-verified: staff deleted a real completed meeting with 5
+   real attendance rows in one statement, cascading both away entirely.
+   Fixed in migration
+   `0135_iteration35_meetings_delete_staff_lock_and_moderation_8th_pass.sql`
+   by reusing the exact immutable `original_meeting_date` anchor migration
+   0134 already introduced for this table: staff may only delete a meeting
+   that was never actually held yet (`original_meeting_date >= current_date`)
+   — a genuinely historical meeting can now never be hard-deleted by
+   anyone (leader has never had DELETE access here at all). Live-verified:
+   deleting a real historical meeting now matches 0 rows; deleting a
+   genuinely upcoming, never-held meeting still works.
+2. **[HIGH]** Same dogfooding pass found 2 bugs in the 7th-pass moderation
+   fix (iteration 34): `CONFUSABLES` mapped U+04CF (Cyrillic Palochka) to
+   `'i'`, but it's actually the canonical Unicode confusable of Latin `'l'`
+   — live-verified "ki" + U+04CF + U+04CF + " myself" (visually
+   "killmyself") bypassed unblocked. There was also no confusable at all
+   for Latin `'w'` (Cyrillic ѡ, U+0461, substituted into "wipe out" also
+   passed through). Separately, a 9th bypass class (numbering continues
+   from the file's own "7th/8th pass" history): `COMBINING_MARKS_RE` only
+   covered one of Unicode's four Combining Marks blocks (U+0300-036F) —
+   live-verified bypasses via the other three (Combining Diacritical Marks
+   Extended U+1AB0-1AFF, Supplement U+1DC0-1DFF, Combining Half Marks
+   U+FE20-FE2F) — the exact "one block instead of the family" mistake this
+   file's own 6th-pass history already names as this codebase's recurring
+   failure mode on this exact file. Fixed the mapping, added the `w`
+   confusable, and widened the combining-marks regex to all 4 blocks.
+   Verified: `deno test` on `moderation.test.ts`, now 42 tests including 2
+   new ones for exactly these cases, fully green.
+3. **[MEDIUM]** Federation Reports audit found `fetchVillageWiseShgs()`
+   groups SHGs by the raw, un-normalized `village` string — a free-text
+   admin field with no case-folding. Live-verified: changing one real
+   SHG's village from `"rangampeta"` to `"RANGAMPETA"` (same village as
+   another real SHG) produced two separate report rows instead of merging
+   into one — silently double-counting a village the moment any admin's
+   capitalization drifts, in a federation-facing CRP/CLF/admin report.
+   Fixed in `report_repository.dart` by grouping on a normalized
+   (trimmed, lowercased) key while still displaying the first-seen
+   original casing, so the report doesn't itself rewrite a village name
+   the user never typed that way. Verified via a read-only query
+   simulating the exact case-drift scenario against real live data,
+   confirming the new grouping key merges it correctly (no RLS boundary
+   involved — this is a pure client-side aggregation bug, verified the
+   same way the earlier `trend_repository.dart`/`analytics_repository.dart`
+   fixes were: code correctness + a live-data simulation, not a browser
+   click-through).
+4. **[LOW-MEDIUM]** Notifications audit found `_zonedSchedule`'s Android
+   exact-alarm-denied fallback call was itself unwrapped — if it also
+   threw, the exception escaped past the whole surrounding try/catch (a
+   sibling `catch` clause doesn't protect code running inside another
+   clause), aborting whichever sync loop called it for every remaining
+   meeting/loan. Fixed by wrapping the fallback in its own try/catch, and
+   added the same per-item try/catch isolation directly to
+   `syncMeetingReminders`/`syncLoanDueReminders` as defense-in-depth, so no
+   single item's failure can ever abort the rest of the sync pass again.
+5. **[LOW]** Same audit found the device-timezone-lookup failure path fell
+   back to whatever `tz.local` already defaults to (UTC) — for an
+   India-only app, a strictly worse fallback than hardcoding
+   `Asia/Kolkata`. Fixed with an `Asia/Kolkata` fallback (itself
+   best-effort, in case the tz database is bare, e.g. `flutter test`).
+6. **[MEDIUM]** Router/Auth audit found `shg_join_requests_page.dart`
+   showed one generic error for every `approve_shg_join_request` failure,
+   including the specific, actionable case migrations 0117/0119 were
+   written to detect (the requester's own account changed since she
+   applied — an admin reassigned her role/SHG while the request sat
+   pending) — the exact sibling gap to the one fixed in
+   `admin_users_page.dart` in iteration 34, missed on this page. Added a
+   targeted message (detecting the specific RPC exception text) plus new
+   `hi`/`te` translations, mirroring iteration 34's fix.
+
+**Found this round, documented rather than fixed (needs more design work
+or is already an accepted trade-off):**
+
+7. Notifications audit: first-use OS permission denial (triggered by
+   simply opening the Meetings/Loans/Announcements tab, not Settings) has
+   no UI feedback at all — silently flips the preference off with no
+   snackbar, unlike the equivalent `SettingsPage` path. A real gap, but
+   fixing it needs threading a `BuildContext`/callback through 3
+   `unawaited()` call sites with no current hook for it — left for a
+   dedicated round rather than a rushed wiring change.
+8. Notifications audit: `notifyNewAnnouncements` has no reentrancy guard
+   (unlike `SettingsPage`'s explicit `_meetingsToggleBusy`-style flags),
+   so rapidly navigating away from and back to the Announcements tab can
+   spawn two overlapping sync chains reading the same stale "seen"
+   registry, both potentially firing a duplicate OS notification. Not
+   live-observed this round (no device session); a real structural gap
+   worth its own round rather than a quick patch that risks introducing a
+   new race of its own.
+9. Federation Reports audit: confirmed and sharpened an already-documented
+   gap — a silently-failed nightly report-snapshot run is genuinely
+   undetectable in practice. Live-checked this round: `net._http_response`
+   (the previously-documented workaround for checking the Edge Function's
+   real result, since `cron.job_run_details` only reflects successful
+   *enqueueing*) currently retains only ~6 hours of history — pg_net
+   self-prunes it well before a human would check the next morning, so
+   even the accepted workaround isn't durable. `infra_health_checks`
+   doesn't cover this either (a generic DB round-trip ping, unrelated to
+   snapshot outcomes). Needs a real monitoring design (e.g. writing
+   success/failure to a table this app owns, not relying on pg_net's own
+   transient log), not a quick fix.
+10. Federation Reports audit: `generate-report-snapshots`'s member/
+    attendance counts still don't exclude deactivated profiles, unlike
+    every client-side query — already an accepted latent gap (nothing
+    reads `report_snapshots` in the UI yet) per an earlier round's
+    documentation; re-verified still true and re-demonstrated the actual
+    numeric drift on real data (5 profiles via the edge function's query
+    shape vs. 4 via the client's `is_active`-filtered shape) rather than
+    trusting the stale doc entry.
+11. Router/Auth audit: `savings_ledger_page.dart`'s realtime `StreamBuilder`
+    has no session-expiry recovery affordance (`Retry`/`Sign In Again`),
+    unlike every other data screen via `AppAsyncBuilder`'s explicit
+    `isAuthExpiredError` handling — a real code fact, not live-tested this
+    round (deliberately did not revoke a real live session mid-stream).
+    Also a deep-link query-parameter loss (cosmetic) and a re-confirmed,
+    already-documented mid-session-deactivation polling-cadence gap (only
+    re-checks on app-lifecycle `resumed`, not a continuously-foregrounded
+    session) — both left as-is, matching this project's existing judgment
+    calls on similar lower-stakes gaps.
+
+**Re-confirmed still correctly closed by this round's audits (no
+regression):** the `ON CONFLICT DO UPDATE` upsert path for
+`livelihood_activities` routes through the UPDATE policy, not INSERT, so
+it doesn't bypass 0134's DELETE lock; `approve_shg_join_request` never
+touches the approver's own profile row (no interaction with
+`profiles_staff_no_shg`); `updateUserRole`/`assignShg` correctly surface
+`profiles_leader_requires_shg`/`profiles_staff_no_shg` violations as
+errors rather than silently succeeding; `role_select_page.dart`'s live-mode
+branch is genuinely unreachable, no router loop/dead-end found across
+every traced profile state; federation report RLS (`report_snapshots`,
+`shgs`) correctly scopes leader/member to their own SHG and staff to
+everything, with no export feature existing yet to audit for RLS parity.
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full 1077
+test suite passing. `deno test` — moderation.test.ts (42, up from 40) fully
+green. Live: migration `0135` deployed via `supabase db push` and
+individually live-verified in rolled-back transactions with both a
+negative (attack) and positive (legitimate-use) case. The village-grouping
+fix (a pure Dart aggregation change, no RLS boundary) was verified via a
+read-only query simulating the real case-drift scenario against live data.
+All test fixtures confirmed removed via re-querying afterward (zero
+residual rows).
+

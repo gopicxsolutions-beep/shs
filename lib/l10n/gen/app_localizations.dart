@@ -4960,6 +4960,12 @@ abstract class AppLocalizations {
   /// **'Could not process this request. Please try again.'**
   String get shgJoinRequestsProcessError;
 
+  /// No description provided for @shgJoinRequestsProcessErrorStaleRequester.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not process this request — the member\'s account has changed since she applied (e.g. her role or SHG was updated by an admin). Ask her to submit a new request.'**
+  String get shgJoinRequestsProcessErrorStaleRequester;
+
   /// No description provided for @shgJoinRequestsTitle.
   ///
   /// In en, this message translates to:

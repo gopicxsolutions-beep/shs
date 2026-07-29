@@ -1474,6 +1474,7 @@
   "shgJoinRequestsDemoMode": "डेमो मोड — सेव नहीं हुआ (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
 
   "shgJoinRequestsProcessError": "यह अनुरोध पूरा नहीं हो सका। कृपया फिर से कोशिश करें।",
+  "shgJoinRequestsProcessErrorStaleRequester": "यह अनुरोध पूरा नहीं हो सका — सदस्य के आवेदन के बाद से उसका खाता बदल गया है (जैसे किसी एडमिन ने उसकी भूमिका या SHG अपडेट कर दी हो)। उससे नया अनुरोध सबमिट करने को कहें।",
 
   "shgJoinRequestsTitle": "जुड़ने के अनुरोध",
 

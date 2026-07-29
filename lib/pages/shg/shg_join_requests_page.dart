@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/shg_join_request.dart';
@@ -54,9 +55,20 @@ class _ShgJoinRequestsPageState extends State<ShgJoinRequestsPage> {
         ));
         _key.currentState?.reload();
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.shgJoinRequestsProcessError)));
+        // Gap-hunt iteration 35: this used to be one generic message for
+        // every failure — including the specific, actionable case
+        // `approve_shg_join_request` (migrations 0117/0119) was written to
+        // detect: the requester's own account changed since she applied
+        // (an admin reassigned her role/SHG while the request sat
+        // pending), so the "is she still really a pending, unlinked
+        // member?" re-check fails. A bare "could not process" gives the
+        // leader/staff reviewer no clue the fix is "have her re-apply."
+        final staleRequester = e is PostgrestException && e.message.contains('requester account has changed since this request was filed');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(staleRequester ? l10n.shgJoinRequestsProcessErrorStaleRequester : l10n.shgJoinRequestsProcessError),
+        ));
       }
     } finally {
       if (mounted) setState(() => _deciding = null);

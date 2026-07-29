@@ -181,24 +181,38 @@ function stripInvisibleChars(text: string): string {
   return text.replace(INVISIBLE_CHARS_RE, ' ');
 }
 
-// See the "7th pass" history entry above. Combining Diacritical Marks
-// block only (U+0300-U+036F) — deliberately NOT the broader `\p{Mn}`
-// category, which would also strip legitimate Hindi/Telugu combining
-// vowel signs (matras/vottulu). Those live in the Devanagari (U+0900-097F)
-// and Telugu (U+0C00-0C7F) blocks respectively, entirely disjoint from
-// this one, so this strip cannot corrupt a real Hindi/Telugu phrase.
-const COMBINING_MARKS_RE = new RegExp('[\\u0300-\\u036f]', 'g');
+// See the "7th pass" history entry above. 8th pass (gap-hunt iteration
+// 35): dogfooding found this covered only ONE of Unicode's four Combining
+// Marks blocks — the exact "one block instead of the family" mistake this
+// file's own 6th-pass history already names as a recurring failure mode.
+// Live-verified bypasses via the other three: U+1AB0-1AFF (Combining
+// Diacritical Marks Extended), U+1DC0-1DFF (Combining Diacritical Marks
+// Supplement), U+FE20-FE2F (Combining Half Marks) — each defeats the
+// pattern matcher identically to a bare U+0300-036F injection. Still
+// deliberately NOT the broader `\p{Mn}` category, which would also strip
+// legitimate Hindi/Telugu combining vowel signs (matras/vottulu) — those
+// live in the Devanagari (U+0900-097F) and Telugu (U+0C00-0C7F) blocks,
+// entirely disjoint from all four ranges below, so this strip still
+// cannot corrupt a real Hindi/Telugu phrase.
+const COMBINING_MARKS_RE = new RegExp('[\\u0300-\\u036f\\u1ab0-\\u1aff\\u1dc0-\\u1dff\\ufe20-\\ufe2f]', 'g');
 
 // Common, actually-typeable Cyrillic/Greek homoglyphs of the Latin letters
 // used in the pattern sets below, folded to their Latin lookalike. Not
 // Unicode's full confusables database — a lightweight, maintainable
 // subset per this file's own stated scope.
+// Gap-hunt iteration 35 dogfooding found 2 bugs in this table: U+04CF
+// (Cyrillic Palochka) was mapped to 'i', but per Unicode's own
+// confusables data it's the canonical lookalike of Latin 'l', not 'i' —
+// live-verified "ki" + U+04CF + U+04CF + "myself" (visually
+// "killmyself") bypassed unblocked; and there was no confusable at all
+// for Latin 'w' (Cyrillic ѡ, U+0461, substituted into "wipe out" also
+// bypassed). Both fixed below.
 const CONFUSABLES: Record<string, string> = {
   а: 'a', е: 'e', о: 'o', р: 'p', с: 'c', х: 'x', у: 'y', і: 'i', ѕ: 's', к: 'k',
-  м: 'm', н: 'h', т: 't', в: 'v', ё: 'e', ј: 'j', ԁ: 'd', ц: 'c', ӏ: 'i',
+  м: 'm', н: 'h', т: 't', в: 'v', ё: 'e', ј: 'j', ԁ: 'd', ц: 'c', ӏ: 'l', ѡ: 'w',
   α: 'a', ο: 'o', ν: 'v', κ: 'k', ρ: 'p', υ: 'u', τ: 't', ι: 'i', β: 'b', η: 'n',
   А: 'a', Е: 'e', О: 'o', Р: 'p', С: 'c', Х: 'x', У: 'y', І: 'i', Ѕ: 's', К: 'k',
-  М: 'm', Н: 'h', Т: 't', В: 'v', Ё: 'e', Ј: 'j',
+  М: 'm', Н: 'h', Т: 't', В: 'v', Ё: 'e', Ј: 'j', Ѡ: 'w',
   Α: 'a', Ο: 'o', Ν: 'n', Κ: 'k', Ρ: 'p', Υ: 'y', Τ: 't', Ι: 'i', Β: 'b', Η: 'h',
 };
 

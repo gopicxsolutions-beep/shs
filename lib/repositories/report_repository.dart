@@ -259,15 +259,26 @@ class ReportRepository {
       savingsByShg[shgId] = (savingsByShg[shgId] ?? 0) + (map['amount'] as num);
     }
 
+    // `village` is free-text (admin_shgs_page.dart only `.trim()`s it, no
+    // case-folding), so grouping by the raw string fragments this report
+    // the moment one admin types "Rangampeta" and another "RANGAMPETA" —
+    // live-verified (gap-hunt iteration 35) to silently split one real
+    // village into two rows instead of merging them. Group by a
+    // normalized (trimmed, lowercased) key instead, while still displaying
+    // the first-seen original casing so the report doesn't itself
+    // normalize a village name the user never typed that way.
     final shgCountByVillage = <String, int>{};
     final savingsByVillage = <String, num>{};
+    final displayNameByKey = <String, String>{};
     for (final entry in villageByShgId.entries) {
-      final village = entry.value;
-      shgCountByVillage[village] = (shgCountByVillage[village] ?? 0) + 1;
-      savingsByVillage[village] = (savingsByVillage[village] ?? 0) + (savingsByShg[entry.key] ?? 0);
+      final village = entry.value.trim();
+      final key = village.toLowerCase();
+      displayNameByKey.putIfAbsent(key, () => village.isEmpty ? 'Unknown' : village);
+      shgCountByVillage[key] = (shgCountByVillage[key] ?? 0) + 1;
+      savingsByVillage[key] = (savingsByVillage[key] ?? 0) + (savingsByShg[entry.key] ?? 0);
     }
 
-    final villages = shgCountByVillage.keys.toList()..sort();
-    return villages.map((v) => VillageShgGroup(village: v, shgCount: shgCountByVillage[v]!, totalSavings: savingsByVillage[v] ?? 0)).toList();
+    final keys = shgCountByVillage.keys.toList()..sort((a, b) => displayNameByKey[a]!.compareTo(displayNameByKey[b]!));
+    return keys.map((k) => VillageShgGroup(village: displayNameByKey[k]!, shgCount: shgCountByVillage[k]!, totalSavings: savingsByVillage[k] ?? 0)).toList();
   }
 }

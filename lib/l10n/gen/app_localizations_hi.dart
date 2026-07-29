@@ -2794,6 +2794,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'यह अनुरोध पूरा नहीं हो सका। कृपया फिर से कोशिश करें।';
 
   @override
+  String get shgJoinRequestsProcessErrorStaleRequester =>
+      'यह अनुरोध पूरा नहीं हो सका — सदस्य के आवेदन के बाद से उसका खाता बदल गया है (जैसे किसी एडमिन ने उसकी भूमिका या SHG अपडेट कर दी हो)। उससे नया अनुरोध सबमिट करने को कहें।';
+
+  @override
   String get shgJoinRequestsTitle => 'जुड़ने के अनुरोध';
 
   @override
