@@ -2117,6 +2117,8 @@
   "adminDashboardActivityDocument": "పత్రం అప్‌లోడ్ చేయబడింది — {name}",
 
   "aiAdvisorUpstreamUnavailable": "సలహాదారు సేవ ప్రస్తుతం తాత్కాలికంగా అందుబాటులో లేదు. దయచేసి కొద్దిసేపటి తర్వాత మళ్లీ ప్రయత్నించండి.",
+  "aiAdvisorChatYouLabel": "మీరు",
+  "aiAdvisorChatAdvisorLabel": "సలహాదారు",
   "aiAdvisorChatInputHint": "ఒక ప్రశ్న అడగండి…",
   "aiAdvisorChatSendTooltip": "పంపండి",
   "aiAdvisorChatFinancialHint": "మీ SHG కోసం పొదుపు, రుణాలు, లేదా బడ్జెట్ గురించి అడగండి.",

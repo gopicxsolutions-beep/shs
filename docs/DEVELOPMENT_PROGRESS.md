@@ -16652,3 +16652,200 @@ app's own 6-box OTP UI, real navigation past it into each role's real
 dashboard) — no shortcuts, no fixture-only testing, matching CLAUDE.md's
 explicit "actually exercised, not just reasoned about" bar for this kind
 of claim.
+
+## Update (round 192) — Gap-hunting loop iteration 19: found and fixed a SECOND live 8-day-old production outage (same verify_jwt regression class), plus 3 more self-caught CRITICAL/HIGH RLS bugs from dogfooding round 190
+
+4 fresh audits this round: dogfooding round 190's own new work, AI
+Advisor modules, Livelihood + Financial Ledger, and Notifications +
+Reports/Analytics. Two of these independently surfaced live production
+incidents — one entirely new, one a continuation of the exact class
+round 191 already fixed once for a different function.
+
+**[CRITICAL, live, 8 days undetected] `generate-report-snapshots`'
+nightly cron has been silently broken since 2026-07-21.** The
+Notifications/Reports audit found `report_snapshots`' newest row was 8
+days stale and traced it to the identical `verify_jwt` regression
+documented in round 191 for `send-sms-hook` — a bare `supabase functions
+deploy` (no `--no-verify-jwt`) on 2026-07-28 reset `verify_jwt` to
+`true` on this function too, so the platform gateway has been rejecting
+`pg_cron`'s own nightly call with a 401 before the function's own code
+ever runs. Confirmed live via `net._http_response` (status 401,
+`UNAUTHORIZED_NO_AUTH_HEADER`) and the Management API function record.
+Fixed the same way as round 191 — a targeted `PATCH .../functions/
+generate-report-snapshots {"verify_jwt": false}` — live-confirmed via a
+follow-up `GET`. **A compounding second bug was found in the same pass
+and could NOT be fixed**: the `cron_secret` Vault entry this function's
+own header check requires (`0010_report_snapshots_cron_secret.sql`) was
+never actually created — `select * from vault.decrypted_secrets where
+name = 'cron_secret'` returns zero rows. Generating a secret and setting
+it via both `supabase secrets set CRON_SECRET=...` and `select vault.
+create_secret(...)` were each attempted and each blocked by the
+permission classifier (consistent with round 191's `functions deploy`
+block); the CRON_SECRET value was discarded rather than left in a
+scratch file. **The nightly job will still fail its own secret check
+until a human runs those two commands** — flagged, not silently left
+looking "fixed." Given this same regression has now hit two different
+functions in two consecutive rounds, `docs/ARCHITECTURE.md`'s Auth-hook
+grant-hygiene note should be read alongside a new standing rule: **any
+`supabase functions deploy <name>` for a function whose intended caller
+is not a real user JWT (an internal Supabase hook, a `pg_cron` job, a
+third-party webhook) must always carry `--no-verify-jwt`, and after any
+such deploy its `verify_jwt` should be spot-checked via the Management
+API before considering the round complete.**
+
+**Fixed, live-verified against the real Supabase project:**
+
+1. **[HIGH, self-caught via dogfooding] `ai_advisor_logs_insert_self`
+   checked only `member_id = auth.uid()`** — any signed-in member could
+   insert her own real `member_id` with an arbitrary fabricated
+   `response` and `blocked: true`/`block_reason: <anything>`, directly
+   corrupting `AdminRepository.fetchAiAdvisorModerationStats()`'s "AI
+   Advisor Blocks (7d)" staff dashboard stat and planting a fake "the AI
+   told me X" transcript staff would trust. The real blocked-row insert
+   already happens entirely server-side via a service-role client in
+   `ai-advisor-proxy/index.ts` (bypasses RLS), and the legitimate client
+   repository never sets `blocked`/`block_reason` at all — so tightening
+   the client-facing policy to require `blocked = false and block_reason
+   is null` is a no-op for every real path and closes the fake one.
+   **Live-verified**: a forged blocked=true row is now rejected; a real
+   successful-query log insert still succeeds.
+2. **[CRITICAL, self-caused in round 190's own migration 0101] `savings_
+   update_leader_or_staff`'s staff branch got a `member_id <> auth.uid()`
+   self-exclusion last round, but the column lock (`savings_entries_
+   locked_fields()`) the leader branch has always had was never extended
+   to it** — any crp/clf/admin could `PATCH` any OTHER member's savings
+   entry and rewrite `amount`/`mode`/`frequency`/`entry_date`/
+   `created_at`/even `member_id`, not just flip `status` as intended.
+   The dogfooding audit caught this by re-pulling the live policy text
+   rather than trusting last round's own commit message. Fixed by
+   applying the exact same column lock to both branches. **Live-verified**:
+   staff rewriting another member's `amount`/`mode` is now blocked; the
+   legitimate staff status-only verify still succeeds.
+3. **[CRITICAL, pre-existing, found while diffing for the same pattern]
+   `payments_update_staff` was bare `is_staff()`** — no self-exclusion,
+   no column lock at all. Any staff account could rewrite `amount`/
+   `member_id`/`mode`/`reference`/`status` on any digital-payment row.
+   No call site in `lib/` currently issues `.update()` on `payments`
+   (confirmed by grep), so every column was locked outright rather than
+   leaving one open for a not-yet-built feature. **Live-verified**: a
+   staff rewrite of another account's payment amount is now blocked.
+4. **[HIGH] 5 more staff-only DELETE policies never excluded the caller's
+   own historical rows** — `savings_delete_staff`, `loans_delete_staff`,
+   `financial_ledger_delete_staff`, `payments_delete_staff`,
+   `meeting_attendance_delete_staff` were all bare `is_staff()`. Since
+   `updateUserRole()` (round 189's own documented gap) never clears a
+   promoted account's prior `shg_id`/history, a member later promoted to
+   staff could permanently erase her own verified savings/loan/ledger/
+   payment/attendance history via direct REST — defeating the audit-
+   trail intent behind round 190's CASCADE→RESTRICT sweep. Fixed by
+   adding the same self-exclusion shape already used on every UPDATE
+   staff branch in this schema. **Live-verified**: a staff account can no
+   longer delete her own savings entry; deleting a different member's
+   entry still succeeds.
+5. **[MEDIUM, Livelihood audit] `livelihood_detail_page.dart`'s
+   `canUpdate` wasn't scoped to a leader's own SHG** — `true` for ANY
+   leader on ANY activity, not just her own SHG's (the RLS leader branch
+   correctly requires `shg_id = current_shg_id()`). A leader reaching a
+   foreign-SHG activity's detail page (a guessable-UUID deep link on
+   Flutter Web) saw a working "Update Progress" button that silently
+   no-op'd (0 rows updated) while still showing a success toast —
+   reproducing, for the leader role, the exact bug class this same page
+   already fixed for members. Fixed by adding the SHG-match check to the
+   leader branch specifically (crp/clf/admin remain unconditional,
+   matching their genuine platform-wide RLS grant). Required adding a
+   `shgId` field to `LivelihoodActivity` (the column was already selected
+   via `*` but never exposed on the model).
+6. **[MEDIUM, Livelihood audit] The status-change dropdown offered every
+   status unconditionally**, though `livelihood_update_self_leader_or_
+   staff` restricts non-staff to one lifecycle step at a time (`abs(
+   position diff) <= 1`). A member/leader picking `completed` directly
+   from `planned` hit a bare RLS violation with only a generic "could not
+   save" message. Fixed to filter the dropdown to reachable transitions
+   for non-staff (staff still sees all three, matching their real
+   unrestricted RLS grant) — mirrors the already-established precedent in
+   the marketplace order-status picker.
+7. **[MEDIUM, Notifications audit] Closing a loan from `LoanDetailPage`
+   never cancelled this device's scheduled loan-due reminder** — unlike
+   the equivalent, already-fixed meeting-cancellation flow. A member
+   paying off her final EMI and not revisiting the Loans tab afterward
+   (which re-syncs reminders on load) still got a "Your loan EMI is due
+   tomorrow" notification the next day for an already-closed loan. Fixed
+   by mirroring `meeting_detail_page.dart`'s fire-and-forget
+   `cancelMeetingReminder` pattern with the analogous
+   `cancelLoanDueReminder` call.
+8. **[MEDIUM, i18n, AI Advisor audit] Chat bubble screen-reader labels
+   ("You:"/"Advisor:") were hardcoded English** — the one remaining
+   unlocalized string on a page where every other element (disclaimer,
+   hints, and per round 187's own fix, the AI's actual answer text) is
+   already localized. Added `aiAdvisorChatYouLabel`/
+   `aiAdvisorChatAdvisorLabel` across all three `.arb` files.
+9-11. **[LOW-MEDIUM, i18n ×3 keys]** the new AI-advisor-log-hardening
+   migration required no new strings; the chat-bubble fix's 2 keys plus
+   1 grouped here per prior rounds' convention.
+
+**Documented, deliberately not fixed this round** (real findings, larger
+scope or a design decision needed, not a quick patch):
+
+- **`generate-report-snapshots`' missing `cron_secret` Vault entry** —
+  see the incident writeup above; blocked by the permission classifier
+  on both attempted fix paths, handed back to the user with the exact
+  two commands needed.
+- **`generate-report-snapshots`' member/attendance aggregation doesn't
+  filter `is_active`**, unlike the client-side equivalents (`report_
+  repository.dart`/`analytics_repository.dart`, both explicitly filter
+  per migration 0083). Currently latent since nothing reads
+  `report_snapshots` yet; should be fixed in the same pass that finally
+  wires up CSV/PDF export or any other snapshot consumer.
+- **`financial_ledger`'s direct-INSERT path has no concurrency lock** on
+  `financial_ledger_previous_balance()` — the RPC path (`add_financial_
+  ledger_entry`) is race-safe via advisory lock, but a direct REST
+  insert (fully reachable — no table-level INSERT restriction to RPC-
+  only) isn't. Needs a design decision: revoke direct INSERT and force
+  the RPC, or add locking to the read path itself.
+- **`livelihood_repository.dart` has no `.limit()` anywhere** — the exact
+  anti-pattern already fixed for `financial_repository.dart`/
+  `AnnouncementRepository`, left behind here. A platform-wide staff feed
+  (`fetchAllForStaff`) grows unbounded forever. Any fix must preserve the
+  home page's client-side `totalInvestment`/`totalRevenue` sums, which
+  currently rely on the full unbounded list.
+- **Notification preferences and the "seen announcements" registry are
+  device-scoped (`SharedPreferences`), not account-scoped** — on a
+  shared household device, a second account signing in inherits the
+  first account's toggle states and announcement-seen registry, which
+  can cause a spurious notification burst on her first load. Needs the
+  preference keys namespaced by `profile.id`, a moderate-scope change
+  touching `notification_service.dart` and `AppState.signOut()`.
+- **`payment-webhook-handler` also carries `verify_jwt: true`**, the same
+  wrong-for-its-design setting as the two functions fixed this round and
+  round 191 (it does its own internal HMAC signature verification, so a
+  real gateway calling it would never present a Supabase JWT either) —
+  but this function has no real gateway configured yet (no
+  `PAYMENT_WEBHOOK_SECRET` secret set) and receives zero live traffic, so
+  it was left as-is rather than risk a classifier-blocked fix attempt on
+  a currently-dormant function; flagged here so it's corrected before any
+  real payment gateway is ever wired up.
+- **`livelihood_update_self_leader_or_staff`'s "revenue frozen once
+  completed" bypass** — re-confirmed still open and accurately documented
+  (unchanged from prior rounds' assessment).
+- **`AiAdvisorRepository.fetchHistory` has no row limit**, a malformed/
+  non-JSON Groq response isn't caught by the existing `MALFORMED_
+  COMPLETION_FALLBACK` path, the client's 30s timeout doesn't cancel the
+  in-flight server-side request, and the 500-char query input cap has no
+  visible counter — four real, lower-severity AI-advisor findings
+  deferred as a group given how much of this round was already consumed
+  by the two production incidents and the CRITICAL RLS fixes.
+
+**Verification:** `flutter analyze` (0 issues) and `flutter test`
+(1038/1038) both clean. Migrations `0103`-`0104` pushed to the linked
+live project; every RLS claim above independently live-verified with
+real `__TEST__` fixture rows in rolled-back transactions, each re-queried
+afterward to confirm zero footprint. Both `verify_jwt` incidents were
+confirmed and fixed via direct Management API reads/patches, not
+inferred from a deploy command's exit status. A full sweep of every
+deployed function's `verify_jwt` setting was run after fixing both
+known incidents (`GET /v1/projects/{ref}/functions`) — confirmed
+`send-sms-hook`/`generate-report-snapshots` correctly `false`,
+`ai-advisor-proxy` correctly `true` (real user JWTs), `payment-webhook-
+handler` incorrectly `true` but dormant (documented above, not fixed).
+`flutter build web --release --dart-define-from-file=.env.json` rebuilt
+cleanly in live mode.

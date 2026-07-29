@@ -3910,6 +3910,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'The advisor service is temporarily unavailable right now. Please try again in a moment.';
 
   @override
+  String get aiAdvisorChatYouLabel => 'You';
+
+  @override
+  String get aiAdvisorChatAdvisorLabel => 'Advisor';
+
+  @override
   String get aiAdvisorChatInputHint => 'Ask a question…';
 
   @override

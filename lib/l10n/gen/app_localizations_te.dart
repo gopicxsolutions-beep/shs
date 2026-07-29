@@ -3913,6 +3913,12 @@ class AppLocalizationsTe extends AppLocalizations {
       'సలహాదారు సేవ ప్రస్తుతం తాత్కాలికంగా అందుబాటులో లేదు. దయచేసి కొద్దిసేపటి తర్వాత మళ్లీ ప్రయత్నించండి.';
 
   @override
+  String get aiAdvisorChatYouLabel => 'మీరు';
+
+  @override
+  String get aiAdvisorChatAdvisorLabel => 'సలహాదారు';
+
+  @override
   String get aiAdvisorChatInputHint => 'ఒక ప్రశ్న అడగండి…';
 
   @override

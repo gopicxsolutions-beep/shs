@@ -45,6 +45,7 @@ String livelihoodActivityTypeLabel(String type, AppLocalizations l10n) => {
 /// Mirrors a row in `public.livelihood_activities` (joined with member name).
 class LivelihoodActivity {
   final String id;
+  final String shgId;
   final String memberId;
   final String memberName;
   final String activityType;
@@ -59,6 +60,7 @@ class LivelihoodActivity {
 
   const LivelihoodActivity({
     required this.id,
+    required this.shgId,
     required this.memberId,
     required this.memberName,
     required this.activityType,
@@ -73,6 +75,7 @@ class LivelihoodActivity {
 
   factory LivelihoodActivity.fromMap(Map<String, dynamic> map) => LivelihoodActivity(
         id: map['id'] as String,
+        shgId: map['shg_id'] as String? ?? '',
         memberId: map['member_id'] as String,
         memberName: (map['profiles'] as Map<String, dynamic>?)?['name'] as String? ?? 'Member',
         activityType: map['activity_type'] as String,

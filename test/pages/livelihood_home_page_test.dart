@@ -40,8 +40,8 @@ class _FakeAuthServiceWithSession extends AuthService {
 class _FakePlatformWideLivelihoodRepository extends LivelihoodRepository {
   @override
   Future<List<LivelihoodActivity>> fetchAllForStaff() async => const [
-        LivelihoodActivity(id: 'act-1', memberId: 'mem-1', memberName: 'Test Member One', activityType: 'Dairy', investment: 1000, revenue: 1500, status: 'active', shgName: 'Jyothi SHG'),
-        LivelihoodActivity(id: 'act-2', memberId: 'mem-2', memberName: 'Test Member Two', activityType: 'Tailoring', investment: 500, revenue: 200, status: 'active', shgName: 'Sneha SHG'),
+        LivelihoodActivity(id: 'act-1', shgId: 'shg-1', memberId: 'mem-1', memberName: 'Test Member One', activityType: 'Dairy', investment: 1000, revenue: 1500, status: 'active', shgName: 'Jyothi SHG'),
+        LivelihoodActivity(id: 'act-2', shgId: 'shg-2', memberId: 'mem-2', memberName: 'Test Member Two', activityType: 'Tailoring', investment: 500, revenue: 200, status: 'active', shgName: 'Sneha SHG'),
       ];
   @override
   Future<List<LivelihoodActivity>> fetchForMember(String? memberId) async => const [];

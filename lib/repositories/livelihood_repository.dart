@@ -79,6 +79,7 @@ class LivelihoodRepository {
     if (!_live) {
       _locallyAdded.add(LivelihoodActivity(
         id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+        shgId: shgId ?? 'demo-shg',
         memberId: memberId ?? 'me',
         memberName: _demoMemberName(memberId),
         activityType: activityType,
@@ -109,6 +110,7 @@ class LivelihoodRepository {
       final a = current.first;
       _locallyUpdated[id] = LivelihoodActivity(
         id: a.id,
+        shgId: a.shgId,
         memberId: a.memberId,
         memberName: a.memberName,
         activityType: a.activityType,
@@ -131,6 +133,7 @@ class LivelihoodRepository {
   List<LivelihoodActivity> _mockActivities() => mock.livelihoodActivities
       .map((a) => LivelihoodActivity(
             id: a.id,
+            shgId: 'demo-shg',
             memberId: a.id,
             memberName: a.memberName,
             activityType: a.activityType,

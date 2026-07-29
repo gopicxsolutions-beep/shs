@@ -6820,6 +6820,18 @@ abstract class AppLocalizations {
   /// **'The advisor service is temporarily unavailable right now. Please try again in a moment.'**
   String get aiAdvisorUpstreamUnavailable;
 
+  /// No description provided for @aiAdvisorChatYouLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get aiAdvisorChatYouLabel;
+
+  /// No description provided for @aiAdvisorChatAdvisorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Advisor'**
+  String get aiAdvisorChatAdvisorLabel;
+
   /// No description provided for @aiAdvisorChatInputHint.
   ///
   /// In en, this message translates to:

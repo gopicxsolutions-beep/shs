@@ -43,14 +43,25 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
             return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.livelihoodDetailNotFoundMessage);
           }
           // `livelihood_write_self_leader_or_staff` (RLS) only lets the
-          // activity's own member, the SHG's leader, or staff update it —
-          // but `livelihood_select_shg_or_staff` lets every SHG member READ
-          // every other member's activities (transparency, like savings/
-          // loans), so any member could open a teammate's activity detail
-          // page and see "Update Progress" with no ownership check, tap it,
-          // and hit a silent RLS no-op (0 rows updated, no exception) that
-          // looked like a successful save.
-          final canUpdate = activity.memberId == appState.profile?.id || appState.user.role != Role.member;
+          // activity's own member, the SHG's OWN leader, or staff update it
+          // — but `livelihood_select_shg_or_staff` lets every SHG member
+          // READ every other member's activities (transparency, like
+          // savings/loans), so any member could open a teammate's activity
+          // detail page and see "Update Progress" with no ownership check,
+          // tap it, and hit a silent RLS no-op (0 rows updated, no
+          // exception) that looked like a successful save. The leader
+          // branch specifically must also be scoped to her OWN SHG — a
+          // leader reaching a foreign-SHG activity's detail page (deep
+          // link / typed URL with a known/guessed id on Flutter Web)
+          // reproduced the identical silent-no-op-looks-like-success bug
+          // for that role, since `appState.user.role != Role.member` was
+          // true for ANY leader regardless of which SHG the activity
+          // actually belongs to.
+          final canUpdate = activity.memberId == appState.profile?.id ||
+              appState.user.role == Role.crp ||
+              appState.user.role == Role.clf ||
+              appState.user.role == Role.admin ||
+              (appState.user.role == Role.leader && activity.shgId == appState.profile?.shgId);
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -83,7 +94,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
                 AppButton(
                   label: l10n.livelihoodDetailUpdateProgressButton,
                   fullWidth: true,
-                  onPressed: () => _updateProgress(context, activity),
+                  onPressed: () => _updateProgress(context, activity, isStaff: appState.user.role != Role.member && appState.user.role != Role.leader),
                 ),
               ],
             ],
@@ -104,10 +115,22 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
         ),
       );
 
-  Future<void> _updateProgress(BuildContext context, LivelihoodActivity activity) async {
+  Future<void> _updateProgress(BuildContext context, LivelihoodActivity activity, {required bool isStaff}) async {
     final l10n = AppLocalizations.of(context)!;
     final revenueController = TextEditingController(text: '${activity.revenue}');
     var status = activity.status;
+    // `livelihood_update_self_leader_or_staff` (RLS) only lets a non-staff
+    // caller (the activity's own member, or her leader) move status one
+    // step at a time (`abs(position diff) <= 1`) — staff has no such
+    // restriction. Offering every status unconditionally let a member/
+    // leader pick e.g. `completed` directly from `planned` and hit a
+    // server-side RLS violation with only a generic "could not save"
+    // message, instead of the reachable-only options this dialog now
+    // shows (matching the established precedent in the marketplace order
+    // status picker, which disables unreachable transitions the same way).
+    final reachableOptions = isStaff
+        ? _statusOptions
+        : _statusOptions.where((s) => (_statusOptions.indexOf(s) - _statusOptions.indexOf(activity.status)).abs() <= 1).toList();
     String? error;
     var submitting = false;
     final saved = await showDialog<bool>(
@@ -131,7 +154,7 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
               DropdownButton<String>(
                 value: status,
                 isExpanded: true,
-                items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(livelihoodStatusLabel(s, l10n)))).toList(),
+                items: reachableOptions.map((s) => DropdownMenuItem(value: s, child: Text(livelihoodStatusLabel(s, l10n)))).toList(),
                 onChanged: (v) => setState(() => status = v ?? status),
               ),
               if (error != null) ...[

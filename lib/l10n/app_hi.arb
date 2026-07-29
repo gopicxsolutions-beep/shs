@@ -2117,6 +2117,8 @@
   "adminDashboardActivityDocument": "दस्तावेज़ अपलोड किया गया — {name}",
 
   "aiAdvisorUpstreamUnavailable": "सलाहकार सेवा अभी अस्थायी रूप से उपलब्ध नहीं है। कृपया थोड़ी देर बाद फिर से प्रयास करें।",
+  "aiAdvisorChatYouLabel": "आप",
+  "aiAdvisorChatAdvisorLabel": "सलाहकार",
   "aiAdvisorChatInputHint": "एक सवाल पूछें…",
   "aiAdvisorChatSendTooltip": "भेजें",
   "aiAdvisorChatFinancialHint": "अपने SHG के लिए बचत, ऋण, या बजट के बारे में पूछें।",

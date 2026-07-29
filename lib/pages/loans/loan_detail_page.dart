@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +7,7 @@ import '../../layout/page_header.dart';
 import '../../models/loan.dart';
 import '../../models/types.dart';
 import '../../repositories/loan_repository.dart';
+import '../../services/notification_service.dart';
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -20,7 +22,8 @@ import '../../widgets/section_header.dart';
 
 class LoanDetailPage extends StatefulWidget {
   final String loanId;
-  const LoanDetailPage({super.key, required this.loanId});
+  final NotificationService? notificationService;
+  const LoanDetailPage({super.key, required this.loanId, this.notificationService});
   @override
   State<LoanDetailPage> createState() => _LoanDetailPageState();
 }
@@ -29,6 +32,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
   final _repo = LoanRepository();
   final _key = GlobalKey<AppAsyncBuilderState<Loan?>>();
   final _paymentsKey = GlobalKey<AppAsyncBuilderState<List<LoanPayment>>>();
+  late final NotificationService _notifications = widget.notificationService ?? LocalNotificationService.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -165,6 +169,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
     final controller = TextEditingController(text: '${loan.emi}');
     String? error;
     var submitting = false;
+    var loanClosed = false;
     final recorded = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -218,6 +223,7 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                       try {
                         final newOutstanding = (loan.outstanding - amount).clamp(0, loan.amount);
                         await _repo.recordPayment(loan.id, amount, newOutstanding);
+                        loanClosed = newOutstanding <= 0;
                         if (context.mounted) Navigator.of(context).pop(true);
                       } catch (_) {
                         if (context.mounted) {
@@ -235,6 +241,16 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
       ),
     );
     if (recorded == true) {
+      if (loanClosed) {
+        // Mirrors meeting_detail_page.dart's cancelMeetingReminder pattern:
+        // best-effort, fire-and-forget local housekeeping that must never
+        // delay the user-visible confirmation below. Without this, a
+        // member who pays off her final EMI and doesn't revisit the Loans
+        // tab afterward (which re-syncs reminders on load) still gets a
+        // "Your loan EMI is due tomorrow" notification the next day for a
+        // loan that's already closed.
+        unawaited(_notifications.cancelLoanDueReminder(loan.id).catchError((_) {}));
+      }
       _key.currentState?.reload();
       _paymentsKey.currentState?.reload();
       if (context.mounted) {

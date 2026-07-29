@@ -2718,6 +2718,8 @@
   },
 
   "aiAdvisorUpstreamUnavailable": "The advisor service is temporarily unavailable right now. Please try again in a moment.",
+  "aiAdvisorChatYouLabel": "You",
+  "aiAdvisorChatAdvisorLabel": "Advisor",
   "aiAdvisorChatInputHint": "Ask a question…",
   "aiAdvisorChatSendTooltip": "Send",
   "aiAdvisorChatFinancialHint": "Ask about savings, loans, or budgeting for your SHG.",

@@ -197,7 +197,7 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
                   itemBuilder: (context, i) {
                     final e = _entries[i];
                     return Semantics(
-                      label: '${e.mine ? 'You' : 'Advisor'}: ${e.text}',
+                      label: '${e.mine ? (l10n?.aiAdvisorChatYouLabel ?? 'You') : (l10n?.aiAdvisorChatAdvisorLabel ?? 'Advisor')}: ${e.text}',
                       child: ExcludeSemantics(
                         child: Align(
                           alignment: e.mine

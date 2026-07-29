@@ -3841,6 +3841,12 @@ class AppLocalizationsHi extends AppLocalizations {
       'सलाहकार सेवा अभी अस्थायी रूप से उपलब्ध नहीं है। कृपया थोड़ी देर बाद फिर से प्रयास करें।';
 
   @override
+  String get aiAdvisorChatYouLabel => 'आप';
+
+  @override
+  String get aiAdvisorChatAdvisorLabel => 'सलाहकार';
+
+  @override
   String get aiAdvisorChatInputHint => 'एक सवाल पूछें…';
 
   @override
