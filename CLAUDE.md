@@ -141,6 +141,34 @@ flow for hours because nobody executed the actual query path. Rules going forwar
   **then** treat it as actually stuck: don't repeat the same diagnostic loop,
   and fall back to DB-level verification rather than silently giving up on
   verification entirely.
+- **After adding a NEW plugin package to `pubspec.yaml` (round: training-video
+  upload), a normal `flutter build web` can silently reuse a stale cached
+  `.dart_tool/flutter_build/<hash>/web_plugin_registrant.dart` that predates
+  the new plugin** — the new package appears in `.flutter-plugins-dependencies`
+  and even gets tree-shaken into `main.dart.js`, but its `registerWith()` call
+  is never actually wired into `registerPlugins()`, so the plugin's platform
+  interface stays the unimplemented default (symptom: a web-only
+  `UnimplementedError: <method>() has not been implemented` at the exact call
+  the new plugin should have handled — for `video_player_web` specifically,
+  this manifested as every attached video failing to load with **zero**
+  console output, because the failure happened before any `<video>` element
+  or network request was ever created, and was being silently swallowed by
+  the feature's own error-handling `catch` block). Confirm the actual root
+  cause by checking `.dart_tool/flutter_build/*/web_plugin_registrant.dart`
+  for the new plugin's `registerWith` call — if it's missing despite the
+  plugin being in `.flutter-plugins-dependencies`, run `flutter clean` before
+  rebuilding (a plain rebuild after just adding the dependency is not
+  sufficient once this staleness has already occurred once).
+- **Browser-pane `navigate` calls that only change the URL's hash fragment
+  (e.g. `#/app/a` → `#/app/b`) do not reliably force a real page
+  reload/re-fetch of `main.dart.js`** — the SPA may just update client-side
+  routing without ever re-requesting the script, so a code change (or the
+  stale-plugin-registrant fix above) can silently keep running the OLD
+  compiled bundle even after `navigate{force:true}` to the new hash. Verify
+  what's actually loaded with `fetch('/main.dart.js', {cache:'no-store'})`
+  and check for a marker string; if the running tab is stale, navigate to a
+  URL with a **different query string** (e.g. `?v=2#/app/...`), which forces
+  a genuine full document reload.
 
 ## Quality bar (why this file exists)
 

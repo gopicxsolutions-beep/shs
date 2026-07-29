@@ -813,11 +813,25 @@ guard pattern used for loan approval.
 
 **How it works.** Any user browses a platform-wide course catalog. Progress
 toward a course advances by a **flat +50 percentage points per tap** of a
-"Continue" button — there is no real content-consumption tracking (no
-video-watched percentage, no scroll tracking); two taps takes any course from
-0% to 100%. Certification is entirely separate from that progress number: it
-is granted only by passing a quiz, reachable at any time regardless of
+"Continue" button — this remains an intentional placeholder, independent of
+whether a course's attached video was actually watched (no scroll tracking
+either, for PDF/Audio-labeled courses); two taps takes any course from 0% to
+100%. Certification is entirely separate from that progress number: it is
+granted only by passing a quiz, reachable at any time regardless of
 displayed progress.
+
+**Closed: real video upload + in-app playback (migration `0115`).** A staff
+member (crp/clf/admin) can now attach an actual video file to a course from
+"Manage Training Courses" — `TrainingRepository.uploadCourseVideo` uploads it
+to a new public `training-videos` storage bucket (staff-write, public-read,
+200 MiB cap, MP4/WebM/MOV allow-list) and stores the resulting permanent URL
+on `training_courses.video_url`. `CourseDetailPage` renders a real player
+(`TrainingVideoPlayer`, built on `video_player`/`chewie` — play/pause/seek/
+fullscreen controls, works on Flutter Web) whenever a course has a video
+attached, replacing what used to be no content viewer of any kind regardless
+of `format`. The "+50%-per-tap" progress button above is unchanged and stays
+fully decoupled from actual video-watch behavior — playing a video to
+completion does not itself advance progress or certify the course.
 
 **The quiz now has real, per-course content**, backed by a new
 `quiz_questions` table (migration `0041`: course-scoped question/options/

@@ -114,6 +114,42 @@ void main() {
     expect(courses.firstWhere((c) => c.title == '__TEST__ Editable Course').topic, 'Updated Topic');
   });
 
+  // Doesn't tap "Attach video" itself, since that invokes file_picker's real
+  // platform channel (unavailable/unmocked under `flutter test`, same
+  // limitation already documented for shg_documents_page_test.dart's
+  // "Choose file" control) — this just confirms the video-attach control is
+  // actually wired into the Add/Edit dialog, and that a course with no video
+  // attached round-trips with a null videoUrl (no accidental placeholder).
+  testWidgets('the Add dialog offers a video-attach control, and an unattached course has no videoUrl', (tester) async {
+    await boot(tester);
+
+    await tester.tap(find.byTooltip('Add course'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Attach video'), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Course title'), '__TEST__ No Video Course');
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    final courses = await TrainingRepository().fetchCourses();
+    expect(courses.firstWhere((c) => c.title == '__TEST__ No Video Course').videoUrl, isNull);
+  });
+
+  testWidgets('editing a course that already has a video shows it as attached', (tester) async {
+    await TrainingRepository().createCourse(title: '__TEST__ Video Course', topic: 'Testing', format: 'Video', videoUrl: 'https://example.com/sample.mp4');
+    await boot(tester);
+
+    await tester.scrollUntilVisible(find.byTooltip('Edit __TEST__ Video Course'), 200);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Edit __TEST__ Video Course'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Video attached'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('deleting a course removes it', (tester) async {
     await TrainingRepository().createCourse(title: '__TEST__ Deletable Course', topic: 'Testing', format: 'PDF');
     await boot(tester);

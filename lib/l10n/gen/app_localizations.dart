@@ -3850,6 +3850,30 @@ abstract class AppLocalizations {
   /// **'Duration (optional)'**
   String get adminTrainingCoursesDurationHint;
 
+  /// No description provided for @adminTrainingCoursesChooseVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach video'**
+  String get adminTrainingCoursesChooseVideo;
+
+  /// No description provided for @adminTrainingCoursesVideoAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'Video attached'**
+  String get adminTrainingCoursesVideoAttached;
+
+  /// No description provided for @adminTrainingCoursesRemoveVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove video'**
+  String get adminTrainingCoursesRemoveVideo;
+
+  /// No description provided for @adminTrainingCoursesVideoTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'This video is too large. Please choose a file under 200 MB.'**
+  String get adminTrainingCoursesVideoTooLarge;
+
   /// No description provided for @adminTrainingCoursesTitleRequiredError.
   ///
   /// In en, this message translates to:
@@ -4959,6 +4983,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This course could not be found'**
   String get courseDetailNotFound;
+
+  /// No description provided for @trainingVideoPlayerError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load video'**
+  String get trainingVideoPlayerError;
 
   /// No description provided for @courseDetailCertifiedBadge.
   ///

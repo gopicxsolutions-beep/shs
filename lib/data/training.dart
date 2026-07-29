@@ -6,6 +6,12 @@ class Course {
   final String duration;
   final int progress;
   final bool certified;
+  // Demo mode has no Supabase Storage to upload to, so this points at a
+  // public domain sample video (the same one used in video_player's own
+  // official docs/examples) purely so the in-app player has something real
+  // to actually play back while exercising this feature without a live
+  // backend — not meant to be real course content.
+  final String? videoUrl;
   const Course({
     required this.id,
     required this.title,
@@ -14,16 +20,23 @@ class Course {
     required this.duration,
     required this.progress,
     this.certified = false,
+    this.videoUrl,
   });
 }
 
+// Hosted by the Flutter team specifically for demoing the video_player
+// package (used in that package's own README/example) — confirmed reachable
+// live, unlike Google's old commondatastorage.googleapis.com demo bucket
+// (now returns 403).
+const _sampleVideoUrl = 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4';
+
 const courses = <Course>[
-  Course(id: 'co1', title: 'Basics of Household Budgeting', topic: 'Financial Literacy', format: 'Video', duration: '18 min', progress: 100, certified: true),
-  Course(id: 'co2', title: 'Understanding Interest & EMI', topic: 'Financial Literacy', format: 'Video', duration: '22 min', progress: 60),
+  Course(id: 'co1', title: 'Basics of Household Budgeting', topic: 'Financial Literacy', format: 'Video', duration: '18 min', progress: 100, certified: true, videoUrl: _sampleVideoUrl),
+  Course(id: 'co2', title: 'Understanding Interest & EMI', topic: 'Financial Literacy', format: 'Video', duration: '22 min', progress: 60, videoUrl: _sampleVideoUrl),
   Course(id: 'co3', title: 'Starting a Micro Enterprise', topic: 'Entrepreneurship', format: 'PDF', duration: '12 pages', progress: 30),
-  Course(id: 'co4', title: 'UPI & QR Payments Made Easy', topic: 'Digital Payments', format: 'Video', duration: '15 min', progress: 0),
+  Course(id: 'co4', title: 'UPI & QR Payments Made Easy', topic: 'Digital Payments', format: 'Video', duration: '15 min', progress: 0, videoUrl: _sampleVideoUrl),
   Course(id: 'co5', title: 'Selling on Social Media', topic: 'Marketing', format: 'Audio', duration: '10 min', progress: 0),
-  Course(id: 'co6', title: 'Costing & Pricing Your Products', topic: 'Marketing', format: 'Video', duration: '20 min', progress: 100, certified: true),
+  Course(id: 'co6', title: 'Costing & Pricing Your Products', topic: 'Marketing', format: 'Video', duration: '20 min', progress: 100, certified: true, videoUrl: _sampleVideoUrl),
 ];
 
 /// One multiple-choice question for demo-mode's course quiz. Mirrors the

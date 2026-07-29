@@ -1128,6 +1128,14 @@
 
   "adminTrainingCoursesDurationHint": "अवधि (वैकल्पिक)",
 
+  "adminTrainingCoursesChooseVideo": "वीडियो जोड़ें",
+
+  "adminTrainingCoursesVideoAttached": "वीडियो जोड़ा गया",
+
+  "adminTrainingCoursesRemoveVideo": "वीडियो हटाएं",
+
+  "adminTrainingCoursesVideoTooLarge": "यह वीडियो बहुत बड़ी है। कृपया 200 MB से छोटी फ़ाइल चुनें।",
+
   "adminTrainingCoursesTitleRequiredError": "कोर्स शीर्षक आवश्यक है।",
 
   "adminTrainingCoursesAddedMessage": "कोर्स जोड़ा गया",
@@ -1486,6 +1494,8 @@
   "courseDetailProgressError": "आपकी प्रगति सेव नहीं हो सकी। कृपया फिर से कोशिश करें।",
 
   "courseDetailNotFound": "यह कोर्स नहीं मिल सका",
+
+  "trainingVideoPlayerError": "वीडियो लोड नहीं हो सका",
 
   "courseDetailCertifiedBadge": "सर्टिफाइड",
 

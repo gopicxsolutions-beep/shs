@@ -2212,6 +2212,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminTrainingCoursesDurationHint => 'Duration (optional)';
 
   @override
+  String get adminTrainingCoursesChooseVideo => 'Attach video';
+
+  @override
+  String get adminTrainingCoursesVideoAttached => 'Video attached';
+
+  @override
+  String get adminTrainingCoursesRemoveVideo => 'Remove video';
+
+  @override
+  String get adminTrainingCoursesVideoTooLarge =>
+      'This video is too large. Please choose a file under 200 MB.';
+
+  @override
   String get adminTrainingCoursesTitleRequiredError =>
       'Course title is required.';
 
@@ -2827,6 +2840,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get courseDetailNotFound => 'This course could not be found';
+
+  @override
+  String get trainingVideoPlayerError => 'Couldn\'t load video';
 
   @override
   String get courseDetailCertifiedBadge => 'Certified';

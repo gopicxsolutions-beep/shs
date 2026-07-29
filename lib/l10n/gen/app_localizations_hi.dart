@@ -2175,6 +2175,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminTrainingCoursesDurationHint => 'अवधि (वैकल्पिक)';
 
   @override
+  String get adminTrainingCoursesChooseVideo => 'वीडियो जोड़ें';
+
+  @override
+  String get adminTrainingCoursesVideoAttached => 'वीडियो जोड़ा गया';
+
+  @override
+  String get adminTrainingCoursesRemoveVideo => 'वीडियो हटाएं';
+
+  @override
+  String get adminTrainingCoursesVideoTooLarge =>
+      'यह वीडियो बहुत बड़ी है। कृपया 200 MB से छोटी फ़ाइल चुनें।';
+
+  @override
   String get adminTrainingCoursesTitleRequiredError =>
       'कोर्स शीर्षक आवश्यक है।';
 
@@ -2790,6 +2803,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get courseDetailNotFound => 'यह कोर्स नहीं मिल सका';
+
+  @override
+  String get trainingVideoPlayerError => 'वीडियो लोड नहीं हो सका';
 
   @override
   String get courseDetailCertifiedBadge => 'सर्टिफाइड';

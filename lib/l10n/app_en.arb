@@ -1509,6 +1509,14 @@
 
   "adminTrainingCoursesDurationHint": "Duration (optional)",
 
+  "adminTrainingCoursesChooseVideo": "Attach video",
+
+  "adminTrainingCoursesVideoAttached": "Video attached",
+
+  "adminTrainingCoursesRemoveVideo": "Remove video",
+
+  "adminTrainingCoursesVideoTooLarge": "This video is too large. Please choose a file under 200 MB.",
+
   "adminTrainingCoursesTitleRequiredError": "Course title is required.",
 
   "adminTrainingCoursesAddedMessage": "Course added",
@@ -1889,6 +1897,8 @@
   "courseDetailProgressError": "Could not save your progress. Please try again.",
 
   "courseDetailNotFound": "This course could not be found",
+
+  "trainingVideoPlayerError": "Couldn't load video",
 
   "courseDetailCertifiedBadge": "Certified",
 

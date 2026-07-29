@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +27,17 @@ class AdminTrainingCoursesPage extends StatefulWidget {
 // `_gradeOptions`.
 const _formatOptions = ['Video', 'PDF', 'Audio'];
 
+// Mirrors the training-videos bucket's own allow-list
+// (0115_training_course_videos.sql): MP4, WebM, MOV.
+const _allowedVideoExtensions = ['mp4', 'webm', 'mov'];
+const _maxVideoBytes = 200 * 1024 * 1024; // mirrors the bucket's 200 MiB cap
+
+String _contentTypeForVideo(String? extension) => switch (extension?.toLowerCase()) {
+      'webm' => 'video/webm',
+      'mov' => 'video/quicktime',
+      _ => 'video/mp4',
+    };
+
 /// Before this page, the live `training_courses`/`quiz_questions` tables
 /// were confirmed empty with no way to populate them except a direct SQL
 /// insert — the entire Training module was non-functional in live mode
@@ -46,6 +58,15 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
   final _duration = TextEditingController();
   String _format = _formatOptions.first;
   bool _busy = false;
+
+  // Video-attach state for the currently-open add/edit dialog. `_pickedVideo`
+  // is a freshly-chosen file awaiting upload; `_existingVideoUrl` is the
+  // course's already-attached video when editing; `_removeVideo` tracks an
+  // explicit "remove" tap so a saved edit can clear a previously-attached
+  // video rather than silently keeping it.
+  PlatformFile? _pickedVideo;
+  String? _existingVideoUrl;
+  bool _removeVideo = false;
 
   @override
   void dispose() {
@@ -68,7 +89,48 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
         ),
         const SizedBox(height: 12),
         TextField(controller: _duration, maxLength: 40, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.adminTrainingCoursesDurationHint)),
+        const SizedBox(height: 12),
+        _videoPickerRow(setDialogState, l10n),
       ];
+
+  Widget _videoPickerRow(StateSetter setDialogState, AppLocalizations l10n) {
+    final hasExisting = _existingVideoUrl != null && !_removeVideo;
+    final label = _pickedVideo != null ? _pickedVideo!.name : (hasExisting ? l10n.adminTrainingCoursesVideoAttached : l10n.adminTrainingCoursesChooseVideo);
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () async {
+              final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: _allowedVideoExtensions, withData: true);
+              final file = result?.files.isNotEmpty == true ? result!.files.first : null;
+              if (file == null || file.bytes == null) return;
+              if (file.size > _maxVideoBytes) {
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminTrainingCoursesVideoTooLarge)));
+                return;
+              }
+              setDialogState(() {
+                _pickedVideo = file;
+                _removeVideo = false;
+              });
+            },
+            icon: const Icon(Icons.video_file_outlined, size: 18),
+            label: Text(label, overflow: TextOverflow.ellipsis),
+          ),
+        ),
+        if (_pickedVideo != null || hasExisting) ...[
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 18),
+            tooltip: l10n.adminTrainingCoursesRemoveVideo,
+            onPressed: () => setDialogState(() {
+              _pickedVideo = null;
+              _removeVideo = true;
+            }),
+          ),
+        ],
+      ],
+    );
+  }
 
   Future<void> _addCourse() async {
     final l10n = AppLocalizations.of(context)!;
@@ -76,6 +138,9 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
     _topic.clear();
     _duration.clear();
     _format = _formatOptions.first;
+    _pickedVideo = null;
+    _existingVideoUrl = null;
+    _removeVideo = false;
     final confirmed = await showDialog<bool>(
       context: context,
       // See shg_home_page.dart's identical fix for why: an accidental tap
@@ -102,7 +167,11 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
     }
     setState(() => _busy = true);
     try {
-      await _repo.createCourse(title: _title.text.trim(), topic: _topic.text.trim(), format: _format, duration: _duration.text.trim().isEmpty ? null : _duration.text.trim());
+      String? videoUrl;
+      if (_pickedVideo != null && SupabaseService.isConfigured) {
+        videoUrl = await _repo.uploadCourseVideo(bytes: _pickedVideo!.bytes!, fileName: _pickedVideo!.name, contentType: _contentTypeForVideo(_pickedVideo!.extension));
+      }
+      await _repo.createCourse(title: _title.text.trim(), topic: _topic.text.trim(), format: _format, duration: _duration.text.trim().isEmpty ? null : _duration.text.trim(), videoUrl: videoUrl);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(SupabaseService.isConfigured ? l10n.adminTrainingCoursesAddedMessage : l10n.adminTrainingCoursesDemoModeMessage)));
         _key.currentState?.reload();
@@ -120,6 +189,9 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
     _topic.text = c.topic;
     _duration.text = c.duration ?? '';
     _format = _formatOptions.contains(c.format) ? c.format : _formatOptions.first;
+    _pickedVideo = null;
+    _existingVideoUrl = c.videoUrl;
+    _removeVideo = false;
     final confirmed = await showDialog<bool>(
       context: context,
       // See shg_home_page.dart's identical fix for why: an accidental tap
@@ -146,7 +218,11 @@ class _AdminTrainingCoursesPageState extends State<AdminTrainingCoursesPage> {
     }
     setState(() => _busy = true);
     try {
-      await _repo.updateCourse(c.id, title: _title.text.trim(), topic: _topic.text.trim(), format: _format, duration: _duration.text.trim().isEmpty ? null : _duration.text.trim());
+      var videoUrl = _removeVideo ? null : _existingVideoUrl;
+      if (_pickedVideo != null && SupabaseService.isConfigured) {
+        videoUrl = await _repo.uploadCourseVideo(bytes: _pickedVideo!.bytes!, fileName: _pickedVideo!.name, contentType: _contentTypeForVideo(_pickedVideo!.extension));
+      }
+      await _repo.updateCourse(c.id, title: _title.text.trim(), topic: _topic.text.trim(), format: _format, duration: _duration.text.trim().isEmpty ? null : _duration.text.trim(), videoUrl: videoUrl);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(SupabaseService.isConfigured ? l10n.adminTrainingCoursesUpdatedMessage : l10n.adminTrainingCoursesDemoModeMessage)));
         _key.currentState?.reload();

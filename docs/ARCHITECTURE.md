@@ -80,7 +80,7 @@ migrations:
 | `livelihood_activities` | Member microenterprise tracking |
 | `marketplace_products`, `marketplace_orders`, `marketplace_reviews` | Commerce |
 | `schemes`, `scheme_applications` | Government welfare scheme catalog + applications; `schemes.eligibility_criteria` (JSONB, migration `0040`) backs the real structured eligibility rules engine — see §7 |
-| `training_courses`, `course_progress`, `quiz_questions` | E-learning catalog + per-member progress/certification + real per-course quiz content (migration `0041`) — see §7 |
+| `training_courses`, `course_progress`, `quiz_questions` | E-learning catalog (`training_courses.video_url`, migration `0115`, points into the public `training-videos` storage bucket for real in-app playback) + per-member progress/certification + real per-course quiz content (migration `0041`) — see §7 |
 | `quiz_questions_public` (view, migration `0051`) | What `TrainingRepository.fetchQuizQuestions()` actually reads — same rows as the base table, `correct_index` excluded entirely; direct base-table `SELECT` is revoked from `authenticated` so a client can't request the answer key by asking a raw REST call for a column its own query omits |
 | `payments` | Digital payment records (gateway is mocked — see §7) |
 | `announcements`, `announcement_reads` | Circulars + per-member read receipts |

@@ -18425,3 +18425,88 @@ the `flutter-web-release` static server (port 5002) logged in as admin
 Training Courses → a course's Quiz page (2 hops) and confirmed tapping
 Back returns to Manage Training Courses, not the dashboard — the exact
 symptom reported, reproduced as fixed.
+
+## Training video upload + real in-app playback
+
+**User request: "add a video upload option also for training and also
+create video player for user to learn and see the videos."** Before this,
+`training_courses.format` was purely a descriptive label ('Video'/'PDF'/
+'Audio') — no course had any actual content attached, and
+`CourseDetailPage` had no viewer of any kind.
+
+**What was added:**
+- `training_courses.video_url` (migration `0115_training_course_videos.sql`)
+  + a new public `training-videos` Storage bucket (200 MiB cap, MP4/WebM/MOV
+  allow-list, staff-write via `is_staff()` matching
+  `training_courses_write_staff`'s own scope, public-read so playback
+  doesn't depend on a signed URL expiring mid-video).
+- `TrainingRepository.uploadCourseVideo()` — same shape as
+  `MarketplaceRepository.uploadProductImage`, returns a permanent public URL.
+- `admin_training_courses_page.dart`'s Add/Edit dialogs gained an "Attach
+  video" control (`file_picker`, mirrors `shg_documents_page.dart`'s upload
+  pattern) with attach/replace/remove states, wired into `createCourse`/
+  `updateCourse`'s new `videoUrl` parameter.
+- `TrainingVideoPlayer` (`lib/widgets/training_video_player.dart`) — real
+  playback via `video_player`+`chewie` (play/pause/seek/fullscreen
+  controls), rendered in `CourseDetailPage` whenever a course has a video
+  attached. Independent of the existing "+50%-per-tap" progress placeholder
+  — playing the video does not itself advance progress or certify the
+  course (see updated `docs/SRS.md` §3.10).
+- Demo mode: `lib/data/training.dart`'s mock courses now carry a real,
+  currently-reachable sample video URL (`flutter.github.io/assets-for-api-
+  docs`, the same asset used in `video_player`'s own official example) so
+  the player has something genuine to play back without a live backend.
+
+**Bug found and fixed during live verification: a stale Flutter web build
+cache silently disabled the new plugin.** After `flutter pub add
+video_player chewie` and a normal `flutter build web --release`, every
+attached video failed to load with **zero console output** — traced (see
+CLAUDE.md's new build-gotcha entry) to `.dart_tool/flutter_build/<hash>/
+web_plugin_registrant.dart` being reused stale from before `video_player`
+was added, so `VideoPlayerPlugin.registerWith()` was never actually wired
+in despite the package being tree-shaken into `main.dart.js` and listed in
+`.flutter-plugins-dependencies`. The real error (`UnimplementedError:
+init() has not been implemented`) only surfaced after adding a temporary
+debug print AND forcing a genuinely fresh page load (a hash-only URL
+change doesn't reliably re-fetch `main.dart.js` — used a cache-busting
+query string instead). Fixed with `flutter clean` + rebuild; confirmed via
+`.dart_tool/flutter_build/*/web_plugin_registrant.dart` now containing
+`VideoPlayerPlugin.registerWith(registrar)`. Also caught and swapped out a
+second, unrelated bug during the same investigation: the originally-chosen
+demo sample video URL (Google's old `commondatastorage.googleapis.com`
+bucket) now returns 403 — replaced with the `video_player`-package's own
+maintained example asset (confirmed reachable via a live `fetch` HEAD
+check first).
+
+**Live RLS verification** (isolated rolled-back transactions, the
+project's established pattern): a real crp-role session's insert into
+`storage.objects` for the `training-videos` bucket genuinely succeeded (1
+row); a real member-role session's identical insert genuinely raised
+`42501` (0 rows) — both against the live linked project. No leftover rows
+confirmed via re-query after both rollbacks.
+
+**Live playback verification:** temporarily set a real course's
+`video_url` to the working sample asset, confirmed via `supabase db push`
++ direct query that the migration applied cleanly, then in the live
+`flutter-web-release` browser preview: the Chewie player rendered with
+real video frames and working transport controls, and — checked directly
+via the underlying `<video>` element's `currentTime`/`duration`/
+`readyState` — actually played through to completion. Reverted the test
+course's `video_url` back to `null` afterward (no real video was actually
+uploaded for it; the column was only used to exercise the player).
+
+**Regression coverage:** `admin_training_courses_page_test.dart` gained
+two tests (video-attach control renders + round-trips a null `videoUrl`;
+editing a course with an existing video shows "Video attached"). New
+`course_detail_page_test.dart` covers both the with-video and without-
+video render paths, asserting no crash — doesn't assert a working
+`<video>` element under `flutter test` itself, since (like the camera/mic/
+file_picker elsewhere in this suite) there's no real video-decoding
+platform implementation registered there; the real playback path was
+verified live in the browser instead, per this project's own "test
+against the real thing" standard.
+
+**Verification:** `flutter analyze` — 0 issues. `flutter test` (after the
+`flutter clean` fix) — full suite passed (1052 tests). `flutter build web
+--release --dart-define-from-file=.env.json` — clean build with the
+plugin correctly registered.

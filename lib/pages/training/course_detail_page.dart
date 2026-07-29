@@ -15,6 +15,7 @@ import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/progress_bar.dart';
+import '../../widgets/training_video_player.dart';
 
 class _DetailData {
   final Course course;
@@ -98,6 +99,10 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                   ],
                 ),
               ),
+              if (course.videoUrl != null) ...[
+                const SizedBox(height: 20),
+                TrainingVideoPlayer(key: ValueKey(course.videoUrl), videoUrl: course.videoUrl!),
+              ],
               const SizedBox(height: 20),
               if (!certified) ...[
                 AppButton(

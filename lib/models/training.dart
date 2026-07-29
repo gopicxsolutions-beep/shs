@@ -6,7 +6,14 @@ class Course {
   final String format; // Video | PDF | Audio
   final String? duration;
 
-  const Course({required this.id, required this.title, required this.topic, required this.format, this.duration});
+  /// A public, permanent URL into the `training-videos` storage bucket (or,
+  /// in demo mode, a static sample URL) — null until a staff member attaches
+  /// a video via `AdminTrainingCoursesPage`. Independent of [format]: a
+  /// course can be labeled 'Video' with no video attached yet, and
+  /// `CourseDetailPage` only renders a player when this is non-null.
+  final String? videoUrl;
+
+  const Course({required this.id, required this.title, required this.topic, required this.format, this.duration, this.videoUrl});
 
   factory Course.fromMap(Map<String, dynamic> map) => Course(
         id: map['id'] as String,
@@ -14,6 +21,7 @@ class Course {
         topic: map['topic'] as String,
         format: map['format'] as String,
         duration: map['duration'] as String?,
+        videoUrl: map['video_url'] as String?,
       );
 }
 

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/training.dart' as mock;
 import '../models/training.dart';
@@ -41,7 +42,7 @@ class TrainingRepository {
     if (!_live) {
       final base = mock.courses
           .where((c) => !_locallyDeletedCourses.contains(c.id))
-          .map((c) => _locallyUpdatedCourses[c.id] ?? Course(id: c.id, title: c.title, topic: c.topic, format: c.format, duration: c.duration));
+          .map((c) => _locallyUpdatedCourses[c.id] ?? Course(id: c.id, title: c.title, topic: c.topic, format: c.format, duration: c.duration, videoUrl: c.videoUrl));
       return [...base, ..._locallyAddedCourses];
     }
     // Platform-wide catalog shared by every SHG (see class doc comment and
@@ -58,19 +59,19 @@ class TrainingRepository {
   /// (`training_courses_write_staff`) restricts the live-mode insert to
   /// crp/clf/admin — see `admin_training_courses_page.dart`'s own UI-level
   /// gate, which matches that same staff scope (not narrowed to admin-only).
-  Future<Course> createCourse({required String title, required String topic, required String format, String? duration}) async {
+  Future<Course> createCourse({required String title, required String topic, required String format, String? duration, String? videoUrl}) async {
     if (!_live) {
-      final course = Course(id: 'local-course-${_locallyAddedCourses.length}-${title.hashCode}', title: title, topic: topic, format: format, duration: duration);
+      final course = Course(id: 'local-course-${_locallyAddedCourses.length}-${title.hashCode}', title: title, topic: topic, format: format, duration: duration, videoUrl: videoUrl);
       _locallyAddedCourses.add(course);
       return course;
     }
-    final row = await _client.from('training_courses').insert({'title': title, 'topic': topic, 'format': format, 'duration': duration}).select().single();
+    final row = await _client.from('training_courses').insert({'title': title, 'topic': topic, 'format': format, 'duration': duration, 'video_url': videoUrl}).select().single();
     return Course.fromMap(row);
   }
 
-  Future<void> updateCourse(String id, {required String title, required String topic, required String format, String? duration}) async {
+  Future<void> updateCourse(String id, {required String title, required String topic, required String format, String? duration, String? videoUrl}) async {
     if (!_live) {
-      final updated = Course(id: id, title: title, topic: topic, format: format, duration: duration);
+      final updated = Course(id: id, title: title, topic: topic, format: format, duration: duration, videoUrl: videoUrl);
       final addedIdx = _locallyAddedCourses.indexWhere((c) => c.id == id);
       if (addedIdx != -1) {
         _locallyAddedCourses[addedIdx] = updated;
@@ -79,7 +80,22 @@ class TrainingRepository {
       }
       return;
     }
-    await _client.from('training_courses').update({'title': title, 'topic': topic, 'format': format, 'duration': duration}).eq('id', id);
+    await _client.from('training_courses').update({'title': title, 'topic': topic, 'format': format, 'duration': duration, 'video_url': videoUrl}).eq('id', id);
+  }
+
+  /// Uploads a picked video's bytes to the public `training-videos` bucket
+  /// (migration 0115) and returns its permanent public URL — same shape as
+  /// `MarketplaceRepository.uploadProductImage`. Unlike that bucket's
+  /// per-seller folder convention, writes here are gated purely by
+  /// `public.is_staff()` (matching `training_courses_write_staff`'s own
+  /// scope), not by folder ownership, so the path doesn't need a per-user
+  /// prefix. Public-read (not a signed URL) because a video can play for
+  /// much longer than a signed URL's validity window — a short-lived URL
+  /// would risk expiring mid-playback.
+  Future<String> uploadCourseVideo({required Uint8List bytes, required String fileName, required String contentType}) async {
+    final path = '${DateTime.now().millisecondsSinceEpoch}_$fileName';
+    await _client.storage.from('training-videos').uploadBinary(path, bytes, fileOptions: FileOptions(contentType: contentType));
+    return _client.storage.from('training-videos').getPublicUrl(path);
   }
 
   /// Deleting a course still cascades to its own quiz question bank
@@ -109,7 +125,7 @@ class TrainingRepository {
       final matches = mock.courses.where((c) => c.id == id);
       if (matches.isEmpty) return null;
       final c = matches.first;
-      return Course(id: c.id, title: c.title, topic: c.topic, format: c.format, duration: c.duration);
+      return Course(id: c.id, title: c.title, topic: c.topic, format: c.format, duration: c.duration, videoUrl: c.videoUrl);
     }
     final row = await _client.from('training_courses').select().eq('id', id).maybeSingle();
     return row == null ? null : Course.fromMap(row);

@@ -2210,6 +2210,19 @@ class AppLocalizationsTe extends AppLocalizations {
   String get adminTrainingCoursesDurationHint => 'వ్యవధి (ఐచ్ఛికం)';
 
   @override
+  String get adminTrainingCoursesChooseVideo => 'వీడియో జోడించండి';
+
+  @override
+  String get adminTrainingCoursesVideoAttached => 'వీడియో జోడించబడింది';
+
+  @override
+  String get adminTrainingCoursesRemoveVideo => 'వీడియో తొలగించండి';
+
+  @override
+  String get adminTrainingCoursesVideoTooLarge =>
+      'ఈ వీడియో చాలా పెద్దది. దయచేసి 200 MB కంటే చిన్న ఫైల్‌ను ఎంచుకోండి.';
+
+  @override
   String get adminTrainingCoursesTitleRequiredError => 'కోర్సు శీర్షిక అవసరం.';
 
   @override
@@ -2824,6 +2837,9 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get courseDetailNotFound => 'ఈ కోర్సు కనుగొనబడలేదు';
+
+  @override
+  String get trainingVideoPlayerError => 'వీడియో లోడ్ కాలేదు';
 
   @override
   String get courseDetailCertifiedBadge => 'సర్టిఫైడ్';

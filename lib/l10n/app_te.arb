@@ -1128,6 +1128,14 @@
 
   "adminTrainingCoursesDurationHint": "వ్యవధి (ఐచ్ఛికం)",
 
+  "adminTrainingCoursesChooseVideo": "వీడియో జోడించండి",
+
+  "adminTrainingCoursesVideoAttached": "వీడియో జోడించబడింది",
+
+  "adminTrainingCoursesRemoveVideo": "వీడియో తొలగించండి",
+
+  "adminTrainingCoursesVideoTooLarge": "ఈ వీడియో చాలా పెద్దది. దయచేసి 200 MB కంటే చిన్న ఫైల్‌ను ఎంచుకోండి.",
+
   "adminTrainingCoursesTitleRequiredError": "కోర్సు శీర్షిక అవసరం.",
 
   "adminTrainingCoursesAddedMessage": "కోర్సు జోడించబడింది",
@@ -1486,6 +1494,8 @@
   "courseDetailProgressError": "మీ పురోగతిని సేవ్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
 
   "courseDetailNotFound": "ఈ కోర్సు కనుగొనబడలేదు",
+
+  "trainingVideoPlayerError": "వీడియో లోడ్ కాలేదు",
 
   "courseDetailCertifiedBadge": "సర్టిఫైడ్",
 
