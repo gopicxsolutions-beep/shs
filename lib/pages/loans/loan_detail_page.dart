@@ -8,7 +8,6 @@ import '../../layout/page_header.dart';
 import '../../models/loan.dart';
 import '../../models/types.dart';
 import '../../repositories/loan_repository.dart';
-import '../../services/notification_service.dart';
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -23,8 +22,7 @@ import '../../widgets/section_header.dart';
 
 class LoanDetailPage extends StatefulWidget {
   final String loanId;
-  final NotificationService? notificationService;
-  const LoanDetailPage({super.key, required this.loanId, this.notificationService});
+  const LoanDetailPage({super.key, required this.loanId});
   @override
   State<LoanDetailPage> createState() => _LoanDetailPageState();
 }
@@ -33,7 +31,6 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
   final _repo = LoanRepository();
   final _key = GlobalKey<AppAsyncBuilderState<Loan?>>();
   final _paymentsKey = GlobalKey<AppAsyncBuilderState<List<LoanPayment>>>();
-  late final NotificationService _notifications = widget.notificationService ?? LocalNotificationService.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +168,6 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
     final controller = TextEditingController(text: '${loan.emi}');
     String? error;
     var submitting = false;
-    var loanClosed = false;
     final recorded = await showDialog<bool>(
       context: context,
       // See shg_home_page.dart's identical fix for why: an accidental tap
@@ -232,7 +228,6 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
                       try {
                         final newOutstanding = (loan.outstanding - amount).clamp(0, loan.amount);
                         await _repo.recordPayment(loan.id, amount, newOutstanding);
-                        loanClosed = newOutstanding <= 0;
                         if (context.mounted) Navigator.of(context).pop(true);
                       } catch (e) {
                         // The client-side check above only guards against
@@ -286,16 +281,22 @@ class _LoanDetailPageState extends State<LoanDetailPage> {
       ),
     );
     if (recorded == true) {
-      if (loanClosed) {
-        // Mirrors meeting_detail_page.dart's cancelMeetingReminder pattern:
-        // best-effort, fire-and-forget local housekeeping that must never
-        // delay the user-visible confirmation below. Without this, a
-        // member who pays off her final EMI and doesn't revisit the Loans
-        // tab afterward (which re-syncs reminders on load) still gets a
-        // "Your loan EMI is due tomorrow" notification the next day for a
-        // loan that's already closed.
-        unawaited(_notifications.cancelLoanDueReminder(loan.id).catchError((_) {}));
-      }
+      // NOT mirrored here: meeting_detail_page.dart's cancelMeetingReminder
+      // call is meaningful because a leader cancelling an SHG-wide meeting
+      // plausibly has that same meeting's reminder scheduled on her OWN
+      // device too (meetings are SHG-shared). A loan isn't — `canRecordPayment`
+      // (this page's own gate, above) only ever lets a LEADER/staff account
+      // reach this call, recording a payment on someone ELSE's loan; the
+      // borrowing member herself can never trigger it. So a `cancelLoanDueReminder`
+      // call here would cancel a reminder id on the LEADER's device, which
+      // never had that reminder scheduled in the first place — a real,
+      // previously-shipped "fix" that was actually a silent no-op for its
+      // only real caller (gap-hunt iteration 31). The borrower's own stale
+      // reminder is what would need cancelling, and only her own device can
+      // do that — she already self-heals it the next time she opens the
+      // Loans tab (`syncLoanDueReminders`), which `settingsNotifLocalOnly`
+      // now honestly discloses for this exact case instead of pretending an
+      // inert call here already handles it.
       _key.currentState?.reload();
       _paymentsKey.currentState?.reload();
       if (context.mounted) {

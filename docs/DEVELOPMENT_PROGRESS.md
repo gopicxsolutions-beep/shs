@@ -16808,13 +16808,18 @@ scope or a design decision needed, not a quick patch):
   (`fetchAllForStaff`) grows unbounded forever. Any fix must preserve the
   home page's client-side `totalInvestment`/`totalRevenue` sums, which
   currently rely on the full unbounded list.
-- **Notification preferences and the "seen announcements" registry are
-  device-scoped (`SharedPreferences`), not account-scoped** — on a
-  shared household device, a second account signing in inherits the
-  first account's toggle states and announcement-seen registry, which
-  can cause a spurious notification burst on her first load. Needs the
-  preference keys namespaced by `profile.id`, a moderate-scope change
-  touching `notification_service.dart` and `AppState.signOut()`.
+- ~~Notification preferences and the "seen announcements" registry are
+  device-scoped, not account-scoped~~ — **fixed in iteration 27 (round
+  200)**: `AppState.signOut()` now clears all 5 device-scoped keys
+  (`kNotifyMeetingsPrefKey`/`kNotifyPaymentsPrefKey`/
+  `kNotifyAnnouncementsPrefKey`/both cancel-pending flags/
+  `kSeenAnnouncementIdsPrefKey`) on every sign-out, confirmed current in
+  `lib/state/app_state.dart:459-506` — re-verified still correct as of
+  iteration 31's Notifications full sweep. Left this bullet struck
+  through rather than deleted, per this project's own "a doc that still
+  says not implemented after the feature ships is actively misleading"
+  rule — a later gap-hunt round found this exact stale entry and nearly
+  re-reported it as a live gap.
 - **`payment-webhook-handler` also carries `verify_jwt: true`**, the same
   wrong-for-its-design setting as the two functions fixed this round and
   round 191 (it does its own internal HMAC signature verification, so a
@@ -19306,3 +19311,95 @@ row-count/error assertions — not reasoned about, actually executed
 against the real linked project, including the self-caught regression in
 finding 18 that a positive-control test (not just the negative exploit
 test) specifically surfaced.
+
+## Gap-hunting loop iteration 31: a CRITICAL scheme_applications status-forgery hole (same shape loans had pre-0088), an attendance-rate cross-SHG numerator leak, and an honest accounting of what a context-compaction boundary cost this round
+
+Iteration 31 launched 4 fresh audits (Scheme Catalog/Applications, Notifications,
+Reports/Federation analytics, and a dogfooding pass over iteration 30's own
+fixes). This round's write-up crossed a context-compaction boundary partway
+through triage, and per this project's own quality bar ("claiming something is
+done when it wasn't actually exercised" is the standing failure mode this log
+exists to catch), only the findings that survived compaction with enough
+concrete detail to independently re-verify were carried through to an actual
+fix this round. The rest are listed honestly below as found-but-not-yet-fixed,
+to be re-audited fresh in iteration 32 rather than patched from a fuzzy memory
+of what an earlier sub-agent said.
+
+**Fixed and live-verified this round:**
+
+1. **[CRITICAL, live-verified]** `scheme_applications_update_staff`'s
+   `WITH CHECK` never locked the row's `status` column — only `scheme_id`/
+   `member_id`/`applied_on` were locked via `scheme_applications_locked_fields()`.
+   `decide_scheme_application()`'s "already decided" guard
+   (`if v_status not in ('applied','under_review') then raise exception...`)
+   is `security invoker` application logic, not an RLS-enforced boundary, so
+   any staff account could `PATCH` an already-decided application directly —
+   e.g. flip a real `rejected` decision back to `approved` — completely
+   bypassing the RPC. This is the exact vulnerability shape `loans` had
+   before migration `0088`. Fixed in migration
+   `0128_iteration31_scheme_applications_status_lock.sql`: added `status` to
+   `scheme_applications_locked_fields()`'s return columns, and the
+   `WITH CHECK` now requires the OLD status to have been in
+   `('applied','under_review')` and the NEW status to be in
+   `('approved','rejected')` — structurally preventing any caller, RPC or
+   raw REST, from re-deciding an already-decided row.
+   Live-verified in rolled-back transactions against the real linked
+   project: (a) a direct UPDATE attempting to re-decide a genuinely
+   already-decided application throws a hard `42501` RLS violation (not a
+   silent 0-row match — a `WITH CHECK` failure on an already-visible row
+   errors, which is the expected, stronger signal); (b) a legitimate
+   first-time decision on a freshly-inserted `applied` application still
+   succeeds and returns the updated row; (c) immediately re-attacking that
+   same now-`approved` row a second time in the same session is also
+   blocked. All test fixtures were rolled back/aborted, never committed —
+   confirmed zero leftover rows by re-querying afterward.
+2. **[MEDIUM, live-verified via code inspection + full test suite]**
+   `TrendRepository.attendanceRate()` had the identical cross-SHG leak
+   `attendanceTrend()` was already fixed for earlier in iteration 30: the
+   denominator (`_rosterSizeByShg`) correctly filters by `is_active` and the
+   member's *current* `shg_id`, but the numerator counted any
+   `meeting_attendance.present=true` row with no equivalent filter — a stray
+   or historical attendance row for a member who has since left (or never
+   belonged to) that SHG inflated the reported rate. Fixed by embedding
+   `profiles(shg_id, is_active)` in the same query and applying the same
+   "is_active AND shg_id matches this meeting's own shg_id" filter the
+   denominator already uses, mirroring the exact pattern from
+   `attendanceTrend()`.
+3. **[housekeeping]** Deleted the pre-existing live `__TEST__ RLG` scheme
+   fixture (`99999999-9999-9999-9999-999999999160`) and its application
+   (`...161`) via direct `supabase db query --linked` DELETEs (application
+   row first, then the scheme row, since a DELETE policy doesn't exist for
+   scheme_applications and the FK would otherwise block the scheme delete) —
+   re-queried afterward and confirmed zero rows remain.
+
+**Found by this round's audits, not yet fixed — carried into iteration 32
+rather than patched from memory of a pre-compaction summary:**
+
+4. Scheme Catalog audit: a rejected application appears to permanently block
+   re-applying to the same scheme (no re-application path was found) — needs
+   re-confirming against current code before deciding whether this is a
+   deliberate policy or a gap.
+5. Notifications audit: possible gaps around permission re-validation on
+   app resume, reminders not auto-cancelling for a deactivated account, and
+   unbounded growth of a locally-stored seen-announcement-ids list — all
+   need fresh re-derivation of exact file/line detail before fixing.
+6. Reports/Federation audit: possible gaps around cron-snapshot silent
+   failures, unbounded federation-wide queries, and the `TrendChart` widget's
+   semantic labels not being localized — these look like they may already be
+   accepted/documented trade-offs elsewhere in this codebase and need
+   re-checking against current state, not assumed.
+7. Dogfooding pass: a possible marketplace_products staff-branch multi-seller
+   batch edge case flagged as low-severity/fails-closed — needs
+   re-confirming.
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full 1077+
+test suite passing. Live: migration `0128` deployed via `supabase db push`
+and independently live-verified per CLAUDE.md's rule (real rolled-back
+transactions, explicit row-count/error assertions, not HTTP status) —
+including both a negative (attack) and positive (legitimate-use) case, the
+combination that has repeatedly caught self-introduced regressions earlier
+in this loop. `attendanceRate()`'s fix mirrors an already-verified pattern
+(`attendanceTrend()`) applied identically, checked via `flutter analyze`
+and the full test suite (no dedicated live-data test existed for either
+method; both are read-path aggregations with no RLS boundary to test).
+

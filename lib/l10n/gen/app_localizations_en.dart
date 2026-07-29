@@ -219,7 +219,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsNotifLocalOnly =>
-      'Reminders are scheduled on this device only — not sent by a server. They won\'t reach you if you use a different phone or reinstall the app, and restarting your phone can clear them too — reopening the Meetings or Loans tab brings them back in line. If a meeting is cancelled, only this device\'s own reminder is cancelled right away — another member\'s phone may still show a stale reminder for it until she reopens the Meetings tab.';
+      'Reminders are scheduled on this device only — not sent by a server. They won\'t reach you if you use a different phone or reinstall the app, and restarting your phone can clear them too — reopening the Meetings or Loans tab brings them back in line. If a meeting is cancelled, only this device\'s own reminder is cancelled right away — another member\'s phone may still show a stale reminder for it until she reopens the Meetings tab. Same for a loan: if your leader records your final payment on her own phone, your due-date reminder on your phone only clears once you reopen the Loans tab.';
 
   @override
   String get notificationMeetingReminderTitle => 'Meeting reminder';

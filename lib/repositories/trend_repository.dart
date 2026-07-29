@@ -77,23 +77,29 @@ class TrendRepository {
     final meetingShgIds = {for (final m in meetings) m['id'] as String: m['shg_id'] as String};
     final meetingIds = meetingDates.keys.toList();
     final rosterSizeByShg = await _rosterSizeByShg(meetingShgIds.values.toSet());
-    final attendance = await _client.from('meeting_attendance').select('meeting_id, present').inFilter('meeting_id', meetingIds);
-    // `present` rows are only ever written for members a leader actually
-    // toggled (see `MeetingRepository.fetchAttendance`'s own doc comment —
-    // no row means "not yet marked", defaulting to absent in the UI, not
-    // "doesn't count"). Counting attendance ROWS as the denominator instead
-    // of the SHG's actual roster size meant a leader who only toggled the 2
-    // members who showed up (out of 10) — the natural workflow, since
-    // there's no "mark everyone absent first" affordance — produced a 100%
-    // attendance rate (2 present / 2 rows), not the true 20%. This is
-    // exactly the SHG "health score" CRP/CLF triage off of
-    // (analytics_repository.dart, crp/clf dashboards), so an undercounted
-    // denominator silently inverted the signal it exists to provide.
+    // Embeds each row's own current `profiles.shg_id`/`is_active` — see the
+    // filtering loop below for why: the denominator (`rosterSizeByShg`) only
+    // counts a meeting's SHG's CURRENT active members, but the numerator
+    // used to count every `present=true` row regardless of whether that
+    // member still belongs to that SHG. Live-verified (gap-hunt iteration
+    // 31): a real SHG had 2 stray `present=true` rows for an admin account
+    // that was never a member of it at all, inflating that SHG's reported
+    // attendance from a true 75% to a displayed 100% — directly feeding the
+    // CRP/CLF health-score aggregate this exact chart is reused for.
+    final attendance = await _client.from('meeting_attendance').select('meeting_id, present, profiles(shg_id, is_active)').inFilter('meeting_id', meetingIds);
     final presentByMeeting = <String, int>{};
     for (final r in attendance as List) {
       final map = r as Map<String, dynamic>;
       if (map['present'] != true) continue;
       final id = map['meeting_id'] as String;
+      // A row whose member no longer belongs to (or is no longer active in)
+      // the MEETING's OWN shg_id doesn't count — matches the denominator's
+      // own "current active roster of this meeting's SHG" definition. A
+      // profile RLS can't see (a genuinely foreign-SHG member, for a
+      // leader-scoped non-staff caller) embeds as `null` here and is
+      // correctly excluded the same way.
+      final profile = map['profiles'] as Map<String, dynamic>?;
+      if (profile == null || profile['is_active'] != true || profile['shg_id'] != meetingShgIds[id]) continue;
       presentByMeeting[id] = (presentByMeeting[id] ?? 0) + 1;
     }
     final byMonth = <String, (int present, int total)>{};
@@ -162,10 +168,14 @@ class TrendRepository {
     // for why counting rows alone lets a partially-marked meeting read as
     // ~100% attended.
     final rosterSizeByShg = await _rosterSizeByShg(meetingShgIds.values.toSet());
-    final attendance = await _client.from('meeting_attendance').select('meeting_id, present').inFilter('meeting_id', meetingIds);
+    final attendance = await _client.from('meeting_attendance').select('meeting_id, present, profiles(shg_id, is_active)').inFilter('meeting_id', meetingIds);
     var present = 0;
     for (final r in attendance as List) {
-      if ((r as Map<String, dynamic>)['present'] == true) present++;
+      final map = r as Map<String, dynamic>;
+      if (map['present'] != true) continue;
+      final profile = map['profiles'] as Map<String, dynamic>?;
+      if (profile == null || profile['is_active'] != true || profile['shg_id'] != meetingShgIds[map['meeting_id']]) continue;
+      present++;
     }
     final total = meetingIds.fold<int>(0, (sum, id) => sum + (rosterSizeByShg[meetingShgIds[id]] ?? 0));
     if (total == 0) return 0.0;
