@@ -19107,3 +19107,202 @@ mode's `fetchMine()` always returns, same as a live account with a genuinely
 absent request) to render the "Waiting for approval" copy, exactly the
 bug iteration 28 closed. Updated the test to assert the corrected "no SHG
 selected yet" state instead of the old one.
+
+## Gap-hunting loop iteration 30: a CRITICAL "fixed" claim in this very log turns out false and live-exploited, a systemic rate-limit bypass across 4 tables, a CRITICAL cross-SHG attendance-forgery hole, and a self-caught bug in the fix for it — 20+ gaps across 4 fresh audits
+
+Four parallel audits: dogfooding iteration 29's fixes, Marketplace full
+sweep, Meetings/Attendance full sweep, Livelihood full sweep (all stale —
+Marketplace not dedicated-swept since iteration 21, Meetings since
+iteration 25, Livelihood since iteration 26).
+
+**Livelihood full sweep — the standout finding: this log's own round-186
+entry claimed a fix that was never actually shipped**
+
+1. **[CRITICAL]** `livelihood_update_self_leader_or_staff` never checked
+   `profile_is_active(member_id)` — round 186's entry in this very file
+   claimed *"Fixed with the same profile_is_active(member_id) pattern"*,
+   but migration 0090 (round 186's real migration) only ever added
+   `livelihood_activities_amount_cap`; no migration since ever added the
+   check. Live-verified (rolled back): a leader (or staff) could freely
+   `UPDATE ... SET status='active', revenue=<anything>` on a DEACTIVATED
+   member's livelihood activity — 1 row affected, no restriction at all,
+   permanently feeding fabricated numbers attributed to someone no longer
+   in the group into SHG-wide/platform-wide totals. Fixed (migration
+   0122) by adding the check to both the staff-editing-someone-else branch
+   (previously fully unrestricted) and the self/leader/staff-on-own-row
+   branch. Also corrected this log's own false claim so a future session
+   doesn't re-trust it.
+2. **[MEDIUM, fixed]** `audit_livelihood_staff_override` only logged an
+   on-behalf-of edit when the actor was staff — but the RLS policy grants
+   an SHG's LEADER the identical capability, and a leader rewriting a
+   teammate's numbers is exactly the kind of action worth an audit trail
+   for. Broadened the trigger to any actor editing someone else's row,
+   renamed the logged action from `livelihood_staff_override` to
+   `livelihood_override` to match.
+3. **[LOW, fixed with `NOT VALID`]** `activity_type` had no DB-level
+   constraint — bounded to the known 7-value set, but as `NOT VALID`
+   since the live table already has real pre-existing rows outside that
+   exact set ("Poultry Farming" vs. "Poultry") that this session has no
+   business silently rewriting; `NOT VALID` enforces the constraint for
+   every future write without touching historical data on a guess.
+4. **[LOW, documented]** Revenue-freeze-once-completed guard is trivially
+   bypassed by stepping status back one level then forward again (first
+   flagged round 186, re-confirmed still open, not fixed this round —
+   needs a `revenue_locked` column + trigger, a larger change deferred
+   given this round's scope). Also documented: no per-member/per-type
+   duplicate-activity guard, no pagination past 500 rows (both accepted
+   trade-offs already established elsewhere in this schema).
+
+**Dogfooding iteration 29 — mostly holding, but one systemic HIGH finding
+affecting 4 tables, not just the one just "fixed"**
+
+5. **[HIGH, fixed, migration 0123]** `payments_insert_self`'s brand-new
+   30/hour rate limit (iteration 29) is a per-row `WITH CHECK` — evaluated
+   against each row's own statement snapshot, so rows inserted by the SAME
+   multi-row INSERT never see each other. Live-verified: a single
+   `INSERT ... SELECT ... FROM generate_series(1,40)` inserted all 40 rows
+   in one statement, completely ignoring the limit — and PostgREST (what
+   the Supabase client SDK uses) accepts a JSON array body on one POST,
+   executing exactly this shape with no raw SQL needed. The SAME
+   per-row-count pattern is used by THREE other tables'
+   (`support_tickets`, `announcements`, `support_messages`) rate limits —
+   all four share this bypass. Fixed for all four with an `AFTER INSERT
+   ... FOR EACH STATEMENT` trigger using a transition table
+   (`REFERENCING NEW TABLE`), which fires once per statement after ALL its
+   rows are already visible — closing the gap regardless of batch size.
+   The original per-row checks are left in place too (defense in depth).
+6. **[LOW, documented]** `approve_shg_join_request`'s deactivation check
+   is a separate unlocked read before the atomic UPDATE — a residual,
+   very-low-impact non-atomic step in an otherwise-atomic function; not
+   fixed this round given its negligible practical impact.
+7. **[LOW, documented]** `LoanDetailPage`'s stale-balance refetch silently
+   no-ops if `fetchById` returns null, leaving the retry dead-ended with
+   no path out but closing the dialog manually — not fixed this round.
+8. Re-confirmed holding, live-tested: migration 0119's
+   `profiles_leader_requires_shg` CHECK constraint (rejects the exact
+   escalation chain even under `session_replication_role = replica`),
+   `approve_shg_join_request`'s atomic re-verify (correctly raises under a
+   simulated concurrent-deactivation race), migration 0120's/0121's staff-
+   forgery/column-lock closures, `crp_dashboard.dart`'s count/partial-
+   average logic.
+
+**Marketplace full sweep (5 findings; 2 fixed, rest documented)**
+
+9. **[HIGH, fixed, migration 0124]** `marketplace_products` had no pinned
+   seller-name column — the seller's display name depended on a
+   `profiles(name)` PostgREST embed, but `profiles_select_self_shg_or_staff`
+   only permits reading a same-SHG/self/staff profile, with no exception
+   for Marketplace's explicitly cross-SHG design (any member can browse
+   any seller's listings platform-wide). A denied embed doesn't error —
+   it silently returns null, swallowed into the fallback string `'Seller'`.
+   Any buyer outside the seller's own SHG and not staff has been seeing
+   every one of that seller's listings attributed to a generic "Seller"
+   this whole time. Fixed the same way `marketplace_reviews.reviewer_name`
+   already is: a pinning trigger reading `profiles.name`, firing on both
+   INSERT and UPDATE (unlike reviews, products ARE routinely edited, so an
+   insert-only pin would leave it client-settable on every edit).
+10. **[MEDIUM-HIGH, fixed, migration 0127]** No rate limit or moderation
+    on listing a product — unlike `support_tickets_insert_self`'s 10/hour
+    cap, nothing bounded `marketplace_products` inserts at all. Added the
+    same 10/hour limit, built correctly from day one with BOTH a per-row
+    check and a statement-level trigger (finding #5 above's fix applied
+    proactively here instead of needing the same follow-up later).
+11. **[MEDIUM, documented]** No shipping/delivery address captured
+    anywhere in the schema — a real business-logic completeness gap for
+    what SRS describes as a genuine goods marketplace, may be an accepted
+    MVP simplification; not fixed this round.
+12. **[LOW, documented]** Order-detail page shows the buyer's own name
+    back to her and never shows the seller's name; `add_product_page.dart`'s
+    stock field has no upper-bound validation parity with the price
+    field's explicit cap.
+13. Re-confirmed still correct: atomic order placement, one-step status
+    transition enforced in RLS itself (not just the RPC), review
+    authorship/no-forged-reviews, stock-can't-go-negative, delete
+    protections (`ON DELETE RESTRICT`).
+
+**Meetings/Attendance full sweep (6 findings; 4 fixed, 2 documented) —
+includes a bug this session introduced and self-caught in the SAME round**
+
+14. **[CRITICAL, fixed, migration 0125+0126]**
+    `meeting_attendance_insert_self_or_leader`'s `is_staff()` branch was a
+    bare `(is_staff() and profile_is_active(member_id))` — unlike the self
+    branch (same-SHG + today) and the leader branch (`profile_shg_id(member_id)
+    = m.shg_id`), it never checked `member_id` belonged to the MEETING's
+    own SHG at all. Live-verified: a real crp inserted a present=true
+    attendance row for one SHG's meeting, naming a real active member of a
+    completely different SHG — succeeded. `TrendRepository.attendanceRate()`
+    (feeding the CRP/CLF health score and SHG performance reports) sums raw
+    rows per meeting with no membership check, so a forged row directly
+    inflates the targeted SHG's stat using a member never in it. Same bug
+    class this exact table's UPDATE path already had fixed (0110) — never
+    closed on INSERT.
+15. **[HIGH, fixed, same migration]** Neither the leader nor staff branch
+    checked the meeting's own date on INSERT/UPDATE — only the self-check-in
+    branch required `meeting_date = today`. A leader/staff could mark
+    attendance for a meeting dated days in the future, reachable through
+    the shipped UI picker (offers any upcoming meeting, not just today's).
+16. **[MEDIUM/HIGH, fixed, same migration]**
+    `meeting_action_items_insert_leader_or_staff`'s staff branch had zero
+    `owner_id` validation, unlike the leader branch two clauses earlier in
+    the same policy. Live-verified: a real crp assigned an action item on
+    one SHG's meeting to a real active member of a different SHG.
+17. **[MEDIUM, fixed, same migration]**
+    `meeting_action_items_delete_related`'s `owner_id = auth.uid()` branch
+    was judged low-stakes when written (on the premise that owner
+    assignment "wasn't populated by the app" yet) — that premise is now
+    stale (a real "Assign to" picker exists and is used), and grepping
+    every `.delete()` call site confirmed zero exist for action items —
+    pure REST-only surface. Dropped, consistent with this session's
+    precedent of retiring dead-but-permissive branches.
+18. **[Self-caught mid-fix, same round]**: migration 0125's fix for
+    findings 14-16 initially reused `public.profile_shg_id(member_id)` for
+    the STAFF branch checks too — but that function is defined as
+    `select p.shg_id from profiles p where p.id = target and p.shg_id =
+    (caller's own shg_id)` — i.e. it's a same-SHG-PEER check, correct for
+    the leader branch (a leader's own shg_id is real), but structurally
+    unable to ever return true for a staff caller, whose own shg_id is
+    ALWAYS null by this app's platform-wide-staff design. The very next
+    verification step after confirming the CRITICAL fix (a positive
+    control: a legitimate same-SHG staff insert, which should succeed)
+    failed with the identical RLS error — revealing the staff branch was
+    now unconditionally false for every staff caller, silently disabling
+    the entire staff attendance/action-item feature outright, not just
+    correctly blocking the exploit. Caught and fixed immediately in the
+    same round (migration 0126) by replacing the staff-branch scope check
+    with a direct `exists (select 1 from profiles p where p.id=... and
+    p.shg_id=m.shg_id)` — safe here specifically because `is_staff()` is
+    already true in this branch, and `profiles_select_self_shg_or_staff`'s
+    own is_staff() clause already grants staff RLS-visibility into any
+    profile row. Re-verified all three cases after the correction: cross-
+    SHG forgery blocked, future-dating blocked, legitimate same-SHG staff
+    insert succeeds.
+19. **[MEDIUM/HIGH, fixed, Dart]** `meeting_attendance_page.dart`'s
+    meeting-picker `DropdownButton` wasn't wrapped in `Flexible` — live-
+    reproduced a `RenderFlex` overflow at 2.0x text scale with a long SHG
+    name (platform-wide staff view). Wrapped in `Flexible` with
+    `isExpanded: true`.
+20. **[MEDIUM, fixed, Dart]** The attendance roster's per-member
+    label-next-to-`Switch` row had no `MergeSemantics`, unlike the
+    identical shape already fixed in `settings_page.dart` — a leader
+    marking attendance for 20+ members is a real, frequent, high-stakes
+    action; a screen reader landing on the Switch announced only "On/Off,
+    switch" with no member name. Wrapped in `MergeSemantics`.
+21. **[LOW, documented]** `meeting_qr_page.dart`'s local check-in state
+    isn't re-initialized from real backend state on load (cosmetic,
+    idempotent upsert underneath).
+22. Re-confirmed still closed: staff retargeting via UPDATE locked-fields
+    (0110/0112), meeting backdating bounds (0064/0090/0110), IST-timezone
+    same-day self-check-in (0098), cross-SHG meeting/member visibility.
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full
+suite passing. Live: migrations 0122 (livelihood deactivated-member
+freeze + audit broadening + activity_type constraint), 0123 (multi-row
+rate-limit bypass closure across payments/support_tickets/announcements/
+support_messages), 0124 (marketplace seller_name pin), 0125+0126 (meetings
+staff-scope + future-dating fixes, plus the self-caught correction), 0127
+(marketplace_products rate limit) all deployed via `supabase db push` and
+individually live-verified via rolled-back transactions with explicit
+row-count/error assertions — not reasoned about, actually executed
+against the real linked project, including the self-caught regression in
+finding 18 that a positive-control test (not just the negative exploit
+test) specifically surfaced.

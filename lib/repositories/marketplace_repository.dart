@@ -45,7 +45,7 @@ class MarketplaceRepository {
     // unbounded as the marketplace matures. Capped at a generous 500 rather
     // than left unbounded — newest-first ordering means it's the oldest,
     // least-recently-listed products that would fall past the cap first.
-    final rows = await _client.from('marketplace_products').select('*, profiles(name)').order('created_at', ascending: false).limit(500);
+    final rows = await _client.from('marketplace_products').select().order('created_at', ascending: false).limit(500);
     return (rows as List).map((r) => Product.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -57,7 +57,7 @@ class MarketplaceRepository {
   Future<List<Product>> fetchMyProducts(String? sellerId) async {
     if (!_live) return [..._locallyAddedProducts.reversed, ..._mockProducts()];
     if (sellerId == null) return [];
-    final rows = await _client.from('marketplace_products').select('*, profiles(name)').eq('seller_id', sellerId).order('created_at', ascending: false).limit(500);
+    final rows = await _client.from('marketplace_products').select().eq('seller_id', sellerId).order('created_at', ascending: false).limit(500);
     return (rows as List).map((r) => Product.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -66,7 +66,7 @@ class MarketplaceRepository {
       final matches = [..._locallyAddedProducts, ..._mockProducts()].where((p) => p.id == id);
       return matches.isEmpty ? null : matches.first;
     }
-    final row = await _client.from('marketplace_products').select('*, profiles(name)').eq('id', id).maybeSingle();
+    final row = await _client.from('marketplace_products').select().eq('id', id).maybeSingle();
     return row == null ? null : Product.fromMap(row);
   }
 

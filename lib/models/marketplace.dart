@@ -26,7 +26,16 @@ String marketplaceCategoryLabel(String category, AppLocalizations l10n) => switc
       _ => category,
     };
 
-/// Mirrors a row in `public.marketplace_products` (joined with seller name).
+/// Mirrors a row in `public.marketplace_products`. `sellerName` is the
+/// table's own pinned `seller_name` column (migration 0124), not a
+/// `profiles` join — Marketplace is explicitly cross-SHG (any member can
+/// browse any seller's listings platform-wide), but `profiles` RLS only
+/// permits reading a same-SHG/self/staff profile, so a `profiles(name)`
+/// embed silently returned null for the majority of real listings and
+/// every buyer outside the seller's own SHG saw a generic "Seller" instead
+/// of the real name. The column is stamped server-side from `profiles.name`
+/// on every insert/update, so it's always correct regardless of the
+/// reader's own RLS visibility into `profiles`.
 class Product {
   final String id;
   final String sellerId;
@@ -53,7 +62,7 @@ class Product {
   factory Product.fromMap(Map<String, dynamic> map) => Product(
         id: map['id'] as String,
         sellerId: map['seller_id'] as String,
-        sellerName: (map['profiles'] as Map<String, dynamic>?)?['name'] as String? ?? 'Seller',
+        sellerName: map['seller_name'] as String? ?? 'Seller',
         name: map['name'] as String,
         description: map['description'] as String?,
         price: map['price'] as num,

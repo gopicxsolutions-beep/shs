@@ -132,19 +132,30 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                           ],
                         ),
                       ),
-                      DropdownButton<Meeting>(
-                        value: meeting,
-                        underline: const SizedBox(),
-                        items: selectableMeetings
-                            .map((m) => DropdownMenuItem(
-                                  value: m,
-                                  child: Text(
-                                    isPlatformWide && m.shgName != null ? '${DateFormat('dd MMM').format(m.date)} · ${m.shgName}' : DateFormat('dd MMM').format(m.date),
-                                    style: AppTheme.sans(12, weight: FontWeight.w600),
-                                  ),
-                                ))
-                            .toList(),
-                        onChanged: (m) => setState(() => _selected = m),
+                      // The left-hand date/agenda text is already `Expanded`,
+                      // but this dropdown wasn't wrapped at all — at large
+                      // text scale, a platform-wide staff viewer's selected
+                      // item (which appends the SHG name) could overflow the
+                      // Row well past the screen edge. Live-reproduced at
+                      // 2.0x text scale with a long SHG name (gap-hunt
+                      // iteration 30) before this fix.
+                      Flexible(
+                        child: DropdownButton<Meeting>(
+                          value: meeting,
+                          isExpanded: true,
+                          underline: const SizedBox(),
+                          items: selectableMeetings
+                              .map((m) => DropdownMenuItem(
+                                    value: m,
+                                    child: Text(
+                                      isPlatformWide && m.shgName != null ? '${DateFormat('dd MMM').format(m.date)} · ${m.shgName}' : DateFormat('dd MMM').format(m.date),
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTheme.sans(12, weight: FontWeight.w600),
+                                    ),
+                                  ))
+                              .toList(),
+                          onChanged: (m) => setState(() => _selected = m),
+                        ),
                       ),
                     ],
                   ),
@@ -191,28 +202,41 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                                     child: Row(children: [
                                       AppAvatar(name: row.memberName, size: 32),
                                       const SizedBox(width: 12),
-                                      Expanded(child: Text(row.memberName, style: AppTheme.sans(13, weight: FontWeight.w600))),
-                                      Switch(
-                                        value: row.present,
-                                        activeThumbColor: Brand.c600,
-                                        onChanged: _updating.contains(row.memberId)
-                                            ? null
-                                            : (v) async {
-                                                setState(() => _updating.add(row.memberId));
-                                                try {
-                                                  await _repo.markAttendance(meeting.id, row.memberId, v);
-                                                  if (!context.mounted) return;
-                                                  setState(() {
-                                                    roster[i] = AttendanceRow(memberId: row.memberId, memberName: row.memberName, present: v);
-                                                  });
-                                                } catch (_) {
-                                                  if (context.mounted) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.meetingAttendanceUpdateError)));
-                                                  }
-                                                } finally {
-                                                  if (context.mounted) setState(() => _updating.remove(row.memberId));
-                                                }
-                                              },
+                                      // MergeSemantics: a leader marking attendance for 20+
+                                      // members is a real, frequent, high-stakes action —
+                                      // without this, a screen reader landing on the Switch
+                                      // announces only "On/Off, switch" with no indication of
+                                      // which member it belongs to, same gap already fixed for
+                                      // the identical label-next-to-Switch shape in
+                                      // settings_page.dart.
+                                      Expanded(
+                                        child: MergeSemantics(
+                                          child: Row(children: [
+                                            Expanded(child: Text(row.memberName, style: AppTheme.sans(13, weight: FontWeight.w600))),
+                                            Switch(
+                                              value: row.present,
+                                              activeThumbColor: Brand.c600,
+                                              onChanged: _updating.contains(row.memberId)
+                                                  ? null
+                                                  : (v) async {
+                                                      setState(() => _updating.add(row.memberId));
+                                                      try {
+                                                        await _repo.markAttendance(meeting.id, row.memberId, v);
+                                                        if (!context.mounted) return;
+                                                        setState(() {
+                                                          roster[i] = AttendanceRow(memberId: row.memberId, memberName: row.memberName, present: v);
+                                                        });
+                                                      } catch (_) {
+                                                        if (context.mounted) {
+                                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.meetingAttendanceUpdateError)));
+                                                        }
+                                                      } finally {
+                                                        if (context.mounted) setState(() => _updating.remove(row.memberId));
+                                                      }
+                                                    },
+                                            ),
+                                          ]),
+                                        ),
                                       ),
                                     ]),
                                   ),
