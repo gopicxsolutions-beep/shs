@@ -15,6 +15,57 @@ import 'voice_recognition_service.dart';
 /// requested language has a recognizer installed all affect whether
 /// [listen] succeeds — this is genuine device behavior, not a simulated
 /// failure mode.
+// speech_to_text's web `onError`/browser SpeechRecognition error codes that
+// mean the recognizer itself can't be used at all (permission denied, no
+// mic hardware, no recognition service available) — as opposed to a
+// transient "listened but didn't catch anything" outcome. Standard Web
+// Speech API error values per the spec, plus this package's own two
+// synthetic ones raised from its web `initialize()` (`'not supported'` /
+// `'speech_not_supported'`, see speech_to_text_web.dart) for completeness —
+// those two are already caught by the `!_available` check below since they
+// only ever fire before `_available` is set, but listing them here too
+// costs nothing and documents the full set in one place.
+const _unavailableErrorMessages = {
+  'not-allowed',
+  'service-not-allowed',
+  'audio-capture',
+  'not supported',
+  'speech_not_supported',
+};
+
+/// Whether a `SpeechRecognitionError.errorMsg` means the recognizer can't be
+/// used at all, vs. an ordinary no-match. Exposed as a top-level function
+/// (rather than left as a private set-membership check) purely so a test can
+/// exercise the classification directly without needing a fake `stt.SpeechToText`.
+bool isUnavailableVoiceError(String? errorMsg) => _unavailableErrorMessages.contains(errorMsg);
+
+/// Pure matching logic behind [DeviceVoiceRecognitionService._resolveLocaleId],
+/// factored out so it's testable without a real/fake `speech_to_text` plugin:
+/// given the language the member picked and the raw locale-id strings the
+/// platform reports (empty on Flutter Web — see the doc comment on the call
+/// site), returns which BCP-47 id to pass into `stt.listen()`.
+String? resolveVoiceLocaleId(Language language, List<String> availableLocaleIds) {
+  final code = switch (language) {
+    Language.te => 'te',
+    Language.hi => 'hi',
+    Language.en => 'en',
+  };
+  for (final preferIndianRegion in [true, false]) {
+    for (final id in availableLocaleIds) {
+      final lower = id.toLowerCase();
+      if (lower.startsWith(code) && (!preferIndianRegion || lower.contains('in'))) return id;
+    }
+  }
+  if (availableLocaleIds.isEmpty) {
+    return switch (language) {
+      Language.te => 'te-IN',
+      Language.hi => 'hi-IN',
+      Language.en => 'en-IN',
+    };
+  }
+  return null;
+}
+
 class DeviceVoiceRecognitionService implements VoiceRecognitionService {
   final stt.SpeechToText _stt = stt.SpeechToText();
   bool _available = false;
@@ -24,6 +75,13 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
   // session afterward, so it needs a way to reach whichever attempt is
   // currently in flight; see the onError doc comment for why this matters.
   Completer<String>? _pendingCompleter;
+  // Set by `onError` when the error it just saw means the recognizer is
+  // unusable (mic permission denied, no mic hardware, no recognition
+  // service) rather than merely "didn't catch anything this attempt" — see
+  // the empty-transcript check below for why this needs to survive past the
+  // completer resolving with '' (both outcomes complete the SAME completer
+  // with the same empty string, since `onResult`'s type only carries text).
+  bool _lastErrorUnavailable = false;
 
   @override
   Future<RecognizedCommand> listen(Language language) async {
@@ -44,7 +102,18 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
         // '' (not throwing here) reuses the exact same "couldn't hear
         // anything, please try again" path the timeout branch already
         // takes below, just reached immediately instead of after 15s.
+        //
+        // `_lastErrorUnavailable` additionally distinguishes WHICH empty
+        // outcome this is: a denied mic permission or missing mic hardware
+        // used to land on the exact same "Sorry, I couldn't hear anything.
+        // Please try again." as a genuine silent room — telling a member to
+        // retry something that literally cannot succeed until she goes into
+        // her phone/browser Settings, with no hint that Settings is even
+        // the problem. Found on the web platform specifically: a browser
+        // permission denial fires `'not-allowed'` here on every subsequent
+        // tap, forever, until she manually re-grants it outside the app.
         onError: (error) {
+          _lastErrorUnavailable = isUnavailableVoiceError(error.errorMsg);
           final completer = _pendingCompleter;
           if (completer != null && !completer.isCompleted) completer.complete('');
         },
@@ -57,6 +126,7 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
     final localeId = await _resolveLocaleId(language);
     final completer = Completer<String>();
     _pendingCompleter = completer;
+    _lastErrorUnavailable = false;
 
     String transcript;
     try {
@@ -87,6 +157,7 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
     }
 
     if (transcript.trim().isEmpty) {
+      if (_lastErrorUnavailable) throw const VoiceRecognitionUnavailableException();
       throw const VoiceRecognitionEmptyResultException();
     }
     return RecognizedCommand(transcript: transcript, intent: VoiceIntentClassifier.classify(transcript, language));
@@ -104,21 +175,28 @@ class DeviceVoiceRecognitionService implements VoiceRecognitionService {
   // installed recognizers report (format varies by OS/version), so this
   // matches by language-code prefix against the device's own reported list
   // rather than guessing a fixed "xx-YY" string that might not exist on
-  // this particular device. Returning null lets the engine fall back to
-  // its own default when no match is found, instead of failing outright.
+  // this particular device.
+  //
+  // On Flutter Web specifically, `locales()` can never do this: the web
+  // implementation's `locales()` just echoes back whatever `.lang` a PRIOR
+  // `listen()` call already set on the browser's `SpeechRecognition` object
+  // (see speech_to_text_web.dart) — before the very first `listen()` ever
+  // runs, that's always empty, and `listen()` is the very thing this method
+  // is called to set up in the first place. So on web this returned `[]`
+  // on every call, every time, and the caller's fallback (a `null` localeId,
+  // "let the engine use its own default") left the browser recognizing in
+  // whatever language it defaults to — frequently English — completely
+  // ignoring the member's actual language selection (Telugu/Hindi). A member
+  // who picked Telugu and spoke Telugu into an English-default recognizer
+  // would get silence/garbage every time: this read as "the voice assistant
+  // doesn't work," when the real bug was that her language choice was being
+  // thrown away. A real device's `locales()` always reports at least its
+  // own system default (Android/iOS genuinely enumerate installed
+  // recognizer languages), so an empty list is itself the reliable signal
+  // that this platform's `locales()` isn't meaningful — falls back to a
+  // direct, well-known BCP-47 regional code instead of giving up.
   Future<String?> _resolveLocaleId(Language language) async {
-    final code = switch (language) {
-      Language.te => 'te',
-      Language.hi => 'hi',
-      Language.en => 'en',
-    };
     final locales = await _stt.locales();
-    for (final preferIndianRegion in [true, false]) {
-      for (final l in locales) {
-        final id = l.localeId.toLowerCase();
-        if (id.startsWith(code) && (!preferIndianRegion || id.contains('in'))) return l.localeId;
-      }
-    }
-    return null;
+    return resolveVoiceLocaleId(language, locales.map((l) => l.localeId).toList());
   }
 }

@@ -18608,3 +18608,65 @@ call with `p_as_leader => true` on her own SHG correctly raised the new
 authorization exception; a real staff session's identical call succeeded —
 both checked via isolated rolled-back transactions, this project's
 established pattern.
+
+## AI Voice Assistant: fixed a real Flutter-Web-only bug that silently discarded the member's language selection
+
+**User report**: "the AI voice assistant is not working, find bugs and gaps
+and fix them." Investigated `lib/pages/ai/ai_voice_assistant_page.dart`
+(real on-device STT/TTS, unrelated to the 3 text-chat AI Advisors or the
+separate Support "Voice Support" feature) and its backing
+`lib/services/device_voice_recognition_service.dart` end to end, then read
+the `speech_to_text` package's own web implementation source to check for a
+platform-specific gap, since this app has been tested almost exclusively via
+the Flutter Web build all session.
+
+**Root cause found**: `speech_to_text_web.dart`'s `locales()` reads back
+whatever `.lang` a *prior* `listen()` call already set on the browser's
+`SpeechRecognition` object — `.lang` is never set anywhere else in that
+package. Before the first `listen()` of a session, that's unset, so on Web
+`locales()` returns `[]` on every call, forever — a chicken-and-egg gap that
+doesn't exist on Android/iOS (both genuinely enumerate installed OS
+recognizer locales independent of any prior `listen()`). This app's
+`_resolveLocaleId()` called `_stt.locales()` *before* ever calling `listen()`
+with a localeId, so on Web it always found nothing and fell back to
+`localeId: null` — leaving the browser's recognizer at whatever language it
+already defaults to (commonly English), **completely ignoring the member's
+Telugu/Hindi/English selection** in the page's own language chips. A Telugu
+speaker selecting "తెలుగు" and speaking Telugu into an English-default
+recognizer would get silence/garbage every time — a well-evidenced,
+deterministic explanation for "doesn't work."
+
+**Fix**: `_resolveLocaleId()` now falls back to a direct hardcoded BCP-47
+code (`te-IN`/`hi-IN`/`en-IN`) when `locales()` comes back empty, instead of
+`null` — an empty list is itself the reliable signal that this platform's
+`locales()` isn't meaningful, since a real device always reports at least
+its own system default. The matching/fallback logic was extracted into a
+pure, independently-testable top-level function `resolveVoiceLocaleId`.
+
+**Secondary gap fixed in the same change**: the shared `onError` callback
+used to complete every recognizer error identically — a denied mic
+permission (`'not-allowed'`, which on Web re-fires on every subsequent
+attempt until the member manually re-grants it in browser settings) landed
+on the same "Sorry, I couldn't hear anything. Please try again." as an
+ordinary silent room, telling her to retry something retrying can never fix.
+Added `isUnavailableVoiceError()` classifying the standard Web Speech API
+permission/hardware error codes (`'not-allowed'`, `'service-not-allowed'`,
+`'audio-capture'`, plus the package's own two web-only synthetic codes) so
+these now throw the existing (but previously unreachable from this path)
+`VoiceRecognitionUnavailableException` instead of the generic empty-result
+one.
+
+**Verification**: `DeviceVoiceRecognitionService` had zero existing tests
+and no mock seam for the real `speech_to_text` plugin — added
+`test/services/device_voice_recognition_service_test.dart` (13 new tests)
+against the two extracted pure functions, covering the empty-locales web
+fallback for all 3 languages, Indian-region preference, case-insensitive
+matching, the genuine-no-match case, and every error classification.
+`flutter analyze` — 0 issues. `flutter test` — full suite, 1074/1074
+passing. Updated `docs/AI_MODULES.md` §3.1 and a new §3.4 with the full
+root-cause writeup. **Not verified with a real spoken voice in this
+environment** — the sandboxed Browser pane blocks real microphone/
+`getUserMedia` access (confirmed via an explicit tool-emitted notice this
+round), so end-to-end recognition accuracy still needs confirming on a real
+device/browser before this is treated as fully proven, consistent with this
+feature's existing testing caveat in `AI_MODULES.md` §3.1.

@@ -179,9 +179,8 @@ speech synthesizer.
 
 `DeviceVoiceRecognitionService.listen(Language)`: initializes `speech_to_text`
 (prompting the OS microphone/speech-recognition permission on first use),
-resolves a device-installed locale by language-code prefix (preferring an
-`*-IN` region variant, e.g. `te-IN`/`hi-IN`/`en-IN`, falling back to the
-engine's own default if the device has no exact match), then listens for up
+resolves a locale by language-code prefix against `stt.locales()` (preferring
+an `*-IN` region variant, e.g. `te-IN`/`hi-IN`/`en-IN`), then listens for up
 to 10 seconds (or 3 seconds of trailing silence) and returns the final
 transcript. The transcript is then classified into a `VoiceIntent`
 (`loanDetails`, `savingsThisMonth`, `readAnnouncements`, `addSavings`,
@@ -189,11 +188,13 @@ transcript. The transcript is then classified into a `VoiceIntent`
 (`lib/services/voice_intent_classifier.dart`), since a real STT engine returns
 arbitrary free text rather than one of a fixed canned set. An empty/silent transcript throws `VoiceRecognitionEmptyResultException`
 and a device with no available recognizer (permission denied, no engine
-installed) throws `VoiceRecognitionUnavailableException` — two distinct
-types (gap-hunt round 181) so `AiVoiceAssistantPage`/`SupportVoicePage` show
-a different, actionable message for each instead of one generic retry
-prompt that couldn't tell a member how to actually fix a denied mic
-permission.
+installed, no mic hardware) throws `VoiceRecognitionUnavailableException` —
+two distinct types (gap-hunt round 181) so `AiVoiceAssistantPage`/
+`SupportVoicePage` show a different, actionable message for each instead of
+one generic retry prompt that couldn't tell a member how to actually fix a
+denied mic permission. As of §3.4, the empty-result path is also reached
+when a mid-listen `onError` fires a permission/hardware-class error, not
+only from the recognizer genuinely hearing nothing.
 `DeviceVoiceSupportService` follows the same listen-and-transcribe shape for
 Support's free-form question, then matches the question against the same FAQ
 content shown on the (text) FAQ page by keyword overlap — not a separate
@@ -264,6 +265,64 @@ to. Fixed by switching to the explicit-locale lookup described in §3.2. This
 is a good illustration of why "which locale accessor" is not a stylistic
 choice in this codebase — the two accessors answer genuinely different
 questions (system-wide vs. page-local intent), and this page needs the latter.
+
+### 3.4 Real bug: Flutter Web silently ignored the member's language selection (found and fixed this round)
+
+**Symptom reported**: "the AI Voice Assistant is not working." Given this
+project has been tested almost exclusively via the Flutter Web build
+throughout its history, the most probable root cause was web-specific, not a
+generic logic bug — confirmed below.
+
+**Root cause**: `speech_to_text`'s web implementation
+(`speech_to_text_web.dart`) implements `locales()` by reading back whatever
+`.lang` a *prior* `listen()` call already set on the browser's
+`SpeechRecognition` object — `.lang` is never set anywhere else. Before the
+very first `listen()` of a session ever runs, that's unset, so `locales()`
+returns `[]` on Web, on literally every call, forever — a chicken-and-egg gap
+that doesn't exist on Android/iOS (both genuinely enumerate installed OS
+recognizer locales independent of any prior `listen()` call). This app's own
+`_resolveLocaleId()` called `_stt.locales()` *before* the first `listen()`,
+so on Web it always matched nothing and fell back to `localeId: null` —
+which leaves the browser's `SpeechRecognition.lang` at whatever it already
+defaulted to (commonly English), **completely ignoring the member's Telugu/
+Hindi/English selection** in the page's own language chips. A Telugu speaker
+selecting "తెలుగు" and speaking Telugu had her speech run through an
+English-default recognizer — a highly plausible, deterministic explanation
+for "doesn't work," since it silently misfires for any member who isn't
+speaking the browser's default language.
+
+**Fix**: `_resolveLocaleId()` (now backed by the pure, independently-testable
+`resolveVoiceLocaleId(Language, List<String>)` function in the same file)
+falls back to a direct hardcoded BCP-47 region code (`te-IN`/`hi-IN`/`en-IN`)
+when `locales()` comes back empty, instead of `null`. An empty list is itself
+the reliable signal that this platform's `locales()` isn't meaningful — a
+real Android/iOS device always reports at least its own system default, so
+seeing `[]` there would be anomalous rather than expected.
+
+**Secondary gap fixed in the same change**: the shared `onError` callback
+used to complete every recognizer error identically (mic permission denied,
+no mic hardware, or a genuine no-speech outcome all landed on the same
+"Sorry, I couldn't hear anything. Please try again."). A denied browser mic
+permission fires `'not-allowed'` on every subsequent attempt until the member
+manually re-grants it outside the app — retrying inside the app can never
+fix it, but the message never said so. Added `isUnavailableVoiceError()` (a
+small classifier over the standard Web Speech API error codes plus this
+package's own two synthetic web-only ones) so a permission/hardware-class
+error now throws `VoiceRecognitionUnavailableException` instead of
+`VoiceRecognitionEmptyResultException`, surfacing the actionable message.
+
+**Verification**: `resolveVoiceLocaleId`/`isUnavailableVoiceError` are pure
+functions with new unit coverage
+(`test/services/device_voice_recognition_service_test.dart`) covering the
+empty-list web fallback, Indian-region preference, case-insensitive
+matching, the no-match case, and every error classification — this closes
+the "zero existing tests for this file" gap without needing a mock harness
+for the real `speech_to_text` plugin (none exists in this repo). `flutter
+analyze`/`flutter test` pass. Genuine spoken-voice, end-to-end verification
+was not possible in this environment — the sandboxed Browser pane blocks
+real microphone access — so, consistent with §3.1's existing testing
+caveat, a real device/browser should confirm the recognizer actually now
+listens in the selected language before this is treated as fully verified.
 
 ---
 
