@@ -25,6 +25,7 @@
   "commonError": "ఏదో తప్పు జరిగింది",
   "commonBack": "వెనుకకు",
   "commonStaffNoShgMessage": "మీ పాత్ర ఏ ఒక్క SHGకి లింక్ కాలేదు — ఈ వీక్షణ వర్తించదు",
+  "commonLeaderNoShgMessage": "మీ ఖాతా ఇంకా ఏ SHGకి లింక్ కాలేదు. సెటప్ కోసం ఒక అడ్మిన్‌ను సంప్రదించండి.",
 
   "asyncErrorGeneric": "ఏదో తప్పు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి.",
   "asyncErrorNetwork": "మీ ఇంటర్నెట్ కనెక్షన్‌ని తనిఖీ చేసి మళ్ళీ ప్రయత్నించండి.",
@@ -141,7 +142,7 @@
   "fieldFullName": "పూర్తి పేరు",
   "fieldMandal": "మండలం",
   "fieldDistrict": "జిల్లా",
-  "yourShg": "మీ SHG (ఐచ్ఛికం)",
+  "yourShg": "మీ SHG",
   "searchSelectShg": "మీ SHGని వెతికి ఎంచుకోండి",
   "changeShg": "మార్చండి",
   "profileSetupSaving": "సేవ్ చేస్తోంది…",
@@ -1474,6 +1475,8 @@
   "shgJoinRequestsWorking": "ప్రాసెస్ అవుతోంది…",
 
   "shgJoinRequestsApprove": "ఆమోదించండి",
+
+  "shgJoinRequestsApproveAsLeader": "నాయకురాలిగా ఆమోదించండి",
 
   "shgMembersTitle": "సభ్యులు",
 

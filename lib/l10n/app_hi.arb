@@ -25,6 +25,7 @@
   "commonError": "कुछ गलत हो गया",
   "commonBack": "वापस",
   "commonStaffNoShgMessage": "आपकी भूमिका किसी एक SHG से जुड़ी नहीं है — यह दृश्य लागू नहीं होता",
+  "commonLeaderNoShgMessage": "आपका खाता अभी तक किसी SHG से जुड़ा नहीं है। सेटअप के लिए किसी एडमिन से संपर्क करें।",
 
   "asyncErrorGeneric": "कुछ गलत हो गया। कृपया फिर से कोशिश करें।",
   "asyncErrorNetwork": "अपना इंटरनेट कनेक्शन जांचें और फिर से कोशिश करें।",
@@ -141,7 +142,7 @@
   "fieldFullName": "पूरा नाम",
   "fieldMandal": "मंडल",
   "fieldDistrict": "ज़िला",
-  "yourShg": "आपका SHG (वैकल्पिक)",
+  "yourShg": "आपका SHG",
   "searchSelectShg": "अपना SHG खोजें और चुनें",
   "changeShg": "बदलें",
   "profileSetupSaving": "सेव हो रहा है…",
@@ -1474,6 +1475,8 @@
   "shgJoinRequestsWorking": "प्रोसेस हो रहा है…",
 
   "shgJoinRequestsApprove": "स्वीकार करें",
+
+  "shgJoinRequestsApproveAsLeader": "नेता के रूप में स्वीकार करें",
 
   "shgMembersTitle": "सदस्य",
 

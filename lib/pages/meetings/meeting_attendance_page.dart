@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/meeting.dart';
+import '../../models/types.dart';
 import '../../repositories/meeting_repository.dart';
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
@@ -34,6 +35,7 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
+    final role = appState.user.role;
     final shgId = appState.profile?.shgId;
     final l10n = AppLocalizations.of(context)!;
 
@@ -45,7 +47,18 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
     // too: a real platform-wide meeting picker instead of an explained-away
     // dead end. `isConfigured` still excludes demo mode, whose simulated
     // identity leaves `shgId` null for every previewed role too.
-    final isPlatformWide = SupabaseService.isConfigured && shgId == null;
+    //
+    // Actual is_staff() (crp/clf/admin), not just `shgId == null` — a LEADER
+    // with a null shgId is an unlinked account (see the guard below), never
+    // legitimately platform-wide.
+    final isPlatformWide = SupabaseService.isConfigured && role != Role.member && role != Role.leader && shgId == null;
+
+    if (SupabaseService.isConfigured && role == Role.leader && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: l10n.meetingAttendanceTitle),
+        body: AppEmptyState(icon: Icons.event_busy_rounded, message: l10n.commonLeaderNoShgMessage),
+      );
+    }
 
     return Scaffold(
       appBar: PageHeader(title: l10n.meetingAttendanceTitle),

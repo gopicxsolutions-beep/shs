@@ -73,6 +73,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'आपकी भूमिका किसी एक SHG से जुड़ी नहीं है — यह दृश्य लागू नहीं होता';
 
   @override
+  String get commonLeaderNoShgMessage =>
+      'आपका खाता अभी तक किसी SHG से जुड़ा नहीं है। सेटअप के लिए किसी एडमिन से संपर्क करें।';
+
+  @override
   String get asyncErrorGeneric => 'कुछ गलत हो गया। कृपया फिर से कोशिश करें।';
 
   @override
@@ -379,7 +383,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get fieldDistrict => 'ज़िला';
 
   @override
-  String get yourShg => 'आपका SHG (वैकल्पिक)';
+  String get yourShg => 'आपका SHG';
 
   @override
   String get searchSelectShg => 'अपना SHG खोजें और चुनें';
@@ -2768,6 +2772,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get shgJoinRequestsApprove => 'स्वीकार करें';
+
+  @override
+  String get shgJoinRequestsApproveAsLeader => 'नेता के रूप में स्वीकार करें';
 
   @override
   String get shgMembersTitle => 'सदस्य';

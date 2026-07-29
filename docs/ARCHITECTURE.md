@@ -294,12 +294,17 @@ to get right up front.
 Defense in depth across three layers, only the last of which is the real
 boundary:
 
-1. **Client UX**: `RoleSelectPage` renders only Member/Leader as tappable once
-   live; each admin page's write affordances are hidden behind an `isAdmin`
-   check.
+1. **Client UX**: `RoleSelectPage` no longer offers a live-mode Member/Leader
+   choice at all (the router redirects any live-mode visit to it away — see
+   §7 below) — every signup starts as `member`, and becoming `leader` only
+   ever happens via `ShgJoinRequestsPage`'s approve-as-leader option, itself
+   only rendered for a staff viewer. Each admin page's write affordances are
+   likewise hidden behind an `isAdmin`/`isStaff` check.
 2. **Fail-fast client guard**: `AppState.setRole()` throws immediately if asked
    to set a staff role in live mode — a backstop against a future UI
-   regression, not the boundary itself.
+   regression, not the boundary itself (and, with Role Select no longer
+   reachable in live mode, this method itself is now unreachable there too —
+   kept only for demo mode's role-preview switcher).
 3. **Database** (the actual boundary):
    - `profiles_insert_self`: `WITH CHECK (id = auth.uid() AND role IN
      ('member','leader') AND shg_id IS NULL)` — closes the INSERT-side path
@@ -309,12 +314,22 @@ boundary:
      `role` between `member`/`leader`, and only while `shg_id` stays `NULL` —
      i.e. only during onboarding, before any real SHG linkage exists. Once
      `shg_id` is non-null, `role` is frozen for self-service; only
-     `current_role() = 'admin'` unlocks further changes.
-   - `approve_shg_join_request()` (the RPC that links a member to an SHG)
-     unconditionally resets `role` back to `'member'` on approval if it
-     currently reads `'leader'` — closing a chained path where someone
-     self-declared `role:'leader'` with no SHG yet, then had an unrelated
-     leader's ordinary approval silently hand them real leadership authority.
+     `current_role() = 'admin'` unlocks further changes. This remains a real,
+     independent guard against a raw REST `PATCH` even though the client no
+     longer offers a Leader self-selection UI at all.
+   - `approve_shg_join_request()` (migration `0116`) — the RPC that links a
+     member to an SHG, and the *only* path by which any account ever becomes
+     `'leader'`. Takes an explicit `p_as_leader` param from the approver; the
+     resulting `role` is derived **solely** from that parameter, never from
+     whatever value happens to already be sitting in `profiles.role` (unlike
+     the earlier version of this RPC, which reactively reset a self-declared
+     `'leader'` back to `'member'` on approval). This is a strict
+     improvement, not just a rename: it structurally can't be defeated by a
+     pre-set `role` value on the row (e.g. via the `profiles_update_self_or_
+     admin` path above), because the RPC never reads that column when
+     deciding the outcome. `p_as_leader = true` additionally requires
+     `is_staff()` — a peer leader approving her own SHG's queue can only
+     grant `member`, never mint a co-leader.
 
 This sequence (client fix → still-exploitable-via-REST → DB fix → adversarial
 re-audit finds a second path → second DB fix) is the project's own history,

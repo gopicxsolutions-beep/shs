@@ -56,24 +56,6 @@ class AppState extends ChangeNotifier {
   // See `profileLoadFailedNetwork` below for why this matters.
   bool _profileLoadFailedNetwork = false;
 
-  // Live mode only — true from the moment a fresh profile is created until
-  // Role Select completes. Without this, `hasProfile` (just `_profile !=
-  // null`) flips true the instant completeProfileSetup() runs, and the
-  // router's "fully onboarded, leave auth flow" branch fires before Role
-  // Select ever renders — the same bug already found and fixed for demo
-  // mode (see the two-flag split below), but never fixed for live mode
-  // since real phone OTP can't complete in this environment and this path
-  // was never actually exercised. See docs/DEVELOPMENT_PROGRESS.md.
-  //
-  // This field's in-memory default (false) is indistinguishable from
-  // "already completed", so a page reload between completeProfileSetup()
-  // and setRole() used to permanently strand the user (router sees
-  // hasProfile=true + needsRoleSelection=false + needsShgApproval=true and
-  // locks them on ShgApprovalPendingPage with no request behind it, and no
-  // route back to Role Select). `_loadProfile()` now restores this from a
-  // SharedPreferences flag written by `_persistRoleSelectionPending()`
-  // instead of relying purely on this in-memory default.
-  bool _needsRoleSelection = false;
 
   // Demo mode mirrors the real two-step gate (session, then profile) with
   // two independent flags — collapsing them into one previously caused
@@ -143,10 +125,6 @@ class AppState extends ChangeNotifier {
   /// what "almost" excludes.
   bool get accountDeactivated => SupabaseService.isConfigured && (_profile?.isActive == false);
 
-  /// Live mode only — a fresh profile exists but Role Select hasn't run
-  /// yet this session.
-  bool get needsRoleSelection => SupabaseService.isConfigured && _needsRoleSelection;
-
   /// Live mode only — a member's SHG join request hasn't been approved
   /// yet (`profiles.shg_id` is still null). Scoped to the `member` role
   /// since the spec's "Select SHG → Approval by Leader" workflow is about
@@ -158,14 +136,16 @@ class AppState extends ChangeNotifier {
   /// [hasProfile] is still false — used by the router's redirect to decide
   /// what counts as "still onboarding" before a `profiles` row exists.
   ///
-  /// True only in demo/unconfigured mode: unlike live mode's 3-stage
-  /// session → profile → role pipeline, demo mode's two legacy flags double
-  /// up stages (`hasSession` == "profile setup done", `hasProfile` == "Role
-  /// Select done" — see the two-flag doc comment above), so `!hasProfile`
-  /// there genuinely means "Role Select is the very next, and only
-  /// reachable, step" — the mechanism that lets demo mode ever reach Role
-  /// Select at all, since [needsRoleSelection] is unconditionally false in
-  /// demo mode.
+  /// True only in demo/unconfigured mode: demo mode's two legacy flags
+  /// double up stages (`hasSession` == "profile setup done", `hasProfile` ==
+  /// "Role Select done" — see the two-flag doc comment above), so
+  /// `!hasProfile` there genuinely means "Role Select is the very next, and
+  /// only reachable, step" — the mechanism that lets demo mode ever reach
+  /// Role Select at all. Live mode has no equivalent concept: Role Select
+  /// doesn't run there at all anymore (every signup starts as `member` with
+  /// a mandatory SHG join request — see `completeProfileSetup`'s doc
+  /// comment — and becoming `leader` is now an approval-time decision, not a
+  /// self-declared one), so this is always false there.
   ///
   /// In live mode, `!hasProfile` instead means no `profiles` row exists yet
   /// — Role Select has nothing to write to (`setRole()` silently no-ops
@@ -258,8 +238,8 @@ class AppState extends ChangeNotifier {
         // session ending OUTSIDE the in-app Sign Out button (an externally
         // revoked refresh token, a forced server-side sign-out, or a
         // refresh-token expiry after a long absence), which previously left
-        // `_pendingDeepLink`/`_pendingShg`/`_shgName`/`_needsRoleSelection`
-        // stale. Concretely: account A's session gets invalidated this way
+        // `_pendingDeepLink`/`_pendingShg`/`_shgName` stale. Concretely:
+        // account A's session gets invalidated this way
         // while a deep link is pending, account B signs in on the same
         // device — without this, `otp_page.dart` would replay account A's
         // captured destination for account B.
@@ -319,31 +299,14 @@ class AppState extends ChangeNotifier {
     }
     try {
       // Non-critical enrichment: the real SHG name (see `_shgName` doc
-      // above) and whether Role Select was already completed for this
-      // profile in a previous session (see `_persistRoleSelectionPending`
-      // doc above `_needsRoleSelection`). A failure here must not affect
-      // the already-loaded `_profile`, so it's isolated in its own
-      // try/catch rather than sharing the one above.
-      final prefs = await SharedPreferences.getInstance();
+      // above). A failure here must not affect the already-loaded
+      // `_profile`, so it's isolated in its own try/catch rather than
+      // sharing the one above.
       final shg = profile.shgId != null ? await _shgRepository.fetchShg(profile.shgId) : null;
       if (generation != _profileLoadGeneration) return;
-      _needsRoleSelection = prefs.getBool(_roleSelectionPendingKey(profile.id)) ?? _needsRoleSelection;
       _shgName = shg?.name;
     } catch (_) {
       // Best-effort enrichment only — leave existing values in place.
-    }
-  }
-
-  String _roleSelectionPendingKey(String profileId) => 'shg_role_selection_pending_$profileId';
-
-  Future<void> _persistRoleSelectionPending(String profileId, bool pending) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_roleSelectionPendingKey(profileId), pending);
-    } catch (_) {
-      // Best-effort — worst case this falls back to the pre-fix behavior
-      // (role-selection-pending state not surviving a reload) rather than
-      // throwing out of a routing-critical state transition.
     }
   }
 
@@ -403,31 +366,18 @@ class AppState extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    // shgId is deliberately NOT passed here — membership only takes effect
-    // once the SHG's leader approves the join request below (see
-    // needsShgApproval).
+    // shgId is deliberately NOT passed here — membership (and, since Role
+    // Select no longer offers a self-declared Leader choice in live mode,
+    // role itself) only takes effect once whoever reviews the join request
+    // below decides it (see needsShgApproval and ShgJoinRequestsPage's
+    // approve-as-member/approve-as-leader choice).
     //
     // This method is also the "Choose a different SHG" retry path a
     // rejected member reaches from ShgApprovalPendingPage (profileSetup
-    // stays reachable while needsShgApproval is true — see the router).
-    // Only a genuinely NEW profile still needs Role Select: without this
-    // `isNewProfile` guard, that retry unconditionally forced
-    // `_needsRoleSelection` back to true below, sending an already
-    // role-selected member back through Role Select a second time even
-    // though they were only ever picking a new SHG — a confusing extra
-    // step, and one that let them pick a different role (e.g. Leader) on
-    // the redo, silently escaping the pending-approval workflow they were
-    // already in the middle of.
+    // stays reachable while needsShgApproval is true — see the router) — the
+    // `isNewProfile` guard below keeps a retry from clobbering an
+    // already-decided role back down to 'member'.
     final isNewProfile = _profile == null;
-    // `role: 'member'` unconditionally was correct for a genuinely new
-    // profile (self-service signup can only ever start as a member — see
-    // `profiles_insert_self`'s RLS), but this method is ALSO the "Choose a
-    // different SHG" retry path (see the `isNewProfile` guard on
-    // `_needsRoleSelection` below) — a hardcoded literal here silently
-    // clobbered an already-role-selected Leader back down to Member on
-    // every retry submission, with no warning and no way back except a
-    // manual admin promotion, since `_needsRoleSelection` is deliberately
-    // never re-flipped true for this same retry case.
     _profile = await _profileRepository.upsertMyProfile(
       name: name,
       mobile: _session?.user.phone,
@@ -436,15 +386,11 @@ class AppState extends ChangeNotifier {
       mandal: mandal,
       district: district,
     );
-    // Flip the routing flags and notify BEFORE the (separate) join-request
-    // submit — if that submit fails, the router still sees a consistent
-    // "profile created, needs role selection" state instead of a
-    // half-finished one (hasProfile=true but needsRoleSelection=false,
-    // which would silently skip Role Select on the next unrelated
-    // notifyListeners()). The caller still sees the thrown exception.
-    if (isNewProfile) _needsRoleSelection = true;
     notifyListeners();
-    if (isNewProfile) await _persistRoleSelectionPending(_profile!.id, true);
+    // Mandatory since profile_setup_page.dart requires `_selectedShg` before
+    // Continue is even enabled — `_pendingShg` is only null here for the
+    // "Choose a different SHG" retry path re-entering with the SAME already-
+    // pending selection still set from the original submission.
     if (_pendingShg != null) {
       await _joinRequestRepository.submit(shgId: _pendingShg!.id);
     }
@@ -476,9 +422,7 @@ class AppState extends ChangeNotifier {
       // the same profile, instead of force-unwrapping a possibly-null value.
       if (_profile?.id == profileId) {
         _profile = _profile!.copyWith(role: role.name);
-        _needsRoleSelection = false;
         notifyListeners();
-        await _persistRoleSelectionPending(profileId, false);
       }
       return;
     }
@@ -505,7 +449,6 @@ class AppState extends ChangeNotifier {
     _profile = null;
     _pendingShg = null;
     _shgName = null;
-    _needsRoleSelection = false;
     _profileLoadFailedNetwork = false;
     // A pending deep link belongs to whoever is about to sign in next —
     // without this, signing out and back in as a different account could

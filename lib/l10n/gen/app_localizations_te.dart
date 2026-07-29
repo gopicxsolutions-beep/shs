@@ -73,6 +73,10 @@ class AppLocalizationsTe extends AppLocalizations {
       'మీ పాత్ర ఏ ఒక్క SHGకి లింక్ కాలేదు — ఈ వీక్షణ వర్తించదు';
 
   @override
+  String get commonLeaderNoShgMessage =>
+      'మీ ఖాతా ఇంకా ఏ SHGకి లింక్ కాలేదు. సెటప్ కోసం ఒక అడ్మిన్‌ను సంప్రదించండి.';
+
+  @override
   String get asyncErrorGeneric =>
       'ఏదో తప్పు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
@@ -383,7 +387,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get fieldDistrict => 'జిల్లా';
 
   @override
-  String get yourShg => 'మీ SHG (ఐచ్ఛికం)';
+  String get yourShg => 'మీ SHG';
 
   @override
   String get searchSelectShg => 'మీ SHGని వెతికి ఎంచుకోండి';
@@ -2802,6 +2806,9 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get shgJoinRequestsApprove => 'ఆమోదించండి';
+
+  @override
+  String get shgJoinRequestsApproveAsLeader => 'నాయకురాలిగా ఆమోదించండి';
 
   @override
   String get shgMembersTitle => 'సభ్యులు';

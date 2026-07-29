@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
+import '../../models/types.dart';
 import '../../repositories/meeting_repository.dart';
 import '../../routes/paths.dart';
 import '../../services/supabase_service.dart';
@@ -178,6 +179,7 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final shgId = context.select<AppState, String?>((s) => s.profile?.shgId);
+    final role = context.select<AppState, Role>((s) => s.user.role);
 
     // Router-restricted to leader/staff already, but crp/clf/admin have no
     // `profile.shgId` of their own — without this guard they could fill out
@@ -185,10 +187,15 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
     // submit time (that check stays in `_submit` as a harmless fallback for
     // the rare case shgId changes mid-session). `isConfigured` excludes demo
     // mode, whose simulated identity leaves `shgId` null for every role.
+    //
+    // A LEADER hitting this is a genuinely broken/unlinked account (see
+    // AppState.completeProfileSetup's doc comment) — `commonStaffNoShgMessage`
+    // ("your role isn't linked to a specific SHG") is written for crp/clf/
+    // admin, for whom that's expected and by design, not an error to fix.
     if (SupabaseService.isConfigured && shgId == null) {
       return Scaffold(
         appBar: PageHeader(title: l10n.meetingScheduleTitle),
-        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
+        body: AppEmptyState(icon: Icons.groups_rounded, message: role == Role.leader ? l10n.commonLeaderNoShgMessage : l10n.commonStaffNoShgMessage),
       );
     }
 

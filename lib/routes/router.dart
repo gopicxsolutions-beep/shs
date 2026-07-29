@@ -92,6 +92,7 @@ import '../pages/training/certificates_page.dart';
 import '../pages/training/course_detail_page.dart';
 import '../pages/training/course_quiz_page.dart';
 import '../pages/training/training_home_page.dart';
+import '../services/supabase_service.dart';
 import '../state/app_state.dart';
 import '../widgets/error_screen.dart';
 import 'navigation_history.dart';
@@ -192,22 +193,31 @@ String? _computeRedirect(BuildContext context, GoRouterState state, AppState app
         return onboarding ? null : Paths.profileSetup;
       }
 
+      // Role Select serves no purpose in live mode once a profile row
+      // exists — every signup starts as 'member' with a mandatory SHG join
+      // request, and becoming 'leader' is now an approval-time decision
+      // (see AppState.completeProfileSetup's and setRole's doc comments),
+      // never a self-service one. Without this, an already-onboarded live
+      // account could still navigate here directly and call setRole() to
+      // reassign its own role at any time — the exact self-escalation gap
+      // this whole redesign exists to close at signup, left wide open
+      // post-signup otherwise (the `!hasProfile` block above only handles
+      // the pre-profile case).
+      if (SupabaseService.isConfigured && state.matchedLocation == Paths.roleSelect) {
+        return Paths.dashboard;
+      }
+
       // Admin deactivated this account (migration 0083) — the RLS layer
       // already silently rejects almost everything this account tries;
       // this stops it from continuing to navigate an app that no longer
       // works for it instead of explaining why. Checked before
-      // needsRoleSelection/needsShgApproval since none of those matter once
-      // the account itself is deactivated.
+      // needsShgApproval since that doesn't matter once the account itself
+      // is deactivated.
       if (appState.accountDeactivated) {
         return state.matchedLocation == Paths.accountDeactivated ? null : Paths.accountDeactivated;
       }
 
-      // Profile just created (live mode) — Role Select hasn't run yet.
-      if (appState.needsRoleSelection) {
-        return state.matchedLocation == Paths.roleSelect ? null : Paths.roleSelect;
-      }
-
-      // Member's SHG join request hasn't been approved by their leader yet.
+      // Every signup's SHG join request hasn't been approved yet.
       // profileSetup stays reachable too, so a member can pick a different
       // SHG and submit a new request instead of being stuck — both while
       // still pending (ShgApprovalPendingPage's "Choose a different SHG" is

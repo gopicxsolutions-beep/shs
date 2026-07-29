@@ -110,7 +110,8 @@ class MeetingsHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
-    final isLeaderOrStaff = appState.user.role != Role.member;
+    final role = appState.user.role;
+    final isLeaderOrStaff = role != Role.member;
     final repo = repository ?? MeetingRepository();
     final shgId = appState.profile?.shgId;
     final notifications = notificationService ?? LocalNotificationService.instance;
@@ -124,7 +125,18 @@ class MeetingsHomePage extends StatelessWidget {
     // of an explained-away dead end. `isConfigured` still excludes demo
     // mode, whose simulated identity leaves `shgId` null for every
     // previewed role.
-    final isPlatformWideStaff = SupabaseService.isConfigured && isLeaderOrStaff && shgId == null;
+    //
+    // Actual is_staff() (crp/clf/admin), not the broader `isLeaderOrStaff` —
+    // a LEADER with `shgId == null` is an unlinked account (see the guard
+    // below), never legitimately platform-wide.
+    final isPlatformWideStaff = SupabaseService.isConfigured && role != Role.member && role != Role.leader && shgId == null;
+
+    if (SupabaseService.isConfigured && role == Role.leader && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: l10n.meetingsHomeTitle),
+        body: AppEmptyState(icon: Icons.event_rounded, message: l10n.commonLeaderNoShgMessage),
+      );
+    }
 
     return Scaffold(
       appBar: PageHeader(

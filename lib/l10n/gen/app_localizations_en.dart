@@ -73,6 +73,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your role isn\'t linked to a specific SHG — this view doesn\'t apply';
 
   @override
+  String get commonLeaderNoShgMessage =>
+      'Your account isn\'t linked to an SHG yet. Contact an Admin to get set up.';
+
+  @override
   String get asyncErrorGeneric => 'Something went wrong. Please try again.';
 
   @override
@@ -377,7 +381,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fieldDistrict => 'District';
 
   @override
-  String get yourShg => 'Your SHG (optional)';
+  String get yourShg => 'Your SHG';
 
   @override
   String get searchSelectShg => 'Search & select your SHG';
@@ -2805,6 +2809,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shgJoinRequestsApprove => 'Approve';
+
+  @override
+  String get shgJoinRequestsApproveAsLeader => 'Approve as Leader';
 
   @override
   String get shgMembersTitle => 'Members';

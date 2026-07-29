@@ -245,5 +245,38 @@ void main() {
       expect(find.text('All Loans (All SHGs)'), findsNothing);
       expect(tester.takeException(), isNull);
     });
+
+    // Onboarding-redesign regression: a leader with a null shgId is a
+    // genuinely broken/unlinked account (see AppState.completeProfileSetup's
+    // doc comment) — not a legitimate platform-wide staff view. Before this
+    // fix, `isPlatformWideStaff` was computed from `isLeaderOrStaff` (true
+    // for leader too), so she would have silently seen the "All Loans (All
+    // SHGs)" platform view here — misleading, since RLS's `is_staff()`
+    // excludes 'leader' and would have silently emptied the fetch anyway.
+    testWidgets('a leader account with a null shgId (broken/unlinked) sees an explanatory message, never the platform-wide view', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final appState = AppState(
+        profileRepository: _FixedProfileRepository(const Profile(id: 'leader-broken', name: 'QA Leader', role: 'leader', shgId: null)),
+        authService: _FakeAuthServiceWithSession(),
+      );
+      await appState.init();
+      final fake = _FakeNotificationService();
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppState>.value(
+          value: appState,
+          child: MaterialApp(
+            home: LoansHomePage(notificationService: fake, repository: _FakePlatformWideLoanRepository()),
+            localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Platform Outstanding'), findsNothing);
+      expect(find.text('All Loans (All SHGs)'), findsNothing);
+      expect(find.text("Your account isn't linked to an SHG yet. Contact an Admin to get set up."), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   });
 }

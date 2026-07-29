@@ -25,6 +25,7 @@
   "commonError": "Something went wrong",
   "commonBack": "Back",
   "commonStaffNoShgMessage": "Your role isn't linked to a specific SHG — this view doesn't apply",
+  "commonLeaderNoShgMessage": "Your account isn't linked to an SHG yet. Contact an Admin to get set up.",
 
   "asyncErrorGeneric": "Something went wrong. Please try again.",
   "asyncErrorNetwork": "Check your internet connection and try again.",
@@ -146,7 +147,7 @@
   "fieldFullName": "Full name",
   "fieldMandal": "Mandal",
   "fieldDistrict": "District",
-  "yourShg": "Your SHG (optional)",
+  "yourShg": "Your SHG",
   "searchSelectShg": "Search & select your SHG",
   "changeShg": "Change",
   "profileSetupSaving": "Saving…",
@@ -1871,6 +1872,8 @@
   "shgJoinRequestsWorking": "Working…",
 
   "shgJoinRequestsApprove": "Approve",
+
+  "shgJoinRequestsApproveAsLeader": "Approve as Leader",
 
   "shgMembersTitle": "Members",
 

@@ -102,7 +102,8 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
-    final isLeaderOrStaff = appState.user.role != Role.member;
+    final role = appState.user.role;
+    final isLeaderOrStaff = role != Role.member;
     final shgId = appState.profile?.shgId;
     final l10n = AppLocalizations.of(context)!;
     final recordTypes = _recordTypes(l10n);
@@ -119,7 +120,18 @@ class _FinancialLedgerPageState extends State<FinancialLedgerPage> {
     // permission restriction, just nothing to post an entry against.
     // `isConfigured` still excludes demo mode, whose simulated identity
     // leaves `shgId` null for every previewed role, including Leader/Member.
-    final isPlatformWideStaff = SupabaseService.isConfigured && isLeaderOrStaff && shgId == null;
+    //
+    // Actual is_staff() (crp/clf/admin), not the broader `isLeaderOrStaff` —
+    // a LEADER with `shgId == null` is an unlinked account (see the guard
+    // below), never legitimately platform-wide.
+    final isPlatformWideStaff = SupabaseService.isConfigured && role != Role.member && role != Role.leader && shgId == null;
+
+    if (SupabaseService.isConfigured && role == Role.leader && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: title),
+        body: AppEmptyState(icon: Icons.receipt_long_rounded, message: l10n.commonLeaderNoShgMessage),
+      );
+    }
 
     return Scaffold(
       appBar: PageHeader(

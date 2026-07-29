@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/savings.dart';
+import '../../models/types.dart';
 import '../../repositories/savings_repository.dart';
 import '../../repositories/shg_repository.dart';
 import '../../routes/paths.dart';
@@ -89,6 +90,7 @@ class _SavingsLedgerPageState extends State<SavingsLedgerPage> {
     // otherwise get their live subscription silently torn down and rebuilt
     // for no reason. `.select` only rebuilds when shgId itself changes.
     final shgId = context.select<AppState, String?>((s) => s.profile?.shgId);
+    final role = context.select<AppState, Role>((s) => s.user.role);
     // Same selective-rebuild reasoning as `shgId` above — only used to gate
     // the Verify/Reject controls on the viewer's own pending entries
     // (`savings_update_leader_or_staff`'s self-exclusion already blocks
@@ -113,7 +115,18 @@ class _SavingsLedgerPageState extends State<SavingsLedgerPage> {
     // is enough for an oversight queue). `isConfigured` still excludes demo
     // mode, whose simulated identity leaves `shgId` null for every
     // previewed role too.
-    final isPlatformWide = SupabaseService.isConfigured && shgId == null;
+    //
+    // Actual is_staff() (crp/clf/admin), not just `shgId == null` — a LEADER
+    // with a null shgId is an unlinked account (see the guard below), never
+    // legitimately platform-wide.
+    final isPlatformWide = SupabaseService.isConfigured && role != Role.member && role != Role.leader && shgId == null;
+
+    if (SupabaseService.isConfigured && role == Role.leader && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: l10n.savingsLedgerTitle),
+        body: AppEmptyState(icon: Icons.account_balance_wallet_rounded, message: l10n.commonLeaderNoShgMessage),
+      );
+    }
 
     return Scaffold(
       appBar: PageHeader(

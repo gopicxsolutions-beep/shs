@@ -107,7 +107,8 @@ class LoansHomePage extends StatelessWidget {
     // token-refresh notify in app_state.dart's `_authSub`), even though
     // nothing displayed here depends on it. `.select` only rebuilds when
     // one of these three fields actually changes.
-    final isLeaderOrStaff = context.select<AppState, bool>((s) => s.user.role != Role.member);
+    final role = context.select<AppState, Role>((s) => s.user.role);
+    final isLeaderOrStaff = role != Role.member;
     final shgId = context.select<AppState, String?>((s) => s.profile?.shgId);
     final memberId = context.select<AppState, String?>((s) => s.profile?.id);
     final repo = repository ?? LoanRepository();
@@ -124,7 +125,23 @@ class LoansHomePage extends StatelessWidget {
     // the capability existed, only the UI never called it. `isConfigured`
     // still excludes demo mode, whose simulated identity leaves `shgId`
     // null for every previewed role, not just staff.
-    final isPlatformWideStaff = SupabaseService.isConfigured && isLeaderOrStaff && shgId == null;
+    //
+    // Deliberately `role != Role.member && role != Role.leader` (actual
+    // is_staff()), NOT the broader `isLeaderOrStaff` — a LEADER with
+    // `shgId == null` is never legitimately "viewing the whole platform"
+    // the way crp/clf/admin are; she's an unlinked account (see the guard
+    // below), and `loans_select_shg_or_staff`'s RLS correctly excludes
+    // leader from `is_staff()` regardless of what this client-side flag
+    // says, so treating her as platform-wide here only mislabeled an
+    // RLS-emptied fetch, it never actually leaked cross-SHG data.
+    final isPlatformWideStaff = SupabaseService.isConfigured && role != Role.member && role != Role.leader && shgId == null;
+
+    if (SupabaseService.isConfigured && role == Role.leader && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: l10n.loansHomeTitle),
+        body: AppEmptyState(icon: Icons.account_balance_rounded, message: l10n.commonLeaderNoShgMessage),
+      );
+    }
 
     return Scaffold(
       appBar: PageHeader(

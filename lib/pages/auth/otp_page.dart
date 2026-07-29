@@ -124,12 +124,12 @@ class _OtpPageState extends State<OtpPage> {
       if (!mounted) return;
       // Replay a deep link the router captured (see
       // AppState.capturePendingDeepLink) only once onboarding is fully
-      // clear — if Role Select or SHG approval still needs to run first,
-      // `Paths.dashboard` is exactly what this went to before, and the
-      // router's own redirect chain takes it from there (Role Select / SHG
-      // Approval Pending / Profile Setup as appropriate); the deep link is
-      // left captured rather than threaded through those in-between screens.
-      final canReplayDeepLink = appState.hasProfile && !appState.needsRoleSelection && !appState.needsShgApproval;
+      // clear — if SHG approval still needs to run first, `Paths.dashboard`
+      // is exactly what this went to before, and the router's own redirect
+      // chain takes it from there (SHG Approval Pending / Profile Setup as
+      // appropriate); the deep link is left captured rather than threaded
+      // through those in-between screens.
+      final canReplayDeepLink = appState.hasProfile && !appState.needsShgApproval;
       final deepLink = canReplayDeepLink ? appState.consumePendingDeepLink() : null;
       context.go(deepLink ?? (appState.hasProfile ? Paths.dashboard : Paths.profileSetup));
     } catch (e) {

@@ -18510,3 +18510,101 @@ against the real thing" standard.
 `flutter clean` fix) — full suite passed (1052 tests). `flutter build web
 --release --dart-define-from-file=.env.json` — clean build with the
 plugin correctly registered.
+
+## Leader onboarding redesign: mandatory SHG selection, approver-chosen role
+
+**Root cause investigation** ("find the bugs in shg leader login and
+signin"): a self-registered Leader had no way to ever end up genuinely
+linked to an SHG. Picking "Leader" at Role Select (live mode) only flipped
+`profiles.role` — it never created or linked an SHG (no self-service
+"create an SHG" flow exists anywhere; `createShg()` is admin-only). If she
+instead picked an existing SHG during Profile Setup (optional, not
+required), that only filed a join request, and `approve_shg_join_request`
+*deliberately* reset a self-declared `'leader'` back to `'member'` on
+approval — a genuine, intentional anti-escalation guard, not a bug. Net
+effect: every self-registered Leader ended up with `shg_id = null`
+permanently unless an Admin manually intervened, and nothing in the UI
+said so — `LeaderDashboard` had zero `shgId == null` guard (rendered
+₹0.0L everywhere, "no pending loans," indistinguishable from a genuinely
+brand-new empty SHG), and 8 other leader-reachable pages
+(`loans_home_page.dart`, `loan_approval_page.dart`, `savings_home_page.
+dart`, `savings_ledger_page.dart`, `livelihood_home_page.dart`,
+`meetings_home_page.dart`, `financial_ledger_page.dart`, `meeting_
+attendance_page.dart`) computed a variable literally named
+`isPlatformWideStaff`/`isPlatformWide` as "leader-or-staff with no
+`shgId`" and called a staff-only platform-wide fetch when true — for a
+broken Leader this mislabeled the state as "viewing every SHG" (not a
+real data leak — RLS's `is_staff()` correctly excludes `'leader'`, so the
+fetch silently returned nothing — but the framing was wrong). Two more
+pages (`meeting_schedule_page.dart`, `meeting_qr_page.dart`) already
+showed a real empty-state message, but the crp/clf/admin-written
+`commonStaffNoShgMessage` ("your role isn't linked to a specific SHG —
+this view doesn't apply") is actively misleading for a leader, whose job
+is entirely SHG-specific.
+
+**User's fix, implemented as designed:** (1) SHG selection at Profile
+Setup is now mandatory, not optional; (2) Role Select no longer offers a
+self-declared Leader choice in live mode — every signup starts as
+`'member'` with a pending join request, and becoming `'leader'` is now
+entirely an approval-time decision made by whoever reviews that request.
+
+- `profile_setup_page.dart`: `valid` now requires `_selectedShg != null`.
+  No cold-start escape hatch for an empty SHG catalog — the real
+  precondition (Admin creates the first SHG before opening signup to real
+  users) already held before this change; this app's own bootstrap admin
+  has always been a one-time direct-SQL promotion, never something that
+  runs through Profile Setup/Role Select at all (see round 173 above:
+  "necessarily promoted via direct SQL once, since staff roles categorically
+  can't self-select and no admin existed yet to promote the first one").
+- `app_state.dart`: `completeProfileSetup` no longer sets
+  `_needsRoleSelection` in live mode — since nothing ever set it true again
+  anywhere, the entire persistence mechanism around it (`_persistRole
+  SelectionPending`, its SharedPreferences key, the restore-on-load) was
+  removed as genuinely dead code rather than left half-functioning.
+  `router.dart`'s existing redirect chain already falls through correctly
+  to `needsShgApproval` with no changes needed there — confirmed, not
+  assumed. A new, separate router check blocks any live-mode direct visit
+  to `Paths.roleSelect` (redirects to the dashboard): without it, an
+  already-onboarded live account could still navigate there directly and
+  call `setRole()` to reassign its own role at any time — the exact
+  self-escalation gap this whole redesign closes at signup, otherwise left
+  open post-signup. `role_select_page.dart` itself is unchanged in
+  structure but is now demo-mode-only in practice.
+- New migration `0116_approve_shg_join_request_approver_chosen_role.sql`:
+  `approve_shg_join_request` gains a `p_as_leader` parameter. The resulting
+  role is derived **solely** from the approver's explicit choice, never
+  from whatever value already sits in `profiles.role` — a strict
+  improvement over the old reactive reset, since it can't be defeated by a
+  pre-set role via a raw REST `PATCH` (the same path `profiles_update_
+  self_or_admin`'s self-branch still legitimately allows while `shg_id IS
+  NULL`, per that policy's own long-standing comment). `p_as_leader = true`
+  additionally requires `is_staff()` — a peer leader approving her own
+  SHG's queue can only grant `member`, never mint a co-leader; this also
+  cleanly covers a brand-new SHG's very first leader with zero extra
+  plumbing, since nobody has `current_role() = 'leader'` for a leaderless
+  SHG yet, so staff (via the existing `/app/analytics/shg/:id/join-
+  requests` override route) was already the only possible approver for
+  that case.
+- `shg_join_request_repository.dart`'s `decide()` gained an `asLeader`
+  param; `shg_join_requests_page.dart` now shows a staff-only "Approve as
+  Leader" button alongside the existing Approve/Reject, gated by the same
+  role check the RPC itself enforces server-side.
+- Closed the blank/mislabeled-dashboard gap for good: added the
+  `shgId == null` guard to `LeaderDashboard` (new `commonLeaderNoShgMessage`
+  string, distinct from the staff-worded one), narrowed all 8
+  `isPlatformWideStaff`/`isPlatformWide` computations from "leader-or-staff"
+  to actual `is_staff()` (crp/clf/admin only), and added the same explicit
+  guard to each of those 8 pages plus branched `meeting_schedule_page.dart`/
+  `meeting_qr_page.dart`'s existing guard to show the leader-specific
+  message instead of the staff one when the viewer is a leader. This closes
+  the gap for already-existing broken accounts too, not just new signups —
+  a one-time data migration to fix any already-existing `role='leader',
+  shg_id=null` rows is a separate, deliberately out-of-scope follow-up.
+
+**Verification:** `flutter analyze` — 0 issues across every file touched.
+`flutter test` — full suite passed. Live: migration `0116` deployed via
+`supabase db push`; a real leader-role session's `approve_shg_join_request`
+call with `p_as_leader => true` on her own SHG correctly raised the new
+authorization exception; a real staff session's identical call succeeded —
+both checked via isolated rolled-back transactions, this project's
+established pattern.

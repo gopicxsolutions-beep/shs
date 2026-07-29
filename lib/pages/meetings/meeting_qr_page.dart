@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/meeting.dart';
+import '../../models/types.dart';
 import '../../repositories/meeting_repository.dart';
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
@@ -76,10 +77,15 @@ class _MeetingQrPageState extends State<MeetingQrPage> {
     // right now" message a genuinely quiet SHG would show, with no hint
     // that the real reason is having no SHG at all. `isConfigured` excludes
     // demo mode, whose simulated identity leaves `shgId` null for every role.
+    //
+    // A LEADER hitting this is a genuinely broken/unlinked account (see
+    // AppState.completeProfileSetup's doc comment) — `commonStaffNoShgMessage`
+    // is written for crp/clf/admin, for whom having no SHG is expected and
+    // by design, not an error to fix.
     if (SupabaseService.isConfigured && shgId == null) {
       return Scaffold(
         appBar: PageHeader(title: l10n.meetingQrTitle),
-        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonStaffNoShgMessage),
+        body: AppEmptyState(icon: Icons.groups_rounded, message: appState.user.role == Role.leader ? l10n.commonLeaderNoShgMessage : l10n.commonStaffNoShgMessage),
       );
     }
 

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/loan.dart';
+import '../../models/types.dart';
 import '../../repositories/loan_repository.dart' show LoanAlreadyDecidedException, LoanRepository;
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
@@ -35,6 +36,7 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final appState = context.watch<AppState>();
+    final role = appState.user.role;
     final shgId = appState.profile?.shgId;
     final myId = appState.profile?.id;
 
@@ -47,7 +49,19 @@ class _LoanApprovalPageState extends State<LoanApprovalPage> {
     // replaced it), fetch every SHG's pending applications instead.
     // `isConfigured` excludes demo mode, whose simulated identity leaves
     // `shgId` null for every previewed role too.
-    final isPlatformWide = SupabaseService.isConfigured && shgId == null;
+    //
+    // Gated on actual is_staff() (crp/clf/admin), not just `shgId == null` —
+    // a LEADER with a null shgId is an unlinked account (see the guard
+    // below), never legitimately platform-wide; RLS already excludes
+    // 'leader' from `is_staff()` regardless of this flag.
+    final isPlatformWide = SupabaseService.isConfigured && role != Role.member && role != Role.leader && shgId == null;
+
+    if (SupabaseService.isConfigured && role == Role.leader && shgId == null) {
+      return Scaffold(
+        appBar: PageHeader(title: l10n.loanApprovalTitle),
+        body: AppEmptyState(icon: Icons.fact_check_rounded, message: l10n.commonLeaderNoShgMessage),
+      );
+    }
 
     return Scaffold(
       appBar: PageHeader(title: l10n.loanApprovalTitle),

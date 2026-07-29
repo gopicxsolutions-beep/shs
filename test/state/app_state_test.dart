@@ -398,7 +398,7 @@ void main() {
     });
   });
 
-  group('AppState SHG name & role-selection persistence', () {
+  group('AppState SHG name & onboarding role assignment', () {
     test('user.shgName reflects the fetched SHG, not the onboarding-time pick or the default placeholder', () async {
       const profile = Profile(id: 'p1', name: 'Asha', role: 'member', shgId: 'shg-1');
       final fakeRepo = _FakeProfileRepository([() async => profile]);
@@ -415,7 +415,16 @@ void main() {
       expect(appState.user.shgName, 'Real SHG Name');
     });
 
-    test('needsRoleSelection survives a fresh AppState instance for the same profile (app restart before Role Select)', () async {
+    test('a fresh live-mode signup lands directly on needsShgApproval, with no Role Select step', () async {
+      // Role Select no longer offers a self-declared Leader choice in live
+      // mode (see AppState.completeProfileSetup's doc comment) — every
+      // signup starts as a plain 'member' with a pending SHG join request,
+      // and becomes 'leader' only if/when whoever approves that request
+      // chooses to (ShgJoinRequestsPage). The router's redirect chain relies
+      // entirely on needsShgApproval to send a fresh signup to SHG Approval
+      // Pending — this must already be true the moment completeProfileSetup
+      // returns, both immediately after signup and across a simulated app
+      // restart, since there's no Role Select step left to run first.
       const profile = Profile(id: 'p2', name: 'Latha', role: 'member');
       final firstAppState = AppState(
         profileRepository: _FakeProfileRepository([() async => profile], upsertResponse: profile),
@@ -424,12 +433,8 @@ void main() {
         shgRepository: _FakeShgRepository(null),
       );
       await firstAppState.completeProfileSetup(name: 'Latha', village: 'Village');
-      expect(firstAppState.needsRoleSelection, isTrue);
+      expect(firstAppState.needsShgApproval, isTrue);
 
-      // Simulate an app restart: a brand-new AppState re-fetches the same
-      // profile row. Without persisting the pending flag, this fresh
-      // instance's in-memory default (false) would strand the user on
-      // ShgApprovalPendingPage instead of restoring them to Role Select.
       final secondAppState = AppState(
         profileRepository: _FakeProfileRepository([() async => profile]),
         authService: _FakeAuthService(),
@@ -438,7 +443,7 @@ void main() {
       );
       await secondAppState.refreshProfile();
 
-      expect(secondAppState.needsRoleSelection, isTrue, reason: 'role-selection-pending must survive a reload, not just live in memory');
+      expect(secondAppState.needsShgApproval, isTrue);
     });
   });
 }

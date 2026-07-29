@@ -94,15 +94,23 @@ only the data source and write-durability differ. See
 | **CLF** | Cluster/village-level federation officer | Village-wide financial oversight, cross-SHG analytics, federation reporting |
 | **Admin** | Platform operator | User/role management, SHG record management, scheme catalog management, system-wide monitoring |
 
-**Self-service role selection is intentionally asymmetric**: in live mode, a
-new user can only self-select `member` or `leader` at Role Select — the app
-renders only those two as tappable options. Staff roles (`crp`/`clf`/`admin`)
-are assignable only by an existing Admin, from the Admin Users screen. This is
-enforced independently at the database layer (`profiles_insert_self`/
-`profiles_update_self_or_admin`), not just by hiding the option — see
-[ARCHITECTURE.md](ARCHITECTURE.md) §3.3 for the exact mechanism and its
-incident history. All 5 roles remain selectable in demo mode only, so every
-dashboard stays explorable without a backend.
+**No role is self-declared in live mode.** Every signup starts as a plain
+`member`, and an SHG pick during Profile Setup is now mandatory (see §3.1) —
+becoming a `leader` only ever happens when whoever reviews that SHG's pending
+join request (its own leader, or staff) chooses to approve it *as leader*
+rather than as a plain member. Staff roles (`crp`/`clf`/`admin`) are, as
+before, assignable only by an existing Admin from the Admin Users screen, and
+approving a request as leader is itself staff-only (a peer leader keeps her
+existing approve-as-member/reject authority over her own SHG's queue, but
+can't unilaterally mint a co-leader). This replaced an earlier design where a
+live-mode Role Select screen let a new user self-declare "Leader" — that self-
+declaration never actually linked her to an SHG (there was no self-service
+"create an SHG" path), so a self-registered Leader routinely ended up
+permanently unlinked with no indication anything was wrong; see
+[ARCHITECTURE.md](ARCHITECTURE.md) §3.3 for the exact enforcement mechanism
+and incident history. Role Select itself is now demo-mode-only (all 5 roles
+remain selectable there, so every dashboard stays explorable without a
+backend) — the router redirects any live-mode visit to it away.
 
 ### 2.3 Operating Environment
 
@@ -153,21 +161,24 @@ focus to the end), plus a 30-second resend cooldown. On verification, the app
 loads (or discovers the absence of) a `profiles` row and routes onward.
 
 Profile Setup collects Name (required), Village/Mandal/District (free text),
-and an *optional* SHG search-and-pick (debounced, searches a safe public
+and a **mandatory** SHG search-and-pick (debounced, searches a safe public
 `shg_directory` view — never the base `shgs` table's sensitive columns).
 Picking an SHG does not directly link the profile to it — it files a
-`shg_join_request` that the target SHG's leader must approve. In live mode,
-`role` is always initialized to `'member'` regardless of any later Role
-Select choice; SHG linkage stays `null` until approval.
+`shg_join_request` that whoever reviews it (the target SHG's own leader, or
+staff) must approve. `role` is always initialized to `'member'` on signup;
+SHG linkage — and, if the approver chooses, promotion to `'leader'` — happens
+atomically together, at approval time (see `approve_shg_join_request`,
+migration `0116`). There is no path to a `role='leader'` account with no
+SHG, because leader is never granted independently of that same approval.
 
-Role Select is only reachable once, right after profile creation, and (in
-live mode) shows only Member and Leader as choices — a member who newly
-selected an SHG then lands on **SHG Approval Pending**, which polls her own
-join-request status and offers "Choose a different SHG" if it's rejected. A
-router-level redirect chain (`lib/routes/router.dart`) enforces this entire
-sequence — no-session → profile setup → role select → SHG approval — on every
+Every fresh signup lands on **SHG Approval Pending**, which polls her own
+join-request status and offers "Choose a different SHG" if it's rejected —
+there is no separate Role Select step in live mode to pass through first (see
+above). A router-level redirect chain (`lib/routes/router.dart`) enforces
+this sequence — no-session → profile setup → SHG approval — on every
 navigation, so a partially-onboarded user can't reach the dashboard by typing
-a URL directly.
+a URL directly; the router additionally redirects any live-mode visit to
+Role Select's own route away, since it has nothing left to do there.
 
 A distinct **Profile Load Error** screen (vs. a plain "no profile yet") exists
 specifically so a returning, already-onboarded user who opens the app offline
@@ -181,12 +192,13 @@ database defense-in-depth chain and its incident history.
 | ID | Requirement | Roles |
 |---|---|---|
 | FR-AUTH-1 | Phone + OTP authentication, Indian mobile number format validated client-side | All |
-| FR-AUTH-2 | Profile setup: name (required), village/mandal/district, optional SHG search-and-request-to-join | All |
-| FR-AUTH-3 | Role Select limited to Member/Leader in live mode; all 5 roles explorable in demo mode | All |
-| FR-AUTH-4 | A member's `shg_id` stays null and an approval-pending screen shows until the target SHG's leader decides the join request | Member |
+| FR-AUTH-2 | Profile setup: name (required), village/mandal/district, mandatory SHG search-and-request-to-join | All |
+| FR-AUTH-3 | Role Select is demo-mode-only (all 5 roles explorable there); a live-mode visit to it is always redirected away | All |
+| FR-AUTH-4 | A fresh signup's `shg_id` stays null and an approval-pending screen shows until the target SHG's join request is decided | Member |
 | FR-AUTH-5 | Staff roles (CRP/CLF/Admin) are assignable only by an Admin via the Admin Users screen, never self-assigned, enforced at the RLS layer independent of the UI | Admin |
 | FR-AUTH-6 | A network-caused profile-load failure shows a distinct, recoverable error screen rather than misrouting into onboarding | All |
 | FR-AUTH-7 | A genuine deep link captured before login is replayed after successful OTP verification, once onboarding is fully complete | All |
+| FR-AUTH-8 | Approving a join request can promote the requester to Leader instead of Member — staff-only; a peer leader reviewing her own SHG's queue can only approve as Member or reject | Leader, CRP, CLF, Admin |
 
 ### 3.2 Dashboards (`dashboard/`)
 
@@ -1156,10 +1168,14 @@ leader-of-own-SHG or admin.
 
 Join-request approval is a leader-only screen; the underlying RPC
 (`approve_shg_join_request`) also accepts staff, even though the router
-restricts the *page* to leaders only. A rejected request's row is immutable —
-there is no re-decision path; a member must file a fresh request (with any
-prior pending request from her automatically superseded/deleted to satisfy a
-one-pending-per-member constraint).
+restricts the *page* to leaders only. Approving now also lets the reviewer
+choose to grant the requester `leader` instead of `member` — this is the
+*only* way any account ever becomes a leader (see §3.1); a peer leader
+reviewing her own SHG's queue can only approve as member or reject, since
+minting a co-leader is reserved for staff. A rejected request's row is
+immutable — there is no re-decision path; a member must file a fresh request
+(with any prior pending request from her automatically superseded/deleted to
+satisfy a one-pending-per-member constraint).
 
 The Documents screen wires a real upload: "Add document" requires picking a
 PDF/JPEG/PNG/WEBP file (`file_picker`, 10 MB cap) alongside the name, uploads
@@ -1177,7 +1193,7 @@ above.
 |---|---|---|
 | FR-SHG-1 | Any user searches/browses SHGs via a safe public directory view (bank fields never exposed through it) | All |
 | FR-SHG-2 | Leader views the member roster and per-member detail | Leader |
-| FR-SHG-3 | Leader (or staff, via the same RPC) approves/rejects join requests; a rejected request cannot be re-decided | Leader, staff |
+| FR-SHG-3 | Leader (or staff, via the same RPC) approves/rejects join requests; approving may promote the requester to Leader (staff-only) instead of Member; a rejected request cannot be re-decided | Leader, staff |
 | FR-SHG-4 | Document repository requires and uploads a real file (PDF/JPEG/PNG/WEBP, 10 MB cap) to Supabase Storage; downloads via a short-lived signed URL | Leader, staff |
 | FR-SHG-5 | Bank account/IFSC are hidden from members in the UI **and** independently RLS-restricted from them at the table level (`shg_bank_details`, migration `0056`) — a direct `/rest/v1` query bypassing the client gets the same masking, not just a hidden UI section | — |
 | FR-SHG-6 | Leader edits her own SHG's Mandal/Bank Name/Account/IFSC via a self-service dialog; Admin edits all six SHG fields (adding VO/CLF/grade, which are leader-locked) via Manage SHGs | Leader, Admin |

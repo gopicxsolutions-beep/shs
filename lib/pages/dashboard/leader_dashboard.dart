@@ -12,6 +12,7 @@ import '../../repositories/meeting_repository.dart';
 import '../../repositories/report_repository.dart';
 import '../../repositories/shg_repository.dart';
 import '../../routes/paths.dart';
+import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -76,6 +77,20 @@ class LeaderDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A leader account with no `shgId` (an already-broken pre-redesign
+    // account, or a direct-REST edge case — see AppState.completeProfile
+    // Setup's and router.dart's doc comments) used to render this entire
+    // dashboard as if she genuinely led an empty, brand-new SHG (all-zero
+    // stats, "no pending loans"), with no indication anything was wrong.
+    // Same pattern as meeting_schedule_page.dart's `shgId == null` guard.
+    final shgId = context.watch<AppState>().profile?.shgId;
+    if (SupabaseService.isConfigured && shgId == null) {
+      final l10n = AppLocalizations.of(context)!;
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonLeaderNoShgMessage),
+      );
+    }
     return AppAsyncBuilder<_LeaderDashboardData>(
       future: () => _load(context),
       builder: (context, data) => _LeaderDashboardBody(data: data),

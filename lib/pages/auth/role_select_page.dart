@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/types.dart';
 import '../../routes/paths.dart';
-import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -54,11 +53,15 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
   Widget build(BuildContext context) {
     final appState = context.read<AppState>();
     final l10n = AppLocalizations.of(context)!;
-    // Staff roles (crp/clf/admin) are never self-selectable in live mode —
-    // see AppState.setRole's doc comment. Demo mode keeps all 5 so every
-    // dashboard stays explorable without a backend (matches this page's
-    // long-standing demo behavior; there's no real account to escalate).
-    final selectableRoles = SupabaseService.isConfigured ? roles.where((r) => r.id == Role.member || r.id == Role.leader).toList() : roles;
+    // This page never actually renders in live mode anymore — the router
+    // (see router.dart's `_computeRedirect`) redirects any live-mode visit
+    // to `Paths.roleSelect` away before it gets here, since every signup now
+    // starts as 'member' with a mandatory SHG join request and becomes
+    // 'leader' only via approval (see AppState.completeProfileSetup's doc
+    // comment), never a self-declared choice. All 5 roles stay selectable
+    // here purely for demo mode's "preview any dashboard" picker, which has
+    // no real account to escalate.
+    final selectableRoles = roles;
     return Scaffold(
       backgroundColor: Neutral.c50,
       body: SafeArea(

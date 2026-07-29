@@ -102,8 +102,8 @@ void main() {
     await appState.setRole(Role.member);
 
     // What OtpPage._submit now does after a successful verification: only
-    // replay the captured link once onboarding is fully clear.
-    expect(appState.needsRoleSelection, isFalse);
+    // replay the captured link once onboarding is fully clear (`hasProfile`
+    // true, no pending SHG approval — both already true here).
     final target = appState.consumePendingDeepLink();
     expect(target, captured);
     router.go(target!);

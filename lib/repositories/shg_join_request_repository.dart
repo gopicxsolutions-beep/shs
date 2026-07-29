@@ -80,8 +80,13 @@ class ShgJoinRequestRepository {
     return (rows as List).map((r) => ShgJoinRequest.fromMap(r as Map<String, dynamic>)).toList();
   }
 
-  Future<void> decide(String requestId, bool approve) async {
+  /// [asLeader] promotes the requester to 'leader' on approval instead of
+  /// leaving her 'member' — the RPC (migration 0116) independently enforces
+  /// that only staff (crp/clf/admin) may pass `true` here, matching
+  /// ShgJoinRequestsPage's own client-side gate on when to even show that
+  /// option. Ignored when [approve] is false.
+  Future<void> decide(String requestId, bool approve, {bool asLeader = false}) async {
     if (!_live) return;
-    await _client.rpc('approve_shg_join_request', params: {'p_request_id': requestId, 'p_approve': approve});
+    await _client.rpc('approve_shg_join_request', params: {'p_request_id': requestId, 'p_approve': approve, 'p_as_leader': asLeader});
   }
 }

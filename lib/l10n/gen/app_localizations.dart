@@ -226,6 +226,12 @@ abstract class AppLocalizations {
   /// **'Your role isn\'t linked to a specific SHG — this view doesn\'t apply'**
   String get commonStaffNoShgMessage;
 
+  /// No description provided for @commonLeaderNoShgMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account isn\'t linked to an SHG yet. Contact an Admin to get set up.'**
+  String get commonLeaderNoShgMessage;
+
   /// No description provided for @asyncErrorGeneric.
   ///
   /// In en, this message translates to:
@@ -781,7 +787,7 @@ abstract class AppLocalizations {
   /// No description provided for @yourShg.
   ///
   /// In en, this message translates to:
-  /// **'Your SHG (optional)'**
+  /// **'Your SHG'**
   String get yourShg;
 
   /// No description provided for @searchSelectShg.
@@ -4923,6 +4929,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Approve'**
   String get shgJoinRequestsApprove;
+
+  /// No description provided for @shgJoinRequestsApproveAsLeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve as Leader'**
+  String get shgJoinRequestsApproveAsLeader;
 
   /// No description provided for @shgMembersTitle.
   ///
