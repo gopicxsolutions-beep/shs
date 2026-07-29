@@ -92,6 +92,20 @@ class MemberDetailPage extends StatelessWidget {
                     _row(l10n.memberDetailMobileLabel, member.mobile ?? '—'),
                     const SizedBox(height: 8),
                     _row(l10n.memberDetailVillageLabel, member.village ?? '—'),
+                    // Conditional, not `?? '—'` like the rows above — these
+                    // are null for any member created before round 193 (or
+                    // who hasn't filled them in yet via Profile > Edit), and
+                    // a leader/staff viewer seeing a wall of "—" rows for a
+                    // field most members haven't set yet would read as
+                    // broken, not merely empty.
+                    if ((member.mandal ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _row(l10n.fieldMandal, member.mandal!),
+                    ],
+                    if ((member.district ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _row(l10n.fieldDistrict, member.district!),
+                    ],
                   ],
                 ),
               ),

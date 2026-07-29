@@ -14,7 +14,8 @@ import '../../widgets/async_state.dart';
 class _ChatEntry {
   final bool mine;
   final String text;
-  const _ChatEntry({required this.mine, required this.text});
+  final bool blocked;
+  const _ChatEntry({required this.mine, required this.text, this.blocked = false});
 }
 
 /// One shared screen reused across the Financial Advisor, Scheme
@@ -81,7 +82,16 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
     if (!_loaded) {
       for (final log in history) {
         _entries.add(_ChatEntry(mine: true, text: log.query));
-        if (log.response != null) {
+        // A blocked query is stored with `response = null` — identical to
+        // "the advisor never replied" — so it used to render as an
+        // orphaned "You:" bubble with nothing after it on every later
+        // visit, indistinguishable from a silent failure. `block_reason`
+        // was already localized server-side at write time (the Edge
+        // Function picks the reason text by the request's own language),
+        // so it's safe to render verbatim here.
+        if (log.blocked) {
+          _entries.add(_ChatEntry(mine: false, blocked: true, text: log.blockReason ?? 'This request could not be processed.'));
+        } else if (log.response != null) {
           _entries.add(_ChatEntry(mine: false, text: log.response!));
         }
       }
@@ -211,14 +221,14 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
                             ),
                             constraints: const BoxConstraints(maxWidth: 280),
                             decoration: BoxDecoration(
-                              color: e.mine ? Brand.c500 : Neutral.c100,
+                              color: e.blocked ? Gold.c50 : (e.mine ? Brand.c500 : Neutral.c100),
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Text(
                               e.text,
                               style: AppTheme.sans(
                                 13,
-                                color: e.mine ? Colors.white : Neutral.c700,
+                                color: e.blocked ? Gold.c700 : (e.mine ? Colors.white : Neutral.c700),
                               ),
                             ),
                           ),

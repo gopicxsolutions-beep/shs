@@ -53,9 +53,14 @@ class ProfileRepository {
   // (0022_profiles_insert_self_privilege_escalation_fix.sql), which is
   // correctly scoped to first-time self-service signup, not edits to an
   // already-existing profile of any role.
-  Future<Profile> updateNameVillage({required String name, String? village}) async {
+  // Unlike `village`'s `?village` (present-but-unset-means-"don't touch"),
+  // `mandal`/`district` are always sent as a real value, including `null` —
+  // a user clearing one of these fields to correct a mistaken entry must
+  // actually clear the stored value too, not silently leave the old one in
+  // place.
+  Future<Profile> updateProfile({required String name, String? village, String? mandal, String? district}) async {
     final uid = _client.auth.currentUser!.id;
-    final row = await _client.from('profiles').update({'name': name, 'village': ?village}).eq('id', uid).select().single();
+    final row = await _client.from('profiles').update({'name': name, 'village': ?village, 'mandal': mandal, 'district': district}).eq('id', uid).select().single();
     return Profile.fromMap(row);
   }
 

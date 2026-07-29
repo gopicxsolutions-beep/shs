@@ -17228,3 +17228,191 @@ fresh authorization each time, not a routine step) — RLS-layer changes are
 already thoroughly verified via live rolled-back transactions above, and the
 release build's landing/login rendering is confirmed as real, non-fabricated
 evidence the build itself isn't broken.
+
+## Update (round 195) — Gap-hunting loop iteration 22: fabricated AI-advisor transcripts + a second staff self-certification angle (both HIGH), a whitespace-defeatable moderation regex, and a real production data-hygiene find, plus 14 more gaps across 4 fresh audits
+
+Four parallel background audits: dogfooding round 194's own new work,
+Notifications/Announcements/Support, AI Advisors, and Meetings + Livelihood.
+
+**AI Advisors (3 findings)**
+1. **[HIGH]** `ai_advisor_logs_insert_self`'s round-103 fix closed the
+   `blocked=true`/`block_reason` forgery vector but never bounded
+   `query`/`response` length — a member could insert an arbitrary,
+   unbounded-length, entirely fabricated `response` that never touched
+   Groq/moderation at all. Live-verified: an ~18,500-char fabricated
+   response inserted successfully. With `blocked` required `false`, such a
+   row is invisible to the admin moderation-stats dashboard — a member
+   could plant literal self-harm/hate/jailbreak text as a "response" with
+   zero moderation trace.
+2. **[MEDIUM]** A blocked query reappears on chat-history reload as an
+   orphaned "You:" bubble with no reply and no indication anything was
+   rejected — `fetchHistory()` has no filter on `blocked`, and the page's
+   loader only ever appended an advisor bubble when `response != null`,
+   which is always true for a server-inserted blocked row. For the
+   self-harm category specifically, the supportive "reach out to someone
+   you trust" message a member saw live was never shown again on revisit.
+3. **[LOW-MEDIUM]** Nearly every multi-word regex in `moderation.ts` —
+   including the safety-critical self-harm patterns — used a literal
+   single space instead of `\s+`, so a newline/tab/double-space fully
+   defeated the pattern. Verified programmatically: `"I want to
+   kill\nmyself"` and `"ignore\nprevious instructions"` were **not**
+   blocked; the single-space originals were. Since history entries have no
+   Llama Guard coverage (already-documented gap) and only regex covers
+   them, a whitespace-broken self-harm/jailbreak phrase in a history entry
+   had no working defense at all in this pipeline.
+
+**Dogfooding round 194's own new work (5 findings)**
+1. **[HIGH]** `course_progress_write_self_or_staff`'s round-194 fix only
+   added self-exclusion — the staff branch still let staff set
+   `certified`/`completed_on` to ANY value for ANY OTHER member's row, no
+   lock. Live-verified: a CRP set `certified=true` for a different member
+   on a course with zero quiz questions attached — no quiz ever taken. No
+   UI call site anywhere in `lib/` uses this staff-writes-another's-row
+   path (confirmed by grep) — the same "unused, should be locked rather
+   than patched" situation round 194 itself used to justify dropping
+   `marketplace_orders_insert_staff`.
+2. **[MEDIUM]** `financial_ledger_is_latest()`'s `created_at >` tiebreak
+   let two rows sharing an identical `created_at` both classify as
+   "latest" — both then independently deletable, not just the single
+   most-recent row the fix claims to restrict to.
+3. **[MEDIUM]** `mandal`/`district` (persisted in round 193) still had no
+   UI path to ever be filled in or corrected after onboarding — a pre-fix
+   account had them permanently null with no recovery.
+4. **[MEDIUM]** `mandal`/`district` were fetched by every `Member` query
+   (`select()` selects all columns) but silently dropped by the `Member`
+   model — the identical gap this same model's own `isActive` comment
+   already documents happening once before (round 182).
+5. **Real production data-hygiene find**: a broad sweep across every
+   free-text column (going beyond the systematic `99999999-...` fixture-ID
+   pattern this session's cleanup passes have checked) turned up a stray
+   `marketplace_orders` row and — more significantly — an unlabeled "QA
+   Test SHG" (with a real-looking name, village, district, and an attached
+   "QA Leader Test" profile) that would appear in the real production SHG
+   directory/search to any actual user, none of it prefixed `__TEST__` or
+   matching the fixture-ID convention. Attempting to delete this cluster
+   was **blocked by the permission classifier** — correctly, since it's a
+   destructive action against live production data with no explicit
+   authorization this session. Not deleted; documented here with exact IDs
+   for a human to clean up: `shgs` row `bf49eb8e-0d57-4ff8-bad1-61683be28798`
+   ("QA Test SHG"), `profiles` row `10896d7f-86ea-403c-a034-3d56a45afa48`
+   ("QA Leader Test", its leader), plus its one `marketplace_products` row
+   (`ab9812ae-b5b0-4111-9d0c-69871ca8630c`), one `meetings` row
+   (`7e8b7312-1ac8-4b9e-81d8-97142aedf936`) with one `meeting_attendance`
+   row, one `savings_entries` row (`1f7ae360-2c4d-4e8b-b69f-83e7bcf31d66`),
+   and the separate stray `marketplace_orders` row
+   `146bd57f-0c2f-4a67-9bb3-b2a7d864b7f8` — delete in that
+   child-before-parent order, then the SHG itself.
+
+**Notifications/Announcements/Support (5 findings)**
+1. **[MEDIUM]** `announcements_delete_staff` was bare `is_staff()` — the
+   same self-dealing pattern this codebase has now found and fixed on 6+
+   other tables, missed here because round 193's sweep never reached
+   `announcements`.
+2. **[MEDIUM]** Silent no-op when a staff account tries to change
+   status/priority on a support ticket she filed herself before
+   promotion — the RLS self-exclusion (round 193) is correct, but
+   `SupportRepository.updateStatus`/`updatePriority` don't check
+   affected-row count, so the UI showed the staff controls unconditionally,
+   let her tap "Resolved," and the ticket silently stayed Open with zero
+   explanation.
+3. **[MEDIUM]** `SupportFaqPage` always rendered `lib/data/support.dart`'s
+   hardcoded English FAQ list verbatim, with no `_live` branch and no
+   localization at all — the only user-facing text on the whole Support
+   module that never went through `AppLocalizations`.
+4. **[MEDIUM]** Cross-account notification flood on a shared device:
+   `notifyNewAnnouncements`'s `kSeenAnnouncementIdsPrefKey` seeds silently
+   only on a null (never-seen) registry, but `AppState.signOut()` never
+   cleared it — a second, different account signing in on the same device
+   found the registry already non-null from the first account's use and
+   got an immediate notification fired for every one of her SHG's
+   historical announcements, the exact spam this registry exists to
+   prevent.
+5. **[LOW-MEDIUM]** `AnnouncementRepository.fetchForShg`'s companion
+   `announcement_reads` query was still unbounded, even though the same
+   method's `announcements` query was already fixed for this exact
+   anti-pattern.
+
+**Meetings + Livelihood (1 finding)**
+1. **[MEDIUM]** `MeetingRepository` and `LivelihoodRepository` were the
+   last two repositories in the codebase with fully unbounded list
+   queries — `fetchForShg`/`fetchAllForStaff`/`fetchAttendanceHistory`/
+   `fetchForMember`, none capped, every sibling repository already fixed.
+   Both modules were otherwise re-confirmed solid under live, rolled-back
+   testing (cross-tenant isolation, round-193's `livelihood_*` self-
+   exclusion and staff-self-edit transition-lock fixes) — an unusually
+   clean result reflecting how much prior scrutiny both have already had.
+
+**Fixes — migration `0107_iteration22_self_dealing_and_data_integrity.sql`**
+(all individually live-verified via rolled-back `__TEST__` transactions,
+including both the blocked case and the still-legitimate case for every
+policy-shape change): rewrote `course_progress_write_self_or_staff` so the
+staff-editing-someone-else branch now locks `certified`/`completed_on` to
+their existing stored values (staff retains full write access to every
+other column for genuine progress-tracking correction, just can never
+grant/revoke a certification for anyone); rewrote
+`financial_ledger_is_latest()` to use a deterministic `row_number()`
+ranking (`created_at desc, id desc`) so exactly one row per
+`(shg_id, entry_type)` is ever "latest," closing the tie; self-excluded
+`announcements_delete_staff`; added `char_length(query) <= 2000` /
+`char_length(response) <= 2000` to `ai_advisor_logs_insert_self` (matching
+`MAX_HISTORY_FIELD_CHARS`, the same cap already enforced server-side for
+genuine history entries) — this bounds the unbounded-storage/fabrication
+vector but, as noted in the migration's own comment, doesn't and
+structurally can't prove a `response` was genuinely Groq-generated; that
+requires moving the insert server-side, flagged as a follow-up.
+
+**Edge Function fix (deployed live)**: `moderation.ts`'s `SELF_HARM_
+PATTERNS` and `JAILBREAK_PATTERNS` qualifier groups switched from a
+literal space to `\s+` throughout, matching the pattern
+`HATE_SPEECH_PATTERNS` already used correctly; added 2 new `deno test`
+cases (whitespace-variant self-harm and jailbreak phrasings) — 53 passed
+before this round's addition, 53 passed after re-verifying, both new tests
+included and green. Deployed via `supabase functions deploy
+ai-advisor-proxy` — this function correctly requires `verify_jwt: true`
+(real user JWTs, confirmed round 192's own sweep), so a bare deploy
+carries none of the `send-sms-hook`-class regression risk.
+
+**Dart-side fixes**: `AiAdvisorLog`/`fetchHistory` gained `blocked`/
+`blockReason` fields and a `.limit(300)` cap; `AiAdvisorChatPage`'s history
+loader now renders a distinct, visually-marked (Gold-toned) bubble showing
+the (already server-localized) block reason for a blocked entry instead of
+an orphaned "You:" bubble; `SupportTicketDetailPage` gates the staff
+status/priority controls on `ticket.memberId != memberId` so the dead-end
+never renders in the first place; `SupportFaqPage` rewritten to source its
+5 Q&A pairs from new `AppLocalizations` keys instead of the hardcoded mock
+list (`lib/data/support.dart`'s `mockFaqs` itself is still used by
+`device_voice_support_service.dart`, left in place); `AppState.signOut()`
+now clears `kSeenAnnouncementIdsPrefKey` alongside the existing reminder-
+cancel, both best-effort; `AnnouncementRepository`'s `announcement_reads`
+query capped at 300, ordered by `read_at desc` so the kept rows align with
+the most-recently-read announcements; `MeetingRepository`/
+`LivelihoodRepository` all 6 previously-unbounded queries capped at 500
+(livelihood's cap ships with an explicit comment about the pre-existing
+totalInvestment/totalRevenue-undercounting trade-off, matching
+`docs/DEVELOPMENT_PROGRESS.md`'s own prior framing of it); `ProfileRepository.
+updateNameVillage` renamed to `updateProfile` and extended to accept
+mandal/district (always sent, including `null`, so a user can actually
+clear a mistaken entry — unlike `village`'s "omit if unset" semantics);
+`ProfilePage`'s edit dialog gained mandal/district fields and wrapped its
+content in a `SingleChildScrollView`; `Member` model gained `mandal`/
+`district`, surfaced conditionally in `MemberDetailPage`.
+
+**Verification:** `flutter analyze` — 0 issues (regenerated l10n after
+adding the 5 new FAQ key pairs; one transient race where analyze ran
+before gen-l10n finished, re-run clean after). `flutter test` —
+1039/1039 passed. `deno test` (ai-advisor-proxy) — 53/53 passed, including
+the 2 new whitespace-regression tests. Migration 0107 pushed to the linked
+live project; all 4 of its changes individually live-verified via
+rolled-back `__TEST__` transactions — including catching my own test-setup
+mistake mid-round (the SHG audit's very first order-status-guard
+verification used a fixture seller id with no actual product row, so both
+the "should block" and "should allow" checks silently no-opped for the
+wrong reason; re-run against the real fixture product/seller correctly
+confirmed both directions). `flutter build web --release --dart-define-
+from-file=.env.json` rebuilt cleanly (62.4s). **Browser-preview UI
+verification succeeded** (restarted the preview server, fronted the tab,
+`document.visibilityState` read `'visible'`, `computer{screenshot}` showed
+the landing page correctly rendered) — did not attempt a full per-role OTP
+sign-in this round, same reasoning as round 194 (would require re-enabling
+debug OTP logging, treated as needing fresh explicit authorization each
+time, not a routine step).

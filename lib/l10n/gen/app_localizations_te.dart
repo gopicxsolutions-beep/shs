@@ -2381,6 +2381,41 @@ class AppLocalizationsTe extends AppLocalizations {
   String get supportFaqTitle => 'సాధారణ ప్రశ్నలు';
 
   @override
+  String get supportFaq1Question => 'నేను పొదుపు నమోదును ఎలా జోడించాలి?';
+
+  @override
+  String get supportFaq1Answer =>
+      'పొదుపు > నమోదు జోడించు కు వెళ్లి, మొత్తం మరియు తేదీని నమోదు చేసి, సమర్పించండి.';
+
+  @override
+  String get supportFaq2Question => 'నేను రుణం కోసం ఎలా దరఖాస్తు చేయాలి?';
+
+  @override
+  String get supportFaq2Answer =>
+      'రుణాలు > దరఖాస్తు చేయి కు వెళ్లి, మొత్తం మరియు ప్రయోజనాన్ని పూరించి, నాయకురాలి ఆమోదం కోసం సమర్పించండి.';
+
+  @override
+  String get supportFaq3Question => 'నా SHG గ్రేడ్‌ను నేను ఎలా చూడాలి?';
+
+  @override
+  String get supportFaq3Answer =>
+      'మీ SHG గ్రేడ్ సభ్యుల వివరాలతో పాటు నా SHG స్క్రీన్‌లో చూపబడుతుంది.';
+
+  @override
+  String get supportFaq4Question => 'ప్రకటనలు ఎవరు పోస్ట్ చేయగలరు?';
+
+  @override
+  String get supportFaq4Answer =>
+      'మీ SHG నాయకురాలు లేదా ప్రోగ్రామ్ సిబ్బంది (CRP/CLF/Admin) మాత్రమే ప్రకటనలు పోస్ట్ చేయగలరు.';
+
+  @override
+  String get supportFaq5Question => 'నేను సపోర్ట్ టికెట్‌ను ఎలా లేవనెత్తాలి?';
+
+  @override
+  String get supportFaq5Answer =>
+      'సపోర్ట్ > టికెట్ లేవనెత్తు కు వెళ్లి, మీ సమస్యను వివరించి, సమర్పించండి. మీరు నా టికెట్లలో ప్రత్యుత్తరాలను ట్రాక్ చేయవచ్చు.';
+
+  @override
   String get supportHomeTitle => 'సహాయం';
 
   @override

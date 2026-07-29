@@ -29,7 +29,14 @@ class LivelihoodRepository {
   Future<List<LivelihoodActivity>> fetchForShg(String? shgId) async {
     if (!_live) return _demoActivities();
     if (shgId == null) return [];
-    final rows = await _client.from('livelihood_activities').select('*, profiles(name)').eq('shg_id', shgId).order('created_at', ascending: false);
+    // Was fully unbounded — the same anti-pattern already fixed across
+    // every other repository in this codebase. `.limit(500)` is generous
+    // enough that no real SHG's activity list should ever hit it, but if
+    // one genuinely does, this page's own client-side totalInvestment/
+    // totalRevenue sums would then undercount rather than reflect true
+    // lifetime totals — a real, documented trade-off (see
+    // docs/DEVELOPMENT_PROGRESS.md), not a silent one.
+    final rows = await _client.from('livelihood_activities').select('*, profiles(name)').eq('shg_id', shgId).order('created_at', ascending: false).limit(500);
     return (rows as List).map((r) => LivelihoodActivity.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -41,7 +48,8 @@ class LivelihoodRepository {
   /// activities from different SHGs apart in one flat list.
   Future<List<LivelihoodActivity>> fetchAllForStaff() async {
     if (!_live) return _demoActivities();
-    final rows = await _client.from('livelihood_activities').select('*, profiles(name), shgs(name)').order('created_at', ascending: false);
+    // Same fix as fetchForShg above — was a bare, fully unbounded select.
+    final rows = await _client.from('livelihood_activities').select('*, profiles(name), shgs(name)').order('created_at', ascending: false).limit(500);
     return (rows as List).map((r) => LivelihoodActivity.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -52,7 +60,8 @@ class LivelihoodRepository {
     // everyone's.
     if (!_live) return _demoActivities().where((a) => a.memberName == _demoMemberName(memberId)).toList();
     if (memberId == null) return [];
-    final rows = await _client.from('livelihood_activities').select('*, profiles(name)').eq('member_id', memberId).order('created_at', ascending: false);
+    // Same fix as fetchForShg above.
+    final rows = await _client.from('livelihood_activities').select('*, profiles(name)').eq('member_id', memberId).order('created_at', ascending: false).limit(500);
     return (rows as List).map((r) => LivelihoodActivity.fromMap(r as Map<String, dynamic>)).toList();
   }
 

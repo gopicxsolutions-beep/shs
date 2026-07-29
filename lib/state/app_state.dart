@@ -524,6 +524,22 @@ class AppState extends ChangeNotifier {
     } catch (_) {
       // Best-effort only.
     }
+    // Same cross-account-leakage concern as the reminder-cancel above, for a
+    // different registry: `notifyNewAnnouncements`'s `kSeenAnnouncementIdsPrefKey`
+    // (see its own doc comment) only ever seeds silently on a null/never-
+    // seen registry. Without clearing it here, a second, different account
+    // signing in on this same device finds the registry already non-null
+    // from the FIRST account's use and skips that one-time silent seeding
+    // entirely — she gets an immediate local notification fired for every
+    // one of her own SHG's historical announcements the moment she opens
+    // the tab, the exact notification-flood this registry exists to
+    // prevent, just triggered by account-switching instead of first use.
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(kSeenAnnouncementIdsPrefKey);
+    } catch (_) {
+      // Best-effort only — see above.
+    }
     if (SupabaseService.isConfigured) {
       // Only bounded by the global 30s TimeoutHttpClient before this — 10x
       // looser than the bound just chosen for the notification-cancel call

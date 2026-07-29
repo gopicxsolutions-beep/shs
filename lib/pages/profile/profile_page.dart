@@ -44,17 +44,30 @@ class _ProfilePageState extends State<ProfilePage> {
     final l10n = AppLocalizations.of(context)!;
     final name = TextEditingController(text: profile.name);
     final village = TextEditingController(text: profile.village ?? '');
+    // Mandal/district were collected at onboarding but, before this fix,
+    // had no path to ever be filled in or corrected afterward — a pre-fix
+    // account had them permanently null with no recovery, and even a
+    // post-fix account could never correct a typo. Reusing the same edit
+    // dialog closes both gaps at once.
+    final mandal = TextEditingController(text: profile.mandal ?? '');
+    final district = TextEditingController(text: profile.district ?? '');
     final saved = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.profileEditProfile),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: name, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.profileName)),
-            const SizedBox(height: 12),
-            TextField(controller: village, maxLength: 100, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.profileVillage)),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: name, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.profileName)),
+              const SizedBox(height: 12),
+              TextField(controller: village, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.profileVillage)),
+              const SizedBox(height: 12),
+              TextField(controller: mandal, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.fieldMandal)),
+              const SizedBox(height: 12),
+              TextField(controller: district, maxLength: 100, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.fieldDistrict)),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
@@ -74,7 +87,12 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
     try {
-      await _profileRepo.updateNameVillage(name: name.text.trim(), village: village.text.trim());
+      await _profileRepo.updateProfile(
+        name: name.text.trim(),
+        village: village.text.trim(),
+        mandal: mandal.text.trim().isEmpty ? null : mandal.text.trim(),
+        district: district.text.trim().isEmpty ? null : district.text.trim(),
+      );
       if (!mounted) return;
       await context.read<AppState>().refreshProfile();
       if (!mounted) return;

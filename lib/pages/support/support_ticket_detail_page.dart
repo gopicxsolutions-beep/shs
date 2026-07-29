@@ -170,6 +170,17 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
           if (ticket == null) {
             return AppEmptyState(icon: Icons.error_outline_rounded, message: l10n.supportTicketDetailNotFound);
           }
+          // `support_tickets_update_staff_or_self_reopen` (RLS) correctly
+          // self-excludes the staff branch — a staff account can never
+          // resolve/reassign a ticket she filed herself before promotion.
+          // Showing the staff status/priority controls unconditionally
+          // whenever `isStaff` is true let a promoted account tap
+          // "Resolved" on her own old ticket, get no error (the UPDATE call
+          // sites don't check affected-row count), and see it silently
+          // stay Open on reload — a real, confusing dead end sitting on
+          // top of otherwise-correct RLS. Gating on ownership closes it at
+          // the UI layer to match the real permission boundary.
+          final canStaffManage = isStaff && SupabaseService.isConfigured && ticket.memberId != memberId;
           return Column(
             children: [
               Padding(
@@ -186,7 +197,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                         ],
                       ),
                     ),
-                    if (isStaff && SupabaseService.isConfigured)
+                    if (canStaffManage)
                       PopupMenuButton<String>(
                         onSelected: (status) => _changeStatus(status, memberId),
                         itemBuilder: (context) => _statuses.map((s) => PopupMenuItem(value: s, child: Text(_statusLabel(l10n, s)))).toList(),
@@ -204,7 +215,7 @@ class _SupportTicketDetailPageState extends State<SupportTicketDetailPage> {
                   runSpacing: 8,
                   children: [
                     AppBadge(text: supportCategoryLabel(ticket.category, l10n), tone: BadgeTone.neutral),
-                    if (isStaff && SupabaseService.isConfigured)
+                    if (canStaffManage)
                       PopupMenuButton<String>(
                         onSelected: _changePriority,
                         itemBuilder: (context) => supportPriorities.map((p) => PopupMenuItem(value: p, child: Text(supportPriorityLabel(p, l10n)))).toList(),

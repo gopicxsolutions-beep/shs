@@ -44,7 +44,10 @@ class MeetingRepository {
   Future<List<Meeting>> fetchForShg(String? shgId) async {
     if (!_live) return [..._locallyScheduled.reversed.map(_withLocalCancelOverlay), ..._mockMeetings()];
     if (shgId == null) return [];
-    final rows = await _client.from('meetings').select().eq('shg_id', shgId).order('meeting_date', ascending: false);
+    // Was fully unbounded — a long-running SHG (years of weekly meetings)
+    // fetched its entire history on every load, the same anti-pattern
+    // already fixed across every other repository in this codebase.
+    final rows = await _client.from('meetings').select().eq('shg_id', shgId).order('meeting_date', ascending: false).limit(500);
     return (rows as List).map((r) => Meeting.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -55,7 +58,9 @@ class MeetingRepository {
   /// `shgs(name)` so the UI can tell meetings from different SHGs apart.
   Future<List<Meeting>> fetchAllForStaff() async {
     if (!_live) return [..._locallyScheduled.reversed.map(_withLocalCancelOverlay), ..._mockMeetings()];
-    final rows = await _client.from('meetings').select('*, shgs(name)').order('meeting_date', ascending: false);
+    // Was a bare, fully unbounded select — every meeting on the entire
+    // platform, on every load of this feed.
+    final rows = await _client.from('meetings').select('*, shgs(name)').order('meeting_date', ascending: false).limit(500);
     return (rows as List).map((r) => Meeting.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -191,7 +196,8 @@ class MeetingRepository {
         .eq('shg_id', shgId)
         .neq('status', 'cancelled')
         .lt('meeting_date', todayStr)
-        .order('meeting_date', ascending: false);
+        .order('meeting_date', ascending: false)
+        .limit(500);
     final meetingList = meetings as List;
     if (meetingList.isEmpty) return const [];
     final meetingIds = meetingList.map((m) => (m as Map<String, dynamic>)['id'] as String).toList();

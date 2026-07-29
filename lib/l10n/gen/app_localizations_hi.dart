@@ -2348,6 +2348,41 @@ class AppLocalizationsHi extends AppLocalizations {
   String get supportFaqTitle => 'सामान्य सवाल';
 
   @override
+  String get supportFaq1Question => 'मैं बचत प्रविष्टि कैसे जोड़ूं?';
+
+  @override
+  String get supportFaq1Answer =>
+      'बचत > प्रविष्टि जोड़ें पर जाएं, राशि और तारीख दर्ज करें, फिर सबमिट करें।';
+
+  @override
+  String get supportFaq2Question => 'मैं ऋण के लिए आवेदन कैसे करूं?';
+
+  @override
+  String get supportFaq2Answer =>
+      'ऋण > आवेदन करें पर जाएं, राशि और उद्देश्य भरें, फिर नेता की स्वीकृति के लिए सबमिट करें।';
+
+  @override
+  String get supportFaq3Question => 'मैं अपने SHG की ग्रेड कैसे देखूं?';
+
+  @override
+  String get supportFaq3Answer =>
+      'आपके SHG की ग्रेड सदस्य विवरण के साथ मेरा SHG स्क्रीन पर दिखाई जाती है।';
+
+  @override
+  String get supportFaq4Question => 'घोषणाएं कौन पोस्ट कर सकता है?';
+
+  @override
+  String get supportFaq4Answer =>
+      'केवल आपकी SHG नेता या कार्यक्रम स्टाफ (CRP/CLF/Admin) ही घोषणाएं पोस्ट कर सकते हैं।';
+
+  @override
+  String get supportFaq5Question => 'मैं सहायता टिकट कैसे उठाऊं?';
+
+  @override
+  String get supportFaq5Answer =>
+      'सहायता > टिकट उठाएं पर जाएं, अपनी समस्या बताएं, और सबमिट करें। आप मेरे टिकट में जवाब ट्रैक कर सकते हैं।';
+
+  @override
   String get supportHomeTitle => 'सहायता';
 
   @override

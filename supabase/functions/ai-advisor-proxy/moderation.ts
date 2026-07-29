@@ -52,16 +52,22 @@ export function normalizeLanguage(raw: unknown): Language {
 // "life insurance" / "life cover" questions, which are exactly the kind of
 // legitimate query this advisor exists to answer. This is a cheap block on
 // the most obvious cases, not a clinical crisis-detection system.
+// Every multi-word pattern below uses `\s+` (not a literal single space)
+// between words — a literal space fails to match a newline/tab/double-space,
+// which a live gap-hunt round found trivially defeats every one of these
+// (e.g. "kill\nmyself" or "kill  myself" slipped through unblocked, "kill
+// myself" did not). `HATE_SPEECH_PATTERNS` below already used `\s+`
+// correctly; this brought the self-harm/jailbreak sets in line with it.
 const SELF_HARM_PATTERNS: RegExp[] = [
-  /\bkill(ing)? myself\b/i,
+  /\bkill(ing)?\s+myself\b/i,
   /\bsuicid(e|al)\b/i,
-  /\bwant(ed|ing)? to die\b/i,
-  /\bend(ing)? it all\b/i,
-  /\bdon'?t want to (live|be alive)\b/i,
-  /\bno reason to live\b/i,
-  /\bnot worth living\b/i,
+  /\bwant(ed|ing)?\s+to\s+die\b/i,
+  /\bend(ing)?\s+it\s+all\b/i,
+  /\bdon'?t\s+want\s+to\s+(live|be\s+alive)\b/i,
+  /\bno\s+reason\s+to\s+live\b/i,
+  /\bnot\s+worth\s+living\b/i,
   /\bself[- ]?harm(ing)?\b/i,
-  /\b(hurt(ing)?|cutting|cut) myself\b/i,
+  /\b(hurt(ing)?|cutting|cut)\s+myself\b/i,
 ];
 
 const SELF_HARM_REASON: Record<Language, string> = {
@@ -112,9 +118,9 @@ const JAILBREAK_PATTERNS: RegExp[] = [
   // qualifier and missed natural, common phrasings like "ignore all your
   // previous instructions" or "disregard your previous instructions",
   // found by adversarial review to slip through unblocked.
-  /\bignore (all |any |the |your |my |our )?(all |any |the |your |my |our )?(previous|prior|above|earlier)\s+instructions?\b/i,
-  /\bdisregard (all |any |the |your |my |our )?(all |any |the |your |my |our )?(previous|prior|above|earlier)\s+instructions?\b/i,
-  /\bforget (all |any |the |your |my |our )?(all |any |the |your |my |our )?(previous|prior|above|earlier)\s*instructions?\b/i,
+  /\bignore\s+(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(previous|prior|above|earlier)\s+instructions?\b/i,
+  /\bdisregard\s+(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(previous|prior|above|earlier)\s+instructions?\b/i,
+  /\bforget\s+(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(all\s+|any\s+|the\s+|your\s+|my\s+|our\s+)?(previous|prior|above|earlier)\s*instructions?\b/i,
   /\b(reveal|show|print|repeat|output)\b.{0,20}\b(your |the )?system prompt\b/i,
   /\bwhat (is|are) your (system prompt|instructions)\b/i,
   /\brepeat (the words|everything|the text) (above|before this)\b/i,

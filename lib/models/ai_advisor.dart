@@ -6,6 +6,8 @@ class AiAdvisorLog {
   final String query;
   final String? response;
   final DateTime createdAt;
+  final bool blocked;
+  final String? blockReason;
 
   const AiAdvisorLog({
     required this.id,
@@ -14,6 +16,8 @@ class AiAdvisorLog {
     required this.query,
     this.response,
     required this.createdAt,
+    this.blocked = false,
+    this.blockReason,
   });
 
   factory AiAdvisorLog.fromMap(Map<String, dynamic> map) => AiAdvisorLog(
@@ -23,6 +27,8 @@ class AiAdvisorLog {
         query: map['query'] as String,
         response: map['response'] as String?,
         createdAt: DateTime.parse(map['created_at'] as String),
+        blocked: map['blocked'] as bool? ?? false,
+        blockReason: map['block_reason'] as String?,
       );
 }
 

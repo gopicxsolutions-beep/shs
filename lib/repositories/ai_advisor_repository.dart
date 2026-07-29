@@ -39,7 +39,10 @@ class AiAdvisorRepository {
           .toList();
     }
     if (memberId == null) return [];
-    final rows = await _client.from('ai_advisor_logs').select().eq('member_id', memberId).eq('advisor_type', advisorType).order('created_at');
+    // Was the one remaining fully unbounded self-scoped history query in
+    // this codebase — every sibling history fetch already caps at a few
+    // hundred rows.
+    final rows = await _client.from('ai_advisor_logs').select().eq('member_id', memberId).eq('advisor_type', advisorType).order('created_at').limit(300);
     return (rows as List).map((r) => AiAdvisorLog.fromMap(r as Map<String, dynamic>)).toList();
   }
 

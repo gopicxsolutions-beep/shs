@@ -4144,6 +4144,66 @@ abstract class AppLocalizations {
   /// **'FAQs'**
   String get supportFaqTitle;
 
+  /// No description provided for @supportFaq1Question.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I add a savings entry?'**
+  String get supportFaq1Question;
+
+  /// No description provided for @supportFaq1Answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Savings > Add Entry, enter the amount and date, then submit.'**
+  String get supportFaq1Answer;
+
+  /// No description provided for @supportFaq2Question.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I apply for a loan?'**
+  String get supportFaq2Question;
+
+  /// No description provided for @supportFaq2Answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Loans > Apply, fill in the amount and purpose, then submit for leader approval.'**
+  String get supportFaq2Answer;
+
+  /// No description provided for @supportFaq3Question.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I check my SHG grade?'**
+  String get supportFaq3Question;
+
+  /// No description provided for @supportFaq3Answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SHG grade is shown on the My SHG screen along with member details.'**
+  String get supportFaq3Answer;
+
+  /// No description provided for @supportFaq4Question.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can post announcements?'**
+  String get supportFaq4Question;
+
+  /// No description provided for @supportFaq4Answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Only your SHG leader or program staff (CRP/CLF/Admin) can post announcements.'**
+  String get supportFaq4Answer;
+
+  /// No description provided for @supportFaq5Question.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I raise a support ticket?'**
+  String get supportFaq5Question;
+
+  /// No description provided for @supportFaq5Answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Support > Raise a Ticket, describe your issue, and submit. You can track replies in My Tickets.'**
+  String get supportFaq5Answer;
+
   /// No description provided for @supportHomeTitle.
   ///
   /// In en, this message translates to:

@@ -33,7 +33,10 @@ class AnnouncementRepository {
     final rows = shgId == null
         ? await _client.from('announcements').select().filter('shg_id', 'is', null).order('created_at', ascending: false).limit(300)
         : await _client.from('announcements').select().or('shg_id.eq.$shgId,shg_id.is.null').order('created_at', ascending: false).limit(300);
-    final readRows = memberId == null ? [] : await _client.from('announcement_reads').select('announcement_id').eq('member_id', memberId);
+    // Same unbounded-query anti-pattern as the `announcements` query above,
+    // for its companion read-receipt table — over a member's lifetime this
+    // set grows independent of the 300-row display cap.
+    final readRows = memberId == null ? [] : await _client.from('announcement_reads').select('announcement_id').eq('member_id', memberId).order('read_at', ascending: false).limit(300);
     final readIds = {for (final r in readRows) (r as Map<String, dynamic>)['announcement_id'] as String};
     return (rows as List).map((r) {
       final map = r as Map<String, dynamic>;

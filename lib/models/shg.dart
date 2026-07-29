@@ -63,8 +63,14 @@ class Member {
   // to an active one in her own SHG's roster with no visual cue at all,
   // unlike AdminUsersPage's `Profile` model, which already surfaces this.
   final bool isActive;
+  // Was fetched by every query on this table (`select()` selects all
+  // columns) but silently dropped here — the same gap this file's own
+  // `isActive` comment above already documents for that field, now
+  // recurring for round 193's mandal/district addition.
+  final String? mandal;
+  final String? district;
 
-  const Member({required this.id, required this.name, this.mobile, required this.role, this.village, this.isActive = true});
+  const Member({required this.id, required this.name, this.mobile, required this.role, this.village, this.isActive = true, this.mandal, this.district});
 
   factory Member.fromMap(Map<String, dynamic> map) => Member(
         id: map['id'] as String,
@@ -73,6 +79,8 @@ class Member {
         role: map['role'] as String? ?? 'member',
         village: map['village'] as String?,
         isActive: map['is_active'] as bool? ?? true,
+        mandal: map['mandal'] as String?,
+        district: map['district'] as String?,
       );
 }
 
