@@ -20533,3 +20533,74 @@ inspection rather than a new widget test). Live: migrations `0145` and
 `0146` deployed via `supabase db push`; every fix live-verified with both
 a negative (bypass-reproduction) and positive (legitimate-use) case.
 
+## 2026-07-30 — Gap-hunt iteration 41
+
+Four fresh audits: dogfooding migrations 0145-0146, Financial Ledger,
+Admin User Management, and Payments.
+
+1. **[CRITICAL] `financial_ledger_delete_staff` let staff walk backward
+   through an entire SHG's cashbook history, one entry at a time.** The
+   policy (migration 0106) only checks "is this the CURRENT latest row" —
+   it never bounds how old that row is allowed to be. Since deleting the
+   latest row makes the next-most-recent instantly become the new
+   "latest," nothing stopped a staff account from repeating the delete
+   indefinitely. Live-verified with a real SHG's real 4-entry cashbook
+   chain and a real, non-authoring `crp` account: 3 sequential deletes
+   walked the count from 4 → 3 → 2 → 1, every delete succeeding, directly
+   contradicting this table's own documented purpose as "the SHG's
+   permanent, append-only audit trail." Fixed (migration `0147`) by
+   bounding deletion to rows created within the last 15 minutes — the
+   exact "undo the mistake you just posted" window the original 0106
+   commit message already described as its intent, now actually enforced.
+   Live-verified: the same walk-back attempt on the (days-old) real rows
+   is now blocked (0 rows); a genuinely fresh row inserted moments earlier
+   can still be deleted (1 row).
+2. **[MEDIUM, dogfooding] `meeting_minutes_delete_staff` was missed by
+   0146's cancel-guard sweep** — a bare `is_staff()` with no shg/status
+   check at all (unchanged since migration 0026). Live-verified: minutes
+   inserted on an active test meeting could still be deleted by staff
+   *after* the meeting was cancelled, contradicting 0146's own rationale
+   for this exact table pair. Fixed (migration `0148`) with the same
+   `m.status <> 'cancelled'` guard applied everywhere else in this chain.
+   Live-verified: delete on a cancelled meeting's minutes now blocked (0
+   rows); delete on an active meeting's minutes still works (1 row).
+3. **[Investigated, NOT a gap — a claimed CRITICAL finding was refuted by
+   first-hand verification]** The Admin User Management audit reported a
+   TOCTOU race in `guard_last_admin_deactivation()`/`guard_last_admin_
+   delete()`, claiming two concurrent sessions deactivating different
+   admins could both pass the last-admin check since each only sees the
+   other's *committed* state. But both guard functions already wrap their
+   admin-count query in `SELECT ... FOR UPDATE` (added in an earlier
+   round specifically for this reason) — under standard Postgres
+   row-locking, this must serialize exactly this scenario. Rather than
+   implement a fix for an unconfirmed claim, this was independently
+   re-tested with two genuinely concurrent sessions (one held open with
+   `pg_sleep`, the other fired mid-sleep from a separate connection): the
+   second session hung for the full timeout with zero output while the
+   first held its lock, then completed in ~50ms once unblocked and alone
+   — direct, first-hand evidence the existing lock correctly serializes
+   these transactions. The original audit's "no blocking observed" claim
+   does not match this reproduction; most likely its two "concurrent"
+   attempts were actually sequential (a common pitfall when simulating
+   concurrency via separate tool-call invocations without true process
+   overlap). No fix applied — documented here per this project's own
+   discipline of verifying claims (including a fresh agent's own) before
+   acting on them, not just theorizing or trusting a report at face
+   value.
+4. **Payments: no new gaps found.** A full fresh pass (cross-member
+   forgery/read, column-lock holds, amount cap, exact rate-limit boundary
+   re-verified at 29/30/31, multi-row batch-bypass re-confirmed closed,
+   webhook signature verification correct) corroborated 5+ prior
+   dedicated hardening rounds rather than finding anything new. The
+   `payment-webhook-handler`'s dormant `verify_jwt: true` misconfiguration
+   was re-confirmed present but is already logged as a known, deliberately
+   deferred issue (function isn't deployed/wired to a real gateway yet).
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full
+1085 test suite passing (no Dart changes this round — SQL-only fixes).
+Live: migrations `0147` and `0148` deployed via `supabase db push`; both
+live-verified with negative (exploit-reproduction) and positive
+(legitimate-use) cases. The last-admin race claim was independently
+re-verified rather than blindly fixed, and found not reproducible against
+the existing code.
+
