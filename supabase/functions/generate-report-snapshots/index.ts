@@ -131,7 +131,13 @@ serve(async (req) => {
           { data: loans, error: loansError },
           { data: meetings, error: meetingsError },
         ] = await Promise.all([
-          supabase.from('profiles').select('id').eq('shg_id', shg.id),
+          // `is_active` filter: every client-side equivalent (report_
+          // repository.dart, analytics_repository.dart, trend_repository.dart)
+          // already excludes deactivated profiles from its member/attendance
+          // counts — this nightly snapshot didn't, silently inflating both
+          // memberCount and the avgAttendancePct denominator below the
+          // moment any account is deactivated (gap-hunt iteration 37).
+          supabase.from('profiles').select('id').eq('shg_id', shg.id).eq('is_active', true),
           supabase.from('savings_entries').select('amount').eq('shg_id', shg.id).eq('status', 'verified'),
           supabase.from('loans').select('outstanding, status').eq('shg_id', shg.id),
           supabase.from('meetings').select('id').eq('shg_id', shg.id).neq('status', 'cancelled').gte('meeting_date', windowStartStr).lt('meeting_date', todayStr),

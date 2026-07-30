@@ -145,6 +145,16 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
   // supportive, safety-oriented self-harm rejection text, which must reach
   // the member verbatim rather than as "something went wrong".
   String _errorMessageFor(Object error, AppLocalizations? l10n) {
+    // Checked first, before the AiAdvisorRequestException branch below: an
+    // expired/invalid session throws a raw AuthException from supabase-
+    // flutter before the Edge Function is ever reached, so it would
+    // otherwise fall through to the generic asyncErrorGeneric message with
+    // no indication the member needs to sign in again — unlike every other
+    // data screen, which routes through AppAsyncBuilder's own
+    // isAuthExpiredError branch (gap-hunt iteration 37).
+    if (isAuthExpiredError(error)) {
+      return l10n?.asyncErrorSessionExpired ?? 'Your session has expired. Please sign in again.';
+    }
     if (error is AiAdvisorRequestException) {
       // 400 (validation/moderation pre-filter) and 429 (rate limit): the
       // server's own `reason` is already written to be shown to the member

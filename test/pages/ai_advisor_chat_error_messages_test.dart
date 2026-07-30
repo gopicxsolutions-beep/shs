@@ -9,6 +9,7 @@ import 'package:shg_saathi/repositories/ai_advisor_repository.dart';
 import 'package:shg_saathi/services/ai_advisor_service.dart';
 import 'package:shg_saathi/services/supabase_service.dart';
 import 'package:shg_saathi/state/app_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Regression coverage for the documented gap in docs/AI_MODULES.md §2.2 /
 /// §6: the chat page used to flatten every server-side ai-advisor-proxy
@@ -45,6 +46,7 @@ const _upstreamUnavailableMessage =
     'The advisor service is temporarily unavailable right now. Please try again in a moment.';
 const _genericFallback = 'Something went wrong. Please try again.';
 const _networkFallback = 'Check your internet connection and try again.';
+const _sessionExpiredMessage = 'Your session has expired. Please sign in again.';
 
 Future<void> _askAndSettle(WidgetTester tester, Object Function() makeError) async {
   final repo = AiAdvisorRepository(service: _ThrowingAiAdvisorService(makeError));
@@ -123,5 +125,17 @@ void main() {
     await _askAndSettle(tester, () => Exception('some unexpected shape'));
 
     expect(find.text(_genericFallback), findsOneWidget);
+  });
+
+  // Gap-hunt iteration 37: an expired/invalid session throws a raw
+  // AuthException from supabase-flutter before the Edge Function is ever
+  // reached — this used to fall through to the generic fallback with no
+  // indication the member needs to sign in again, unlike every other data
+  // screen (AppAsyncBuilder's own isAuthExpiredError branch).
+  testWidgets('an expired session shows the session-expired message, not the generic fallback', (tester) async {
+    await _askAndSettle(tester, () => AuthException('invalid refresh token', statusCode: '401'));
+
+    expect(find.text(_sessionExpiredMessage), findsOneWidget);
+    expect(find.text(_genericFallback), findsNothing);
   });
 }

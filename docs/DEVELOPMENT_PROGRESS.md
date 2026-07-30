@@ -20185,3 +20185,113 @@ mutating query ran inside `BEGIN...ROLLBACK`, except the marketplace data
 correction (an intentional, permanent fix to a pre-existing stale row) and
 the two schema migrations themselves.
 
+**Addendum, same day**: `ai-advisor-proxy` had not actually been
+*deployed* since before this iteration's own moderation.ts fix (last
+deploy 2026-07-29 08:30, predating today's small-caps confusables work) —
+`deno test` validates the source locally but not what's actually serving
+live traffic. Deployed it (and `generate-report-snapshots`, for iteration
+37's fix below) via `supabase functions deploy`; both now current.
+
+## 2026-07-30 — Gap-hunt iteration 37
+
+Four fresh audits: Notifications/Announcements, Savings entries/Loan
+repayment, Voice Assistant + AI advisor quality (non-moderation), and
+Reports/Analytics.
+
+1. **[CRITICAL] A leader could permanently erase any already-verified
+   savings deposit in her own SHG** by chaining two independently
+   reasonable-looking migrations that never re-examined each other:
+   `savings_update_leader_or_staff` (0108) never locked `status` on
+   UPDATE (0034's reasoning: un-verifying alone is harmless, every total
+   is computed live), while `savings_delete_self_or_leader_pending` (0086)
+   lets a leader DELETE any `status = 'pending'` row in her SHG (reasoning:
+   deletion risk "doesn't exist for a still-pending entry"). Chained: a
+   leader flips a fellow member's `verified` entry back to `pending`
+   (permitted), then deletes it (now eligible) — a real, previously-
+   confirmed deposit vanishes with zero trace, no audit trigger exists on
+   this table. Live-verified both steps succeeded against a real
+   `verified` entry (rolled back; row confirmed intact afterward). Fixed
+   (migration `0138`): the leader/staff UPDATE `WITH CHECK` now also locks
+   against the one transition that manufactures DELETE-eligibility —
+   `verified -> pending` — while the legitimate `verifyEntry()` flow
+   (`pending -> verified`) is untouched. Live-verified: the exploit's
+   un-verify step now fails RLS (`42501`); the legitimate verify still
+   succeeds.
+2. **[HIGH] `announcements_update_leader_or_staff` let any leader/staff
+   silently launder an announcement's authorship onto themselves.** Every
+   other column (title/body/category/shg_id/created_at) was locked to its
+   original value, but `created_by` was left as a bare `= auth.uid()`
+   requirement — since the policy has no edit UI behind it at all (0081's
+   own comment), the ONLY thing it could actually change was authorship.
+   Live-verified: a different leader in the same SHG reassigned another
+   leader's post onto herself with zero content change and no
+   `updated_at` column to detect it. Chained with `announcements_delete_
+   staff` (`is_staff() and created_by <> auth.uid()`, written specifically
+   to block a staff member deleting their OWN post to cover tracks), this
+   let one staff account launder a colleague's post onto a third party,
+   after which the original poster now satisfies the delete guard and can
+   delete it outright — defeating the self-deletion protection entirely.
+   Fixed (migration `0138`, same as above): `created_by` is now locked to
+   its original value like every sibling column. Live-verified: the
+   reassignment now fails RLS (`42501`); a legitimate no-op self-update
+   still succeeds.
+3. **[HIGH] A 5-day-old `__TEST__` SHG fixture was live in production,
+   corrupting federation reports** — a full leftover live-mode signup-test
+   scenario from earlier in this session (`shgs` row `__TEST__ Jyothi
+   Mahila Sangham`, 5 profiles including one real `auth.users`-linked
+   leader account created via an actual OTP signup test, 2 savings
+   entries, 2 loans, 2 meetings, a marketplace product/order, a support
+   ticket, a join request, and its own `report_snapshots` row) — counted
+   in the federation rollup and injecting a fake village into
+   `fetchVillageWiseShgs()`. Cleaned up: mapped the full FK dependency
+   graph live (`pg_constraint`), dry-ran the complete deletion in a
+   rolled-back transaction to confirm it succeeds cleanly, then executed
+   it for real across every dependent table in the correct order (leaving
+   the orphaned `auth.users` row alone — deleting a real Auth account
+   needs the admin API, not raw SQL, and an auth-only orphan with no
+   profile is harmless). Re-queried afterward: zero residual rows across
+   every affected table.
+4. **[MEDIUM] `generate-report-snapshots` still didn't exclude deactivated
+   profiles from its member/attendance counts** — re-confirmed present in
+   the currently-deployed function (`profiles` select had no `is_active`
+   filter, unlike every client-side equivalent). Not currently
+   numerically manifesting (0 deactivated profiles exist platform-wide
+   right now), but the code bug remains and will drift the moment any
+   account is deactivated. Fixed and redeployed.
+5. **[MEDIUM] Both AI-surface pages (chat and voice assistant) collapsed
+   an expired/invalid session into the generic "something went wrong"
+   message**, unlike every other data screen (`AppAsyncBuilder`'s own
+   `isAuthExpiredError` branch) — an `AuthException` thrown by supabase-
+   flutter before the Edge Function/repository call is ever reached fell
+   through with no "sign in again" guidance. Fixed both
+   (`ai_advisor_chat_page.dart`, `ai_voice_assistant_page.dart`) to check
+   `isAuthExpiredError` first. New regression test in
+   `ai_advisor_chat_error_messages_test.dart`; the voice assistant page
+   has no injectable repository seam for its `_resolve()` calls (unlike
+   the chat page's `repository:`/`service:` seams), so it relies on the
+   same already-tested `isAuthExpiredError` helper without a page-level
+   widget test — flagged rather than forcing an invasive constructor
+   refactor just for test coverage.
+6. Re-verified, still holding: `record_loan_payment`'s overpayment/self-
+   payment/race guards; `loans_update_leader_or_staff`'s full column lock
+   and self-approval block; savings/loan amount caps and cross-tenant
+   isolation; `report_snapshots`/router RLS and role-gating; AI advisor
+   RLS, rate limiting, retention, cost controls, locale fallback, and
+   session/history lifecycle — no regressions found in any of these.
+7. **Not independently re-fixed this round**: `ReportRepository.
+   fetchFederationReport()` is confirmed dead code (zero callers) — left
+   as-is, flagged for awareness rather than deleted mid-audit. No export
+   (PDF/CSV) functionality exists — a feature gap, not a bug.
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full
+1085 test suite passing (up from 1084: +1 new test, the session-expired
+regression). `deno test` — unaffected, still 62/62 (this round's fixes
+were SQL/Dart, not moderation.ts). Live: migration `0138` deployed via
+`supabase db push`; `generate-report-snapshots` and `ai-advisor-proxy`
+(see this entry's addendum above) redeployed via `supabase functions
+deploy`. Every RLS fix individually live-verified with both a negative
+(attack-reproduction) and positive (legitimate-use) case. The stale
+`__TEST__` SHG cleanup was a real, permanent live-data deletion (not
+rolled back) — dry-run-verified first, then executed, then re-queried to
+confirm zero residual rows across every affected table.
+

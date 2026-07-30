@@ -19,7 +19,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/ai_disclaimer_banner.dart';
 import '../../widgets/app_card.dart';
-import '../../widgets/async_state.dart' show isNetworkError;
+import '../../widgets/async_state.dart' show isAuthExpiredError, isNetworkError;
 
 enum _AssistantState { idle, listening, thinking, answered }
 
@@ -181,6 +181,12 @@ class _AiVoiceAssistantPageState extends State<AiVoiceAssistantPage> {
         _answer = switch (e) {
           VoiceRecognitionUnavailableException() => l10n.voiceAssistantMicUnavailableError,
           VoiceRecognitionEmptyResultException() => l10n.voiceAssistantNoSpeechError,
+          // Same gap as ai_advisor_chat_page.dart's identical fix: an
+          // expired session during `_resolve()`'s repository calls (Loan/
+          // Savings/AnnouncementRepository) previously fell through to the
+          // generic message with no "sign in again" guidance, unlike every
+          // other data screen (gap-hunt iteration 37).
+          _ when isAuthExpiredError(e) => l10n.asyncErrorSessionExpired,
           _ when isNetworkError(e) => l10n.asyncErrorNetwork,
           _ => l10n.asyncErrorGeneric,
         };
