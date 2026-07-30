@@ -145,6 +145,15 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
     final reachableOptions = isStaff
         ? _statusOptions
         : _statusOptions.where((s) => (_statusOptions.indexOf(s) - _statusOptions.indexOf(activity.status)).abs() <= 1).toList();
+    // Migration 0129's `livelihood_activities_enforce_revenue_permanence()`
+    // trigger force-pins `revenue` back to its stored value on every UPDATE
+    // once locked, regardless of what's submitted — but the write itself
+    // still reports success (rows_affected=1), so without this check the
+    // dialog would let a leader/member retype a new revenue figure, show
+    // the normal "updated" success message, and silently keep the old
+    // value with no indication anything was rejected (gap-hunt
+    // iteration 40, live-verified: submitted revenue never persisted).
+    final revenueLocked = activity.revenueLockedAt != null;
     String? error;
     var submitting = false;
     final saved = await showDialog<bool>(
@@ -164,12 +173,17 @@ class _LivelihoodDetailPageState extends State<LivelihoodDetailPage> {
             children: [
               TextField(
                 controller: revenueController,
+                enabled: !revenueLocked,
                 keyboardType: TextInputType.number,
                 inputFormatters: decimalAmountInputFormatters,
                 textInputAction: TextInputAction.done,
                 maxLength: 9,
                 decoration: InputDecoration(prefixText: '₹', labelText: l10n.livelihoodDetailRevenueToDateLabel, counterText: ''),
               ),
+              if (revenueLocked) ...[
+                const SizedBox(height: 4),
+                Text(l10n.livelihoodDetailRevenueLockedNotice, style: AppTheme.sans(11, color: Neutral.c500)),
+              ],
               const SizedBox(height: 12),
               DropdownButton<String>(
                 value: status,

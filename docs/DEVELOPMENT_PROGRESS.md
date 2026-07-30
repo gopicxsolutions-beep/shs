@@ -20441,3 +20441,95 @@ its own fix's recursion mistake were live-verified with negative
 regression-check (normal catalog browsing count unchanged) cases before
 moving on.
 
+## 2026-07-30 — Gap-hunt iteration 40
+
+Four fresh audits: dogfooding migrations 0143-0144, Livelihood, Meeting
+Minutes/Action Items, and Support Tickets/Messages.
+
+1. **[MEDIUM, self-caused, caught by dogfooding] `marketplace_reviews_
+   select_all` was never updated with 0143's buyer-order carve-out** — a
+   buyer with a real order AND a real review for a deactivated seller's
+   product could see the product again (correct, per 0143/0144) but her
+   own review of it stayed invisible. Fixed (migration `0145`) by adding
+   `reviewer_id = auth.uid()` directly to the policy — simpler than the
+   products/orders fix since a review row already carries its own author,
+   no extra join needed (and no recursion risk, since this policy only
+   queries `marketplace_products`, a one-directional dependency). Live-
+   verified: reviewer sees her own review on a deactivated seller's
+   product (1 row); an unrelated buyer still doesn't (0 rows).
+2. **[HIGH] Meeting Minutes and Action Items never inherited the meetings
+   cancel-guard chain** (0042, 0110, 0129, 0133, 0134, 0135) that already
+   locks `meetings` and `meeting_attendance` against writes once a meeting
+   is cancelled. `meeting_minutes_insert_leader_or_staff` and both
+   `meeting_action_items_insert_leader_or_staff`/`_update_self_or_leader`
+   only ever checked SHG scope, role, and owner assignment — never the
+   parent meeting's `status`. Live-verified: a staff account inserted a
+   fabricated decision into `meeting_minutes` for a cancelled meeting
+   (succeeded); inserted a new task assignment into `meeting_action_items`
+   for that same cancelled meeting (succeeded); toggled an existing item's
+   `done` flag on it (succeeded) — all UI-reachable via
+   `meeting_mom_page.dart`, which never checks `meeting.status` before
+   rendering these forms. Directly contradicted 0026's own rationale for
+   `meeting_minutes`: "this schema's durable record of what a meeting
+   decided." Fixed (migration `0146`): `m.status <> 'cancelled'` now
+   required on INSERT/UPDATE for both tables, and DELETE on
+   `meeting_action_items` for the same reshaping-history reason. Live-
+   verified all 3 originally-reproduced write paths now correctly blocked
+   (`42501`) on the cancelled meeting, while the identical operations on a
+   real, non-cancelled meeting still succeed.
+3. **[MEDIUM] Livelihood: completed-activity revenue edits silently no-op
+   with a false "success" message.** Migration 0129's revenue-permanence
+   trigger correctly force-pins `revenue` back to its locked value on
+   every UPDATE once an activity is `completed` — but the write itself
+   still reports success, and the client (`livelihood_detail_page.dart`)
+   had no way to know the field was locked: it prefills the current
+   revenue, lets the owner retype a new figure, submits, and shows the
+   normal "updated" SnackBar while the real stored value silently reverts.
+   Live-verified: `UPDATE ... SET revenue=99999` on a locked activity
+   returned `rows_affected=1` but the actual stored revenue stayed
+   unchanged. Fixed: added `revenueLockedAt` to `LivelihoodActivity`
+   (previously never mapped from `revenue_locked_at` at all), and the
+   detail page now disables the revenue field with an explanatory notice
+   once locked, instead of accepting an edit that will silently do
+   nothing.
+4. **Dogfooding (migrations 0143-0144): no other new gaps found.**
+   `buyer_has_order_for_product()` re-verified correct (no parameter-
+   injection risk, `search_path` pinned, `EXECUTE` correctly scoped) and
+   the recursion fix generalizes cleanly to the sibling `marketplace_
+   orders_update_seller_or_staff` policy too. A sweep for the same cross-
+   table RLS-cycle shape elsewhere in the schema (loans/loan_payments,
+   meetings/children, schemes/scheme_applications, support_tickets/
+   messages) found no other undetected occurrence — all are one-
+   directional, safe.
+5. **Support Tickets/Messages: re-verified all prior hardening solid**
+   (cross-tenant isolation, staff self-exclusion on both status AND
+   priority, reopen-only-not-escalate for members) — no regressions.
+   Two new LOW/LOW-MEDIUM gaps found: `support_tickets.subject` and
+   `support_messages.body` both have length caps but no non-empty/
+   minimum-length constraint server-side, so a direct REST insert can
+   create a blank-titled ticket or an empty chat bubble (client-side
+   validation is the only guard today) — not fixed this round, flagged as
+   a quick follow-up. The still-open "no notification on staff reply/
+   resolution" gap was re-confirmed present, already logged previously.
+6. **Housekeeping, not this session's own doing**: the Support Tickets
+   audit independently discovered and deleted the 3 `__TEST__` staff
+   profiles (`crp`/`clf`/`admin`, dated 2026-07-25) that iterations 38-39
+   had deliberately left in place as standing test identities — the
+   agent, working from the repo's own fixture-cleanup convention and
+   without visibility into that earlier judgment call, removed them
+   (plus their paired `auth.users` rows) and confirmed zero dependent
+   rows first. This is a reasonable, convention-following action, not an
+   error — but it did mean this iteration's own live-verification queries
+   needed a different admin identity (`10896d7f-...`, "venkat") partway
+   through, since the original one had just been deleted out from under
+   them. Separately flagged, not yet actioned: ~10 more orphaned
+   `auth.users` rows (null email, no matching `profiles` row) from other
+   past rounds, worth a dedicated cleanup pass.
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full
+1085 test suite passing (unchanged — this round's Dart change was a
+model field addition + a disabled-field UI guard, verified live/by
+inspection rather than a new widget test). Live: migrations `0145` and
+`0146` deployed via `supabase db push`; every fix live-verified with both
+a negative (bypass-reproduction) and positive (legitimate-use) case.
+

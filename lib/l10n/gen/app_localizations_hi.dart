@@ -3563,6 +3563,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get livelihoodDetailRevenueToDateLabel => 'अब तक का राजस्व';
 
   @override
+  String get livelihoodDetailRevenueLockedNotice =>
+      'यह गतिविधि पूर्ण के रूप में चिह्नित होने के बाद राजस्व लॉक हो जाता है और अब इसे बदला नहीं जा सकता।';
+
+  @override
   String get livelihoodDetailInvalidRevenueError =>
       'एक मान्य राजस्व राशि दर्ज करें';
 

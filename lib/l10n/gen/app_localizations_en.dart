@@ -3629,6 +3629,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get livelihoodDetailRevenueToDateLabel => 'Revenue to date';
 
   @override
+  String get livelihoodDetailRevenueLockedNotice =>
+      'Revenue is locked once this activity is marked completed and can no longer be changed.';
+
+  @override
   String get livelihoodDetailInvalidRevenueError =>
       'Enter a valid revenue amount';
 

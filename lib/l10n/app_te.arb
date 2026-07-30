@@ -1930,6 +1930,8 @@
 
   "livelihoodDetailRevenueToDateLabel": "ఇప్పటివరకు ఆదాయం",
 
+  "livelihoodDetailRevenueLockedNotice": "ఈ కార్యకలాపం పూర్తయినట్లు గుర్తించిన తర్వాత ఆదాయం లాక్ అవుతుంది మరియు దీన్ని ఇక మార్చలేరు.",
+
   "livelihoodDetailInvalidRevenueError": "సరైన ఆదాయ మొత్తాన్ని నమోదు చేయండి",
 
   "livelihoodDetailSaveError": "ఈ అప్‌డేట్‌ను సేవ్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",

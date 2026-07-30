@@ -2456,6 +2456,8 @@
 
   "livelihoodDetailRevenueToDateLabel": "Revenue to date",
 
+  "livelihoodDetailRevenueLockedNotice": "Revenue is locked once this activity is marked completed and can no longer be changed.",
+
   "livelihoodDetailInvalidRevenueError": "Enter a valid revenue amount",
 
   "livelihoodDetailSaveError": "Could not save this update. Please try again.",

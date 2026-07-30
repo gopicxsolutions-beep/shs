@@ -6322,6 +6322,12 @@ abstract class AppLocalizations {
   /// **'Revenue to date'**
   String get livelihoodDetailRevenueToDateLabel;
 
+  /// No description provided for @livelihoodDetailRevenueLockedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue is locked once this activity is marked completed and can no longer be changed.'**
+  String get livelihoodDetailRevenueLockedNotice;
+
   /// No description provided for @livelihoodDetailInvalidRevenueError.
   ///
   /// In en, this message translates to:

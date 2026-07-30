@@ -53,6 +53,14 @@ class LivelihoodActivity {
   final num investment;
   final num revenue;
   final String status; // planned | active | completed
+  // Non-null once revenue has ever been locked (migration 0129's
+  // BEFORE INSERT/UPDATE trigger, `livelihood_activities_enforce_revenue_
+  // permanence()`) — from that point on, any UPDATE force-pins `revenue`
+  // back to its stored value regardless of what the client sends, even
+  // though the write still reports success. The UI must check this to
+  // avoid presenting a revenue edit as if it will take effect when it
+  // silently won't.
+  final DateTime? revenueLockedAt;
   // Only populated when the query joins `shgs(name)` (today: only
   // LivelihoodRepository.fetchAllForStaff()'s platform-wide fetch) — null
   // everywhere else, including demo mode. Mirrors Loan.shgName.
@@ -68,6 +76,7 @@ class LivelihoodActivity {
     required this.investment,
     required this.revenue,
     required this.status,
+    this.revenueLockedAt,
     this.shgName,
   });
 
@@ -83,6 +92,7 @@ class LivelihoodActivity {
         investment: map['investment'] as num? ?? 0,
         revenue: map['revenue'] as num? ?? 0,
         status: map['status'] as String,
+        revenueLockedAt: map['revenue_locked_at'] == null ? null : DateTime.parse(map['revenue_locked_at'] as String),
         shgName: (map['shgs'] as Map<String, dynamic>?)?['name'] as String?,
       );
 }

@@ -3631,6 +3631,10 @@ class AppLocalizationsTe extends AppLocalizations {
   String get livelihoodDetailRevenueToDateLabel => 'ఇప్పటివరకు ఆదాయం';
 
   @override
+  String get livelihoodDetailRevenueLockedNotice =>
+      'ఈ కార్యకలాపం పూర్తయినట్లు గుర్తించిన తర్వాత ఆదాయం లాక్ అవుతుంది మరియు దీన్ని ఇక మార్చలేరు.';
+
+  @override
   String get livelihoodDetailInvalidRevenueError =>
       'సరైన ఆదాయ మొత్తాన్ని నమోదు చేయండి';
 
