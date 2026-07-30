@@ -1375,6 +1375,8 @@
 
   "schemeDetailApplyError": "Could not submit this application. Please try again.",
 
+  "schemeDetailAlreadyAppliedError": "You've already applied for this scheme — check its status below instead of submitting again.",
+
   "schemeDetailTitle": "Scheme Detail",
 
   "schemeDetailNotFound": "This scheme could not be found",

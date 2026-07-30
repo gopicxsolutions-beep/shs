@@ -1013,6 +1013,8 @@
 
   "schemeDetailApplyError": "यह आवेदन जमा नहीं हो सका। कृपया फिर से कोशिश करें।",
 
+  "schemeDetailAlreadyAppliedError": "आपने पहले ही इस योजना के लिए आवेदन कर दिया है — दोबारा जमा करने के बजाय नीचे इसकी स्थिति देखें।",
+
   "schemeDetailTitle": "योजना विवरण",
 
   "schemeDetailNotFound": "यह योजना नहीं मिली",

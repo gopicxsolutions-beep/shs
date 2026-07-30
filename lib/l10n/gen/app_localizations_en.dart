@@ -2045,6 +2045,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not submit this application. Please try again.';
 
   @override
+  String get schemeDetailAlreadyAppliedError =>
+      'You\'ve already applied for this scheme — check its status below instead of submitting again.';
+
+  @override
   String get schemeDetailTitle => 'Scheme Detail';
 
   @override

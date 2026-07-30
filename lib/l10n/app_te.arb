@@ -1013,6 +1013,8 @@
 
   "schemeDetailApplyError": "ఈ దరఖాస్తును సమర్పించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
 
+  "schemeDetailAlreadyAppliedError": "మీరు ఇప్పటికే ఈ పథకానికి దరఖాస్తు చేసారు — మళ్ళీ సమర్పించే బదులు దిగువ దాని స్థితిని చూడండి.",
+
   "schemeDetailTitle": "పథకం వివరాలు",
 
   "schemeDetailNotFound": "ఈ పథకం కనుగొనబడలేదు",

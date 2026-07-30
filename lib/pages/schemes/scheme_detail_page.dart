@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/scheme.dart';
@@ -97,8 +98,23 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
           SnackBar(content: Text(SupabaseService.isConfigured ? l10n.schemeDetailApplicationSubmitted : l10n.profileUpdateDemoMode)),
         );
       }
-    } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.schemeDetailApplyError)));
+    } catch (e) {
+      if (mounted) {
+        // `scheme_applications_scheme_id_member_id_key` (unique constraint):
+        // reachable live — e.g. a submit whose response never arrived,
+        // followed by the member retrying the identical tap. The old
+        // generic "please try again" message was actively wrong advice
+        // here: her application already exists, so every retry fails
+        // identically forever with no indication of that. Reload so the
+        // status tracker below reflects the application that DID go
+        // through, instead of leaving the page looking like nothing
+        // happened (same fix shape as loan_detail_page.dart's stale-
+        // balance handling).
+        final isDuplicate = e is PostgrestException && e.code == '23505';
+        if (isDuplicate) _appKey.currentState?.reload();
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isDuplicate ? l10n.schemeDetailAlreadyAppliedError : l10n.schemeDetailApplyError)));
+      }
     } finally {
       if (mounted) setState(() => _applying = false);
     }
@@ -157,20 +173,22 @@ class _SchemeDetailPageState extends State<SchemeDetailPage> {
                 AppCard(child: Text(scheme.benefit!, style: AppTheme.sans(13))),
                 const SizedBox(height: 20),
               ],
-              SectionHeader(title: l10n.schemeDetailEligibilitySection),
-              AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: scheme.eligibility.map((e) => Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Icon(Icons.check_circle_rounded, size: 16, color: Brand.c500),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(e, style: AppTheme.sans(12))),
-                        ]),
-                      )).toList(),
+              if (scheme.eligibility.isNotEmpty) ...[
+                SectionHeader(title: l10n.schemeDetailEligibilitySection),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: scheme.eligibility.map((e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Icon(Icons.check_circle_rounded, size: 16, color: Brand.c500),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(e, style: AppTheme.sans(12))),
+                          ]),
+                        )).toList(),
+                  ),
                 ),
-              ),
+              ],
               if (!isLeaderOrStaff) ...[
                 const SizedBox(height: 20),
                 AppAsyncBuilder<SchemeApplication?>(

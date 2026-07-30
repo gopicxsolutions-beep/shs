@@ -2011,6 +2011,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'यह आवेदन जमा नहीं हो सका। कृपया फिर से कोशिश करें।';
 
   @override
+  String get schemeDetailAlreadyAppliedError =>
+      'आपने पहले ही इस योजना के लिए आवेदन कर दिया है — दोबारा जमा करने के बजाय नीचे इसकी स्थिति देखें।';
+
+  @override
   String get schemeDetailTitle => 'योजना विवरण';
 
   @override

@@ -100,17 +100,31 @@ class SchemeRepository {
       return byStatus;
     }
     if (memberId == null) return {};
-    // `scheme_applications` now has two FKs into `profiles` (`member_id`,
-    // `decided_by`) since migration 0050 added decision attribution — an
-    // unqualified `profiles(name)` embed would be ambiguous to PostgREST
-    // (the exact bug already hit `shg_join_requests`, round 90). The
-    // explicit FK hint plus an alias keeps this one unambiguous and keyed
-    // distinctly from a same-named `member_id` embed, if one is ever added
-    // here too.
-    final rows = await _client.from('scheme_applications').select('*, decided_by_profile:profiles!decided_by(name)').eq('member_id', memberId);
+    // Deliberately NOT an embedded `profiles!decided_by(name)` select —
+    // that was gap-hunt iteration 38's own finding: RLS on `profiles` is
+    // row-level, not column-level, so `profiles_select_scheme_decider`
+    // (which only exists to let this exact lookup resolve) was granting
+    // the decider's ENTIRE row, not just the name the app ever displays —
+    // a direct REST query against `/profiles?id=eq.<decider_id>` leaked
+    // the deciding staff member's mobile number/village/mandal/district to
+    // any member whose application they'd ever decided. Fixed by querying
+    // the new `scheme_decider_public` view instead (migration 0139) — a
+    // `security_invoker` projection of just `id, name`, so even a client
+    // bypassing this app entirely and querying that view directly gets
+    // nothing beyond the name.
+    final rows = await _client.from('scheme_applications').select('*').eq('member_id', memberId);
+    final rowList = (rows as List).cast<Map<String, dynamic>>();
+    final deciderIds = rowList.map((r) => r['decided_by'] as String?).whereType<String>().toSet();
+    var deciderNames = const <String, String>{};
+    if (deciderIds.isNotEmpty) {
+      final deciders = await _client.from('scheme_decider_public').select('id, name').inFilter('id', deciderIds.toList());
+      deciderNames = {for (final d in deciders as List) d['id'] as String: d['name'] as String};
+    }
     final byScheme = <String, SchemeApplication>{};
-    for (final r in rows as List) {
-      final app = SchemeApplication.fromMap(r as Map<String, dynamic>);
+    for (final r in rowList) {
+      final deciderId = r['decided_by'] as String?;
+      final deciderName = deciderId == null ? null : deciderNames[deciderId];
+      final app = SchemeApplication.fromMap(deciderName == null ? r : {...r, 'decided_by_profile': {'name': deciderName}});
       byScheme[app.schemeId] = app;
     }
     return byScheme;

@@ -2046,6 +2046,10 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఈ దరఖాస్తును సమర్పించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
+  String get schemeDetailAlreadyAppliedError =>
+      'మీరు ఇప్పటికే ఈ పథకానికి దరఖాస్తు చేసారు — మళ్ళీ సమర్పించే బదులు దిగువ దాని స్థితిని చూడండి.';
+
+  @override
   String get schemeDetailTitle => 'పథకం వివరాలు';
 
   @override

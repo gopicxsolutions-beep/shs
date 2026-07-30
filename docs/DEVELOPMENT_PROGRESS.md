@@ -20295,3 +20295,96 @@ deploy`. Every RLS fix individually live-verified with both a negative
 rolled back) — dry-run-verified first, then executed, then re-queried to
 confirm zero residual rows across every affected table.
 
+## 2026-07-30 — Gap-hunt iteration 38
+
+Four fresh audits: dogfooding iteration 37's fixes, Profile/Settings +
+Member Roster, Government Schemes (member-facing), and Marketplace
+browse/search/reviews.
+
+1. **[HIGH] `profiles_select_scheme_decider` leaked a scheme decider's
+   entire profile row — mobile number, village, mandal, district — not
+   just the name the app ever displays.** RLS is row-level, not
+   column-level: the policy (added in 0111 solely so
+   `scheme_repository.dart`'s `profiles!decided_by(name)` embed resolves)
+   granted full-row SELECT. Live-verified: a real member with a real
+   decided scheme application read the deciding admin's full row —
+   including her real mobile number — via a direct `/profiles?id=eq.
+   <decider_id>` shape query, despite having no other relationship to
+   that admin. Fixed across 3 migrations (`0139`-`0141`, the middle one
+   correcting a mistake caught by live verification before it ever shipped
+   — see below): a `security_invoker = false` view
+   (`scheme_decider_public`) exposing only `id, name`, with the exact
+   original row-visibility condition re-encoded directly in its WHERE
+   clause (since a `security_invoker = true` view would have inherited
+   whatever RLS the base table has — column-scoping and row-scoping can't
+   both be delegated to base-table RLS through an invoker view). The
+   original `profiles_select_scheme_decider` policy was dropped entirely
+   — `scheme_repository.dart` now queries the view instead of embedding
+   through `profiles`. Live-verified: direct `profiles` query blocked (0
+   rows); the view correctly returns `id, name` for a genuinely related
+   applicant and 0 rows for an unrelated one.
+2. **[MEDIUM] Marketplace: a deactivated seller's listings stayed fully
+   visible/browsable/orderable-looking to buyers** — `marketplace_
+   products_select_all`/`marketplace_reviews_select_all` had no `profile_
+   is_active(seller_id)` check at all, unlike the UPDATE policy on the
+   same table. Only the order-placement RPC actually blocked the
+   purchase, with a generic error and no visible reason on the product
+   page — stale/dead catalog entries were indistinguishable from live ones
+   until purchase was attempted. Fixed (migration `0142`): hidden from the
+   general catalog; staff retain full visibility for moderation/audit.
+   Live-verified: a buyer no longer sees an inactive seller's product (0
+   rows); staff still does (1 row); normal active-seller browsing
+   unaffected.
+3. **[MEDIUM] Scheme apply-flow collapsed every failure into one "please
+   try again" message**, including the confirmed-reachable case where the
+   application actually succeeded but the client never got the response —
+   a retry then hits the `scheme_applications_scheme_id_member_id_key`
+   unique-violation and is told to "try again," which fails identically
+   forever with no indication she'd already applied. Fixed
+   (`scheme_detail_page.dart`) to detect Postgres `23505` specifically,
+   show a differentiated "you've already applied" message, and reload the
+   status tracker so the member sees the application that DID go through
+   — same fix shape as `loan_detail_page.dart`'s existing stale-balance
+   handling. New l10n key in all 3 `.arb` files.
+4. **[LOW] Scheme eligibility section had no empty-list guard**, unlike
+   the adjacent benefit section — an admin saving a scheme with no
+   eligibility bullets would render a header over blank whitespace with
+   no "not specified" fallback. Not currently triggered (all 5 live
+   schemes have eligibility text) but reachable; fixed with an `isNotEmpty`
+   guard matching the sibling section.
+5. **Dogfooding: no new gaps found** in migration 0138's savings-entry
+   unverify-delete lock, the announcements authorship lock, migration
+   0136's meetings-delete guard, or the quiz last-question trigger — all
+   re-verified live and holding, including a bulk-delete and a legitimate-
+   cascade case for the quiz trigger specifically re-tested this round.
+6. **Not fixed — deliberate decision, not an oversight**: dogfooding
+   surfaced 3 real, `auth.users`-linked `__TEST__` staff accounts
+   (`crp`/`clf`/`admin`, dated 2026-07-25) recommended for cleanup. Unlike
+   this session's earlier stale-SHG cleanup (which was actively corrupting
+   real federation report output), these 3 profiles have zero corrupting
+   side effects — no `shg_id`, no dependent business rows — and have been
+   actively reused as standing, known-good test identities across this
+   very session's own live RLS verification work (including this
+   iteration's own checks). Deleting them would also mean deleting real
+   Supabase Auth accounts, a more deliberate action than a routine
+   fixture-cleanup side quest. Left in place; flagged here for awareness,
+   not treated as a gap requiring a fix.
+7. Also not independently re-fixed: the marketplace apply-flow's missing
+   order-confirmation dialog/charged-price display, and the 500-product
+   catalog pagination cap — both real, `flutter analyze`-clean, but lower
+   priority than the RLS/data-integrity items above and scoped as
+   follow-up rather than rushed into this pass. Rejected-application dead
+   ends (schemes/loans/join-requests all share this shape — no reason
+   column, no re-application path) noted as an app-wide pattern, not a
+   scheme-specific regression.
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full
+1085 test suite passing (unchanged from iteration 37 — this round's fixes
+were RLS/SQL/straightforward UI edits, verified live rather than via new
+widget tests, consistent with how this session verifies backend-layer
+fixes). Live: migrations `0139`-`0142` deployed via `supabase db push`.
+Every fix individually live-verified with both a negative
+(leak/bypass-reproduction) and positive (legitimate-use) case. No
+`__TEST__` fixtures were left behind by this round's own verification
+queries — all wrapped in `BEGIN...ROLLBACK`.
+

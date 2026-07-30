@@ -3562,6 +3562,12 @@ abstract class AppLocalizations {
   /// **'Could not submit this application. Please try again.'**
   String get schemeDetailApplyError;
 
+  /// No description provided for @schemeDetailAlreadyAppliedError.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve already applied for this scheme — check its status below instead of submitting again.'**
+  String get schemeDetailAlreadyAppliedError;
+
   /// No description provided for @schemeDetailTitle.
   ///
   /// In en, this message translates to:
