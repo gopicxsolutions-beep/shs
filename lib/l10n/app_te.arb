@@ -759,6 +759,8 @@
 
   "meetingAttendanceUpdateError": "హాజరును నవీకరించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
 
+  "meetingAttendanceFutureMeetingNotice": "ఈ సమావేశం ఇంకా జరగలేదు — హాజరును {date} నాడు లేదా తర్వాత నమోదు చేయవచ్చు.",
+
   "meetingMomTitle": "సమావేశ నివేదిక",
 
   "meetingMomNotFound": "ఈ సమావేశం కనుగొనబడలేదు",

@@ -759,6 +759,8 @@
 
   "meetingAttendanceUpdateError": "उपस्थिति अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।",
 
+  "meetingAttendanceFutureMeetingNotice": "यह बैठक अभी नहीं हुई है — उपस्थिति {date} को या उसके बाद दर्ज की जा सकती है।",
+
   "meetingMomTitle": "बैठक का ब्यौरा",
 
   "meetingMomNotFound": "यह बैठक नहीं मिली",

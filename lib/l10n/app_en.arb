@@ -1058,6 +1058,13 @@
 
   "meetingAttendanceUpdateError": "Could not update attendance. Please try again.",
 
+  "meetingAttendanceFutureMeetingNotice": "This meeting hasn't happened yet — attendance can be marked on or after {date}.",
+  "@meetingAttendanceFutureMeetingNotice": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+
   "meetingMomTitle": "Minutes of Meeting",
 
   "meetingMomNotFound": "This meeting could not be found",

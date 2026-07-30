@@ -97,6 +97,29 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
           // of today's meeting, forever, once the SHG has more than one
           // meeting on record.
           final upcomingMeetings = selectableMeetings.where((m) => m.status == 'upcoming' && !m.hasPassed).toList()..sort((a, b) => a.date.compareTo(b.date));
+          // Attendance can only ever be written (RLS: `meeting_date <=
+          // current_date`, see `meeting_attendance_insert_self_or_leader`/
+          // `meeting_attendance_update_self_or_leader`) for a meeting that
+          // has already happened or is happening today — never a genuinely
+          // future one. `upcomingMeetings` above is deliberately
+          // future-inclusive (see `Meeting.hasPassed`'s own doc comment), so
+          // defaulting to its nearest match — as this page used to, always —
+          // could silently default onto a meeting attendance can't legally
+          // be marked for yet, e.g. a brand-new SHG whose only scheduled
+          // meeting is weeks out: every switch toggle then fails against
+          // RLS with a generic error, reading exactly like "attendance isn't
+          // updating" (live-reproduced against a real SHG, gap-hunt
+          // iteration 36). Prefer the most recently occurred (or today's)
+          // meeting instead — the one an admin/leader actually opens this
+          // page to act on. Live mode only: demo mode has no RLS boundary
+          // (`markAttendance` always "succeeds" locally regardless of
+          // date) and its curated mock meetings are illustrative, not a
+          // real, growing history — the existing "default to the nearest
+          // still-upcoming demo meeting" behavior is intentional there and
+          // must stay exactly as it was.
+          final markableMeetings = SupabaseService.isConfigured
+              ? (selectableMeetings.where((m) => m.hasPassed || m.isScheduledToday).toList()..sort((a, b) => b.date.compareTo(a.date)))
+              : const <Meeting>[];
           // If the previously-selected meeting is no longer selectable (e.g.
           // it was the one just cancelled), fall back to the default below
           // instead of leaving `_selected` pointing at a meeting that is no
@@ -105,8 +128,16 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
           if (_selected != null && !selectableMeetings.any((m) => m.id == _selected!.id)) {
             _selected = null;
           }
-          _selected ??= upcomingMeetings.isNotEmpty ? upcomingMeetings.first : selectableMeetings.first;
+          _selected ??= markableMeetings.isNotEmpty ? markableMeetings.first : (upcomingMeetings.isNotEmpty ? upcomingMeetings.first : selectableMeetings.first);
           final meeting = _selected!;
+          // Still reachable when the SHG's only meeting(s) on record are
+          // all genuinely in the future (no `markableMeetings` at all) — the
+          // dropdown still lets the picker land here, so the roster below
+          // must not silently accept futile writes; it explains why instead.
+          // Demo mode has no RLS boundary to actually enforce this against
+          // (see `markableMeetings`'s doc comment above), so it stays
+          // unrestricted there — matches every existing demo-mode test.
+          final canMarkAttendance = !SupabaseService.isConfigured || meeting.hasPassed || meeting.isScheduledToday;
 
           return Column(
             children: [
@@ -179,6 +210,23 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                     final presentCount = roster.where((r) => r.present).length;
                     return Column(
                       children: [
+                        // The picker can still land on a future meeting (see
+                        // `canMarkAttendance` above) — surface why the
+                        // switches below are disabled instead of letting the
+                        // admin/leader toggle them and hit a generic RLS
+                        // error with no explanation.
+                        if (!canMarkAttendance)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                            child: AppCard(
+                              color: Accent.amber50,
+                              borderColor: Accent.amber100,
+                              child: Text(
+                                l10n.meetingAttendanceFutureMeetingNotice(DateFormat('dd MMM yyyy').format(meeting.date)),
+                                style: AppTheme.sans(12, weight: FontWeight.w600, color: Accent.amber800),
+                              ),
+                            ),
+                          ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Align(
@@ -216,7 +264,7 @@ class _MeetingAttendancePageState extends State<MeetingAttendancePage> {
                                             Switch(
                                               value: row.present,
                                               activeThumbColor: Brand.c600,
-                                              onChanged: _updating.contains(row.memberId)
+                                              onChanged: (_updating.contains(row.memberId) || !canMarkAttendance)
                                                   ? null
                                                   : (v) async {
                                                       setState(() => _updating.add(row.memberId));

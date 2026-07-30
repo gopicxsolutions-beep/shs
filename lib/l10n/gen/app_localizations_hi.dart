@@ -1557,6 +1557,11 @@ class AppLocalizationsHi extends AppLocalizations {
       'उपस्थिति अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।';
 
   @override
+  String meetingAttendanceFutureMeetingNotice(String date) {
+    return 'यह बैठक अभी नहीं हुई है — उपस्थिति $date को या उसके बाद दर्ज की जा सकती है।';
+  }
+
+  @override
   String get meetingMomTitle => 'बैठक का ब्यौरा';
 
   @override

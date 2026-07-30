@@ -1581,6 +1581,11 @@ class AppLocalizationsTe extends AppLocalizations {
       'హాజరును నవీకరించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
+  String meetingAttendanceFutureMeetingNotice(String date) {
+    return 'ఈ సమావేశం ఇంకా జరగలేదు — హాజరును $date నాడు లేదా తర్వాత నమోదు చేయవచ్చు.';
+  }
+
+  @override
   String get meetingMomTitle => 'సమావేశ నివేదిక';
 
   @override

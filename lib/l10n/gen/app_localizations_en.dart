@@ -1574,6 +1574,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not update attendance. Please try again.';
 
   @override
+  String meetingAttendanceFutureMeetingNotice(String date) {
+    return 'This meeting hasn\'t happened yet — attendance can be marked on or after $date.';
+  }
+
+  @override
   String get meetingMomTitle => 'Minutes of Meeting';
 
   @override

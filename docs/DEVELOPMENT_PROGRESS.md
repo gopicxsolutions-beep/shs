@@ -20029,3 +20029,50 @@ end-to-end through a real UI click, not just unit-tested; the happy path
 All `__TEST__`-prefixed fixtures deleted afterward and re-queried to
 confirm zero residual rows.
 
+## 2026-07-30 — Bug fix: attendance silently not updating for a new SHG's meeting
+
+User-reported: "admin try to attendance its not updated for new shg group."
+Root-caused against the real SHG "new shg group"
+(`bf49eb8e-0d57-4ff8-bad1-61683be28798`): `meeting_attendance_page.dart`
+always defaulted its picker to the nearest still-`upcoming`,
+not-yet-passed meeting — but `meeting_attendance_insert_self_or_leader`/
+`meeting_attendance_update_self_or_leader` (RLS) require
+`meeting_date <= current_date` for any write. This SHG's only `'upcoming'`
+meeting on record was scheduled 2026-08-15 (today: 2026-07-30), so every
+switch toggle the admin made silently failed against RLS with a generic
+"could not update attendance" snackbar — exactly reading like attendance
+"isn't updating." `Meeting.hasPassed`'s own doc comment already documented
+that a naive `!hasPassed` filter is future-inclusive ("would happily
+resolve to an SHG's next scheduled meeting even if it's a month out"), but
+nothing had connected that to the attendance page's default-selection
+logic specifically.
+
+Fix (`lib/pages/meetings/meeting_attendance_page.dart`, live mode only —
+demo mode has no RLS boundary to violate and its curated mock meetings are
+intentionally illustrative, not real growing history, so its existing
+"default to nearest upcoming" behavior is untouched):
+1. Default selection now prefers the most recently occurred (or today's)
+   meeting over a genuinely future one, since that's the only kind
+   attendance can actually be written for.
+2. If the SHG's only meeting(s) on record are all still in the future (a
+   brand-new SHG's very first scheduled meeting), the picker can still
+   land there — added an explicit amber notice
+   (`meetingAttendanceFutureMeetingNotice`, new key in all 3 `.arb` files)
+   and disabled every attendance `Switch` in that state, instead of
+   letting the admin/leader toggle it and hit an unexplained generic
+   error.
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full 1079
+test suite passing, including 2 new regression tests
+(`test/pages/meeting_attendance_page_test.dart`) covering both the
+past-vs-future default-selection preference and the disabled-switch/notice
+state for a future-only SHG; the pre-existing demo-mode tests were left
+unmodified and still pass unchanged, confirming the fix is correctly
+scoped to live mode only. Live: reproduced the exact reported failure via
+a rolled-back transaction impersonating a real admin
+(`99999999-9999-9999-9999-999999999108`) — inserting `meeting_attendance`
+for the SHG's future 2026-08-15 meeting raised `42501` (RLS rejection),
+while the identical insert for its past 2026-07-15 meeting succeeded (1
+row, rolled back). No test fixtures were created; both queries only read/
+wrote pre-existing rows inside `BEGIN...ROLLBACK`.
+

@@ -51,6 +51,33 @@ class _FakePlatformWideMeetingRepository extends MeetingRepository {
   Future<List<Meeting>> fetchForShg(String? shgId) async => const [];
 }
 
+/// A single SHG with both an already-occurred meeting and a genuinely
+/// future one — regression coverage for gap-hunt iteration 36's live-mode
+/// default-meeting-selection fix (a brand-new SHG whose only meeting was
+/// still weeks out used to default the picker there, where RLS silently
+/// rejects every attendance write since `meeting_date <= current_date` is
+/// required — reproduced live against a real SHG).
+class _FakeMixedPastFutureMeetingRepository extends MeetingRepository {
+  @override
+  Future<List<Meeting>> fetchForShg(String? shgId) async => [
+        Meeting(id: 'past-1', shgId: 'shg-1', date: DateTime.now().subtract(const Duration(days: 10)), venue: 'Community Hall', agenda: 'Last month review', status: 'upcoming'),
+        Meeting(id: 'future-1', shgId: 'shg-1', date: DateTime.now().add(const Duration(days: 14)), venue: 'Community Hall', agenda: 'Next review', status: 'upcoming'),
+      ];
+  @override
+  Future<List<AttendanceRow>> fetchAttendance(String meetingId, String? shgId) async => [AttendanceRow(memberId: 'mem-a', memberName: 'Padma', present: false)];
+}
+
+/// A brand-new SHG whose ONLY meeting on record is still weeks out — the
+/// exact shape of the live bug report this fix addresses.
+class _FakeFutureOnlyMeetingRepository extends MeetingRepository {
+  @override
+  Future<List<Meeting>> fetchForShg(String? shgId) async => [
+        Meeting(id: 'future-only-1', shgId: 'shg-1', date: DateTime.now().add(const Duration(days: 16)), venue: 'Community Hall', agenda: 'First meeting', status: 'upcoming'),
+      ];
+  @override
+  Future<List<AttendanceRow>> fetchAttendance(String meetingId, String? shgId) async => [AttendanceRow(memberId: 'mem-a', memberName: 'Padma', present: false)];
+}
+
 /// Regression coverage for the second finding an adversarial review flagged
 /// in the "Cancel Meeting" / attendance-marking interaction:
 /// `MeetingAttendancePage`'s dropdown was built from the FULL, unfiltered
@@ -222,6 +249,70 @@ void main() {
 
       expect(find.text("Your role isn't linked to a specific SHG — this view doesn't apply"), findsNothing);
       expect(find.textContaining('SHG:'), findsNothing, reason: 'a leader only ever sees her own SHG, so the tag would be redundant noise');
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  // Gap-hunt iteration 36: live mode must default to (and only allow marking
+  // attendance for) a meeting attendance can actually be written for —
+  // never a genuinely future one, since `meeting_attendance_insert_self_or_
+  // leader`/`meeting_attendance_update_self_or_leader` (RLS) require
+  // `meeting_date <= current_date`. Reproduced live against a real SHG whose
+  // only scheduled meeting was still weeks out: every attendance toggle
+  // silently failed with a generic error.
+  group('live-mode default selection avoids unmarkable future meetings (iteration 36)', () {
+    setUp(() {
+      SupabaseService.isConfigured = true;
+    });
+    tearDown(() {
+      SupabaseService.isConfigured = false;
+    });
+
+    Future<void> pumpWithRepo(WidgetTester tester, AppState appState, MeetingRepository repository) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppState>.value(
+          value: appState,
+          child: MaterialApp(
+            home: MeetingAttendancePage(repository: repository),
+            localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('defaults to the already-occurred meeting, not the further-out future one', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      const profile = Profile(id: 'leader-1', name: 'QA Leader', role: 'leader', shgId: 'shg-1');
+      final appState = AppState(profileRepository: _FixedProfileRepository(profile), authService: _FakeAuthServiceWithSession());
+      await appState.init();
+
+      final pastDate = DateTime.now().subtract(const Duration(days: 10));
+      final futureDate = DateTime.now().add(const Duration(days: 14));
+      await pumpWithRepo(tester, appState, _FakeMixedPastFutureMeetingRepository());
+
+      expect(find.text(DateFormat('dd MMM yyyy').format(pastDate)), findsOneWidget, reason: 'the already-occurred meeting is the one an admin/leader actually opens this page to act on');
+      expect(find.text(DateFormat('dd MMM yyyy').format(futureDate)), findsNothing);
+      // The switch on the (markable, past) selected meeting must remain
+      // interactive — this fix must not disable attendance-marking for
+      // meetings it IS legal to mark.
+      final switchWidget = tester.widget<Switch>(find.byType(Switch).first);
+      expect(switchWidget.onChanged, isNotNull);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a brand-new SHG with only a future meeting shows a notice and disables the switch instead of allowing a futile write', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      const profile = Profile(id: 'leader-2', name: 'QA Leader New', role: 'leader', shgId: 'shg-1');
+      final appState = AppState(profileRepository: _FixedProfileRepository(profile), authService: _FakeAuthServiceWithSession());
+      await appState.init();
+
+      await pumpWithRepo(tester, appState, _FakeFutureOnlyMeetingRepository());
+
+      final switchWidget = tester.widget<Switch>(find.byType(Switch).first);
+      expect(switchWidget.onChanged, isNull, reason: 'toggling would always fail against RLS (meeting_date > current_date) — must be disabled, not left to fail silently');
+      expect(find.textContaining("hasn't happened yet"), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

@@ -2770,6 +2770,12 @@ abstract class AppLocalizations {
   /// **'Could not update attendance. Please try again.'**
   String get meetingAttendanceUpdateError;
 
+  /// No description provided for @meetingAttendanceFutureMeetingNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This meeting hasn\'t happened yet — attendance can be marked on or after {date}.'**
+  String meetingAttendanceFutureMeetingNotice(String date);
+
   /// No description provided for @meetingMomTitle.
   ///
   /// In en, this message translates to:
