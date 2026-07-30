@@ -3712,6 +3712,11 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String adminMonitoringChecksCount24h(int count) {
+    return 'पिछले 24 घंटों में $count जांचों के आधार पर';
+  }
+
+  @override
   String get aiHubTitle => 'AI सलाहकार';
 
   @override

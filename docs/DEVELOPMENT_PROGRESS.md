@@ -20076,3 +20076,112 @@ while the identical insert for its past 2026-07-15 meeting succeeded (1
 row, rolled back). No test fixtures were created; both queries only read/
 wrote pre-existing rows inside `BEGIN...ROLLBACK`.
 
+## 2026-07-30 — Gap-hunt iteration 36
+
+Four fresh audits: dogfooding iteration 35's own fixes + the new join-
+requests dashboard feature, Training/Certificates/Quiz, Admin Infra Health
+Checks/platform monitoring, and Payments/Marketplace order lifecycle.
+
+1. **[CRITICAL] Dogfooding found migration 0135's `meetings_delete_staff`
+   guard itself has a bypass.** 0135 required `original_meeting_date >=
+   current_date` (the immutable INSERT-time anchor) before allowing a
+   staff DELETE, reasoning that meant "never actually held yet, nothing to
+   protect." But `original_meeting_date` only guards the CANCEL-laundering
+   path (0134) — it says nothing about the meeting's current, mutable
+   `meeting_date`, which `meetings_update_leader_or_staff`'s staff branch
+   already lets staff backdate up to 7 days with `status = 'completed'` in
+   the same statement (only cancelling is date-guarded). Live-verified:
+   created a meeting 60 days out, backdated it to -3 days with
+   `status='completed'`, inserted 2 real attendance rows, then DELETEd it
+   successfully — `original_meeting_date` never moved, so 0135's guard
+   never fired. Fixed (migration `0136`) by also requiring the CURRENT
+   `meeting_date >= current_date` for DELETE — closes the exploit (a
+   backdated meeting_date now fails this check) while a genuinely
+   never-happened future meeting (the case 0135 was written for) still
+   deletes cleanly. Live-verified both cases.
+2. **[HIGH] A 10th AI-advisor moderation bypass class**: Unicode "small
+   caps" stylized letterforms (Phonetic Extensions/IPA Extensions/Latin
+   Extended-D blocks — the common social-bio font-generator style, e.g.
+   "ꜱᴜɪᴄɪᴅᴇ" reading "suicide") have no NFKD compatibility decomposition,
+   so `normalizeForModeration`'s existing pipeline never touched them.
+   Live-verified all three pattern categories bypassed via this route
+   before the fix. Fixed by adding direct confusable mappings for the
+   common small-caps letterforms to `CONFUSABLES`
+   (`supabase/functions/ai-advisor-proxy/moderation.ts`); `deno test` —
+   62/62 passing (up from 42), including a new test for this class.
+3. **[HIGH] A course's last quiz question could be deleted with no guard**,
+   silently making an already-listed, already-certifying course
+   permanently uncompletable. Live-confirmed a real course
+   (`b3000000-...-0002`) already in this state (0 questions, 2 members
+   already certified) — anyone else attempting it now gets "no quiz
+   questions for this course" forever. Fixed with a `BEFORE DELETE`
+   trigger (`quiz_questions_block_last_delete`, migration `0136`) blocking
+   deletion of a course's last question while the course itself still
+   exists in the catalog — a genuine `DELETE FROM training_courses`
+   cascade is unaffected, since the parent row is already gone by the time
+   the cascade reaches its children. Live-verified: direct last-question
+   delete blocked with the expected error; course-level cascade delete
+   still removes all its questions cleanly.
+4. **[MEDIUM] `submit_quiz_attempt`'s `completed_on` was never actually
+   locked after first certification** — a member simply retaking and
+   re-passing an already-passed quiz silently overwrote her own
+   certification date to today, corrupting her certificate and any
+   federation-level "when completed" reporting, for the cost of 1 of her 5
+   daily attempts. Live-confirmed on a real member/course
+   (`completed_on` jumped from 2026-06-20 to today on a re-pass). Fixed
+   (same migration) to only stamp `completed_on` the first time a member
+   is certified; a re-pass keeps the original date. Live-verified both the
+   re-pass (date unchanged) and a genuine first-time certification (date =
+   today) cases.
+5. **[HIGH] `AdminMonitoringPage` was unreachable by crp/clf** despite both
+   RLS (`infra_health_checks_select_staff`) and `system-health-check`'s own
+   `authorizeCaller()` already granting them read access — the page lived
+   at `/app/admin/monitoring`, nested under the blanket admin-only
+   `/app/admin` router prefix, silently overriding the staff-wide grant at
+   the router layer (the same shape of bug already found and fixed once
+   for `trainingCompletionPct`/`adminTrainingCourses`). Fixed by moving it
+   to its own `/app/monitoring` route with a narrower `_federationStaff`
+   `_roleRestrictedPrefixes` entry, mirroring `adminTrainingCourses`'s
+   existing fix. New `test/routes/admin_monitoring_role_gate_test.dart`
+   (5 cases: member/leader redirected, crp/clf/admin all reach it).
+6. Also surfaced `SystemHealth.totalChecks24h` in the monitoring page —
+   fetched but never rendered, the one figure that would reveal a dead
+   cron schedule (expected ~12/hr) instead of a falsely-reassuring 100%
+   uptime reading from zero data points.
+7. **[MEDIUM] Marketplace's `NOT VALID` category/length CHECK constraints
+   (migration 0131) don't actually grandfather pre-existing out-of-range
+   rows** — Postgres re-validates every CHECK constraint on a row on ANY
+   UPDATE to it, regardless of column touched. Live-confirmed: a
+   pre-0131 `__TEST__` fixture product (category `'Textiles'`, not in the
+   5-value allowlist) threw `23514` from inside the stock-decrement UPDATE
+   even though that statement never touched `category`, making the
+   product permanently unorderable/uneditable. Fixed (migration `0137`):
+   corrected that one row's category to `'Handicrafts'` and `VALIDATE`d
+   all 4 of 0131's `NOT VALID` constraints, so the schema honestly
+   reflects "every row currently conforms" going forward. Live-verified:
+   an unrelated-column update on the same row now succeeds.
+8. **Documented, not fixed this round (too large for this pass)**: SMS/OTP
+   delivery has zero durable failure tracking anywhere in the schema —
+   `send-sms-hook` only `console.error`s a Fast2SMS failure, and
+   `infra_health_checks` has no knowledge of OTP delivery at all. An admin
+   could see 100% "infra health" while every new signup silently fails at
+   the OTP step. Needs a real `sms_log`/`otp_log` table plus edge-function
+   changes — scoped as a follow-up, not attempted here to avoid a rushed,
+   partial implementation of a real audit trail.
+9. Re-verified, still holding: rate limits on `place_marketplace_order()`
+   (20/hr) and `payments` inserts (30/hr) at their exact boundaries;
+   marketplace order status-transition guard (both RPC and RLS layers);
+   payments staff self-dealing exclusion; join-requests dashboard feature
+   RLS (5 boundary cases, all correct — no gap found).
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full 1084
+test suite passing (up from 1079: +5 new tests, this round's router-gate
+and quiz fixes). `deno test` — 62/62 passing. Live: migrations `0136` and
+`0137` deployed via `supabase db push` and every fix individually
+live-verified in rolled-back transactions with both a negative (attack/
+bug-reproduction) and positive (legitimate-use) case, per this project's
+established discipline. No `__TEST__` fixtures were left behind — every
+mutating query ran inside `BEGIN...ROLLBACK`, except the marketplace data
+correction (an intentional, permanent fix to a pre-existing stale row) and
+the two schema migrations themselves.
+

@@ -213,6 +213,20 @@ const CONFUSABLES: Record<string, string> = {
   α: 'a', ο: 'o', ν: 'v', κ: 'k', ρ: 'p', υ: 'u', τ: 't', ι: 'i', β: 'b', η: 'n',
   А: 'a', Е: 'e', О: 'o', Р: 'p', С: 'c', Х: 'x', У: 'y', І: 'i', Ѕ: 's', К: 'k',
   М: 'm', Н: 'h', Т: 't', В: 'v', Ё: 'e', Ј: 'j', Ѡ: 'w',
+  // 10th bypass class (gap-hunt iteration 36, found by dogfooding): Unicode
+  // "small caps" stylized letterforms (the ubiquitous social-bio
+  // font-generator style, e.g. "ꜱᴜɪᴄɪᴅᴇ" reading "suicide"). These live in
+  // the Phonetic Extensions (U+1D00-U+1D7F), IPA Extensions (U+0250-U+02AF),
+  // and Latin Extended-D (U+A730-U+A7FF) blocks — none of them have an NFKD
+  // compatibility decomposition (unlike fullwidth/math-alphanumeric forms
+  // the 7th pass already catches), so `normalizeForModeration`'s
+  // `normalize('NFKD')` step does nothing for them; they needed direct
+  // confusable mappings like every other homoglyph in this table.
+  // Live-verified: "ꜱᴜɪᴄɪᴅᴇ", "ᴊᴀɪʟʙʀᴇᴀᴋ", and "ꜱᴜʙʜᴜᴍᴀɴ" all passed
+  // `blocked: false` before this fix.
+  ᴀ: 'a', ᴊ: 'j', ᴋ: 'k', ᴍ: 'm', ᴏ: 'o', ᴘ: 'p', ᴛ: 't', ᴜ: 'u', ᴠ: 'v', ᴡ: 'w', ᴢ: 'z', ᴄ: 'c', ᴅ: 'd', ᴇ: 'e',
+  ɢ: 'g', ʜ: 'h', ɪ: 'i', ʟ: 'l', ɴ: 'n', ʀ: 'r', ʁ: 'r', ʏ: 'y', ʙ: 'b',
+  ꜰ: 'f', ꜱ: 's',
   Α: 'a', Ο: 'o', Ν: 'n', Κ: 'k', Ρ: 'p', Υ: 'y', Τ: 't', Ι: 'i', Β: 'b', Η: 'h',
 };
 

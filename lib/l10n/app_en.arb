@@ -2553,6 +2553,13 @@
     }
   },
 
+  "adminMonitoringChecksCount24h": "Based on {count} checks in the last 24h",
+  "@adminMonitoringChecksCount24h": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
   "aiHubTitle": "AI Advisors",
 
   "aiHubAskAdvisor": "Ask an advisor",

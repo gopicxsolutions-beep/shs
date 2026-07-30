@@ -160,6 +160,13 @@ class _AdminMonitoringPageState extends State<AdminMonitoringPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(l10n.adminMonitoringCheckedAt(DateFormat('dd MMM yyyy, hh:mm a').format(h.checkedAt)), style: AppTheme.sans(11, color: Neutral.c400)),
+                    // `totalChecks24h` was already fetched into `SystemHealth`
+                    // but never rendered anywhere — the one figure that would
+                    // reveal a dead cron schedule (expected ~12/hr; a much
+                    // lower count means the check itself has stopped running,
+                    // not that everything is healthy) was silently discarded
+                    // (gap-hunt iteration 36).
+                    if (h.totalChecks24h != null) Text(l10n.adminMonitoringChecksCount24h(h.totalChecks24h!), style: AppTheme.sans(11, color: Neutral.c400)),
                   ],
                 ),
               ),

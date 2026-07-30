@@ -3782,6 +3782,11 @@ class AppLocalizationsTe extends AppLocalizations {
   }
 
   @override
+  String adminMonitoringChecksCount24h(int count) {
+    return 'గత 24 గంటల్లో $count తనిఖీల ఆధారంగా';
+  }
+
+  @override
   String get aiHubTitle => 'AI సలహాదారులు';
 
   @override

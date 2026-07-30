@@ -135,6 +135,11 @@ const _roleRestrictedPrefixes = <(String, Set<Role>)>[
   // `Paths.adminTrainingCourses`'s own doc comment) precisely so this
   // narrower rule — not the blanket admin-only one above — is what applies.
   ('/app/training/manage', _federationStaff),
+  // Same reasoning, same fix shape as `/app/training/manage` just above:
+  // `AdminMonitoringPage` moved out from under `/app/admin` specifically so
+  // this narrower staff-only rule — not the blanket admin-only one above —
+  // is what applies (see `Paths.adminMonitoring`'s own doc comment).
+  (Paths.adminMonitoring, _federationStaff),
 ];
 
 /// Split out of `buildRouter`'s `redirect:` parameter so the wrapper below

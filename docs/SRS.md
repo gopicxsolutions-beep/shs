@@ -1236,12 +1236,19 @@ any-staff).
 
 System Monitoring shows **real row counts** from `profiles`/`shgs`/
 `savings_entries`/`loans` (not synthetic numbers), plus real infrastructure
-metrics — uptime, average/p95 latency, and error rate over a rolling 24h
-window — from the `system-health-check` Edge Function (see
+metrics — uptime, average/p95 latency, error rate, and a rolling 24h check
+count (so a dead cron schedule is itself visible, not just masked as
+100% uptime) — from the `system-health-check` Edge Function (see
 `docs/ARCHITECTURE.md`'s Edge Functions section). That function runs a
 genuine synthetic database round-trip check, both on a pg_cron schedule
-(every 5 minutes) and on-demand every time an admin opens this page, and
-logs each result to `public.infra_health_checks`. The UI's own "About
+(every 5 minutes) and on-demand every time a viewer opens this page, and
+logs each result to `public.infra_health_checks`. Reachable by any
+federation staff role (crp/clf/admin) — both the RLS policy and the edge
+function's own `authorizeCaller()` were already staff-wide; the router
+briefly (through gap-hunt iteration 36) blocked crp/clf regardless, since
+the page lived under the admin-only `/app/admin` prefix — it now sits at
+its own `/app/monitoring` route with a staff-wide restriction, matching
+the access every other layer already granted. The UI's own "About
 these metrics" note honestly scopes this as OUR OWN backend round-trip,
 not a full third-party APM's view of every layer of the stack (CDN, DNS,
 client rendering, etc.) — that broader claim would need a real APM vendor

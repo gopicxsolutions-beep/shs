@@ -127,7 +127,15 @@ class Paths {
 
   static const adminUsers = '/app/admin/users';
   static const adminSchemes = '/app/admin/schemes';
-  static const adminMonitoring = '/app/admin/monitoring';
+  // Deliberately NOT under `/app/admin/...`, for the same reason as
+  // `adminTrainingCourses` below: RLS (`infra_health_checks_select_staff`)
+  // and the `system-health-check` edge function's own `authorizeCaller()`
+  // both already grant crp/clf (not just admin) read access to this data —
+  // `/app/admin`'s blanket admin-only restriction was silently overriding
+  // that grant at the router layer, leaving crp/clf with no monitoring
+  // surface at all despite being explicitly provisioned for one
+  // (gap-hunt iteration 36).
+  static const adminMonitoring = '/app/monitoring';
   static const adminAuditLog = '/app/admin/audit-log';
   static const adminShgs = '/app/admin/shgs';
   // Deliberately NOT under `/app/admin/...`: RLS already permits crp/clf

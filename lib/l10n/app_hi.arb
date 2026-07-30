@@ -2011,6 +2011,8 @@
 
   "adminMonitoringCheckedAt": "{date} को जांचा गया",
 
+  "adminMonitoringChecksCount24h": "पिछले 24 घंटों में {count} जांचों के आधार पर",
+
   "aiHubTitle": "AI सलाहकार",
 
   "aiHubAskAdvisor": "किसी सलाहकार से पूछें",

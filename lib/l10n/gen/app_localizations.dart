@@ -6592,6 +6592,12 @@ abstract class AppLocalizations {
   /// **'Checked {date}'**
   String adminMonitoringCheckedAt(String date);
 
+  /// No description provided for @adminMonitoringChecksCount24h.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on {count} checks in the last 24h'**
+  String adminMonitoringChecksCount24h(int count);
+
   /// No description provided for @aiHubTitle.
   ///
   /// In en, this message translates to:

@@ -3778,6 +3778,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String adminMonitoringChecksCount24h(int count) {
+    return 'Based on $count checks in the last 24h';
+  }
+
+  @override
   String get aiHubTitle => 'AI Advisors';
 
   @override
