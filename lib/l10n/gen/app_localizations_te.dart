@@ -631,6 +631,18 @@ class AppLocalizationsTe extends AppLocalizations {
   String get adminDashboardReviewAction => 'సమీక్షించండి';
 
   @override
+  String dashboardPendingJoinRequestsCount(int count) {
+    return '$count చేరిక అభ్యర్థనలు పెండింగ్‌లో ఉన్నాయి';
+  }
+
+  @override
+  String get dashboardPendingJoinRequestsSubtitle =>
+      'కొత్త సభ్యులు ఒక SHGలో చేరడానికి వేచి ఉన్నారు';
+
+  @override
+  String get dashboardPendingJoinRequestsAction => 'సమీక్షించండి';
+
+  @override
   String get adminDashboardPlatformSnapshotTitle => 'ప్లాట్‌ఫారమ్ స్నాప్‌షాట్';
 
   @override
@@ -832,6 +844,13 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get leaderDashboardNoPendingLoans => 'పెండింగ్‌లో రుణ అభ్యర్థనలు లేవు';
+
+  @override
+  String get leaderDashboardJoinRequestsTitle => 'పెండింగ్ చేరిక అభ్యర్థనలు';
+
+  @override
+  String get leaderDashboardNoPendingJoinRequests =>
+      'పెండింగ్‌లో చేరిక అభ్యర్థనలు లేవు';
 
   @override
   String get leaderDashboardNextMeetingTitle => 'తదుపరి సమావేశం';
@@ -2833,6 +2852,9 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get shgJoinRequestsTitle => 'చేరిక అభ్యర్థనలు';
+
+  @override
+  String get shgJoinRequestsAllTitle => 'అన్ని పెండింగ్ చేరిక అభ్యర్థనలు';
 
   @override
   String get shgJoinRequestsEmpty =>

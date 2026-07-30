@@ -7,9 +7,11 @@ import '../../models/loan.dart';
 import '../../models/meeting.dart';
 import '../../models/report.dart';
 import '../../models/shg.dart';
+import '../../models/shg_join_request.dart';
 import '../../repositories/loan_repository.dart';
 import '../../repositories/meeting_repository.dart';
 import '../../repositories/report_repository.dart';
+import '../../repositories/shg_join_request_repository.dart';
 import '../../repositories/shg_repository.dart';
 import '../../routes/paths.dart';
 import '../../services/supabase_service.dart';
@@ -30,7 +32,15 @@ class _LeaderDashboardData {
   final List<Loan> pendingLoans;
   final List<Loan> overdueLoans;
   final Meeting? upcomingMeeting;
-  const _LeaderDashboardData({required this.report, required this.shg, required this.pendingLoans, required this.overdueLoans, required this.upcomingMeeting});
+  final List<ShgJoinRequest> pendingJoinRequests;
+  const _LeaderDashboardData({
+    required this.report,
+    required this.shg,
+    required this.pendingLoans,
+    required this.overdueLoans,
+    required this.upcomingMeeting,
+    required this.pendingJoinRequests,
+  });
 }
 
 class LeaderDashboard extends StatelessWidget {
@@ -45,6 +55,11 @@ class LeaderDashboard extends StatelessWidget {
       ShgRepository().fetchShg(shgId),
       LoanRepository().fetchForShg(shgId),
       MeetingRepository().fetchForShg(shgId),
+      // New members waiting to join must be easy to spot and act on from
+      // the dashboard itself, not just discoverable by happening to open
+      // Members and notice the person-add icon — see this section's own
+      // render code below for the "Pending Join Requests" card this backs.
+      ShgJoinRequestRepository().fetchPendingForShg(shgId),
     ]);
     final loans = results[2] as List<Loan>;
     final meetings = results[3] as List<Meeting>;
@@ -72,6 +87,7 @@ class LeaderDashboard extends StatelessWidget {
       pendingLoans: loans.where((l) => l.status == 'pending' && l.memberId != memberId).toList(),
       overdueLoans: loans.where((l) => l.status == 'overdue').toList(),
       upcomingMeeting: upcoming.isEmpty ? null : upcoming.first,
+      pendingJoinRequests: results[4] as List<ShgJoinRequest>,
     );
   }
 
@@ -144,7 +160,14 @@ class _LeaderDashboardBody extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconTile(onTap: () => context.go(Paths.shgMembers), icon: Icons.groups_rounded, label: l10n.leaderDashboardMembersTile, tone: TileTone.brand),
+                IconTile(
+                  onTap: () => context.go(Paths.shgMembers),
+                  icon: Icons.groups_rounded,
+                  label: l10n.leaderDashboardMembersTile,
+                  tone: TileTone.brand,
+                  badge: data.pendingJoinRequests.isNotEmpty ? '${data.pendingJoinRequests.length}' : null,
+                  badgeSemanticLabel: data.pendingJoinRequests.isNotEmpty ? l10n.leaderDashboardJoinRequestsTitle : null,
+                ),
                 IconTile(
                   onTap: () => context.go(Paths.loanApproval),
                   icon: Icons.fact_check_rounded,
@@ -211,6 +234,30 @@ class _LeaderDashboardBody extends StatelessWidget {
                                 Text(l.purpose, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(11, color: Neutral.c400)),
                               ])),
                               AppBadge(text: '₹${NumberFormat('#,##,##0', 'en_IN').format(l.amount)}', tone: BadgeTone.warning),
+                            ]),
+                          )).toList(),
+                    ),
+            ),
+          ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SectionHeader(title: l10n.leaderDashboardJoinRequestsTitle, action: l10n.leaderDashboardReviewAllAction, onAction: () => context.go(Paths.shgJoinRequests)),
+            AppCard(
+              padded: false,
+              child: data.pendingJoinRequests.isEmpty
+                  ? Padding(padding: const EdgeInsets.all(16), child: Text(l10n.leaderDashboardNoPendingJoinRequests, style: AppTheme.sans(12, color: Neutral.c400)))
+                  : Column(
+                      children: data.pendingJoinRequests.map((r) => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Row(children: [
+                              AppAvatar(name: r.memberName ?? l10n.shgJoinRequestsMemberFallback, size: 32),
+                              const SizedBox(width: 12),
+                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(r.memberName ?? l10n.shgJoinRequestsMemberFallback, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700)),
+                                Text(l10n.shgJoinRequestsRequestedOn(DateFormat('dd MMM yyyy').format(r.requestedAt)), maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(11, color: Neutral.c400)),
+                              ])),
                             ]),
                           )).toList(),
                     ),

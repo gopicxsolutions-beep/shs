@@ -624,6 +624,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminDashboardReviewAction => 'Review';
 
   @override
+  String dashboardPendingJoinRequestsCount(int count) {
+    return '$count join requests pending';
+  }
+
+  @override
+  String get dashboardPendingJoinRequestsSubtitle =>
+      'New members waiting to join an SHG';
+
+  @override
+  String get dashboardPendingJoinRequestsAction => 'Review';
+
+  @override
   String get adminDashboardPlatformSnapshotTitle => 'Platform Snapshot';
 
   @override
@@ -823,6 +835,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get leaderDashboardNoPendingLoans => 'No pending loan requests';
+
+  @override
+  String get leaderDashboardJoinRequestsTitle => 'Pending Join Requests';
+
+  @override
+  String get leaderDashboardNoPendingJoinRequests => 'No pending join requests';
 
   @override
   String get leaderDashboardNextMeetingTitle => 'Next Meeting';
@@ -2837,6 +2855,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shgJoinRequestsTitle => 'Join Requests';
+
+  @override
+  String get shgJoinRequestsAllTitle => 'All Pending Join Requests';
 
   @override
   String get shgJoinRequestsEmpty => 'No pending join requests';

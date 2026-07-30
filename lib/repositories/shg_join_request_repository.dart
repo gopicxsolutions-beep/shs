@@ -80,6 +80,38 @@ class ShgJoinRequestRepository {
     return (rows as List).map((r) => ShgJoinRequest.fromMap(r as Map<String, dynamic>)).toList();
   }
 
+  /// Cheap head-only count (no rows fetched) of the leader's own SHG's
+  /// pending requests — backs a dashboard badge without pulling the full
+  /// requester list `fetchPendingForShg` embeds just to show a number.
+  Future<int> fetchPendingCountForShg(String? shgId) async {
+    if (!_live || shgId == null) return 0;
+    return await _client.from('shg_join_requests').count().eq('shg_id', shgId).eq('status', 'pending');
+  }
+
+  /// Federation-wide pending-request count across every SHG — backs the
+  /// crp/clf/admin dashboard shortcut. Staff have no `shg_id` of their own
+  /// to scope [fetchPendingCountForShg] by, so this deliberately omits the
+  /// `shg_id` filter; `shg_join_requests_select_self_leader_or_staff`'s
+  /// `is_staff()` branch already grants that visibility with no additional
+  /// scoping needed here — RLS is what actually enforces who may see what,
+  /// this method is just the cheap-count equivalent for staff.
+  Future<int> fetchPendingCountAcrossAllShgs() async {
+    if (!_live) return 0;
+    return await _client.from('shg_join_requests').count().eq('status', 'pending');
+  }
+
+  /// Every SHG's pending join requests, federation-wide — the staff
+  /// counterpart to [fetchPendingForShg] (which only ever resolves one
+  /// SHG). Embeds the requester's name/mobile like [fetchPendingForShg]
+  /// plus the SHG name itself, since a single federation-wide list needs to
+  /// show which SHG each request is for.
+  Future<List<ShgJoinRequest>> fetchPendingAcrossAllShgs() async {
+    if (!_live) return const [];
+    final rows =
+        await _client.from('shg_join_requests').select('*, profiles!member_id(name, mobile), shgs!shg_id(name)').eq('status', 'pending').order('requested_at');
+    return (rows as List).map((r) => ShgJoinRequest.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
   /// [asLeader] promotes the requester to 'leader' on approval instead of
   /// leaving her 'member' — the RPC (migration 0116) independently enforces
   /// that only staff (crp/clf/admin) may pass `true` here, matching

@@ -113,6 +113,14 @@ class Paths {
       Uri(path: '/app/analytics/shg/$id/members', queryParameters: name == null ? null : {'name': name}).toString();
   static String analyticsShgJoinRequests(String id, {String? name}) =>
       Uri(path: '/app/analytics/shg/$id/join-requests', queryParameters: name == null ? null : {'name': name}).toString();
+  // Federation-wide "every SHG's pending join requests in one list" —
+  // reached from the crp/clf/admin dashboard shortcut, since staff have no
+  // `shg_id` of their own for the per-SHG override route above to resolve
+  // to without first picking a specific SHG. Nested under `/app/analytics`
+  // for the same reason as its siblings above: the existing staff-only
+  // router restriction on that prefix covers this too, no new
+  // `_roleRestrictedPrefixes` entry needed.
+  static const allShgJoinRequests = '/app/analytics/join-requests';
 
   static const profileSettings = '/app/profile/settings';
   static const profileLanguage = '/app/profile/language';

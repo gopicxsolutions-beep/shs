@@ -1194,6 +1194,7 @@ above.
 | FR-SHG-1 | Any user searches/browses SHGs via a safe public directory view (bank fields never exposed through it) | All |
 | FR-SHG-2 | Leader views the member roster and per-member detail | Leader |
 | FR-SHG-3 | Leader (or staff, via the same RPC) approves/rejects join requests; approving may promote the requester to Leader (staff-only) instead of Member; a rejected request cannot be re-decided | Leader, staff |
+| FR-SHG-3a | A new pending join request is surfaced on the reviewer's own home dashboard, not just discoverable by navigating to Members/Analytics first — leader sees a badge on her Members tile plus a "Pending Join Requests" preview section (her own SHG only); crp/clf/admin each see a federation-wide "N join requests pending" banner (hidden entirely at 0) linking to a dedicated cross-SHG list showing every pending request with its SHG name | Leader, CRP, CLF, Admin |
 | FR-SHG-4 | Document repository requires and uploads a real file (PDF/JPEG/PNG/WEBP, 10 MB cap) to Supabase Storage; downloads via a short-lived signed URL | Leader, staff |
 | FR-SHG-5 | Bank account/IFSC are hidden from members in the UI **and** independently RLS-restricted from them at the table level (`shg_bank_details`, migration `0056`) — a direct `/rest/v1` query bypassing the client gets the same masking, not just a hidden UI section | — |
 | FR-SHG-6 | Leader edits her own SHG's Mandal/Bank Name/Account/IFSC via a self-service dialog; Admin edits all six SHG fields (adding VO/CLF/grade, which are leader-locked) via Manage SHGs | Leader, Admin |

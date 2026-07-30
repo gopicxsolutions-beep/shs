@@ -1192,6 +1192,24 @@ abstract class AppLocalizations {
   /// **'Review'**
   String get adminDashboardReviewAction;
 
+  /// No description provided for @dashboardPendingJoinRequestsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} join requests pending'**
+  String dashboardPendingJoinRequestsCount(int count);
+
+  /// No description provided for @dashboardPendingJoinRequestsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New members waiting to join an SHG'**
+  String get dashboardPendingJoinRequestsSubtitle;
+
+  /// No description provided for @dashboardPendingJoinRequestsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get dashboardPendingJoinRequestsAction;
+
   /// No description provided for @adminDashboardPlatformSnapshotTitle.
   ///
   /// In en, this message translates to:
@@ -1521,6 +1539,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No pending loan requests'**
   String get leaderDashboardNoPendingLoans;
+
+  /// No description provided for @leaderDashboardJoinRequestsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Join Requests'**
+  String get leaderDashboardJoinRequestsTitle;
+
+  /// No description provided for @leaderDashboardNoPendingJoinRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending join requests'**
+  String get leaderDashboardNoPendingJoinRequests;
 
   /// No description provided for @leaderDashboardNextMeetingTitle.
   ///
@@ -4971,6 +5001,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Join Requests'**
   String get shgJoinRequestsTitle;
+
+  /// No description provided for @shgJoinRequestsAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All Pending Join Requests'**
+  String get shgJoinRequestsAllTitle;
 
   /// No description provided for @shgJoinRequestsEmpty.
   ///

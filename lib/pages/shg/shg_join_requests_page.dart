@@ -25,11 +25,16 @@ import '../../widgets/async_state.dart';
 class ShgJoinRequestsPage extends StatefulWidget {
   final String? shgId;
   final String? shgName;
+  // Federation-wide view for crp/clf/admin (every SHG's pending requests in
+  // one list, since staff have no `shg_id` of their own for [shgId] to
+  // resolve to) — reached from each staff dashboard's "N pending" shortcut
+  // rather than requiring staff to drill into one SHG at a time first.
+  final bool allShgs;
   // Injectable so the approve-as-member/approve-as-leader role gating can be
   // widget-tested against canned request data instead of a real network call
   // — mirrors LoanApprovalPage's `repository` seam.
   final ShgJoinRequestRepository? repository;
-  const ShgJoinRequestsPage({super.key, this.shgId, this.shgName, this.repository});
+  const ShgJoinRequestsPage({super.key, this.shgId, this.shgName, this.allShgs = false, this.repository});
   @override
   State<ShgJoinRequestsPage> createState() => _ShgJoinRequestsPageState();
 }
@@ -87,10 +92,10 @@ class _ShgJoinRequestsPageState extends State<ShgJoinRequestsPage> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: PageHeader(title: l10n.shgJoinRequestsTitle, subtitle: widget.shgName),
+      appBar: PageHeader(title: widget.allShgs ? l10n.shgJoinRequestsAllTitle : l10n.shgJoinRequestsTitle, subtitle: widget.shgName),
       body: AppAsyncBuilder<List<ShgJoinRequest>>(
         key: _key,
-        future: () => _repo.fetchPendingForShg(shgId),
+        future: () => widget.allShgs ? _repo.fetchPendingAcrossAllShgs() : _repo.fetchPendingForShg(shgId),
         builder: (context, requests) {
           if (requests.isEmpty) {
             return AppEmptyState(icon: Icons.person_add_alt_1_rounded, message: l10n.shgJoinRequestsEmpty);
@@ -107,6 +112,15 @@ class _ShgJoinRequestsPageState extends State<ShgJoinRequestsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Federation-wide view spans every SHG, so each card
+                      // needs to say WHICH one a request is for — the
+                      // per-SHG view (a leader's own queue, or staff's
+                      // per-SHG override) never needs this since it's
+                      // already scoped to one SHG the viewer already knows.
+                      if (widget.allShgs && r.shgName != null) ...[
+                        Text(r.shgName!, style: AppTheme.sans(11, weight: FontWeight.w700, color: Brand.c600)),
+                        const SizedBox(height: 2),
+                      ],
                       Text(r.memberName ?? l10n.shgJoinRequestsMemberFallback, style: AppTheme.sans(14, weight: FontWeight.w700)),
                       if (r.memberMobile != null) ...[
                         const SizedBox(height: 2),

@@ -236,6 +236,17 @@
 
   "adminDashboardReviewAction": "समीक्षा करें",
 
+  "dashboardPendingJoinRequestsCount": "{count} जुड़ने के अनुरोध लंबित",
+  "@dashboardPendingJoinRequestsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "dashboardPendingJoinRequestsSubtitle": "नए सदस्य किसी SHG से जुड़ने की प्रतीक्षा में हैं",
+
+  "dashboardPendingJoinRequestsAction": "समीक्षा करें",
+
   "adminDashboardPlatformSnapshotTitle": "प्लेटफ़ॉर्म स्नैपशॉट",
 
   "adminDashboardAnalyticsAction": "एनालिटिक्स",
@@ -344,6 +355,10 @@
   "leaderDashboardReviewAllAction": "सभी की समीक्षा करें",
 
   "leaderDashboardNoPendingLoans": "कोई लंबित ऋण अनुरोध नहीं",
+
+  "leaderDashboardJoinRequestsTitle": "लंबित जुड़ने के अनुरोध",
+
+  "leaderDashboardNoPendingJoinRequests": "कोई लंबित जुड़ने का अनुरोध नहीं",
 
   "leaderDashboardNextMeetingTitle": "अगली बैठक",
 
@@ -1477,6 +1492,8 @@
   "shgJoinRequestsProcessErrorStaleRequester": "यह अनुरोध पूरा नहीं हो सका — सदस्य के आवेदन के बाद से उसका खाता बदल गया है (जैसे किसी एडमिन ने उसकी भूमिका या SHG अपडेट कर दी हो)। उससे नया अनुरोध सबमिट करने को कहें।",
 
   "shgJoinRequestsTitle": "जुड़ने के अनुरोध",
+
+  "shgJoinRequestsAllTitle": "सभी लंबित जुड़ने के अनुरोध",
 
   "shgJoinRequestsEmpty": "फ़िलहाल जुड़ने का कोई अनुरोध लंबित नहीं है",
 

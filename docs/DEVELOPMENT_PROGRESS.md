@@ -19973,3 +19973,59 @@ read-only query simulating the real case-drift scenario against live data.
 All test fixtures confirmed removed via re-querying afterward (zero
 residual rows).
 
+## 2026-07-30 — Feature: pending join requests surfaced on every role's home dashboard
+
+User-requested, standalone from the gap-hunting loop: a newly-arrived SHG
+join request was only discoverable by navigating into Members (leader) or
+Analytics → a specific SHG (staff) first — nothing on any home dashboard
+hinted one was waiting. Built dedicated, role-appropriate visibility
+instead of one generic banner for everyone:
+
+1. **Repository**: `ShgJoinRequestRepository` gained 3 read methods —
+   `fetchPendingCountForShg` / `fetchPendingCountAcrossAllShgs` (cheap
+   `.count()` HEAD-style queries, no row fetch) and
+   `fetchPendingAcrossAllShgs()` (federation-wide list, embedding both
+   `profiles!member_id(name, mobile)` and `shgs!shg_id(name)` — the
+   explicit `!member_id` hint is required because `shg_join_requests` has a
+   second FK into `profiles` via `decided_by`, so an unqualified
+   `profiles(...)` embed is ambiguous and errors the whole query).
+2. **Leader dashboard**: her own SHG's pending count badges the existing
+   Members `IconTile`, plus a new "Pending Join Requests" preview section
+   (mirrors the existing "Pending Loan Approvals" card pattern exactly) —
+   she only ever sees her own SHG's queue, consistent with her existing
+   RLS-scoped access everywhere else.
+3. **CRP / CLF / Admin dashboards**: each gained a federation-wide amber
+   banner ("N join requests pending", hidden entirely at 0 rather than
+   shown as "0 pending" — same convention as admin's pre-existing
+   scheme-applications review banner) linking to a new
+   `/app/analytics/join-requests` route (`ShgJoinRequestsPage(allShgs:
+   true)`) listing every pending request across every SHG with the SHG
+   name labeled per row. Admin now shows two independent banners (join
+   requests + the pre-existing scheme-applications one) since they're
+   unrelated queues.
+4. Deliberately placed the new route under `/app/analytics/...` rather
+   than nesting it under the leader-only `/app/shg/join-requests` prefix —
+   `router.dart`'s `_roleRestrictedPrefixes` matches via
+   `startsWith('$prefix/')` with no short-circuit across the tuple list, so
+   a literal path-segment child of a differently-scoped restricted prefix
+   would have incorrectly inherited that prefix's role restriction.
+5. 6 new l10n keys added to all three `.arb` files (`app_en`/`app_hi`/
+   `app_te`) and regenerated via `flutter gen-l10n`.
+6. `docs/SRS.md`'s FR-SHG table gained FR-SHG-3a documenting this
+   dashboard-visibility shortcut (Leader/CRP/CLF/Admin).
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` — full
+suite passing. Live: built a real `--dart-define-from-file=.env.json`
+release bundle and exercised the entire surface against the live Supabase
+project — banner correctly hidden at 0 pending and shown once a real
+pending row existed; navigation from all three staff dashboards' banners
+and the leader's preview section confirmed (cross-checked via
+`window.location.hash`, not just screenshots, after one navigation looked
+ambiguous mid-transition on a screenshot alone); per-row SHG-name labeling
+correct on the federation-wide list; the error path (approving an already-
+linked member) correctly surfaced the iteration-35 stale-requester message
+end-to-end through a real UI click, not just unit-tested; the happy path
+(approving a genuinely unlinked member) correctly set `profiles.shg_id`.
+All `__TEST__`-prefixed fixtures deleted afterward and re-queried to
+confirm zero residual rows.
+

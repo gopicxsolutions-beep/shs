@@ -6,6 +6,7 @@ import '../../models/admin.dart';
 import '../../models/analytics.dart';
 import '../../repositories/admin_repository.dart';
 import '../../repositories/analytics_repository.dart';
+import '../../repositories/shg_join_request_repository.dart';
 import '../../routes/paths.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -63,7 +64,8 @@ class _AdminDashboardData {
   final PlatformKpis kpis;
   final AdminDashboardStats stats;
   final SystemHeartbeatStatus heartbeat;
-  const _AdminDashboardData({required this.kpis, required this.stats, required this.heartbeat});
+  final int pendingJoinRequests;
+  const _AdminDashboardData({required this.kpis, required this.stats, required this.heartbeat, required this.pendingJoinRequests});
 }
 
 class AdminDashboard extends StatelessWidget {
@@ -75,8 +77,17 @@ class AdminDashboard extends StatelessWidget {
       AnalyticsRepository().fetchPlatformKpis(),
       repo.fetchDashboardStats(viewerId),
       repo.fetchSystemHeartbeatStatus(),
+      // Federation-wide, same as the crp/clf dashboards' matching future —
+      // a new SHG join request must be just as visible to admin as a
+      // pending scheme application already is.
+      ShgJoinRequestRepository().fetchPendingCountAcrossAllShgs(),
     ]);
-    return _AdminDashboardData(kpis: results[0] as PlatformKpis, stats: results[1] as AdminDashboardStats, heartbeat: results[2] as SystemHeartbeatStatus);
+    return _AdminDashboardData(
+      kpis: results[0] as PlatformKpis,
+      stats: results[1] as AdminDashboardStats,
+      heartbeat: results[2] as SystemHeartbeatStatus,
+      pendingJoinRequests: results[3] as int,
+    );
   }
 
   @override
@@ -84,7 +95,7 @@ class AdminDashboard extends StatelessWidget {
     final viewerId = context.read<AppState>().profile?.id;
     return AppAsyncBuilder<_AdminDashboardData>(
       future: () => _load(viewerId),
-      builder: (context, data) => _AdminDashboardBody(kpis: data.kpis, stats: data.stats, heartbeat: data.heartbeat),
+      builder: (context, data) => _AdminDashboardBody(kpis: data.kpis, stats: data.stats, heartbeat: data.heartbeat, pendingJoinRequests: data.pendingJoinRequests),
     );
   }
 }
@@ -93,7 +104,8 @@ class _AdminDashboardBody extends StatelessWidget {
   final PlatformKpis kpis;
   final AdminDashboardStats stats;
   final SystemHeartbeatStatus heartbeat;
-  const _AdminDashboardBody({required this.kpis, required this.stats, required this.heartbeat});
+  final int pendingJoinRequests;
+  const _AdminDashboardBody({required this.kpis, required this.stats, required this.heartbeat, required this.pendingJoinRequests});
 
   @override
   Widget build(BuildContext context) {
@@ -161,6 +173,32 @@ class _AdminDashboardBody extends StatelessWidget {
                   child: InkWell(
                     onTap: () => context.go(Paths.schemeApplications),
                     child: Text(l10n.adminDashboardReviewAction, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Accent.amber700)),
+                  ),
+                ),
+              ]),
+            ),
+          ),
+        // A separate concern from the scheme-applications banner above (SHG
+        // join requests, not scheme decisions) — same hidden-at-0 pattern,
+        // same amber styling, own icon/action so the two don't read as one
+        // combined thing when both happen to be nonzero at once.
+        if (pendingJoinRequests > 0)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: AppCard(
+              color: Accent.amber50,
+              borderColor: Accent.amber100,
+              child: Row(children: [
+                Container(width: 40, height: 40, decoration: BoxDecoration(color: Accent.amber100, borderRadius: BorderRadius.circular(12)), child: Icon(Icons.person_add_alt_1_rounded, color: Accent.amber600, size: 20)),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(l10n.dashboardPendingJoinRequestsCount(pendingJoinRequests), style: AppTheme.sans(13, weight: FontWeight.w700, color: Accent.amber800)),
+                  Text(l10n.dashboardPendingJoinRequestsSubtitle, style: AppTheme.sans(12, color: Accent.amber600)),
+                ])),
+                Flexible(
+                  child: InkWell(
+                    onTap: () => context.go(Paths.allShgJoinRequests),
+                    child: Text(l10n.dashboardPendingJoinRequestsAction, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Accent.amber700)),
                   ),
                 ),
               ]),

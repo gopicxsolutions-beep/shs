@@ -7,6 +7,7 @@ import '../../models/report.dart';
 import '../../repositories/admin_repository.dart';
 import '../../repositories/analytics_repository.dart';
 import '../../repositories/report_repository.dart';
+import '../../repositories/shg_join_request_repository.dart';
 import '../../routes/paths.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -19,7 +20,8 @@ class _ClfDashboardData {
   final PlatformKpis kpis;
   final List<VillageShgGroup> villages;
   final int trainingCompletionPct;
-  const _ClfDashboardData({required this.kpis, required this.villages, required this.trainingCompletionPct});
+  final int pendingJoinRequests;
+  const _ClfDashboardData({required this.kpis, required this.villages, required this.trainingCompletionPct, required this.pendingJoinRequests});
 }
 
 class CLFDashboard extends StatelessWidget {
@@ -33,8 +35,17 @@ class CLFDashboard extends StatelessWidget {
       AnalyticsRepository().fetchPlatformKpis(),
       ReportRepository().fetchVillageWiseShgs(),
       AdminRepository().fetchTrainingCompletionPct(),
+      // Same reasoning as crp_dashboard.dart's matching future — a
+      // federation-wide count so a new join request is immediately visible
+      // here too, not just discoverable one SHG at a time.
+      ShgJoinRequestRepository().fetchPendingCountAcrossAllShgs(),
     ]);
-    return _ClfDashboardData(kpis: results[0] as PlatformKpis, villages: results[1] as List<VillageShgGroup>, trainingCompletionPct: results[2] as int);
+    return _ClfDashboardData(
+      kpis: results[0] as PlatformKpis,
+      villages: results[1] as List<VillageShgGroup>,
+      trainingCompletionPct: results[2] as int,
+      pendingJoinRequests: results[3] as int,
+    );
   }
 
   @override
@@ -70,6 +81,31 @@ class _ClfDashboardBody extends StatelessWidget {
             ]),
           ),
         ),
+        // Mirrors admin_dashboard.dart's pendingReviewCount banner /
+        // crp_dashboard.dart's matching one — hidden entirely at 0 rather
+        // than shown as "0 pending".
+        if (data.pendingJoinRequests > 0)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: AppCard(
+              color: Accent.amber50,
+              borderColor: Accent.amber100,
+              child: Row(children: [
+                Container(width: 40, height: 40, decoration: BoxDecoration(color: Accent.amber100, borderRadius: BorderRadius.circular(12)), child: Icon(Icons.person_add_alt_1_rounded, color: Accent.amber600, size: 20)),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(l10n.dashboardPendingJoinRequestsCount(data.pendingJoinRequests), style: AppTheme.sans(13, weight: FontWeight.w700, color: Accent.amber800)),
+                  Text(l10n.dashboardPendingJoinRequestsSubtitle, style: AppTheme.sans(12, color: Accent.amber600)),
+                ])),
+                Flexible(
+                  child: InkWell(
+                    onTap: () => context.go(Paths.allShgJoinRequests),
+                    child: Text(l10n.dashboardPendingJoinRequestsAction, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700, color: Accent.amber700)),
+                  ),
+                ),
+              ]),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
           child: AppCard(

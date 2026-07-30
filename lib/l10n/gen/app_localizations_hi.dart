@@ -622,6 +622,18 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminDashboardReviewAction => 'समीक्षा करें';
 
   @override
+  String dashboardPendingJoinRequestsCount(int count) {
+    return '$count जुड़ने के अनुरोध लंबित';
+  }
+
+  @override
+  String get dashboardPendingJoinRequestsSubtitle =>
+      'नए सदस्य किसी SHG से जुड़ने की प्रतीक्षा में हैं';
+
+  @override
+  String get dashboardPendingJoinRequestsAction => 'समीक्षा करें';
+
+  @override
   String get adminDashboardPlatformSnapshotTitle => 'प्लेटफ़ॉर्म स्नैपशॉट';
 
   @override
@@ -816,6 +828,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get leaderDashboardNoPendingLoans => 'कोई लंबित ऋण अनुरोध नहीं';
+
+  @override
+  String get leaderDashboardJoinRequestsTitle => 'लंबित जुड़ने के अनुरोध';
+
+  @override
+  String get leaderDashboardNoPendingJoinRequests =>
+      'कोई लंबित जुड़ने का अनुरोध नहीं';
 
   @override
   String get leaderDashboardNextMeetingTitle => 'अगली बैठक';
@@ -2799,6 +2818,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get shgJoinRequestsTitle => 'जुड़ने के अनुरोध';
+
+  @override
+  String get shgJoinRequestsAllTitle => 'सभी लंबित जुड़ने के अनुरोध';
 
   @override
   String get shgJoinRequestsEmpty =>

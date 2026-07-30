@@ -295,6 +295,17 @@
 
   "adminDashboardReviewAction": "Review",
 
+  "dashboardPendingJoinRequestsCount": "{count} join requests pending",
+  "@dashboardPendingJoinRequestsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "dashboardPendingJoinRequestsSubtitle": "New members waiting to join an SHG",
+
+  "dashboardPendingJoinRequestsAction": "Review",
+
   "adminDashboardPlatformSnapshotTitle": "Platform Snapshot",
 
   "adminDashboardAnalyticsAction": "Analytics",
@@ -478,6 +489,10 @@
   "leaderDashboardReviewAllAction": "Review all",
 
   "leaderDashboardNoPendingLoans": "No pending loan requests",
+
+  "leaderDashboardJoinRequestsTitle": "Pending Join Requests",
+
+  "leaderDashboardNoPendingJoinRequests": "No pending join requests",
 
   "leaderDashboardNextMeetingTitle": "Next Meeting",
 
@@ -1875,6 +1890,8 @@
   "shgJoinRequestsProcessErrorStaleRequester": "Could not process this request — the member's account has changed since she applied (e.g. her role or SHG was updated by an admin). Ask her to submit a new request.",
 
   "shgJoinRequestsTitle": "Join Requests",
+
+  "shgJoinRequestsAllTitle": "All Pending Join Requests",
 
   "shgJoinRequestsEmpty": "No pending join requests",
 
