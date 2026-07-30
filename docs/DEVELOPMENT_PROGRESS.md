@@ -20388,3 +20388,56 @@ Every fix individually live-verified with both a negative
 `__TEST__` fixtures were left behind by this round's own verification
 queries — all wrapped in `BEGIN...ROLLBACK`.
 
+## 2026-07-30 — Gap-hunt iteration 39 (dogfooding round)
+
+Dogfooding pass on migrations 0139-0142 confirmed the scheme-decider PII
+fix, the duplicate-application handling, and `fetchApplicationsForMember`'s
+rewrite are all solid — no new gaps. But it found a real, confirmed
+regression from 0142's own fix, which itself required 2 follow-up
+migrations to close correctly (a self-caught mistake, same discipline as
+iteration 38's own mid-flight correction):
+
+1. **[MEDIUM, self-caused regression] 0142's deactivated-seller product
+   hiding degraded a BUYER's own past order history.** `fetchOrdersForBuyer`/
+   `fetchOrderById` embed `marketplace_products(name, seller_id)` — the
+   same RLS-gated table 0142 restricted. Once a seller is deactivated,
+   that embed silently resolves to null for every buyer who ever bought
+   from her, permanently showing a generic "Product" placeholder with no
+   seller in her own purchase history, even though nothing about her own
+   order changed. Live-confirmed via join simulation before fixing.
+2. **[Self-caught before shipping] The first fix attempt (migration 0143)
+   introduced RLS self-referencing-subquery recursion (`42P17`)** —
+   `marketplace_products`'s policy added an EXISTS check into
+   `marketplace_orders`, but `marketplace_orders_select_related`'s own
+   policy already queries back into `marketplace_products` (to check
+   `seller_id = auth.uid()`) — the exact two-table recursion cycle
+   CLAUDE.md's own house rules warn about. Caught immediately by live
+   verification (`ERROR: infinite recursion detected in policy for
+   relation "marketplace_products"`) before this was ever exposed to the
+   app. Fixed (migration `0144`) using this codebase's established
+   pattern for exactly this situation: a `security definer` helper
+   function (`buyer_has_order_for_product`) that queries `marketplace_
+   orders` directly, bypassing RLS for that one inner check so the cycle
+   never forms.
+3. Live-verified the final state: a buyer with a real order against a now-
+   deactivated seller's product still sees it (1 row); an unrelated buyer
+   with no such order still doesn't (0 rows) — the general catalog
+   closure from 0142 stays exactly as tight as it was; normal browsing
+   (3 real active-seller products) unaffected.
+4. **Flagged, not fixed this round** (spawned as separate follow-up tasks
+   by the dogfooding agent, outside this iteration's assigned scope): the
+   mirror-image of 0139-0141's fix — `loan_repository.dart`'s `decided_by_
+   profile:profiles!decided_by(name)` embed silently resolves to null for
+   every staff-approved loan (no broad policy exists here, so it's a
+   missing-name UX gap, not a leak) — and the 3 stale `__TEST__` staff
+   profiles already noted in iteration 38's own entry (still a deliberate
+   non-fix, not new).
+
+**Verification**: `flutter analyze` — 0 issues (no Dart changes this
+round, SQL-only). Live: migrations `0143` (superseded in-place by its own
+fix) and `0144` deployed via `supabase db push`. Both the regression and
+its own fix's recursion mistake were live-verified with negative
+(unrelated-buyer denial), positive (owning-buyer allowed), and
+regression-check (normal catalog browsing count unchanged) cases before
+moving on.
+
