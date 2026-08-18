@@ -2305,10 +2305,29 @@ class AppLocalizationsTe extends AppLocalizations {
   String get adminSchemesNameHint => 'పథకం పేరు';
 
   @override
+  String get adminSchemesFullNameHint => 'పూర్తి పేరు';
+
+  @override
   String get adminSchemesAgencyHint => 'ఏజెన్సీ';
 
   @override
   String get adminSchemesBenefitHint => 'ప్రయోజనం';
+
+  @override
+  String get adminSchemesEligibilityHint =>
+      'అర్హత అవసరాలు (ఒక్కో పంక్తికి ఒకటి)';
+
+  @override
+  String get adminSchemesDeadlineLabel => 'దరఖాస్తు గడువు';
+
+  @override
+  String get adminSchemesDeadlineNotSet => 'సెట్ చేయలేదు';
+
+  @override
+  String get adminSchemesPickDateButton => 'తేదీని ఎంచుకోండి';
+
+  @override
+  String get adminSchemesClearDeadlineTooltip => 'గడువును తీసివేయండి';
 
   @override
   String get adminSchemesNameRequiredError => 'పథకం పేరు అవసరం.';

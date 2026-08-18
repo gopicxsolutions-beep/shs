@@ -1161,9 +1161,21 @@
 
   "adminSchemesNameHint": "పథకం పేరు",
 
+  "adminSchemesFullNameHint": "పూర్తి పేరు",
+
   "adminSchemesAgencyHint": "ఏజెన్సీ",
 
   "adminSchemesBenefitHint": "ప్రయోజనం",
+
+  "adminSchemesEligibilityHint": "అర్హత అవసరాలు (ఒక్కో పంక్తికి ఒకటి)",
+
+  "adminSchemesDeadlineLabel": "దరఖాస్తు గడువు",
+
+  "adminSchemesDeadlineNotSet": "సెట్ చేయలేదు",
+
+  "adminSchemesPickDateButton": "తేదీని ఎంచుకోండి",
+
+  "adminSchemesClearDeadlineTooltip": "గడువును తీసివేయండి",
 
   "adminSchemesNameRequiredError": "పథకం పేరు అవసరం.",
 

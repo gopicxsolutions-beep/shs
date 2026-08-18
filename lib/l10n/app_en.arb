@@ -1578,9 +1578,21 @@
 
   "adminSchemesNameHint": "Scheme name",
 
+  "adminSchemesFullNameHint": "Full name",
+
   "adminSchemesAgencyHint": "Agency",
 
   "adminSchemesBenefitHint": "Benefit",
+
+  "adminSchemesEligibilityHint": "Eligibility requirements (one per line)",
+
+  "adminSchemesDeadlineLabel": "Application Deadline",
+
+  "adminSchemesDeadlineNotSet": "Not set",
+
+  "adminSchemesPickDateButton": "Pick Date",
+
+  "adminSchemesClearDeadlineTooltip": "Clear deadline",
 
   "adminSchemesNameRequiredError": "Scheme name is required.",
 

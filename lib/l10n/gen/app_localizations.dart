@@ -4006,6 +4006,12 @@ abstract class AppLocalizations {
   /// **'Scheme name'**
   String get adminSchemesNameHint;
 
+  /// No description provided for @adminSchemesFullNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name'**
+  String get adminSchemesFullNameHint;
+
   /// No description provided for @adminSchemesAgencyHint.
   ///
   /// In en, this message translates to:
@@ -4017,6 +4023,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Benefit'**
   String get adminSchemesBenefitHint;
+
+  /// No description provided for @adminSchemesEligibilityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Eligibility requirements (one per line)'**
+  String get adminSchemesEligibilityHint;
+
+  /// No description provided for @adminSchemesDeadlineLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Application Deadline'**
+  String get adminSchemesDeadlineLabel;
+
+  /// No description provided for @adminSchemesDeadlineNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get adminSchemesDeadlineNotSet;
+
+  /// No description provided for @adminSchemesPickDateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick Date'**
+  String get adminSchemesPickDateButton;
+
+  /// No description provided for @adminSchemesClearDeadlineTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear deadline'**
+  String get adminSchemesClearDeadlineTooltip;
 
   /// No description provided for @adminSchemesNameRequiredError.
   ///

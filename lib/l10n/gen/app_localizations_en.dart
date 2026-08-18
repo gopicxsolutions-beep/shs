@@ -2304,10 +2304,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSchemesNameHint => 'Scheme name';
 
   @override
+  String get adminSchemesFullNameHint => 'Full name';
+
+  @override
   String get adminSchemesAgencyHint => 'Agency';
 
   @override
   String get adminSchemesBenefitHint => 'Benefit';
+
+  @override
+  String get adminSchemesEligibilityHint =>
+      'Eligibility requirements (one per line)';
+
+  @override
+  String get adminSchemesDeadlineLabel => 'Application Deadline';
+
+  @override
+  String get adminSchemesDeadlineNotSet => 'Not set';
+
+  @override
+  String get adminSchemesPickDateButton => 'Pick Date';
+
+  @override
+  String get adminSchemesClearDeadlineTooltip => 'Clear deadline';
 
   @override
   String get adminSchemesNameRequiredError => 'Scheme name is required.';

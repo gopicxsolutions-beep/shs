@@ -2269,10 +2269,29 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminSchemesNameHint => 'योजना का नाम';
 
   @override
+  String get adminSchemesFullNameHint => 'पूरा नाम';
+
+  @override
   String get adminSchemesAgencyHint => 'एजेंसी';
 
   @override
   String get adminSchemesBenefitHint => 'लाभ';
+
+  @override
+  String get adminSchemesEligibilityHint =>
+      'पात्रता आवश्यकताएं (प्रति पंक्ति एक)';
+
+  @override
+  String get adminSchemesDeadlineLabel => 'आवेदन की अंतिम तिथि';
+
+  @override
+  String get adminSchemesDeadlineNotSet => 'निर्धारित नहीं';
+
+  @override
+  String get adminSchemesPickDateButton => 'तिथि चुनें';
+
+  @override
+  String get adminSchemesClearDeadlineTooltip => 'अंतिम तिथि हटाएं';
 
   @override
   String get adminSchemesNameRequiredError => 'योजना का नाम आवश्यक है।';

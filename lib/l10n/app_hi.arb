@@ -1161,9 +1161,21 @@
 
   "adminSchemesNameHint": "योजना का नाम",
 
+  "adminSchemesFullNameHint": "पूरा नाम",
+
   "adminSchemesAgencyHint": "एजेंसी",
 
   "adminSchemesBenefitHint": "लाभ",
+
+  "adminSchemesEligibilityHint": "पात्रता आवश्यकताएं (प्रति पंक्ति एक)",
+
+  "adminSchemesDeadlineLabel": "आवेदन की अंतिम तिथि",
+
+  "adminSchemesDeadlineNotSet": "निर्धारित नहीं",
+
+  "adminSchemesPickDateButton": "तिथि चुनें",
+
+  "adminSchemesClearDeadlineTooltip": "अंतिम तिथि हटाएं",
 
   "adminSchemesNameRequiredError": "योजना का नाम आवश्यक है।",
 
