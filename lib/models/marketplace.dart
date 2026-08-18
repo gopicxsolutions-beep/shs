@@ -46,6 +46,12 @@ class Product {
   final int stock;
   final String? category;
   final String? imageUrl;
+  final String? upiId;
+  final String? paymentNote;
+  // Defaults true so demo-mode/mock products (no backing DB row) always
+  // read as active — matches every other bool-ish column this repository
+  // simplifies away in _mockProducts().
+  final bool isActive;
 
   const Product({
     required this.id,
@@ -57,6 +63,9 @@ class Product {
     required this.stock,
     this.category,
     this.imageUrl,
+    this.upiId,
+    this.paymentNote,
+    this.isActive = true,
   });
 
   factory Product.fromMap(Map<String, dynamic> map) => Product(
@@ -69,6 +78,9 @@ class Product {
         stock: map['stock'] as int? ?? 0,
         category: map['category'] as String?,
         imageUrl: map['image_url'] as String?,
+        upiId: map['upi_id'] as String?,
+        paymentNote: map['payment_note'] as String?,
+        isActive: map['is_active'] as bool? ?? true,
       );
 }
 

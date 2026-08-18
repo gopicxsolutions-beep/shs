@@ -841,11 +841,35 @@
 
   "addProductSubmitButton": "List Product",
 
+  "addProductEditTitle": "Edit Product",
+
+  "addProductUpiIdLabel": "UPI ID (optional)",
+
+  "addProductUpiIdHint": "e.g. 9876543210@upi",
+
+  "addProductPaymentNoteLabel": "Payment Note (optional)",
+
+  "addProductPaymentNoteHint": "Bank details, cash-on-delivery instructions, etc.",
+
+  "addProductInvalidUpiId": "Enter a valid UPI ID (e.g. name@bank)",
+
+  "addProductUpdateButton": "Save Changes",
+
+  "addProductUpdatingInProgress": "Saving…",
+
+  "addProductUpdatedSuccess": "Product updated",
+
+  "addProductUpdateError": "Could not update this product. Please try again.",
+
+  "addProductLoadError": "Could not load this product.",
+
   "marketplaceHomeTitle": "Marketplace",
 
   "marketplaceHomeAddProductTooltip": "Add product",
 
   "marketplaceHomeSellTile": "Sell",
+
+  "marketplaceHomeMyListingsTile": "My Listings",
 
   "marketplaceHomeOrdersTile": "Orders",
 
@@ -886,6 +910,61 @@
       "rating": {"type": "int"}
     }
   },
+
+  "myListingsTitle": "My Listings",
+
+  "myListingsEmpty": "You haven't listed any products yet",
+
+  "myListingsEditTooltip": "Edit {name}",
+  "@myListingsEditTooltip": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "myListingsDelistTooltip": "Delist {name}",
+  "@myListingsDelistTooltip": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "myListingsRelistTooltip": "Relist {name}",
+  "@myListingsRelistTooltip": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "myListingsDelistedBadge": "Delisted",
+
+  "myListingsDelistConfirmTitle": "Delist this product?",
+
+  "myListingsDelistConfirmMessage": "\"{name}\" will be hidden from buyers and can no longer be ordered. You can relist it anytime.",
+  "@myListingsDelistConfirmMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "myListingsRelistConfirmTitle": "Relist this product?",
+
+  "myListingsRelistConfirmMessage": "\"{name}\" will become visible to buyers again.",
+  "@myListingsRelistConfirmMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "myListingsDelistButton": "Delist",
+
+  "myListingsRelistButton": "Relist",
+
+  "myListingsDelistedSuccess": "Product delisted",
+
+  "myListingsRelistedSuccess": "Product relisted",
+
+  "myListingsToggleError": "Could not update this listing. Please try again.",
 
   "orderDetailTitle": "Order Detail",
 
@@ -968,6 +1047,23 @@
   "productDetailPlacingInProgress": "Placing…",
 
   "productDetailPlaceOrderButton": "Place Order",
+
+  "productDetailPaymentDetailsTitle": "Payment Details",
+
+  "productDetailUpiIdLabel": "UPI ID: {id}",
+  "@productDetailUpiIdLabel": {
+    "placeholders": {
+      "id": {"type": "String"}
+    }
+  },
+
+  "productDetailPayViaUpiButton": "Pay via UPI",
+
+  "productDetailUpiOpeningInProgress": "Opening…",
+
+  "productDetailUpiLaunchError": "Could not open a UPI app. Please pay using the UPI ID shown above.",
+
+  "productDetailDelistedBadge": "Delisted",
 
   "meetingsHomeTitle": "Meetings",
 

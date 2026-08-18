@@ -84,6 +84,7 @@ class _MarketplaceHomePageState extends State<MarketplaceHomePage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           IconTile(onTap: () => context.go(Paths.marketplaceAddProduct), icon: Icons.add_business_rounded, label: l10n.marketplaceHomeSellTile, tone: TileTone.brand),
+                          IconTile(onTap: () => context.go(Paths.marketplaceMyListings), icon: Icons.storefront_rounded, label: l10n.marketplaceHomeMyListingsTile, tone: TileTone.violet),
                           IconTile(onTap: () => context.go(Paths.marketplaceOrders), icon: Icons.receipt_long_rounded, label: l10n.marketplaceHomeOrdersTile, tone: TileTone.gold),
                           IconTile(onTap: () => context.go(Paths.marketplaceReviews), icon: Icons.star_rounded, label: l10n.marketplaceHomeReviewsTile, tone: TileTone.sky),
                         ],

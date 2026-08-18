@@ -612,11 +612,35 @@
 
   "addProductSubmitButton": "उत्पाद सूचीबद्ध करें",
 
+  "addProductEditTitle": "उत्पाद संपादित करें",
+
+  "addProductUpiIdLabel": "UPI ID (वैकल्पिक)",
+
+  "addProductUpiIdHint": "उदा. 9876543210@upi",
+
+  "addProductPaymentNoteLabel": "भुगतान नोट (वैकल्पिक)",
+
+  "addProductPaymentNoteHint": "बैंक विवरण, कैश-ऑन-डिलीवरी निर्देश, आदि।",
+
+  "addProductInvalidUpiId": "एक मान्य UPI ID दर्ज करें (उदा. name@bank)",
+
+  "addProductUpdateButton": "परिवर्तन सहेजें",
+
+  "addProductUpdatingInProgress": "सहेज रहे हैं…",
+
+  "addProductUpdatedSuccess": "उत्पाद अपडेट किया गया",
+
+  "addProductUpdateError": "यह उत्पाद अपडेट नहीं किया जा सका। कृपया पुनः प्रयास करें।",
+
+  "addProductLoadError": "यह उत्पाद लोड नहीं किया जा सका।",
+
   "marketplaceHomeTitle": "बाज़ार",
 
   "marketplaceHomeAddProductTooltip": "उत्पाद जोड़ें",
 
   "marketplaceHomeSellTile": "बेचें",
+
+  "marketplaceHomeMyListingsTile": "मेरी सूचियां",
 
   "marketplaceHomeOrdersTile": "ऑर्डर",
 
@@ -644,6 +668,36 @@
   "marketplaceReviewsFromCount": "{count} {count, plural, =1{समीक्षा} other{समीक्षाओं}} के आधार पर",
 
   "marketplaceReviewsRatingSemantics": "5 में से {rating} सितारे",
+
+  "myListingsTitle": "मेरी सूचियां",
+
+  "myListingsEmpty": "आपने अभी तक कोई उत्पाद सूचीबद्ध नहीं किया है",
+
+  "myListingsEditTooltip": "{name} संपादित करें",
+
+  "myListingsDelistTooltip": "{name} हटाएं",
+
+  "myListingsRelistTooltip": "{name} फिर से सूचीबद्ध करें",
+
+  "myListingsDelistedBadge": "हटाया गया",
+
+  "myListingsDelistConfirmTitle": "इस उत्पाद को हटाएं?",
+
+  "myListingsDelistConfirmMessage": "\"{name}\" खरीदारों से छिपा दिया जाएगा और अब ऑर्डर नहीं किया जा सकेगा। आप इसे कभी भी फिर से सूचीबद्ध कर सकते हैं।",
+
+  "myListingsRelistConfirmTitle": "इस उत्पाद को फिर से सूचीबद्ध करें?",
+
+  "myListingsRelistConfirmMessage": "\"{name}\" फिर से खरीदारों को दिखाई देगा।",
+
+  "myListingsDelistButton": "हटाएं",
+
+  "myListingsRelistButton": "फिर से सूचीबद्ध करें",
+
+  "myListingsDelistedSuccess": "उत्पाद हटा दिया गया",
+
+  "myListingsRelistedSuccess": "उत्पाद फिर से सूचीबद्ध किया गया",
+
+  "myListingsToggleError": "इस सूची को अपडेट नहीं किया जा सका। कृपया पुनः प्रयास करें।",
 
   "orderDetailTitle": "ऑर्डर विवरण",
 
@@ -696,6 +750,18 @@
   "productDetailPlacingInProgress": "ऑर्डर दिया जा रहा है…",
 
   "productDetailPlaceOrderButton": "ऑर्डर करें",
+
+  "productDetailPaymentDetailsTitle": "भुगतान विवरण",
+
+  "productDetailUpiIdLabel": "UPI ID: {id}",
+
+  "productDetailPayViaUpiButton": "UPI से भुगतान करें",
+
+  "productDetailUpiOpeningInProgress": "खोल रहे हैं…",
+
+  "productDetailUpiLaunchError": "UPI ऐप नहीं खोला जा सका। कृपया ऊपर दिखाई गई UPI ID का उपयोग करके भुगतान करें।",
+
+  "productDetailDelistedBadge": "हटाया गया",
 
   "meetingsHomeTitle": "बैठकें",
 

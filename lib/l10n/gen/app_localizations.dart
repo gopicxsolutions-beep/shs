@@ -2314,6 +2314,72 @@ abstract class AppLocalizations {
   /// **'List Product'**
   String get addProductSubmitButton;
 
+  /// No description provided for @addProductEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Product'**
+  String get addProductEditTitle;
+
+  /// No description provided for @addProductUpiIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'UPI ID (optional)'**
+  String get addProductUpiIdLabel;
+
+  /// No description provided for @addProductUpiIdHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 9876543210@upi'**
+  String get addProductUpiIdHint;
+
+  /// No description provided for @addProductPaymentNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Note (optional)'**
+  String get addProductPaymentNoteLabel;
+
+  /// No description provided for @addProductPaymentNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank details, cash-on-delivery instructions, etc.'**
+  String get addProductPaymentNoteHint;
+
+  /// No description provided for @addProductInvalidUpiId.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid UPI ID (e.g. name@bank)'**
+  String get addProductInvalidUpiId;
+
+  /// No description provided for @addProductUpdateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get addProductUpdateButton;
+
+  /// No description provided for @addProductUpdatingInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get addProductUpdatingInProgress;
+
+  /// No description provided for @addProductUpdatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Product updated'**
+  String get addProductUpdatedSuccess;
+
+  /// No description provided for @addProductUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update this product. Please try again.'**
+  String get addProductUpdateError;
+
+  /// No description provided for @addProductLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load this product.'**
+  String get addProductLoadError;
+
   /// No description provided for @marketplaceHomeTitle.
   ///
   /// In en, this message translates to:
@@ -2331,6 +2397,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sell'**
   String get marketplaceHomeSellTile;
+
+  /// No description provided for @marketplaceHomeMyListingsTile.
+  ///
+  /// In en, this message translates to:
+  /// **'My Listings'**
+  String get marketplaceHomeMyListingsTile;
 
   /// No description provided for @marketplaceHomeOrdersTile.
   ///
@@ -2427,6 +2499,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{rating} out of 5 stars'**
   String marketplaceReviewsRatingSemantics(int rating);
+
+  /// No description provided for @myListingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Listings'**
+  String get myListingsTitle;
+
+  /// No description provided for @myListingsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t listed any products yet'**
+  String get myListingsEmpty;
+
+  /// No description provided for @myListingsEditTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit {name}'**
+  String myListingsEditTooltip(String name);
+
+  /// No description provided for @myListingsDelistTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Delist {name}'**
+  String myListingsDelistTooltip(String name);
+
+  /// No description provided for @myListingsRelistTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Relist {name}'**
+  String myListingsRelistTooltip(String name);
+
+  /// No description provided for @myListingsDelistedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Delisted'**
+  String get myListingsDelistedBadge;
+
+  /// No description provided for @myListingsDelistConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delist this product?'**
+  String get myListingsDelistConfirmTitle;
+
+  /// No description provided for @myListingsDelistConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{name}\" will be hidden from buyers and can no longer be ordered. You can relist it anytime.'**
+  String myListingsDelistConfirmMessage(String name);
+
+  /// No description provided for @myListingsRelistConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Relist this product?'**
+  String get myListingsRelistConfirmTitle;
+
+  /// No description provided for @myListingsRelistConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{name}\" will become visible to buyers again.'**
+  String myListingsRelistConfirmMessage(String name);
+
+  /// No description provided for @myListingsDelistButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delist'**
+  String get myListingsDelistButton;
+
+  /// No description provided for @myListingsRelistButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Relist'**
+  String get myListingsRelistButton;
+
+  /// No description provided for @myListingsDelistedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Product delisted'**
+  String get myListingsDelistedSuccess;
+
+  /// No description provided for @myListingsRelistedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Product relisted'**
+  String get myListingsRelistedSuccess;
+
+  /// No description provided for @myListingsToggleError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update this listing. Please try again.'**
+  String get myListingsToggleError;
 
   /// No description provided for @orderDetailTitle.
   ///
@@ -2583,6 +2745,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Place Order'**
   String get productDetailPlaceOrderButton;
+
+  /// No description provided for @productDetailPaymentDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Details'**
+  String get productDetailPaymentDetailsTitle;
+
+  /// No description provided for @productDetailUpiIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'UPI ID: {id}'**
+  String productDetailUpiIdLabel(String id);
+
+  /// No description provided for @productDetailPayViaUpiButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay via UPI'**
+  String get productDetailPayViaUpiButton;
+
+  /// No description provided for @productDetailUpiOpeningInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening…'**
+  String get productDetailUpiOpeningInProgress;
+
+  /// No description provided for @productDetailUpiLaunchError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open a UPI app. Please pay using the UPI ID shown above.'**
+  String get productDetailUpiLaunchError;
+
+  /// No description provided for @productDetailDelistedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Delisted'**
+  String get productDetailDelistedBadge;
 
   /// No description provided for @meetingsHomeTitle.
   ///

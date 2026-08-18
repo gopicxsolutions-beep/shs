@@ -1276,6 +1276,42 @@ class AppLocalizationsHi extends AppLocalizations {
   String get addProductSubmitButton => 'उत्पाद सूचीबद्ध करें';
 
   @override
+  String get addProductEditTitle => 'उत्पाद संपादित करें';
+
+  @override
+  String get addProductUpiIdLabel => 'UPI ID (वैकल्पिक)';
+
+  @override
+  String get addProductUpiIdHint => 'उदा. 9876543210@upi';
+
+  @override
+  String get addProductPaymentNoteLabel => 'भुगतान नोट (वैकल्पिक)';
+
+  @override
+  String get addProductPaymentNoteHint =>
+      'बैंक विवरण, कैश-ऑन-डिलीवरी निर्देश, आदि।';
+
+  @override
+  String get addProductInvalidUpiId =>
+      'एक मान्य UPI ID दर्ज करें (उदा. name@bank)';
+
+  @override
+  String get addProductUpdateButton => 'परिवर्तन सहेजें';
+
+  @override
+  String get addProductUpdatingInProgress => 'सहेज रहे हैं…';
+
+  @override
+  String get addProductUpdatedSuccess => 'उत्पाद अपडेट किया गया';
+
+  @override
+  String get addProductUpdateError =>
+      'यह उत्पाद अपडेट नहीं किया जा सका। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get addProductLoadError => 'यह उत्पाद लोड नहीं किया जा सका।';
+
+  @override
   String get marketplaceHomeTitle => 'बाज़ार';
 
   @override
@@ -1283,6 +1319,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get marketplaceHomeSellTile => 'बेचें';
+
+  @override
+  String get marketplaceHomeMyListingsTile => 'मेरी सूचियां';
 
   @override
   String get marketplaceHomeOrdersTile => 'ऑर्डर';
@@ -1345,6 +1384,63 @@ class AppLocalizationsHi extends AppLocalizations {
   String marketplaceReviewsRatingSemantics(int rating) {
     return '5 में से $rating सितारे';
   }
+
+  @override
+  String get myListingsTitle => 'मेरी सूचियां';
+
+  @override
+  String get myListingsEmpty => 'आपने अभी तक कोई उत्पाद सूचीबद्ध नहीं किया है';
+
+  @override
+  String myListingsEditTooltip(String name) {
+    return '$name संपादित करें';
+  }
+
+  @override
+  String myListingsDelistTooltip(String name) {
+    return '$name हटाएं';
+  }
+
+  @override
+  String myListingsRelistTooltip(String name) {
+    return '$name फिर से सूचीबद्ध करें';
+  }
+
+  @override
+  String get myListingsDelistedBadge => 'हटाया गया';
+
+  @override
+  String get myListingsDelistConfirmTitle => 'इस उत्पाद को हटाएं?';
+
+  @override
+  String myListingsDelistConfirmMessage(String name) {
+    return '\"$name\" खरीदारों से छिपा दिया जाएगा और अब ऑर्डर नहीं किया जा सकेगा। आप इसे कभी भी फिर से सूचीबद्ध कर सकते हैं।';
+  }
+
+  @override
+  String get myListingsRelistConfirmTitle =>
+      'इस उत्पाद को फिर से सूचीबद्ध करें?';
+
+  @override
+  String myListingsRelistConfirmMessage(String name) {
+    return '\"$name\" फिर से खरीदारों को दिखाई देगा।';
+  }
+
+  @override
+  String get myListingsDelistButton => 'हटाएं';
+
+  @override
+  String get myListingsRelistButton => 'फिर से सूचीबद्ध करें';
+
+  @override
+  String get myListingsDelistedSuccess => 'उत्पाद हटा दिया गया';
+
+  @override
+  String get myListingsRelistedSuccess => 'उत्पाद फिर से सूचीबद्ध किया गया';
+
+  @override
+  String get myListingsToggleError =>
+      'इस सूची को अपडेट नहीं किया जा सका। कृपया पुनः प्रयास करें।';
 
   @override
   String get orderDetailTitle => 'ऑर्डर विवरण';
@@ -1447,6 +1543,27 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get productDetailPlaceOrderButton => 'ऑर्डर करें';
+
+  @override
+  String get productDetailPaymentDetailsTitle => 'भुगतान विवरण';
+
+  @override
+  String productDetailUpiIdLabel(String id) {
+    return 'UPI ID: $id';
+  }
+
+  @override
+  String get productDetailPayViaUpiButton => 'UPI से भुगतान करें';
+
+  @override
+  String get productDetailUpiOpeningInProgress => 'खोल रहे हैं…';
+
+  @override
+  String get productDetailUpiLaunchError =>
+      'UPI ऐप नहीं खोला जा सका। कृपया ऊपर दिखाई गई UPI ID का उपयोग करके भुगतान करें।';
+
+  @override
+  String get productDetailDelistedBadge => 'हटाया गया';
 
   @override
   String get meetingsHomeTitle => 'बैठकें';

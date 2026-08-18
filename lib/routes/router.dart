@@ -40,6 +40,7 @@ import '../pages/marketplace/add_product_page.dart';
 import '../pages/marketplace/marketplace_home_page.dart';
 import '../pages/marketplace/marketplace_orders_page.dart';
 import '../pages/marketplace/marketplace_reviews_page.dart';
+import '../pages/marketplace/my_listings_page.dart';
 import '../pages/marketplace/order_detail_page.dart';
 import '../pages/marketplace/product_detail_page.dart';
 import '../pages/meetings/meeting_attendance_page.dart';
@@ -316,6 +317,7 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(path: Paths.livelihood, builder: (context, state) => const LivelihoodHomePage()),
           GoRoute(path: Paths.livelihoodEntry, builder: (context, state) => const LivelihoodEntryPage()),
           GoRoute(path: Paths.marketplaceAddProduct, builder: (context, state) => const AddProductPage()),
+          GoRoute(path: Paths.marketplaceMyListings, builder: (context, state) => const MyListingsPage()),
           GoRoute(path: Paths.marketplaceOrders, builder: (context, state) => const MarketplaceOrdersPage()),
           GoRoute(path: Paths.marketplaceReviews, builder: (context, state) => const MarketplaceReviewsPage()),
           GoRoute(path: Paths.schemes, builder: (context, state) => const SchemesHomePage()),
@@ -401,6 +403,10 @@ GoRouter buildRouter(AppState appState) {
           GoRoute(
             path: '/app/marketplace/product/:id',
             builder: (context, state) => ProductDetailPage(key: ValueKey(state.pathParameters['id']), productId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/app/marketplace/edit-product/:id',
+            builder: (context, state) => AddProductPage(key: ValueKey(state.pathParameters['id']), productId: state.pathParameters['id']),
           ),
           GoRoute(
             path: '/app/marketplace/orders/:id',

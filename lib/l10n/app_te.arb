@@ -612,11 +612,35 @@
 
   "addProductSubmitButton": "ఉత్పత్తిని జాబితా చేయండి",
 
+  "addProductEditTitle": "ఉత్పత్తిని సవరించండి",
+
+  "addProductUpiIdLabel": "UPI ID (ఐచ్ఛికం)",
+
+  "addProductUpiIdHint": "ఉదా. 9876543210@upi",
+
+  "addProductPaymentNoteLabel": "చెల్లింపు గమనిక (ఐచ్ఛికం)",
+
+  "addProductPaymentNoteHint": "బ్యాంక్ వివరాలు, క్యాష్-ఆన్-డెలివరీ సూచనలు, మొదలైనవి.",
+
+  "addProductInvalidUpiId": "చెల్లుబాటు అయ్యే UPI IDని నమోదు చేయండి (ఉదా. name@bank)",
+
+  "addProductUpdateButton": "మార్పులను సేవ్ చేయండి",
+
+  "addProductUpdatingInProgress": "సేవ్ చేస్తోంది…",
+
+  "addProductUpdatedSuccess": "ఉత్పత్తి అప్‌డేట్ చేయబడింది",
+
+  "addProductUpdateError": "ఈ ఉత్పత్తిని అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+
+  "addProductLoadError": "ఈ ఉత్పత్తిని లోడ్ చేయలేకపోయాము.",
+
   "marketplaceHomeTitle": "మార్కెట్",
 
   "marketplaceHomeAddProductTooltip": "ఉత్పత్తిని జోడించండి",
 
   "marketplaceHomeSellTile": "అమ్మండి",
+
+  "marketplaceHomeMyListingsTile": "నా జాబితాలు",
 
   "marketplaceHomeOrdersTile": "ఆర్డర్లు",
 
@@ -644,6 +668,36 @@
   "marketplaceReviewsFromCount": "{count} {count, plural, =1{సమీక్ష} other{సమీక్షల}} ఆధారంగా",
 
   "marketplaceReviewsRatingSemantics": "5లో {rating} నక్షత్రాలు",
+
+  "myListingsTitle": "నా జాబితాలు",
+
+  "myListingsEmpty": "మీరు ఇంకా ఏ ఉత్పత్తిని జాబితా చేయలేదు",
+
+  "myListingsEditTooltip": "{name}ను సవరించండి",
+
+  "myListingsDelistTooltip": "{name}ను తీసివేయండి",
+
+  "myListingsRelistTooltip": "{name}ను మళ్లీ జాబితా చేయండి",
+
+  "myListingsDelistedBadge": "తీసివేయబడింది",
+
+  "myListingsDelistConfirmTitle": "ఈ ఉత్పత్తిని తీసివేయాలా?",
+
+  "myListingsDelistConfirmMessage": "\"{name}\" కొనుగోలుదారుల నుండి దాచబడుతుంది మరియు ఇకపై ఆర్డర్ చేయబడదు. మీరు దీన్ని ఎప్పుడైనా మళ్లీ జాబితా చేయవచ్చు.",
+
+  "myListingsRelistConfirmTitle": "ఈ ఉత్పత్తిని మళ్లీ జాబితా చేయాలా?",
+
+  "myListingsRelistConfirmMessage": "\"{name}\" కొనుగోలుదారులకు మళ్లీ కనిపిస్తుంది.",
+
+  "myListingsDelistButton": "తీసివేయండి",
+
+  "myListingsRelistButton": "మళ్లీ జాబితా చేయండి",
+
+  "myListingsDelistedSuccess": "ఉత్పత్తి తీసివేయబడింది",
+
+  "myListingsRelistedSuccess": "ఉత్పత్తి మళ్లీ జాబితా చేయబడింది",
+
+  "myListingsToggleError": "ఈ జాబితాను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
 
   "orderDetailTitle": "ఆర్డర్ వివరాలు",
 
@@ -696,6 +750,18 @@
   "productDetailPlacingInProgress": "ఆర్డర్ చేస్తోంది…",
 
   "productDetailPlaceOrderButton": "ఆర్డర్ చేయండి",
+
+  "productDetailPaymentDetailsTitle": "చెల్లింపు వివరాలు",
+
+  "productDetailUpiIdLabel": "UPI ID: {id}",
+
+  "productDetailPayViaUpiButton": "UPI ద్వారా చెల్లించండి",
+
+  "productDetailUpiOpeningInProgress": "తెరుస్తోంది…",
+
+  "productDetailUpiLaunchError": "UPI యాప్‌ను తెరవలేకపోయాము. దయచేసి పైన చూపిన UPI IDని ఉపయోగించి చెల్లించండి.",
+
+  "productDetailDelistedBadge": "తీసివేయబడింది",
 
   "meetingsHomeTitle": "సమావేశాలు",
 

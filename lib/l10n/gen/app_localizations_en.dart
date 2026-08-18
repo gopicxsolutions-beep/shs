@@ -1297,6 +1297,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addProductSubmitButton => 'List Product';
 
   @override
+  String get addProductEditTitle => 'Edit Product';
+
+  @override
+  String get addProductUpiIdLabel => 'UPI ID (optional)';
+
+  @override
+  String get addProductUpiIdHint => 'e.g. 9876543210@upi';
+
+  @override
+  String get addProductPaymentNoteLabel => 'Payment Note (optional)';
+
+  @override
+  String get addProductPaymentNoteHint =>
+      'Bank details, cash-on-delivery instructions, etc.';
+
+  @override
+  String get addProductInvalidUpiId => 'Enter a valid UPI ID (e.g. name@bank)';
+
+  @override
+  String get addProductUpdateButton => 'Save Changes';
+
+  @override
+  String get addProductUpdatingInProgress => 'Saving…';
+
+  @override
+  String get addProductUpdatedSuccess => 'Product updated';
+
+  @override
+  String get addProductUpdateError =>
+      'Could not update this product. Please try again.';
+
+  @override
+  String get addProductLoadError => 'Could not load this product.';
+
+  @override
   String get marketplaceHomeTitle => 'Marketplace';
 
   @override
@@ -1304,6 +1339,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get marketplaceHomeSellTile => 'Sell';
+
+  @override
+  String get marketplaceHomeMyListingsTile => 'My Listings';
 
   @override
   String get marketplaceHomeOrdersTile => 'Orders';
@@ -1363,6 +1401,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String marketplaceReviewsRatingSemantics(int rating) {
     return '$rating out of 5 stars';
   }
+
+  @override
+  String get myListingsTitle => 'My Listings';
+
+  @override
+  String get myListingsEmpty => 'You haven\'t listed any products yet';
+
+  @override
+  String myListingsEditTooltip(String name) {
+    return 'Edit $name';
+  }
+
+  @override
+  String myListingsDelistTooltip(String name) {
+    return 'Delist $name';
+  }
+
+  @override
+  String myListingsRelistTooltip(String name) {
+    return 'Relist $name';
+  }
+
+  @override
+  String get myListingsDelistedBadge => 'Delisted';
+
+  @override
+  String get myListingsDelistConfirmTitle => 'Delist this product?';
+
+  @override
+  String myListingsDelistConfirmMessage(String name) {
+    return '\"$name\" will be hidden from buyers and can no longer be ordered. You can relist it anytime.';
+  }
+
+  @override
+  String get myListingsRelistConfirmTitle => 'Relist this product?';
+
+  @override
+  String myListingsRelistConfirmMessage(String name) {
+    return '\"$name\" will become visible to buyers again.';
+  }
+
+  @override
+  String get myListingsDelistButton => 'Delist';
+
+  @override
+  String get myListingsRelistButton => 'Relist';
+
+  @override
+  String get myListingsDelistedSuccess => 'Product delisted';
+
+  @override
+  String get myListingsRelistedSuccess => 'Product relisted';
+
+  @override
+  String get myListingsToggleError =>
+      'Could not update this listing. Please try again.';
 
   @override
   String get orderDetailTitle => 'Order Detail';
@@ -1465,6 +1559,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get productDetailPlaceOrderButton => 'Place Order';
+
+  @override
+  String get productDetailPaymentDetailsTitle => 'Payment Details';
+
+  @override
+  String productDetailUpiIdLabel(String id) {
+    return 'UPI ID: $id';
+  }
+
+  @override
+  String get productDetailPayViaUpiButton => 'Pay via UPI';
+
+  @override
+  String get productDetailUpiOpeningInProgress => 'Opening…';
+
+  @override
+  String get productDetailUpiLaunchError =>
+      'Could not open a UPI app. Please pay using the UPI ID shown above.';
+
+  @override
+  String get productDetailDelistedBadge => 'Delisted';
 
   @override
   String get meetingsHomeTitle => 'Meetings';

@@ -29,7 +29,15 @@ String _imageContentType(String? extension) => switch (extension?.toLowerCase())
 };
 
 class AddProductPage extends StatefulWidget {
-  const AddProductPage({super.key});
+  // When set, this page edits the existing listing instead of creating a
+  // new one — mirrors MeetingSchedulePage's own optional-param dual-purpose
+  // pattern. There is no separate EditProductPage: this form already has a
+  // photo picker plus 6 fields, well past this codebase's own "a dialog is
+  // fine for ~10 short fields" threshold (see admin_shgs_page.dart), so a
+  // full-page route shared between add/edit follows this module's existing
+  // norm (this page, loan_apply_page.dart, savings_entry_page.dart) instead.
+  final String? productId;
+  const AddProductPage({super.key, this.productId});
   @override
   State<AddProductPage> createState() => _AddProductPageState();
 }
@@ -39,12 +47,23 @@ class _AddProductPageState extends State<AddProductPage> {
   final _description = TextEditingController();
   final _price = TextEditingController();
   final _stock = TextEditingController();
+  final _upiId = TextEditingController();
+  final _paymentNote = TextEditingController();
   final _repo = MarketplaceRepository();
   String _category = 'Handicrafts';
   bool _saving = false;
   bool _dirty = false;
   String? _error;
   PlatformFile? _image;
+
+  // Edit-mode only state: the fetched product's existing photo (kept as-is
+  // unless the seller picks a new one) and its current `isActive` flag —
+  // this form never toggles delist/relist itself (that's MyListingsPage's
+  // job), so submit always echoes this back unchanged.
+  bool _loading = false;
+  bool _loadError = false;
+  String? _existingImageUrl;
+  bool _existingIsActive = true;
 
   static const _categories = ['Handicrafts', 'Tailoring', 'Food', 'Agriculture', 'Other'];
   // Matches the sanity-check ceiling already used on `loan_apply_page.dart`
@@ -57,6 +76,37 @@ class _AddProductPageState extends State<AddProductPage> {
   // is rejected immediately at picking time with a clear reason, instead of
   // only failing later at upload with a raw `StorageException`.
   static const _maxImageBytes = 5 * 1024 * 1024;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.productId != null) _loadForEdit(widget.productId!);
+  }
+
+  Future<void> _loadForEdit(String id) async {
+    setState(() => _loading = true);
+    final product = await _repo.fetchProductById(id);
+    if (!mounted) return;
+    if (product == null) {
+      setState(() {
+        _loading = false;
+        _loadError = true;
+      });
+      return;
+    }
+    _name.text = product.name;
+    _description.text = product.description ?? '';
+    _price.text = product.price.toString();
+    _stock.text = product.stock.toString();
+    _upiId.text = product.upiId ?? '';
+    _paymentNote.text = product.paymentNote ?? '';
+    setState(() {
+      _category = product.category ?? _category;
+      _existingImageUrl = product.imageUrl;
+      _existingIsActive = product.isActive;
+      _loading = false;
+    });
+  }
 
   Future<void> _pickImage() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
@@ -90,6 +140,8 @@ class _AddProductPageState extends State<AddProductPage> {
     _description.dispose();
     _price.dispose();
     _stock.dispose();
+    _upiId.dispose();
+    _paymentNote.dispose();
     super.dispose();
   }
 
@@ -108,6 +160,15 @@ class _AddProductPageState extends State<AddProductPage> {
       setState(() => _error = AppLocalizations.of(context)!.addProductPriceTooLarge);
       return;
     }
+    final upiId = _upiId.text.trim();
+    // Light sanity check only — real validation happens in the buyer's own
+    // UPI app once the deep link opens, not something worth a full-grammar
+    // regex here.
+    if (upiId.isNotEmpty && !upiId.contains('@')) {
+      setState(() => _error = AppLocalizations.of(context)!.addProductInvalidUpiId);
+      return;
+    }
+    final isEditing = widget.productId != null;
     setState(() {
       _saving = true;
       _error = null;
@@ -115,11 +176,12 @@ class _AddProductPageState extends State<AddProductPage> {
     final appState = context.read<AppState>();
     final sellerId = appState.profile?.id;
     try {
-      String? imageUrl;
-      // Uploaded before the product row is inserted, and inside the same
-      // try/catch, so an image that fails to upload doesn't silently list
-      // the product without the photo the seller actually chose — the whole
-      // submit fails together, surfacing one clear error to retry.
+      String? imageUrl = _existingImageUrl;
+      // Uploaded before the product row is written, and inside the same
+      // try/catch, so an image that fails to upload doesn't silently
+      // list/update the product without the photo the seller actually
+      // chose — the whole submit fails together, surfacing one clear error
+      // to retry.
       if (_image != null && SupabaseService.isConfigured && sellerId != null) {
         imageUrl = await _repo.uploadProductImage(
           sellerId: sellerId,
@@ -128,28 +190,52 @@ class _AddProductPageState extends State<AddProductPage> {
           contentType: _imageContentType(_image!.extension),
         );
       }
-      await _repo.addProduct(
-        sellerId: sellerId,
-        name: _name.text.trim(),
-        description: _description.text.trim(),
-        price: price,
-        stock: stock ?? 0,
-        category: _category,
-        imageUrl: imageUrl,
-      );
+      final upiIdValue = upiId.isEmpty ? null : upiId;
+      final paymentNoteValue = _paymentNote.text.trim().isEmpty ? null : _paymentNote.text.trim();
+      if (isEditing) {
+        await _repo.updateProduct(
+          id: widget.productId!,
+          name: _name.text.trim(),
+          description: _description.text.trim(),
+          price: price,
+          stock: stock ?? 0,
+          category: _category,
+          imageUrl: imageUrl,
+          upiId: upiIdValue,
+          paymentNote: paymentNoteValue,
+          isActive: _existingIsActive,
+        );
+      } else {
+        await _repo.addProduct(
+          sellerId: sellerId,
+          name: _name.text.trim(),
+          description: _description.text.trim(),
+          price: price,
+          stock: stock ?? 0,
+          category: _category,
+          imageUrl: imageUrl,
+          upiId: upiIdValue,
+          paymentNote: paymentNoteValue,
+        );
+      }
       if (mounted) {
         // Navigate first, then show on the captured messenger — showing
         // before navigating drops the SnackBar, since context.go() replaces
         // this page's Scaffold before it ever gets a frame to render.
         final messenger = ScaffoldMessenger.of(context);
         final l10n = AppLocalizations.of(context)!;
-        context.go(Paths.marketplace);
+        context.go(isEditing ? Paths.marketplaceMyListings : Paths.marketplace);
         messenger.showSnackBar(SnackBar(
-          content: Text(SupabaseService.isConfigured ? l10n.addProductListedSuccess : l10n.addProductDemoModeNotSaved),
+          content: Text(!SupabaseService.isConfigured
+              ? l10n.addProductDemoModeNotSaved
+              : (isEditing ? l10n.addProductUpdatedSuccess : l10n.addProductListedSuccess)),
         ));
       }
     } catch (_) {
-      if (mounted) setState(() => _error = AppLocalizations.of(context)!.addProductSubmitError);
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        setState(() => _error = isEditing ? l10n.addProductUpdateError : l10n.addProductSubmitError);
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -244,19 +330,24 @@ class _AddProductPageState extends State<AddProductPage> {
     final discard = await confirmDiscardChanges(context);
     if (discard && mounted) {
       UnsavedChanges.dirty = false;
-      context.go(Paths.marketplace);
+      context.go(widget.productId != null ? Paths.marketplaceMyListings : Paths.marketplace);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isEditing = widget.productId != null;
     return PopScope(
       canPop: !_dirty,
       onPopInvokedWithResult: _handlePop,
       child: Scaffold(
-      appBar: PageHeader(title: l10n.addProductTitle),
-      body: SingleChildScrollView(
+      appBar: PageHeader(title: isEditing ? l10n.addProductEditTitle : l10n.addProductTitle),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _loadError
+              ? Center(child: Text(l10n.addProductLoadError, style: AppTheme.sans(13, color: Neutral.c500)))
+              : SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -272,6 +363,10 @@ class _AddProductPageState extends State<AddProductPage> {
               const SizedBox(width: 12),
               Expanded(child: _field(l10n.addProductStockLabel, _stock, hint: '0', keyboardType: TextInputType.number, inputFormatters: wholeNumberInputFormatters, textInputAction: TextInputAction.done, maxLength: 6)),
             ]),
+            const SizedBox(height: 12),
+            _field(l10n.addProductUpiIdLabel, _upiId, hint: l10n.addProductUpiIdHint, maxLength: 100, textInputAction: TextInputAction.next),
+            const SizedBox(height: 12),
+            _field(l10n.addProductPaymentNoteLabel, _paymentNote, hint: l10n.addProductPaymentNoteHint, maxLength: 500, textInputAction: TextInputAction.done),
             const SizedBox(height: 12),
             AppCard(
               child: Column(
@@ -307,7 +402,14 @@ class _AddProductPageState extends State<AddProductPage> {
               Text(_error!, style: AppTheme.sans(12, color: Accent.red600)),
             ],
             const SizedBox(height: 24),
-            AppButton(label: _saving ? l10n.addProductListingInProgress : l10n.addProductSubmitButton, fullWidth: true, size: ButtonSize.lg, onPressed: _saving ? null : _submit),
+            AppButton(
+              label: _saving
+                  ? (isEditing ? l10n.addProductUpdatingInProgress : l10n.addProductListingInProgress)
+                  : (isEditing ? l10n.addProductUpdateButton : l10n.addProductSubmitButton),
+              fullWidth: true,
+              size: ButtonSize.lg,
+              onPressed: _saving ? null : _submit,
+            ),
           ],
         ),
       ),

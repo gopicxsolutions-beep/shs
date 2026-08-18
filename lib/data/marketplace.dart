@@ -6,6 +6,9 @@ class ProductMock {
   final int price;
   final int stock;
   final String category;
+  final String? upiId;
+  final String? paymentNote;
+  final bool isActive;
   const ProductMock({
     required this.id,
     required this.sellerName,
@@ -14,11 +17,14 @@ class ProductMock {
     required this.price,
     required this.stock,
     required this.category,
+    this.upiId,
+    this.paymentNote,
+    this.isActive = true,
   });
 }
 
 const marketplaceProducts = <ProductMock>[
-  ProductMock(id: 'p1', sellerName: 'Lakshmi Devi', name: 'Handwoven Cotton Saree', description: 'Traditional handloom saree, natural dyes', price: 1200, stock: 8, category: 'Handicrafts'),
+  ProductMock(id: 'p1', sellerName: 'Lakshmi Devi', name: 'Handwoven Cotton Saree', description: 'Traditional handloom saree, natural dyes', price: 1200, stock: 8, category: 'Handicrafts', upiId: 'lakshmidevi@upi', paymentNote: 'Cash on delivery also accepted'),
   ProductMock(id: 'p2', sellerName: 'Rajeshwari', name: 'Tailored Blouse — Custom Fit', description: 'Made to measure, cotton or silk', price: 350, stock: 20, category: 'Tailoring'),
   ProductMock(id: 'p3', sellerName: 'Bhavani', name: 'Organic Millet Flour (1kg)', description: 'Stone-ground, chemical-free', price: 90, stock: 45, category: 'Food'),
   ProductMock(id: 'p4', sellerName: 'Gowramma', name: 'Pickle Combo Pack', description: 'Mango, lemon & mixed vegetable pickle', price: 250, stock: 15, category: 'Food'),

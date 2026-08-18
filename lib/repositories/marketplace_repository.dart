@@ -49,11 +49,14 @@ class MarketplaceRepository {
     return (rows as List).map((r) => Product.fromMap(r as Map<String, dynamic>)).toList();
   }
 
-  // No current call site (kept for a future "My Listings" screen) — the
-  // demo branch ignores [sellerId] on purpose, not by omission: demo mode
-  // has no real seller/buyer identity split (see this class's own doc
-  // comment), so every demo-mode product is already "this persona's own,"
-  // matching how `placeOrder()`'s demo branch makes the same simplification.
+  // Backs MyListingsPage. The demo branch ignores [sellerId] on purpose,
+  // not by omission: demo mode has no real seller/buyer identity split (see
+  // this class's own doc comment), so every demo-mode product is already
+  // "this persona's own," matching how `placeOrder()`'s demo branch makes
+  // the same simplification. Live mode returns a seller's own delisted
+  // (`is_active = false`) products too — the RLS `seller_id = auth.uid()`
+  // SELECT branch has no `is_active` condition, unlike the general-browse
+  // branch — so a seller can always see and manage every listing of hers.
   Future<List<Product>> fetchMyProducts(String? sellerId) async {
     if (!_live) return [..._locallyAddedProducts.reversed, ..._mockProducts()];
     if (sellerId == null) return [];
@@ -78,6 +81,8 @@ class MarketplaceRepository {
     required int stock,
     required String category,
     String? imageUrl,
+    String? upiId,
+    String? paymentNote,
   }) async {
     if (!_live) {
       _locallyAddedProducts.add(Product(
@@ -90,6 +95,8 @@ class MarketplaceRepository {
         stock: stock,
         category: category,
         imageUrl: imageUrl,
+        upiId: upiId,
+        paymentNote: paymentNote,
       ));
       return;
     }
@@ -102,7 +109,62 @@ class MarketplaceRepository {
       'stock': stock,
       'category': category,
       'image_url': ?imageUrl,
+      'upi_id': ?upiId,
+      'payment_note': ?paymentNote,
     });
+  }
+
+  /// Edits an existing listing (`AddProductPage`'s edit mode) or toggles its
+  /// `isActive` delist/relist flag (`MyListingsPage`) — one method for both,
+  /// with [isActive] always required/explicit so neither caller can
+  /// accidentally flip it by omission: a field-only edit always echoes back
+  /// the listing's current `isActive`, and a delist/relist toggle always
+  /// echoes back every other field unchanged. `seller_id`/`created_at` are
+  /// locked columns (`marketplace_products_locked_fields`, RLS) — never
+  /// sent here, since this never needs to change either.
+  Future<void> updateProduct({
+    required String id,
+    required String name,
+    required String description,
+    required num price,
+    required int stock,
+    required String category,
+    String? imageUrl,
+    String? upiId,
+    String? paymentNote,
+    required bool isActive,
+  }) async {
+    if (!_live) {
+      final idx = _locallyAddedProducts.indexWhere((p) => p.id == id);
+      if (idx == -1) return;
+      final existing = _locallyAddedProducts[idx];
+      _locallyAddedProducts[idx] = Product(
+        id: existing.id,
+        sellerId: existing.sellerId,
+        sellerName: existing.sellerName,
+        name: name,
+        description: description,
+        price: price,
+        stock: stock,
+        category: category,
+        imageUrl: imageUrl,
+        upiId: upiId,
+        paymentNote: paymentNote,
+        isActive: isActive,
+      );
+      return;
+    }
+    await _client.from('marketplace_products').update({
+      'name': name,
+      'description': description,
+      'price': price,
+      'stock': stock,
+      'category': category,
+      'image_url': ?imageUrl,
+      'upi_id': ?upiId,
+      'payment_note': ?paymentNote,
+      'is_active': isActive,
+    }).eq('id', id);
   }
 
   /// Uploads a picked image's bytes to the `product-images` bucket under
@@ -266,6 +328,18 @@ class MarketplaceRepository {
   }
 
   List<Product> _mockProducts() => (debugProductsOverride ?? mock.marketplaceProducts)
-      .map((p) => Product(id: p.id, sellerId: p.id, sellerName: p.sellerName, name: p.name, description: p.description, price: p.price, stock: p.stock, category: p.category))
+      .map((p) => Product(
+            id: p.id,
+            sellerId: p.id,
+            sellerName: p.sellerName,
+            name: p.name,
+            description: p.description,
+            price: p.price,
+            stock: p.stock,
+            category: p.category,
+            upiId: p.upiId,
+            paymentNote: p.paymentNote,
+            isActive: p.isActive,
+          ))
       .toList();
 }

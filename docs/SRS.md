@@ -769,14 +769,54 @@ closed before the "Write a Review" UI existed, specifically to prevent
 self-boosting or rival review-bombing from ever becoming exploitable once it
 shipped.
 
+**Seller payment details + manual UPI pay (2026-08-18).** There is no real
+payment gateway anywhere in this app (no gateway credentials exist to
+integrate one) — placing an order has only ever recorded a sale, never
+collected money. A seller can now add a UPI ID and an optional free-text
+payment note (bank details, cash-on-delivery instructions, etc.) to her
+listing (`marketplace_products.upi_id`/`payment_note`, migration `0150`); a
+buyer sees these on the product detail page and can tap "Pay via UPI" to
+open her own UPI app pre-filled (`upi://pay?pa=...&pn=...&am=...&cu=INR`,
+via `url_launcher`) before placing the order through the existing flow —
+this mirrors the manual-UPI-record pattern this app already uses for SHG
+savings payments (`payments_qr_page.dart`), since a real gateway isn't
+buildable without credentials. There is deliberately no payment-reference/
+order linkage yet — the buyer confirms payment manually, and the seller
+confirms receipt out-of-band, same as any real small-vendor UPI collection
+today. Any user can view a product's payment details; they're not exposed
+through any separate broadly-readable surface beyond the product row itself
+(matching this schema's existing "sensitive-field" hygiene for other
+tables).
+
+**Seller listing management ("My Listings", 2026-08-18).** `Marketplace
+Repository.fetchMyProducts()` existed with zero UI callers before this — a
+seller could list a product but never edit its price/stock/photo/payment
+details, or take it down. `MyListingsPage` now lists a seller's own
+products with Edit and Delist/Relist actions. Sellers have **no DELETE
+right** on `marketplace_products` (staff-only, and staff are excluded from
+deleting their own too — hardened specifically so a seller can't erase a
+listing's order/review history by deleting the row it hangs off of) — so
+"delist" is a soft `is_active` flag toggled via the seller's existing
+UPDATE rights, not a real delete. A delisted product hides from the general
+catalog (`marketplace_products_select_all`'s RLS now requires `is_active`
+on top of the seller being active) but stays fully visible to its own
+seller and to staff, and a buyer with a pre-existing order on it keeps
+seeing it (regression-tested against the `buyer_has_order_for_product`
+visibility branch). `place_marketplace_order()` independently rejects an
+order against a delisted product server-side — the UI already disables
+"Place Order" for one, but RLS/RPC remains the real authorization boundary
+here, not client-side hiding.
+
 | ID | Requirement | Roles |
 |---|---|---|
-| FR-MKT-1 | Member/seller lists a product (name, description, price, stock, category) | Member, Leader |
-| FR-MKT-2 | Any user browses the cross-SHG product catalog and product detail | All |
-| FR-MKT-3 | Any user places an order; stock decrement and price-locking happen atomically | All |
+| FR-MKT-1 | Member/seller lists a product (name, description, price, stock, category, optional UPI ID + payment note) | Member, Leader |
+| FR-MKT-2 | Any user browses the cross-SHG product catalog and product detail; a delisted product is hidden from general browsing but stays visible to its own seller, staff, and a past buyer | All |
+| FR-MKT-3 | Any user places an order; stock decrement, price-locking, and the delisted-product check happen atomically | All |
 | FR-MKT-4 | Seller sets order status one step forward/back at a time (RLS-guarded); staff may override to any value for a dispute they don't personally own | Member, Leader (seller), staff |
 | FR-MKT-5 | Only a verified past buyer of the specific product may post a review; one review per reviewer per product | All |
 | FR-MKT-6 | Review moderation (edit/delete another user's review) is staff-only | Staff |
+| FR-MKT-7 | Seller edits her own listing (including payment details) or delists/relists it via "My Listings"; sellers cannot delete a listing outright | Member, Leader (seller) |
+| FR-MKT-8 | Buyer sees a seller's UPI ID/payment note on the product detail page and can open her own UPI app pre-filled to pay manually — no real payment gateway, no order-payment linkage | All |
 
 ### 3.9 Government Schemes (`schemes/`)
 

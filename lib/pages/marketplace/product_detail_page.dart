@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/marketplace.dart';
@@ -29,6 +30,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   final _commentController = TextEditingController();
   bool _placing = false;
   bool _submittingReview = false;
+  bool _launchingUpi = false;
 
   @override
   void dispose() {
@@ -148,6 +150,41 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
+  // No real payment-gateway integration exists in this app (no gateway
+  // credentials to wire one up) — this opens the buyer's OWN UPI app
+  // pre-filled with the seller's UPI ID, mirroring the manual-pay pattern
+  // this app already uses for SHG savings payments. The order itself is
+  // still placed through the normal `_placeOrder` flow above; there is no
+  // payment-reference/order linkage in this pass.
+  Future<void> _payViaUpi(Product product) async {
+    if (_launchingUpi) return;
+    setState(() => _launchingUpi = true);
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final uri = Uri(
+        scheme: 'upi',
+        host: 'pay',
+        queryParameters: {
+          'pa': product.upiId!,
+          'pn': product.sellerName,
+          'am': product.price.toString(),
+          'cu': 'INR',
+          if (product.paymentNote != null && product.paymentNote!.isNotEmpty) 'tn': product.paymentNote!,
+        },
+      );
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.productDetailUpiLaunchError)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.productDetailUpiLaunchError)));
+      }
+    } finally {
+      if (mounted) setState(() => _launchingUpi = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final repo = _repo;
@@ -207,7 +244,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               const SizedBox(height: 16),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Expanded(child: Text(product.name, style: AppTheme.display(18))),
-                if (product.category != null) AppBadge(text: marketplaceCategoryLabel(product.category!, l10n), tone: BadgeTone.brand),
+                Row(children: [
+                  if (!product.isActive) ...[
+                    AppBadge(text: l10n.productDetailDelistedBadge, tone: BadgeTone.neutral),
+                    const SizedBox(width: 6),
+                  ],
+                  if (product.category != null) AppBadge(text: marketplaceCategoryLabel(product.category!, l10n), tone: BadgeTone.brand),
+                ]),
               ]),
               const SizedBox(height: 6),
               Text(l10n.productDetailBySeller(product.sellerName), style: AppTheme.sans(12, color: Neutral.c500)),
@@ -217,12 +260,40 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               Text(l10n.productDetailInStock(product.stock), style: AppTheme.sans(12, color: product.stock > 0 ? Neutral.c500 : Accent.red600)),
               const SizedBox(height: 12),
               if (product.description != null) Text(product.description!, style: AppTheme.sans(13, color: Neutral.c700)),
+              // Manual UPI payment details — hidden for the seller's own
+              // listing (same `isOwnProduct` guard already used below to
+              // hide "Write a Review"), whenever no UPI ID was set, and for
+              // a delisted product (no point directing a buyer to pay for
+              // something she can no longer order).
+              if (product.upiId != null && product.upiId!.isNotEmpty && !isOwnProduct && product.isActive) ...[
+                const SizedBox(height: 16),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.productDetailPaymentDetailsTitle, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                      const SizedBox(height: 6),
+                      Text(l10n.productDetailUpiIdLabel(product.upiId!), style: AppTheme.sans(13)),
+                      if (product.paymentNote != null && product.paymentNote!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(product.paymentNote!, style: AppTheme.sans(12, color: Neutral.c600)),
+                      ],
+                      const SizedBox(height: 12),
+                      AppButton(
+                        label: _launchingUpi ? l10n.productDetailUpiOpeningInProgress : l10n.productDetailPayViaUpiButton,
+                        fullWidth: true,
+                        onPressed: _launchingUpi ? null : () => _payViaUpi(product),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
               AppButton(
                 label: _placing ? l10n.productDetailPlacingInProgress : l10n.productDetailPlaceOrderButton,
                 fullWidth: true,
                 size: ButtonSize.lg,
-                onPressed: product.stock <= 0 || _placing ? null : () => _placeOrder(product),
+                onPressed: product.stock <= 0 || _placing || !product.isActive ? null : () => _placeOrder(product),
               ),
               const SizedBox(height: 24),
               SectionHeader(

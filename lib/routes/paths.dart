@@ -50,6 +50,8 @@ class Paths {
 
   static String marketplaceProduct(String id) => '/app/marketplace/product/$id';
   static const marketplaceAddProduct = '/app/marketplace/add-product';
+  static const marketplaceMyListings = '/app/marketplace/my-listings';
+  static String marketplaceEditProduct(String id) => '/app/marketplace/edit-product/$id';
   static const marketplaceOrders = '/app/marketplace/orders';
   static String marketplaceOrderDetail(String id) => '/app/marketplace/orders/$id';
   static const marketplaceReviews = '/app/marketplace/reviews';

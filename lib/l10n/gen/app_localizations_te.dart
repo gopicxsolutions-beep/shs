@@ -1303,6 +1303,42 @@ class AppLocalizationsTe extends AppLocalizations {
   String get addProductSubmitButton => 'ఉత్పత్తిని జాబితా చేయండి';
 
   @override
+  String get addProductEditTitle => 'ఉత్పత్తిని సవరించండి';
+
+  @override
+  String get addProductUpiIdLabel => 'UPI ID (ఐచ్ఛికం)';
+
+  @override
+  String get addProductUpiIdHint => 'ఉదా. 9876543210@upi';
+
+  @override
+  String get addProductPaymentNoteLabel => 'చెల్లింపు గమనిక (ఐచ్ఛికం)';
+
+  @override
+  String get addProductPaymentNoteHint =>
+      'బ్యాంక్ వివరాలు, క్యాష్-ఆన్-డెలివరీ సూచనలు, మొదలైనవి.';
+
+  @override
+  String get addProductInvalidUpiId =>
+      'చెల్లుబాటు అయ్యే UPI IDని నమోదు చేయండి (ఉదా. name@bank)';
+
+  @override
+  String get addProductUpdateButton => 'మార్పులను సేవ్ చేయండి';
+
+  @override
+  String get addProductUpdatingInProgress => 'సేవ్ చేస్తోంది…';
+
+  @override
+  String get addProductUpdatedSuccess => 'ఉత్పత్తి అప్‌డేట్ చేయబడింది';
+
+  @override
+  String get addProductUpdateError =>
+      'ఈ ఉత్పత్తిని అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get addProductLoadError => 'ఈ ఉత్పత్తిని లోడ్ చేయలేకపోయాము.';
+
+  @override
   String get marketplaceHomeTitle => 'మార్కెట్';
 
   @override
@@ -1310,6 +1346,9 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get marketplaceHomeSellTile => 'అమ్మండి';
+
+  @override
+  String get marketplaceHomeMyListingsTile => 'నా జాబితాలు';
 
   @override
   String get marketplaceHomeOrdersTile => 'ఆర్డర్లు';
@@ -1370,6 +1409,63 @@ class AppLocalizationsTe extends AppLocalizations {
   String marketplaceReviewsRatingSemantics(int rating) {
     return '5లో $rating నక్షత్రాలు';
   }
+
+  @override
+  String get myListingsTitle => 'నా జాబితాలు';
+
+  @override
+  String get myListingsEmpty => 'మీరు ఇంకా ఏ ఉత్పత్తిని జాబితా చేయలేదు';
+
+  @override
+  String myListingsEditTooltip(String name) {
+    return '$nameను సవరించండి';
+  }
+
+  @override
+  String myListingsDelistTooltip(String name) {
+    return '$nameను తీసివేయండి';
+  }
+
+  @override
+  String myListingsRelistTooltip(String name) {
+    return '$nameను మళ్లీ జాబితా చేయండి';
+  }
+
+  @override
+  String get myListingsDelistedBadge => 'తీసివేయబడింది';
+
+  @override
+  String get myListingsDelistConfirmTitle => 'ఈ ఉత్పత్తిని తీసివేయాలా?';
+
+  @override
+  String myListingsDelistConfirmMessage(String name) {
+    return '\"$name\" కొనుగోలుదారుల నుండి దాచబడుతుంది మరియు ఇకపై ఆర్డర్ చేయబడదు. మీరు దీన్ని ఎప్పుడైనా మళ్లీ జాబితా చేయవచ్చు.';
+  }
+
+  @override
+  String get myListingsRelistConfirmTitle =>
+      'ఈ ఉత్పత్తిని మళ్లీ జాబితా చేయాలా?';
+
+  @override
+  String myListingsRelistConfirmMessage(String name) {
+    return '\"$name\" కొనుగోలుదారులకు మళ్లీ కనిపిస్తుంది.';
+  }
+
+  @override
+  String get myListingsDelistButton => 'తీసివేయండి';
+
+  @override
+  String get myListingsRelistButton => 'మళ్లీ జాబితా చేయండి';
+
+  @override
+  String get myListingsDelistedSuccess => 'ఉత్పత్తి తీసివేయబడింది';
+
+  @override
+  String get myListingsRelistedSuccess => 'ఉత్పత్తి మళ్లీ జాబితా చేయబడింది';
+
+  @override
+  String get myListingsToggleError =>
+      'ఈ జాబితాను అప్‌డేట్ చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.';
 
   @override
   String get orderDetailTitle => 'ఆర్డర్ వివరాలు';
@@ -1472,6 +1568,27 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get productDetailPlaceOrderButton => 'ఆర్డర్ చేయండి';
+
+  @override
+  String get productDetailPaymentDetailsTitle => 'చెల్లింపు వివరాలు';
+
+  @override
+  String productDetailUpiIdLabel(String id) {
+    return 'UPI ID: $id';
+  }
+
+  @override
+  String get productDetailPayViaUpiButton => 'UPI ద్వారా చెల్లించండి';
+
+  @override
+  String get productDetailUpiOpeningInProgress => 'తెరుస్తోంది…';
+
+  @override
+  String get productDetailUpiLaunchError =>
+      'UPI యాప్‌ను తెరవలేకపోయాము. దయచేసి పైన చూపిన UPI IDని ఉపయోగించి చెల్లించండి.';
+
+  @override
+  String get productDetailDelistedBadge => 'తీసివేయబడింది';
 
   @override
   String get meetingsHomeTitle => 'సమావేశాలు';

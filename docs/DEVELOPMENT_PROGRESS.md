@@ -20675,3 +20675,90 @@ change (this session touched none of `admin_schemes_page.dart`/
 than silently fixed here (different feature, unclear intent for the actual
 copy without the missing context from whatever session started it).
 
+## 2026-08-18 — Feature: Marketplace seller UPI payment details + My Listings (edit/delist)
+
+User-reported: the marketplace was missing important features, and
+specifically there's no way for a seller to actually get paid — the app has
+no real payment gateway. Audited the module first (`docs/DEVELOPMENT_
+PROGRESS.md` rounds 181-183 already documented "marketplace checkout and
+Payments are architecturally disconnected" and "seller listing management
+is still entirely missing" as known, deliberately-deferred gaps) and
+clarified scope with the user before building: a real gateway isn't
+buildable without credentials this environment doesn't have, so the agreed
+approach mirrors this app's existing manual-UPI-record pattern
+(`payments_qr_page.dart`) rather than a fake/simulated "gateway."
+
+**Scope confirmed with the user, explicitly deferred**: order↔payment
+reference linkage, buyer-initiated order cancellation, and review edit/
+delete were all raised by the audit but declined for this pass.
+
+1. **Seller payment details + "Pay via UPI"**: `marketplace_products` gained
+   nullable `upi_id`/`payment_note` columns (migration `0150`). A seller
+   sets them on `add_product_page.dart`'s form (new light validation: a
+   non-empty UPI ID must contain `@`); a buyer sees them on `product_
+   detail_page.dart` and can tap "Pay via UPI" to open her own UPI app via
+   `url_launcher` (`upi://pay?pa=...&pn=...&am=...&cu=INR`, the same
+   package/call shape already used once in `shg_documents_page.dart`, no
+   new dependency) — hidden for the seller's own listing (reusing the
+   existing `isOwnProduct` guard) and for a delisted product. The order
+   itself still goes through the existing `place_marketplace_order` flow
+   unchanged — no payment-reference tracking this pass, per the confirmed
+   scope.
+2. **My Listings (edit/delist)**: `MarketplaceRepository.fetchMyProducts()`
+   existed with zero UI callers before this — new `MyListingsPage` (routed
+   at `/app/marketplace/my-listings`, a 4th tile on the marketplace home
+   screen) lists a seller's own products with Edit and Delist/Relist
+   actions. Sellers have no DELETE right on `marketplace_products`
+   (`marketplace_products_delete_staff` is staff-only, and staff are
+   excluded from their own too, migration `0105`) — so delist is a soft
+   `is_active boolean default true` flag (migration `0150`) toggled via the
+   seller's existing UPDATE rights, not a real delete. `add_product_page.
+   dart` became dual-purpose (`AddProductPage({this.productId})`, routed at
+   `/app/marketplace/edit-product/:id`) rather than a separate near-
+   duplicate page — this codebase's own precedent (`admin_shgs_page.dart`'s
+   Add/Edit dialog) already establishes "shared fields, branch on presence
+   of an id," just expressed as a page constructor param instead of a
+   dialog since this form has 8 fields plus a photo picker, past this
+   codebase's own "dialog is fine for ~10 short fields" threshold. New
+   `MarketplaceRepository.updateProduct()` always requires `isActive`
+   explicitly (never optional) so neither a field-only edit nor a delist/
+   relist toggle can flip the other by omission.
+3. **RLS**: `marketplace_products_select_all` now additionally requires
+   `is_active` on its general-browse branch, with new `seller_id =
+   auth.uid()` and (unchanged) `is_staff()`/`buyer_has_order_for_product()`
+   branches so a seller and staff always see a listing regardless of its
+   `is_active` state, and a past buyer's order-history visibility survives
+   a later delist. `place_marketplace_order()` (latest version confirmed by
+   reading its live source, migration `0131`, before editing it — not
+   guessed) gained an explicit `is_active` guard, `raise exception`-styled
+   identically to its existing deactivated-seller check, so a delisted
+   product can't be ordered via a direct RPC call even though the UI
+   already disables "Place Order" for one.
+
+**Verification**: `flutter analyze` — 0 new issues (same pre-existing,
+unrelated `admin_schemes_page.dart` errors as logged in the previous entry;
+untouched by this round, already flagged as a separate follow-up task).
+5 new/extended widget tests across `test/pages/add_product_page_test.dart`
+(edit-mode prefill + submit, UPI-format validation), a new `test/pages/
+product_detail_page_test.dart` (Pay via UPI hidden/shown/tappable,
+delisted-product badge + disabled Place Order), and a new `test/pages/
+my_listings_page_test.dart` (delist/relist confirm-then-toggle flow) — all
+passing, plus `Paths.marketplaceMyListings` added to `test/routes/
+all_routes_smoke_test.dart`. **Live-verified against the real project**
+before AND after writing the migration (`set local role authenticated` +
+`request.jwt.claims`, all inside one rolled-back transaction — zero test
+data persisted): a seller can insert/update her own `upi_id`/`payment_
+note`/`is_active`; a seller cannot delete her own listing (0 rows); a
+different member cannot edit someone else's listing (0 rows); a delisted
+product is hidden from another buyer's SELECT but stays visible to its own
+seller and to staff; `place_marketplace_order` correctly raises for a
+delisted product with zero stock/order side effects; and — the regression
+check that mattered most — a buyer with a genuinely pre-existing order on a
+separately-delisted product still sees it, confirming the new `is_active`
+gate on the SELECT policy's general-browse branch didn't accidentally
+revoke the unrelated order-history visibility grant it shares a policy
+with. **No live UI click-through**: real staff/member login needs phone
+OTP, not completable in this sandboxed environment (a pre-existing,
+already-documented limitation) — SQL-layer live verification substituted,
+consistent with this session's earlier attendance-fix entry.
+

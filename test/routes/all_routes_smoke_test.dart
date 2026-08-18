@@ -179,6 +179,7 @@ const _adminAccessibleRoutes = <String>[
   Paths.livelihood,
   Paths.livelihoodEntry,
   Paths.marketplaceAddProduct,
+  Paths.marketplaceMyListings,
   Paths.marketplaceOrders,
   Paths.marketplaceReviews,
   Paths.schemes,
