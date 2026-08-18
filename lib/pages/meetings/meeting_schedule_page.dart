@@ -4,8 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
+import '../../models/shg.dart';
 import '../../models/types.dart';
 import '../../repositories/meeting_repository.dart';
+import '../../repositories/shg_repository.dart';
 import '../../routes/paths.dart';
 import '../../services/supabase_service.dart';
 import '../../state/app_state.dart';
@@ -18,7 +20,11 @@ import '../../widgets/async_state.dart';
 import '../../widgets/discard_changes_dialog.dart';
 
 class MeetingSchedulePage extends StatefulWidget {
-  const MeetingSchedulePage({super.key});
+  // Injectable for tests (mirrors `MeetingAttendancePage`'s round-168
+  // `repository` seam) — defaults to the real repositories.
+  final MeetingRepository? repository;
+  final ShgRepository? shgRepository;
+  const MeetingSchedulePage({super.key, this.repository, this.shgRepository});
   @override
   State<MeetingSchedulePage> createState() => _MeetingSchedulePageState();
 }
@@ -26,12 +32,52 @@ class MeetingSchedulePage extends StatefulWidget {
 class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
   final _venue = TextEditingController();
   final _agenda = TextEditingController();
-  final _repo = MeetingRepository();
+  late final MeetingRepository _repo = widget.repository ?? MeetingRepository();
+  late final ShgRepository _shgRepo = widget.shgRepository ?? ShgRepository();
   DateTime _date = DateTime.now().add(const Duration(days: 7));
   TimeOfDay _time = const TimeOfDay(hour: 16, minute: 0);
   bool _saving = false;
   bool _dirty = false;
   String? _error;
+
+  // crp/clf/admin have no `profile.shgId` of their own (platform-wide by
+  // design — see `MeetingAttendancePage`'s identical `isPlatformWide` doc
+  // comment). This page used to hard-block every such account behind
+  // `commonStaffNoShgMessage`, on the reasoning that scheduling is "a
+  // leader's own SHG action" — but `meeting_attendance_page.dart` already
+  // grants staff full platform-wide read/write over attendance (RLS:
+  // `meetings_insert_leader_or_staff`/`meeting_attendance_insert_self_or_
+  // leader` both have an unconditional `is_staff()` branch), and a real SHG
+  // with no leader yet on record (a real, live-observed state — a brand-new
+  // SHG onboarded by a CRP before its leader account exists) can otherwise
+  // NEVER get a meeting scheduled by anyone, which permanently blocks the
+  // entire attendance feature for that SHG despite staff being fully
+  // authorized to operate it. Lets a platform-wide staff account pick which
+  // SHG to schedule for instead of being turned away outright.
+  List<ShgProfile> _shgs = [];
+  String? _selectedShgId;
+  bool _loadingShgs = false;
+
+  Future<void> _loadShgs() async {
+    setState(() => _loadingShgs = true);
+    final page = await _shgRepo.fetchAllShgs();
+    if (mounted) {
+      setState(() {
+        _shgs = page.items;
+        _loadingShgs = false;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final appState = context.read<AppState>();
+    final role = appState.user.role;
+    if (SupabaseService.isConfigured && role != Role.member && role != Role.leader && appState.profile?.shgId == null) {
+      _loadShgs();
+    }
+  }
 
   // Also raises the app-wide `UnsavedChanges` flag that `PageHeader`'s Back
   // button and the bottom nav check before navigating away — see
@@ -77,7 +123,13 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
       return;
     }
     final appState = context.read<AppState>();
-    final shgId = appState.profile?.shgId;
+    final role = appState.user.role;
+    final isPlatformWide = SupabaseService.isConfigured && role != Role.member && role != Role.leader && appState.profile?.shgId == null;
+    final shgId = isPlatformWide ? _selectedShgId : appState.profile?.shgId;
+    if (isPlatformWide && shgId == null) {
+      setState(() => _error = l10n.meetingScheduleSelectShgError);
+      return;
+    }
     // Resolved before any `await` below (not inline at the call site) —
     // `_time.format(context)` used `context` after the duplicate-meeting
     // confirm dialog's own async gap, which `flutter analyze`'s
@@ -181,23 +233,29 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
     final shgId = context.select<AppState, String?>((s) => s.profile?.shgId);
     final role = context.select<AppState, Role>((s) => s.user.role);
 
-    // Router-restricted to leader/staff already, but crp/clf/admin have no
-    // `profile.shgId` of their own — without this guard they could fill out
-    // the whole form before discovering `meetingScheduleNoShgError` only at
-    // submit time (that check stays in `_submit` as a harmless fallback for
-    // the rare case shgId changes mid-session). `isConfigured` excludes demo
-    // mode, whose simulated identity leaves `shgId` null for every role.
-    //
-    // A LEADER hitting this is a genuinely broken/unlinked account (see
-    // AppState.completeProfileSetup's doc comment) — `commonStaffNoShgMessage`
-    // ("your role isn't linked to a specific SHG") is written for crp/clf/
-    // admin, for whom that's expected and by design, not an error to fix.
-    if (SupabaseService.isConfigured && shgId == null) {
+    // A LEADER with no `profile.shgId` is a genuinely broken/unlinked
+    // account (see `AppState.completeProfileSetup`'s doc comment) — still a
+    // hard block, `commonLeaderNoShgMessage` explains why. `isConfigured`
+    // excludes demo mode, whose simulated identity leaves `shgId` null for
+    // every role.
+    if (SupabaseService.isConfigured && role == Role.leader && shgId == null) {
       return Scaffold(
         appBar: PageHeader(title: l10n.meetingScheduleTitle),
-        body: AppEmptyState(icon: Icons.groups_rounded, message: role == Role.leader ? l10n.commonLeaderNoShgMessage : l10n.commonStaffNoShgMessage),
+        body: AppEmptyState(icon: Icons.groups_rounded, message: l10n.commonLeaderNoShgMessage),
       );
     }
+
+    // crp/clf/admin have no `profile.shgId` of their own — platform-wide by
+    // design, not a broken account (mirrors `MeetingAttendancePage`'s own
+    // `isPlatformWide`). This used to hard-block every such account here
+    // too, on the theory that scheduling is purely a leader's own-SHG
+    // action — but staff are already fully authorized (RLS:
+    // `meetings_insert_leader_or_staff`'s unconditional `is_staff()`
+    // branch) to schedule for ANY SHG, and a real SHG with no leader
+    // account yet on record could otherwise never get a meeting scheduled
+    // by anyone, permanently blocking attendance for it. Offer an SHG
+    // picker instead of turning staff away.
+    final isPlatformWide = SupabaseService.isConfigured && role != Role.member && role != Role.leader && shgId == null;
 
     return PopScope(
       canPop: !_dirty,
@@ -209,6 +267,37 @@ class _MeetingSchedulePageState extends State<MeetingSchedulePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (isPlatformWide) ...[
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.meetingScheduleShgLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                    const SizedBox(height: 8),
+                    _loadingShgs
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : _shgs.isEmpty
+                            // Same `DropdownButtonFormField`-silently-disables
+                            // gap already fixed in savings_entry_page.dart —
+                            // an empty `items` list leaves the field looking
+                            // interactive but inert, with no explanation.
+                            ? Text(l10n.adminShgsEmptyState, style: AppTheme.sans(13, color: Neutral.c500))
+                            : DropdownButtonFormField<String>(
+                                initialValue: _selectedShgId,
+                                isExpanded: true,
+                                decoration: InputDecoration(border: InputBorder.none, hintText: l10n.meetingScheduleSelectShgHint),
+                                items: _shgs.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))).toList(),
+                                onChanged: (v) => setState(() {
+                                  _selectedShgId = v;
+                                  _error = null;
+                                  _markDirty();
+                                }),
+                              ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             Row(children: [
               Expanded(child: _pickerTile(l10n.meetingScheduleDateLabel, DateFormat('dd MMM yyyy').format(_date), _pickDate)),
               const SizedBox(width: 12),

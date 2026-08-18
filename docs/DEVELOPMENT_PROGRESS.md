@@ -20604,3 +20604,74 @@ live-verified with negative (exploit-reproduction) and positive
 re-verified rather than blindly fixed, and found not reproducible against
 the existing code.
 
+## 2026-08-18 — Bug fix: staff (crp/clf/admin) could not take attendance for any SHG with no leader account
+
+User-reported: "attendance feature have issue they have not able attendence
+all groups they failed." Investigated by first checking whether this was an
+RLS regression — it was not: live-verified (against the real project,
+`begin`/`rollback` where the write wasn't idempotent) that `is_staff()` can
+insert, update, and true `INSERT ... ON CONFLICT DO UPDATE` (the exact shape
+`MeetingRepository.markAttendance()`'s `.upsert()` issues) into
+`meeting_attendance` for any SHG's meeting, including the real production
+data (`bf49eb8e-0d57-4ff8-bad1-61683be28798`, "new shg group") as the real
+admin account `venkat`. The actual root cause was upstream and Dart-side:
+querying the live project directly showed **zero `role = 'leader'` profiles
+exist across every real SHG** — both real SHGs ("new shg group",
+"testing group") have active members but no leader account on record yet.
+Attendance can only be marked for a meeting that already exists, and
+`meeting_schedule_page.dart` hard-blocked every crp/clf/admin account behind
+`commonStaffNoShgMessage` with no SHG picker (a deliberate choice from the
+2026-07-26 round-168 pass, reasoned at the time as "nothing to post
+against yet" and documented as such in `docs/SRS.md` §3.6) — so for any SHG
+without a leader, no one could ever schedule a meeting, which permanently
+locked out the entire attendance feature for that SHG despite staff already
+being fully RLS-authorized (`meetings_insert_leader_or_staff`'s
+unconditional `is_staff()` branch) to operate it.
+
+Fix (`lib/pages/meetings/meeting_schedule_page.dart`): added a real
+cross-SHG picker for platform-wide staff, mirroring `MeetingAttendancePage`'s
+existing `isPlatformWide` pattern — `ShgRepository.fetchAllShgs()` (already
+`is_staff()`-readable via `shgs_select_own_or_staff`, previously only wired
+into `AdminShgsPage`) backs a `DropdownButtonFormField`; `_submit()` now
+schedules against the picked SHG instead of the caller's own (always-null)
+`shgId`, with a new validation error (`meetingScheduleSelectShgError`, added
+to all 3 `.arb` files) if staff tries to submit with nothing picked. A
+leader with a genuinely broken/unlinked account (`shgId == null`) still gets
+the hard block — that part of the original guard was correct and untouched.
+Also gave the page injectable `repository`/`shgRepository` constructor
+params (mirroring `MeetingAttendancePage`'s existing test seam) so this
+could be widget-tested without a live backend, and fixed one stale UI copy
+nit found while touching this flow: the same-day-duplicate-meeting confirm
+dialog said "Your SHG already has a meeting..." even when a staff account
+was scheduling for a *different* SHG than their own (they have none) —
+reworded to "This SHG" in all 3 languages. `docs/SRS.md` §3.6 updated (the
+"Scheduling still needs a specific SHG to post against... Schedule
+tile/button is hidden" note and FR-MTG-1 were describing a limitation this
+fix closes).
+
+**Verification**: `flutter analyze` — 0 new issues (this file and
+`test/pages/meeting_schedule_page_test.dart` individually: clean). New
+widget tests (`test/pages/meeting_schedule_page_test.dart`, 5 added) cover:
+a crp/clf/admin account sees the real SHG picker (not the old dead-end
+message) and its items are the actual injected catalog; submitting without
+picking an SHG shows the new validation error and never calls `schedule()`;
+picking an SHG and submitting schedules against *that* SHG's id, not the
+staff account's own null one. Live: reproduced the RLS-is-fine /
+scheduling-is-blocked split described above against the real project
+before writing the fix, and cleaned up the one test fixture created during
+that investigation (a `__TEST__`-marked meeting + 2 attendance rows in a
+real, otherwise-empty SHG, id-prefixed `99999999-` for recognizability) —
+re-queried and confirmed zero rows remain. `flutter test`: 467 passing;
+17 pre-existing failures unrelated to this change, all one root cause —
+`admin_schemes_page.dart` (modified, uncommitted, already in the working
+tree before this session started, part of an unfinished prior "iteration
+42" scheme-editor feature) references 6 `AppLocalizations` getters
+(`adminSchemesFullNameHint` and 5 siblings) never added to the `.arb`
+files, a genuine compile error that fails every test file importing it
+transitively — confirmed via isolated `flutter test test/app_smoke_test.dart`
+showing the exact compile trace, confirmed NOT caused by anything in this
+change (this session touched none of `admin_schemes_page.dart`/
+`scheme_repository.dart`), and flagged as a separate follow-up task rather
+than silently fixed here (different feature, unclear intent for the actual
+copy without the missing context from whatever session started it).
+

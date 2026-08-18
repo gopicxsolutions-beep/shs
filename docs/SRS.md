@@ -620,11 +620,23 @@ fetchAllForStaff()` is the new platform-wide fetch
 granted). `meetings_home_page.dart` shows a real cross-SHG upcoming/past
 feed; `meeting_attendance_page.dart` shows a real cross-SHG meeting picker
 that a staff account can mark attendance for — each meeting/row tagged with
-its SHG name. Scheduling still needs a specific SHG to post against (no
-"which SHG" picker), so the Schedule tile/button is hidden for the
-platform-wide view, the same choice made for §3.5's Add-entry button — not
-a new restriction, since `meetings_write_leader_or_staff` already grants
-`is_staff()` unconditional insert rights, just nothing to post against yet.
+its SHG name.
+
+**Fixed (2026-08-18): `meeting_schedule_page.dart` now has a genuine
+cross-SHG picker too, closing the one remaining dead end in this module.**
+Every other write path here (attendance marking) was already platform-wide
+for staff, but scheduling itself stayed hard-blocked behind
+`commonStaffNoShgMessage` — and since attendance can only ever be marked for
+a meeting that already exists, an SHG with no leader account yet on record
+(a real, live-observed state, not a hypothetical) could never get a meeting
+scheduled by *anyone*, permanently locking out the entire attendance feature
+for that SHG despite staff being fully RLS-authorized to operate it
+(`meetings_insert_leader_or_staff`'s unconditional `is_staff()` branch).
+`meeting_schedule_page.dart` now shows a real SHG picker (`ShgRepository.
+fetchAllShgs()`, RLS-readable by any staff role via `shgs_select_own_or_staff`)
+for crp/clf/admin, and schedules against whichever SHG they pick instead of
+their own (always-null) `shgId`. A leader with a genuinely broken/unlinked
+account still gets the hard block — that part was never the gap.
 
 **Found and fixed a real latent bug while building this, previously
 unreachable and so invisible until now**: `meeting_attendance_page.dart`,
@@ -657,7 +669,7 @@ gap, there is no genuine platform-wide capability to build here.
 
 | ID | Requirement | Roles |
 |---|---|---|
-| FR-MTG-1 | Leader schedules a meeting (date/time/venue/agenda); CRP/CLF/Admin can too (RLS `is_staff()`-unconditional) but have no SHG of their own to post against | Leader |
+| FR-MTG-1 | Leader schedules a meeting (date/time/venue/agenda) for her own SHG; CRP/CLF/Admin do the same for any SHG via a picker (since 2026-08-18) | Leader, CRP, CLF, Admin |
 | FR-MTG-2 | Any member self-checks-in (via QR gesture or a plain button — functionally identical) for whichever meeting is scheduled *today* — inherently personal/SHG-scoped, correctly not extended to platform-wide staff | Member |
 | FR-MTG-3 | Leader marks/edits the attendance roster via per-row toggle for her own SHG; CRP/CLF/Admin do the same platform-wide across every SHG, via a cross-SHG picker (since round 168) | Leader, CRP, CLF, Admin |
 | FR-MTG-4 | "Has this meeting happened" is derived from date, not from `status` — `status` reaching `'completed'` is still not implemented — but a leader/staff can genuinely cancel a meeting, and a cancelled meeting is correctly excluded from every completed/attendance stat regardless of date | Leader, staff |

@@ -812,7 +812,7 @@
   "meetingScheduleDemoMode": "डेमो मोड — बैठक सेव नहीं हुई (स्थायी रूप से सेव करने के लिए Supabase से जोड़ें)",
 
   "meetingScheduleDuplicateConfirmTitle": "पहले से बैठक निर्धारित है?",
-  "meetingScheduleDuplicateConfirmMessage": "आपके SHG की {date} को पहले से ही एक बैठक निर्धारित है। क्या उसी दिन के लिए एक और बैठक निर्धारित करें?",
+  "meetingScheduleDuplicateConfirmMessage": "इस SHG की {date} को पहले से ही एक बैठक निर्धारित है। क्या उसी दिन के लिए एक और बैठक निर्धारित करें?",
   "meetingScheduleDuplicateConfirmButton": "फिर भी निर्धारित करें",
 
   "meetingScheduleError": "बैठक शेड्यूल नहीं हो सकी। कृपया फिर से कोशिश करें।",
@@ -828,6 +828,12 @@
   "meetingScheduleAgendaLabel": "एजेंडा",
 
   "meetingScheduleAgendaHint": "जैसे, मासिक बचत समीक्षा और ऋण आवेदन",
+
+  "meetingScheduleShgLabel": "SHG",
+
+  "meetingScheduleSelectShgHint": "एक SHG चुनें",
+
+  "meetingScheduleSelectShgError": "इस बैठक को शेड्यूल करने के लिए एक SHG चुनें।",
 
   "meetingQrTitle": "मीटिंग चेक-इन",
 

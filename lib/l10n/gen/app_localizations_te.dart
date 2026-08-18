@@ -1676,7 +1676,7 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String meetingScheduleDuplicateConfirmMessage(String date) {
-    return 'మీ SHGకి $date న ఇప్పటికే ఒక సమావేశం షెడ్యూల్ చేయబడింది. అదే రోజుకు మరొకటి షెడ్యూల్ చేయాలా?';
+    return 'ఈ SHGకి $date న ఇప్పటికే ఒక సమావేశం షెడ్యూల్ చేయబడింది. అదే రోజుకు మరొకటి షెడ్యూల్ చేయాలా?';
   }
 
   @override
@@ -1704,6 +1704,16 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get meetingScheduleAgendaHint =>
       'ఉదా. నెలవారీ పొదుపు సమీక్ష మరియు రుణ దరఖాస్తులు';
+
+  @override
+  String get meetingScheduleShgLabel => 'SHG';
+
+  @override
+  String get meetingScheduleSelectShgHint => 'ఒక SHGని ఎంచుకోండి';
+
+  @override
+  String get meetingScheduleSelectShgError =>
+      'ఈ సమావేశాన్ని షెడ్యూల్ చేయడానికి ఒక SHGని ఎంచుకోండి.';
 
   @override
   String get meetingQrTitle => 'మీటింగ్ చెక్-ఇన్';

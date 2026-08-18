@@ -1126,7 +1126,7 @@
   "meetingScheduleDemoMode": "Demo mode — meeting not saved (connect Supabase to persist)",
 
   "meetingScheduleDuplicateConfirmTitle": "Meeting already scheduled?",
-  "meetingScheduleDuplicateConfirmMessage": "Your SHG already has a meeting scheduled on {date}. Schedule another one for the same day?",
+  "meetingScheduleDuplicateConfirmMessage": "This SHG already has a meeting scheduled on {date}. Schedule another one for the same day?",
   "@meetingScheduleDuplicateConfirmMessage": {
     "placeholders": {
       "date": {"type": "String"}
@@ -1147,6 +1147,12 @@
   "meetingScheduleAgendaLabel": "Agenda",
 
   "meetingScheduleAgendaHint": "e.g. Monthly savings review & loan applications",
+
+  "meetingScheduleShgLabel": "SHG",
+
+  "meetingScheduleSelectShgHint": "Select an SHG",
+
+  "meetingScheduleSelectShgError": "Select an SHG to schedule this meeting for.",
 
   "meetingQrTitle": "Meeting Check-In",
 

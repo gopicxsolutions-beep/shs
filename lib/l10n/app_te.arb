@@ -812,7 +812,7 @@
   "meetingScheduleDemoMode": "డెమో మోడ్ — సమావేశం సేవ్ కాలేదు (శాశ్వతంగా సేవ్ చేయడానికి Supabaseని కనెక్ట్ చేయండి)",
 
   "meetingScheduleDuplicateConfirmTitle": "ఇప్పటికే సమావేశం షెడ్యూల్ చేయబడిందా?",
-  "meetingScheduleDuplicateConfirmMessage": "మీ SHGకి {date} న ఇప్పటికే ఒక సమావేశం షెడ్యూల్ చేయబడింది. అదే రోజుకు మరొకటి షెడ్యూల్ చేయాలా?",
+  "meetingScheduleDuplicateConfirmMessage": "ఈ SHGకి {date} న ఇప్పటికే ఒక సమావేశం షెడ్యూల్ చేయబడింది. అదే రోజుకు మరొకటి షెడ్యూల్ చేయాలా?",
   "meetingScheduleDuplicateConfirmButton": "అయినా షెడ్యూల్ చేయండి",
 
   "meetingScheduleError": "సమావేశాన్ని షెడ్యూల్ చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
@@ -828,6 +828,12 @@
   "meetingScheduleAgendaLabel": "ఎజెండా",
 
   "meetingScheduleAgendaHint": "ఉదా. నెలవారీ పొదుపు సమీక్ష మరియు రుణ దరఖాస్తులు",
+
+  "meetingScheduleShgLabel": "SHG",
+
+  "meetingScheduleSelectShgHint": "ఒక SHGని ఎంచుకోండి",
+
+  "meetingScheduleSelectShgError": "ఈ సమావేశాన్ని షెడ్యూల్ చేయడానికి ఒక SHGని ఎంచుకోండి.",
 
   "meetingQrTitle": "మీటింగ్ చెక్-ఇన్",
 

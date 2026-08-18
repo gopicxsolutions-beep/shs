@@ -1669,7 +1669,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String meetingScheduleDuplicateConfirmMessage(String date) {
-    return 'Your SHG already has a meeting scheduled on $date. Schedule another one for the same day?';
+    return 'This SHG already has a meeting scheduled on $date. Schedule another one for the same day?';
   }
 
   @override
@@ -1697,6 +1697,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get meetingScheduleAgendaHint =>
       'e.g. Monthly savings review & loan applications';
+
+  @override
+  String get meetingScheduleShgLabel => 'SHG';
+
+  @override
+  String get meetingScheduleSelectShgHint => 'Select an SHG';
+
+  @override
+  String get meetingScheduleSelectShgError =>
+      'Select an SHG to schedule this meeting for.';
 
   @override
   String get meetingQrTitle => 'Meeting Check-In';

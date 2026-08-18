@@ -2935,7 +2935,7 @@ abstract class AppLocalizations {
   /// No description provided for @meetingScheduleDuplicateConfirmMessage.
   ///
   /// In en, this message translates to:
-  /// **'Your SHG already has a meeting scheduled on {date}. Schedule another one for the same day?'**
+  /// **'This SHG already has a meeting scheduled on {date}. Schedule another one for the same day?'**
   String meetingScheduleDuplicateConfirmMessage(String date);
 
   /// No description provided for @meetingScheduleDuplicateConfirmButton.
@@ -2985,6 +2985,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'e.g. Monthly savings review & loan applications'**
   String get meetingScheduleAgendaHint;
+
+  /// No description provided for @meetingScheduleShgLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG'**
+  String get meetingScheduleShgLabel;
+
+  /// No description provided for @meetingScheduleSelectShgHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an SHG'**
+  String get meetingScheduleSelectShgHint;
+
+  /// No description provided for @meetingScheduleSelectShgError.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an SHG to schedule this meeting for.'**
+  String get meetingScheduleSelectShgError;
 
   /// No description provided for @meetingQrTitle.
   ///
