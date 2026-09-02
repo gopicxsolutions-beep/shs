@@ -298,6 +298,13 @@ class AppLocalizationsTe extends AppLocalizations {
   String get languageHindi => 'హిందీ';
 
   @override
+  String get languageSelectTitle => 'మీ భాషను ఎంచుకోండి';
+
+  @override
+  String get languageSelectSubtitle =>
+      'యాప్‌లో ఉపయోగించాలనుకుంటున్న భాషను ఎంచుకోండి. మీరు దీన్ని సెట్టింగ్‌ల నుండి ఎప్పుడైనా మార్చుకోవచ్చు.';
+
+  @override
   String get servicesTitle => 'సేవలు';
 
   @override

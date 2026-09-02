@@ -8,12 +8,6 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_card.dart';
 
-const _languageNames = <Language, (String, String)>{
-  Language.en: ('English', 'English'),
-  Language.te: ('తెలుగు', 'Telugu'),
-  Language.hi: ('हिंदी', 'Hindi'),
-};
-
 class LanguagePage extends StatelessWidget {
   const LanguagePage({super.key});
 
@@ -52,7 +46,7 @@ class LanguagePage extends StatelessWidget {
             child: Column(
               children: Language.values.map((l) {
                 final selected = l == appState.language;
-                final (native, english) = _languageNames[l]!;
+                final (native, english) = languageDisplayNames[l]!;
                 // Which language is currently active is shown only by a
                 // check_circle vs. an unchecked radio icon — a screen reader
                 // has no built-in way to read that distinction from an Icon,

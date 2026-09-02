@@ -150,7 +150,21 @@ it matters, whether that boundary is also independently enforced by RLS.
 
 ### 3.1 Authentication & Onboarding (`auth/`)
 
-**How it works.** Login takes a single 10-digit mobile number, validated
+**How it works.** The very first screen a fresh install ever reaches — before
+Splash, before Login, before anything else in the auth flow — is a
+**language picker** (`Paths.languageSelect`): three full-width rows
+(English / తెలుగు / हिंदी), each showing its own name in its own script.
+Tapping one calls `AppState.setLanguage`, which applies immediately and
+persists to `SharedPreferences`, then continues into Splash. This shows
+exactly once per device: the router's redirect gates it on
+`AppState.languageSelected` (whether `shg_language` has ever been written,
+not just whether the current session is authenticated), so a returning user
+— including one whose account predates this feature and simply never opened
+Settings → Language — is never interrupted mid-app to force a pick. The
+language can always be changed again later from Settings → Language
+(`LanguagePage`), which shares the same three rows.
+
+Login takes a single 10-digit mobile number, validated
 client-side against `^[6-9]\d{9}$` (Indian mobile numbers only — deliberately
 rejects numbers that could never receive an SMS, rather than accepting any
 10-digit string). Submitting sends an OTP via Supabase Auth
@@ -217,6 +231,7 @@ database defense-in-depth chain and its incident history.
 
 | ID | Requirement | Roles |
 |---|---|---|
+| FR-AUTH-0 | First-run language picker (English/Telugu/Hindi) shown before Splash/Login/anything else, exactly once per device (gated on whether a language has ever been chosen, not on auth state), skippable by nobody since all three are complete UIs | All |
 | FR-AUTH-1 | Phone + OTP authentication, Indian mobile number format validated client-side | All |
 | FR-AUTH-2 | Profile setup: name (required), village/mandal/district, mandatory SHG search-and-request-to-join | All |
 | FR-AUTH-2b | Mandatory 9-section ICSSR baseline survey (demographics through consent) at registration time, stored in `member_baseline_surveys`; every field on every section is required — Next stays disabled until all of a section's fields are filled/selected — through submitting the final Consent step | Member, Leader |

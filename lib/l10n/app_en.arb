@@ -113,6 +113,9 @@
   "languageTelugu": "తెలుగు",
   "languageHindi": "हिन्दी",
 
+  "languageSelectTitle": "Choose your language",
+  "languageSelectSubtitle": "Select the language you'd like to use in the app. You can change this anytime from Settings.",
+
   "servicesTitle": "Services",
 
   "loginTitle": "Welcome back",

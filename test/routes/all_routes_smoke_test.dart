@@ -78,18 +78,33 @@ void main() {
   }
 
   group('unauthenticated auth-flow routes render without throwing', () {
-    testWidgets(Paths.splash, (tester) async {
+    // A completely fresh device — no language chosen yet — lands here
+    // first, before Splash/Login/OTP (see router.dart's `languageSelected`
+    // redirect and language_select_redirect_test.dart for the redirect
+    // behavior itself). Covered here purely as a "does it render" smoke
+    // check, matching every other route in this file.
+    testWidgets(Paths.languageSelect, (tester) async {
       await boot(tester, const {});
+      expect(tester.takeException(), isNull, reason: 'Route ${Paths.languageSelect} threw during build/layout');
+    });
+
+    // A language already chosen for the rest of this group — these routes
+    // are past the first-run picker above, matching every real user who
+    // has ever opened the app before.
+    const prefsWithLanguage = {'shg_language': 'en'};
+
+    testWidgets(Paths.splash, (tester) async {
+      await boot(tester, prefsWithLanguage);
       expect(tester.takeException(), isNull, reason: 'Route ${Paths.splash} threw during build/layout');
     });
 
     testWidgets(Paths.login, (tester) async {
-      final router = await boot(tester, const {});
+      final router = await boot(tester, prefsWithLanguage);
       await goAndCheck(tester, router, Paths.login);
     });
 
     testWidgets(Paths.otp, (tester) async {
-      final router = await boot(tester, const {});
+      final router = await boot(tester, prefsWithLanguage);
       await goAndCheck(tester, router, Paths.otp, extra: '9876543210');
     });
   });

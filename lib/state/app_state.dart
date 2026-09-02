@@ -49,6 +49,19 @@ class AppState extends ChangeNotifier {
 
   Language language = Language.en;
 
+  /// Whether a language has ever been explicitly chosen on this device —
+  /// either via the first-run [Paths.languageSelect] picker or later from
+  /// Settings ([LanguagePage]) — as opposed to [language] just sitting at
+  /// its `Language.en` default because nobody has picked yet. Distinct from
+  /// [language] itself: that field is never null (it needs a concrete value
+  /// to render with from the very first frame), so it alone can't tell "the
+  /// user chose English" apart from "no choice has been made yet," which is
+  /// exactly the distinction the router's redirect needs to decide whether
+  /// to show the first-run picker at all. Set from whether [_langKey] was
+  /// already present in `SharedPreferences` at [init] time, and flipped
+  /// true the moment [setLanguage] is ever called.
+  bool languageSelected = false;
+
   Session? _session;
   Profile? _profile;
   ShgSearchResult? _pendingShg;
@@ -261,6 +274,7 @@ class AppState extends ChangeNotifier {
       final match = Language.values.where((l) => l.name == langName);
       if (match.isNotEmpty) language = match.first;
     }
+    languageSelected = langName != null;
 
     if (!SupabaseService.isConfigured) {
       final roleName = prefs.getString(_roleKey);
@@ -508,6 +522,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> setLanguage(Language lang) async {
     language = lang;
+    languageSelected = true;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_langKey, lang.name);

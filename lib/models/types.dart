@@ -20,6 +20,19 @@ RoleInfo roleInfoFor(Role r) => roles.firstWhere((e) => e.id == r);
 
 enum Language { en, te, hi }
 
+/// Each language's own display name, in its own script, paired with an
+/// English gloss (omitted when it'd be identical, i.e. for `en` itself) —
+/// deliberately not run through [AppLocalizations], since a language
+/// picker must always show "తెలుగు"/"हिंदी" in their own script regardless
+/// of whatever locale the app is currently rendering in. Shared by
+/// `language_page.dart` (Settings) and `language_select_page.dart`
+/// (first-run picker) so the two never drift apart on wording.
+const languageDisplayNames = <Language, (String native, String english)>{
+  Language.en: ('English', 'English'),
+  Language.te: ('తెలుగు', 'Telugu'),
+  Language.hi: ('हिंदी', 'Hindi'),
+};
+
 class AppUser {
   final String name;
   final String mobile;

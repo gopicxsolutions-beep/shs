@@ -19,7 +19,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    SharedPreferences.setMockInitialValues({});
+    // A language already chosen — this test is about the 404 error screen,
+    // not the separate first-run language picker (see
+    // language_select_redirect_test.dart), which would otherwise intercept
+    // the unmatched-route navigation below before it ever reaches the
+    // error builder.
+    SharedPreferences.setMockInitialValues({'shg_language': 'en'});
     final appState = AppState();
     await appState.init();
     final router = buildRouter(appState);

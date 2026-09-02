@@ -628,6 +628,18 @@ abstract class AppLocalizations {
   /// **'हिन्दी'**
   String get languageHindi;
 
+  /// No description provided for @languageSelectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your language'**
+  String get languageSelectTitle;
+
+  /// No description provided for @languageSelectSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the language you\'d like to use in the app. You can change this anytime from Settings.'**
+  String get languageSelectSubtitle;
+
   /// No description provided for @servicesTitle.
   ///
   /// In en, this message translates to:

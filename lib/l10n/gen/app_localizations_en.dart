@@ -295,6 +295,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageHindi => 'हिन्दी';
 
   @override
+  String get languageSelectTitle => 'Choose your language';
+
+  @override
+  String get languageSelectSubtitle =>
+      'Select the language you\'d like to use in the app. You can change this anytime from Settings.';
+
+  @override
   String get servicesTitle => 'Services';
 
   @override

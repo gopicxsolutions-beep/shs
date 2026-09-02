@@ -1,4 +1,5 @@
 class Paths {
+  static const languageSelect = '/language-select';
   static const splash = '/';
   static const login = '/login';
   static const otp = '/otp';

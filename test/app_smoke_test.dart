@@ -5,14 +5,16 @@ import 'package:shg_saathi/main.dart';
 
 /// End-to-end smoke test of the demo-mode boot flow (no Supabase
 /// configured, matching how flutter-web-demo runs) — boots the real app
-/// widget tree, lands on the splash screen, and follows "Get Started" into
-/// the login flow.
+/// widget tree on a completely fresh device (no language ever chosen), so
+/// it lands on the first-run language picker first, then follows a
+/// language choice into the splash screen, then "Get Started" into the
+/// login flow.
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('boots to the splash screen and navigates into the login flow', (tester) async {
+  testWidgets('boots to the language picker, then splash, then navigates into the login flow', (tester) async {
     // The default 800x600 test surface is too short for the splash page's
     // content and clips "Get Started" out of the hit-testable area — size
     // the surface like a real phone instead.
@@ -22,6 +24,12 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const ShgSaathiApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Choose your language'), findsOneWidget);
+    expect(find.text('English'), findsOneWidget);
+
+    await tester.tap(find.text('English'));
     await tester.pumpAndSettle();
 
     expect(find.text('Get Started'), findsOneWidget);

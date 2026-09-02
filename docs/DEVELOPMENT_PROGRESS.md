@@ -21008,3 +21008,70 @@ Not independently re-verified against live Supabase this round (no live
 preview session available) — the ICSSR baseline survey feature and
 iteration-42 SQL migrations were already documented as applied/live-verified
 in their own entries above; this round's changes were Dart-only.
+
+## 2026-09-02 — Feature: first-run language picker before onboarding
+
+User-requested: on first launch, show new users a language selection screen
+before the rest of onboarding (Splash/Login/OTP/etc.) begins.
+
+**Design**: a new `Paths.languageSelect` route (`LanguageSelectPage`, styled
+after `LoginPage`'s hero-icon layout) listing the three supported languages
+by their own native name (never run through `AppLocalizations`, since a
+language picker must show "తెలుగు"/"हिंदी" in-script regardless of the app's
+current locale — factored the existing `language_page.dart`'s inline name
+map out to a shared `languageDisplayNames` const in `lib/models/types.dart`
+so the two pickers can't drift apart). Tapping a row calls the existing
+`AppState.setLanguage` and continues to Splash.
+
+**Gating, the part that needed care**: showing this unconditionally on every
+launch would be wrong (nobody wants a language prompt on every open), and
+gating it purely on "hasn't visited Settings → Language" would wrongly catch
+existing users who happen to have always been fine with the English default.
+Added `AppState.languageSelected` — true once `shg_language` has ever been
+written to `SharedPreferences` (by this picker OR by Settings), independent
+of `AppState.language` itself (which always has a concrete `en` default and
+so can't distinguish "chose English" from "never chose"). The router's
+redirect gates the new screen on `!hasSession && !languageSelected` — scoped
+to `!hasSession` specifically so an already-signed-in account (e.g. one that
+predates this feature and simply never touched Settings) is never yanked
+back out to force a pick it never asked for; only a device that hasn't
+authenticated yet ever sees it, and only until it picks once.
+
+A genuine `/app/**` deep link opened by a completely fresh device now passes
+through both gates — this picker AND the pre-existing "no session yet"
+capture (`AppState.capturePendingDeepLink`, added for exactly this purpose
+in an earlier round) — so the very first person to open a shared link on a
+never-before-opened device doesn't lose it, matching what already happened
+for every subsequent opener whose device had already picked a language.
+
+**Test fallout**: every router-level test that boots with empty
+`SharedPreferences` and expects to land directly on Splash/Login/an
+`/app/**` route pre-auth now hits the new gate first. Fixed by adding
+`'shg_language': 'en'` to the handful of `deep_link_redirect_test.dart` /
+`router_error_test.dart` / `all_routes_smoke_test.dart` boot calls that were
+actually testing something else (deep-link capture, the 404 error screen,
+route-render smoke checks) — role-gate tests and the stress-test suites were
+already unaffected, since every one of them either signs in
+(`completeProfileSetup`/`setRole`) before navigating or boots already-
+authenticated (`shg_session_started: true`). `test/app_smoke_test.dart`
+(the one true end-to-end "boot the real `ShgSaathiApp` widget tree" test)
+was rewritten to walk the new real first-run path: language picker → tap
+English → Splash → Get Started → Login. Added
+`test/routes/language_select_redirect_test.dart` for the gating logic
+itself (6 new cases: fresh device sees the picker; login/OTP/a deep link are
+all redirected to it first; a deep link is still captured even though the
+picker intercepts it; picking a language persists it and proceeds; a device
+that already chose one is never sent back; an already-authenticated
+pre-feature account is not interrupted).
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` —
+1107/1107 passing (was 1100; +7 new). Live-checked in a real browser
+(`flutter build web --release` + static serve, demo mode): a fresh profile
+(cleared `localStorage`) shows the picker first; tapping a language persists
+`shg_language` and advances through Splash into Login rendered in the
+chosen language (confirmed with Telugu — full UI, including Login's own
+copy, correctly localized). Not tested against live Supabase this round
+(no backend involvement — the feature is pure client-side routing/state).
+
+Docs updated in this same change: [SRS.md](SRS.md) §3.1 (new opening
+paragraph on the picker) and new FR-AUTH-0.

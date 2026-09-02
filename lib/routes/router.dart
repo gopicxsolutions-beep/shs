@@ -17,6 +17,7 @@ import '../pages/analytics/analytics_dashboard_page.dart';
 import '../pages/analytics/analytics_shg_detail_page.dart';
 import '../pages/analytics/analytics_shg_list_page.dart';
 import '../pages/auth/account_deactivated_page.dart';
+import '../pages/auth/language_select_page.dart';
 import '../pages/auth/login_page.dart';
 import '../pages/auth/otp_page.dart';
 import '../pages/auth/profile_load_error_page.dart';
@@ -163,6 +164,26 @@ String? _computeRedirect(BuildContext context, GoRouterState state, AppState app
       // out/mid-onboarding user away from it.
       final onAuthFlow = state.matchedLocation != '/app' && !state.matchedLocation.startsWith('/app/');
 
+      // First reach of the auth flow on this device, before any language
+      // has ever been explicitly chosen (see AppState.languageSelected) —
+      // shown before Splash, before Login, before anything else. Confined
+      // to `!hasSession`: an already-signed-in account (e.g. one that
+      // predates this feature and simply never visited Settings >
+      // Language) must not be yanked out of the app it's already using to
+      // force a pick it never asked for.
+      if (!appState.hasSession && !appState.languageSelected) {
+        if (state.matchedLocation == Paths.languageSelect) return null;
+        // A genuine deep link (e.g. a shared `/app/...` URL) opened on a
+        // completely fresh device still needs to survive the detour through
+        // this picker and Splash/Login/OTP, exactly like the capture below
+        // this block already does for the same link on a device that HAS
+        // chosen a language — otherwise the very first person to open a
+        // shared link would silently lose it, while everyone after them
+        // (once their device's language is set) would not.
+        if (!onAuthFlow && state.topRoute != null) appState.capturePendingDeepLink(state.matchedLocation);
+        return Paths.languageSelect;
+      }
+
       // No session yet (OTP not verified) — confined to the auth flow.
       if (!appState.hasSession) {
         if (onAuthFlow) return null;
@@ -288,6 +309,7 @@ GoRouter buildRouter(AppState appState) {
       return result;
     },
     routes: [
+      GoRoute(path: Paths.languageSelect, builder: (context, state) => const LanguageSelectPage()),
       GoRoute(path: Paths.splash, builder: (context, state) => const SplashPage()),
       GoRoute(path: Paths.login, builder: (context, state) => const LoginPage()),
       GoRoute(path: Paths.otp, builder: (context, state) => OtpPage(phone: state.extra as String?)),

@@ -56,7 +56,11 @@ void main() {
 
   testWidgets('an unauthenticated visit to a real /app/** deep link is captured and bounced to splash', (tester) async {
     final appState = AppState();
-    final router = await boot(tester, appState, const {});
+    // A language already chosen — these tests are about deep-link capture,
+    // not about the separate first-run language picker (see
+    // language_select_redirect_test.dart), so this keeps the router past
+    // that unrelated gate.
+    final router = await boot(tester, appState, const {'shg_language': 'en'});
 
     router.go(Paths.loanDetail('abc123'));
     await tester.pumpAndSettle();
@@ -67,7 +71,11 @@ void main() {
 
   testWidgets('an unauthenticated visit to an unknown /app-prefixed URL is NOT captured', (tester) async {
     final appState = AppState();
-    final router = await boot(tester, appState, const {});
+    // A language already chosen — these tests are about deep-link capture,
+    // not about the separate first-run language picker (see
+    // language_select_redirect_test.dart), so this keeps the router past
+    // that unrelated gate.
+    final router = await boot(tester, appState, const {'shg_language': 'en'});
 
     router.go('/app/this-route-does-not-exist');
     await tester.pumpAndSettle();
@@ -78,7 +86,11 @@ void main() {
 
   testWidgets('an unauthenticated visit to an auth-flow route (not /app/**) captures nothing', (tester) async {
     final appState = AppState();
-    final router = await boot(tester, appState, const {});
+    // A language already chosen — these tests are about deep-link capture,
+    // not about the separate first-run language picker (see
+    // language_select_redirect_test.dart), so this keeps the router past
+    // that unrelated gate.
+    final router = await boot(tester, appState, const {'shg_language': 'en'});
 
     router.go(Paths.login);
     await tester.pumpAndSettle();
@@ -89,7 +101,11 @@ void main() {
 
   testWidgets('a captured deep link the signed-in user IS allowed to see is reachable once onboarding is complete', (tester) async {
     final appState = AppState();
-    final router = await boot(tester, appState, const {});
+    // A language already chosen — these tests are about deep-link capture,
+    // not about the separate first-run language picker (see
+    // language_select_redirect_test.dart), so this keeps the router past
+    // that unrelated gate.
+    final router = await boot(tester, appState, const {'shg_language': 'en'});
 
     router.go(Paths.loanDetail('abc123'));
     await tester.pumpAndSettle();
@@ -115,7 +131,11 @@ void main() {
 
   testWidgets('a captured deep link the signed-in user is NOT allowed to see still gets role-restricted away', (tester) async {
     final appState = AppState();
-    final router = await boot(tester, appState, const {});
+    // A language already chosen — these tests are about deep-link capture,
+    // not about the separate first-run language picker (see
+    // language_select_redirect_test.dart), so this keeps the router past
+    // that unrelated gate.
+    final router = await boot(tester, appState, const {'shg_language': 'en'});
 
     // Paths.adminUsers ('/app/admin/users') is a genuine registered route,
     // restricted to Role.admin by router.dart's _roleRestrictedPrefixes.

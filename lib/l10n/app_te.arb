@@ -109,6 +109,9 @@
 
   "languageTitle": "భాష",
   "languageSubtitle": "యాప్ కోసం మీకు ఇష్టమైన భాషను ఎంచుకోండి",
+
+  "languageSelectTitle": "మీ భాషను ఎంచుకోండి",
+  "languageSelectSubtitle": "యాప్‌లో ఉపయోగించాలనుకుంటున్న భాషను ఎంచుకోండి. మీరు దీన్ని సెట్టింగ్‌ల నుండి ఎప్పుడైనా మార్చుకోవచ్చు.",
   "languageEnglish": "ఇంగ్లీష్",
   "languageTelugu": "తెలుగు",
   "languageHindi": "హిందీ",
