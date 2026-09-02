@@ -27,7 +27,7 @@ const _statusTones = <String, BadgeTone>{
   'cancelled': BadgeTone.danger,
 };
 
-class MeetingsHomePage extends StatelessWidget {
+class MeetingsHomePage extends StatefulWidget {
   // Injectable for tests (mirrors `SettingsPage`'s `notificationService`
   // seam) — defaults to the real on-device implementation.
   final NotificationService? notificationService;
@@ -36,6 +36,16 @@ class MeetingsHomePage extends StatelessWidget {
   // call — mirrors LoansHomePage's round-168 `repository` seam.
   final MeetingRepository? repository;
   const MeetingsHomePage({super.key, this.notificationService, this.repository});
+  @override
+  State<MeetingsHomePage> createState() => _MeetingsHomePageState();
+}
+
+// Gap-hunt iteration 42: was `StatelessWidget` until this fix needed a
+// `mounted` check to safely show a one-time SnackBar after the fire-and-
+// forget permission-sync's async gap (see `_syncReminders` below) —
+// mirrors `AnnouncementsHomePage`'s existing State-based pattern for the
+// exact same reason.
+class _MeetingsHomePageState extends State<MeetingsHomePage> {
 
   /// Fetches this SHG's meetings and, best-effort and without blocking the
   /// list from rendering, brings this device's scheduled meeting reminders
@@ -85,7 +95,15 @@ class MeetingsHomePage extends StatelessWidget {
   }
 
   Future<void> _syncReminders(NotificationService notifications, List<Meeting> meetings, AppLocalizations l10n) async {
-    final enabled = await ensureNotificationPermissionForDefaultEnabled(notifications, kNotifyMeetingsPrefKey, await meetingRemindersEnabled());
+    final enabled = await ensureNotificationPermissionForDefaultEnabled(
+      notifications,
+      kNotifyMeetingsPrefKey,
+      await meetingRemindersEnabled(),
+      onPermissionDenied: () {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsNotifPermissionDenied)));
+      },
+    );
     if (enabled) {
       await syncMeetingReminders(notifications, meetings, l10n);
     } else if (await meetingCancelPending()) {
@@ -112,9 +130,9 @@ class MeetingsHomePage extends StatelessWidget {
     final appState = context.watch<AppState>();
     final role = appState.user.role;
     final isLeaderOrStaff = role != Role.member;
-    final repo = repository ?? MeetingRepository();
+    final repo = widget.repository ?? MeetingRepository();
     final shgId = appState.profile?.shgId;
-    final notifications = notificationService ?? LocalNotificationService.instance;
+    final notifications = widget.notificationService ?? LocalNotificationService.instance;
     final l10n = AppLocalizations.of(context)!;
 
     // crp/clf/admin have no `profile.shgId` of their own.

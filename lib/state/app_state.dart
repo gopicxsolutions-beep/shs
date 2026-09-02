@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthChangeEvent, AuthState, Session;
+import '../models/baseline_survey.dart';
 import '../models/profile.dart';
 import '../models/types.dart';
 import '../repositories/shg_join_request_repository.dart';
 import '../repositories/shg_repository.dart';
 import '../services/auth_service.dart';
+import '../services/baseline_survey_repository.dart';
 import '../services/notification_service.dart';
 import '../services/profile_repository.dart';
 import '../services/supabase_service.dart';
@@ -23,18 +25,26 @@ import '../widgets/async_state.dart' show isNetworkError;
 ///    [defaultUser]'s role, so the 5 dashboards stay explorable without a
 ///    backend (matches the previous `restore()`/`setRole()` behavior).
 class AppState extends ChangeNotifier {
-  AppState({AuthService? authService, ProfileRepository? profileRepository, ShgJoinRequestRepository? joinRequestRepository, ShgRepository? shgRepository, NotificationService? notificationService})
-      : _authService = authService ?? AuthService(),
+  AppState({
+    AuthService? authService,
+    ProfileRepository? profileRepository,
+    ShgJoinRequestRepository? joinRequestRepository,
+    ShgRepository? shgRepository,
+    NotificationService? notificationService,
+    BaselineSurveyRepository? baselineSurveyRepository,
+  })  : _authService = authService ?? AuthService(),
         _profileRepository = profileRepository ?? ProfileRepository(),
         _joinRequestRepository = joinRequestRepository ?? ShgJoinRequestRepository(),
         _shgRepository = shgRepository ?? ShgRepository(),
-        _notificationService = notificationService ?? LocalNotificationService.instance;
+        _notificationService = notificationService ?? LocalNotificationService.instance,
+        _baselineSurveyRepository = baselineSurveyRepository ?? BaselineSurveyRepository();
 
   final AuthService _authService;
   final ProfileRepository _profileRepository;
   final ShgJoinRequestRepository _joinRequestRepository;
   final ShgRepository _shgRepository;
   final NotificationService _notificationService;
+  final BaselineSurveyRepository _baselineSurveyRepository;
   StreamSubscription<AuthState>? _authSub;
 
   Language language = Language.en;
@@ -49,6 +59,18 @@ class AppState extends ChangeNotifier {
   // approved member. See `user` getter below.
   String? _shgName;
   int _profileLoadGeneration = 0;
+
+  // Whether the current session's profile has already submitted the ICSSR
+  // baseline survey (`public.member_baseline_surveys`, migration 0151).
+  // Fetched as best-effort enrichment alongside `_shgName` in `_loadProfile`
+  // — see that method's doc comment for why a failure here must not affect
+  // an already-loaded `_profile`. Live mode only: `needsBaselineSurvey`
+  // below is unconditionally false without a real session, so demo mode
+  // never reads this — there's no backing table there and, unlike
+  // `_legacyName`/`_legacyVillage`, nothing in demo mode ever displays a
+  // submitted answer back, so there's nothing worth tracking a completion
+  // flag for either (`submitBaselineSurvey`'s demo branch is a pure no-op).
+  bool _baselineSurveyCompleted = false;
 
   // Set by `_loadProfile()` when its most recent attempt failed because of
   // a network/connectivity problem specifically (not a confirmed "no such
@@ -131,6 +153,31 @@ class AppState extends ChangeNotifier {
   /// a rank-and-file member joining, not the role-preview personas
   /// (leader/crp/clf/admin) this app's Role Select otherwise offers.
   bool get needsShgApproval => SupabaseService.isConfigured && _profile != null && _profile!.role == 'member' && _profile!.shgId == null;
+
+  /// Whether this account still needs to fill in the ICSSR baseline survey
+  /// (`public.member_baseline_surveys`, migration 0151) — mandatory before
+  /// dashboard access (see the router's redirect). Scoped to member/leader,
+  /// not crp/clf/admin: the survey is about a woman running (or in) an
+  /// SHG-linked microenterprise, which describes every member/leader
+  /// account but not the federation-oversight staff roles, who never had a
+  /// "registration time" to fill it in at in the first place (no
+  /// self-service signup path ever reaches crp/clf/admin — see
+  /// profile_setup_page.dart's own doc comment on why staff never even
+  /// reaches this page).
+  ///
+  /// This is true for two different accounts, both of which land back on
+  /// `Paths.profileSetup` — that page tells them apart via [isNewProfile]
+  /// (its own name for `_profile == null` at the moment Continue was
+  /// pressed) and renders either the full wizard or a survey-only
+  /// continuation:
+  ///  * a brand-new signup mid-registration (survey and profile submit
+  ///    together in one `completeProfileSetup`/`submitBaselineSurvey` pair
+  ///    — see profile_setup_page.dart's `_continue`)
+  ///  * an account created before this requirement shipped, which has a
+  ///    `profiles` row (and may already be an approved member) but no
+  ///    `member_baseline_surveys` row yet.
+  bool get needsBaselineSurvey =>
+      SupabaseService.isConfigured && _profile != null && (_profile!.role == 'member' || _profile!.role == 'leader') && !_baselineSurveyCompleted;
 
   /// Whether `Paths.roleSelect` is a legitimate destination while
   /// [hasProfile] is still false — used by the router's redirect to decide
@@ -295,6 +342,7 @@ class AppState extends ChangeNotifier {
     final profile = _profile;
     if (profile == null) {
       _shgName = null;
+      _baselineSurveyCompleted = false;
       return;
     }
     try {
@@ -307,6 +355,15 @@ class AppState extends ChangeNotifier {
       _shgName = shg?.name;
     } catch (_) {
       // Best-effort enrichment only — leave existing values in place.
+    }
+    try {
+      // Same best-effort treatment as the SHG name above — see
+      // `_baselineSurveyCompleted`'s doc comment.
+      final completed = await _baselineSurveyRepository.hasSubmitted(profile.id);
+      if (generation != _profileLoadGeneration) return;
+      _baselineSurveyCompleted = completed;
+    } catch (_) {
+      // Best-effort enrichment only — leave existing value in place.
     }
   }
 
@@ -396,6 +453,21 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Submits the ICSSR baseline survey (see `needsBaselineSurvey`'s doc
+  /// comment for the two call sites this serves — a brand-new signup
+  /// finishing registration, or an older account filling in the gap). Demo
+  /// mode has no backing table and `needsBaselineSurvey` never gates
+  /// anything there (see that getter and `_baselineSurveyCompleted`'s doc
+  /// comment), so this is a pure no-op — kept as a real `await` point (not
+  /// a synchronous early return) so `ProfileSetupPage._continue`'s single
+  /// code path behaves identically in both modes.
+  Future<void> submitBaselineSurvey(BaselineSurveyDraft draft) async {
+    if (!SupabaseService.isConfigured) return;
+    await _baselineSurveyRepository.submit(draft);
+    _baselineSurveyCompleted = true;
+    notifyListeners();
+  }
+
   /// Self-service role selection — always the CALLER's own profile. Staff
   /// roles (crp/clf/admin) must never be reachable here: this is the
   /// onboarding Role Select page, not an admin-driven change (that's
@@ -449,6 +521,7 @@ class AppState extends ChangeNotifier {
     _profile = null;
     _pendingShg = null;
     _shgName = null;
+    _baselineSurveyCompleted = false;
     _profileLoadFailedNetwork = false;
     // A pending deep link belongs to whoever is about to sign in next —
     // without this, signing out and back in as a different account could

@@ -81,7 +81,15 @@ class _AnnouncementsHomePageState extends State<AnnouncementsHomePage> {
   // AppLocalizations.of(context) on a possibly-deactivated widget would be
   // unsafe.
   Future<void> _syncNotifications(List<Announcement> items, AppLocalizations l10n) async {
-    final enabled = await ensureNotificationPermissionForDefaultEnabled(_notifications, kNotifyAnnouncementsPrefKey, await announcementNotificationsEnabled());
+    final enabled = await ensureNotificationPermissionForDefaultEnabled(
+      _notifications,
+      kNotifyAnnouncementsPrefKey,
+      await announcementNotificationsEnabled(),
+      onPermissionDenied: () {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsNotifPermissionDenied)));
+      },
+    );
     if (enabled) {
       await notifyNewAnnouncements(_notifications, items, l10n);
     }

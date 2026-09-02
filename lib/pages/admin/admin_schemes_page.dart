@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -28,8 +29,15 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
   final _repo = SchemeRepository();
   final GlobalKey<AppAsyncBuilderState<List<Scheme>>> _key = GlobalKey();
   final _name = TextEditingController();
+  final _fullName = TextEditingController();
   final _agency = TextEditingController();
   final _benefit = TextEditingController();
+  // Gap-hunt iteration 42: free-text eligibility requirements (the ones
+  // `EligibilityCriteria` can't machine-evaluate — see its doc comment,
+  // e.g. BPL status, prior subsidy history) had no form field at all —
+  // one requirement per line, mirroring `SchemeDetailPage`'s bulleted
+  // rendering of this same list.
+  final _eligibility = TextEditingController();
   final _minShgAgeMonths = TextEditingController();
   // Structured eligibility criteria form state (see `EligibilityCriteria` in
   // lib/models/scheme.dart) — reset before each dialog opens, read back once
@@ -37,16 +45,85 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
   // enough here per the "a simple form is fine" scope for this feature.
   bool _requiresShgMembership = false;
   String? _minShgGrade;
+  // Gap-hunt iteration 42: had no form field at all — a scheme's real-world
+  // application deadline (shown on `SchemeDetailPage`) could only ever be
+  // set by writing to the table directly, and any admin who then corrected
+  // a typo through this page's Edit dialog silently wiped it (see
+  // `SchemeRepository.updateScheme`'s doc comment for the wipe mechanism).
+  DateTime? _deadline;
   bool _busy = false;
 
   @override
   void dispose() {
     _name.dispose();
+    _fullName.dispose();
     _agency.dispose();
     _benefit.dispose();
+    _eligibility.dispose();
     _minShgAgeMonths.dispose();
     super.dispose();
   }
+
+  /// `_eligibility`'s free-text textarea, one requirement per line, into
+  /// the `List<String>` `SchemeRepository` stores — mirrors
+  /// `SchemeDetailPage`'s bulleted rendering of the same list. Blank lines
+  /// (leading/trailing, or a field left empty) are dropped rather than
+  /// stored as empty bullets.
+  List<String> get _parsedEligibility => _eligibility.text.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
+
+  /// Shared by both Add and Edit dialogs — the basic catalog fields
+  /// (everything except the structured criteria section below) are
+  /// identical in each, just seeded from different starting values.
+  List<Widget> _basicFields(BuildContext dialogContext, StateSetter setDialogState, AppLocalizations l10n) => [
+        TextField(controller: _name, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminSchemesNameHint)),
+        const SizedBox(height: 12),
+        TextField(controller: _fullName, maxLength: 150, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminSchemesFullNameHint)),
+        const SizedBox(height: 12),
+        TextField(controller: _agency, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminSchemesAgencyHint)),
+        const SizedBox(height: 12),
+        TextField(controller: _benefit, maxLength: 300, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminSchemesBenefitHint)),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _eligibility,
+          maxLines: 3,
+          minLines: 3,
+          textInputAction: TextInputAction.done,
+          decoration: InputDecoration(hintText: l10n.adminSchemesEligibilityHint),
+        ),
+        const SizedBox(height: 16),
+        Text(l10n.adminSchemesDeadlineLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                _deadline == null ? l10n.adminSchemesDeadlineNotSet : DateFormat('dd MMM yyyy').format(_deadline!),
+                style: AppTheme.sans(13),
+              ),
+            ),
+            Builder(builder: (dialogContext) {
+              return TextButton(
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: dialogContext,
+                    initialDate: _deadline ?? DateTime.now(),
+                    firstDate: DateTime.now().subtract(const Duration(days: 365 * 5)),
+                    lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+                  );
+                  if (picked != null) setDialogState(() => _deadline = picked);
+                },
+                child: Text(l10n.adminSchemesPickDateButton),
+              );
+            }),
+            if (_deadline != null)
+              IconButton(
+                icon: const Icon(Icons.clear_rounded),
+                tooltip: l10n.adminSchemesClearDeadlineTooltip,
+                onPressed: () => setDialogState(() => _deadline = null),
+              ),
+          ],
+        ),
+      ];
 
   /// Shared by both Add and Edit dialogs — the criteria section is
   /// identical in each, just seeded from different starting values.
@@ -106,11 +183,14 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
   Future<void> _addScheme() async {
     final l10n = AppLocalizations.of(context)!;
     _name.clear();
+    _fullName.clear();
     _agency.clear();
     _benefit.clear();
+    _eligibility.clear();
     _minShgAgeMonths.clear();
     _requiresShgMembership = false;
     _minShgGrade = null;
+    _deadline = null;
     final confirmed = await showDialog<bool>(
       context: context,
       // See shg_home_page.dart's identical fix for why: an accidental tap
@@ -125,11 +205,7 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(controller: _name, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminSchemesNameHint)),
-                const SizedBox(height: 12),
-                TextField(controller: _agency, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminSchemesAgencyHint)),
-                const SizedBox(height: 12),
-                TextField(controller: _benefit, maxLength: 300, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.adminSchemesBenefitHint)),
+                ..._basicFields(context, setDialogState, l10n),
                 ..._criteriaFields(setDialogState, l10n),
               ],
             ),
@@ -155,7 +231,15 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
     if (!_buildCriteria((c) => criteria = c) || !mounted) return;
     setState(() => _busy = true);
     try {
-      await _repo.createScheme(name: _name.text.trim(), agency: _agency.text.trim(), benefit: _benefit.text.trim(), criteria: criteria!);
+      await _repo.createScheme(
+        name: _name.text.trim(),
+        fullName: _fullName.text.trim().isEmpty ? null : _fullName.text.trim(),
+        agency: _agency.text.trim(),
+        benefit: _benefit.text.trim(),
+        eligibility: _parsedEligibility,
+        criteria: criteria!,
+        deadline: _deadline,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(SupabaseService.isConfigured ? l10n.adminSchemesAddedMessage : l10n.adminSchemesDemoModeMessage),
@@ -181,10 +265,13 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
   Future<void> _editScheme(Scheme s) async {
     final l10n = AppLocalizations.of(context)!;
     _name.text = s.name;
+    _fullName.text = s.fullName ?? '';
     _agency.text = s.agency ?? '';
     _benefit.text = s.benefit ?? '';
+    _eligibility.text = s.eligibility.join('\n');
     _minShgAgeMonths.text = s.criteria.minShgAgeMonths?.toString() ?? '';
     _requiresShgMembership = s.criteria.requiresShgMembership;
+    _deadline = s.deadline;
     // Defensive fallback to "No minimum" for a stored `min_shg_grade` outside
     // this dropdown's 5-item vocabulary (e.g. written directly via SQL,
     // bypassing this form — there's no DB CHECK constraint on the column).
@@ -209,11 +296,7 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(controller: _name, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminSchemesNameHint)),
-                const SizedBox(height: 12),
-                TextField(controller: _agency, maxLength: 100, textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: l10n.adminSchemesAgencyHint)),
-                const SizedBox(height: 12),
-                TextField(controller: _benefit, maxLength: 300, textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: l10n.adminSchemesBenefitHint)),
+                ..._basicFields(context, setDialogState, l10n),
                 ..._criteriaFields(setDialogState, l10n),
               ],
             ),
@@ -236,7 +319,16 @@ class _AdminSchemesPageState extends State<AdminSchemesPage> {
     if (!_buildCriteria((c) => criteria = c) || !mounted) return;
     setState(() => _busy = true);
     try {
-      await _repo.updateScheme(s.id, name: _name.text.trim(), fullName: s.fullName, agency: _agency.text.trim(), benefit: _benefit.text.trim(), criteria: criteria!);
+      await _repo.updateScheme(
+        s.id,
+        name: _name.text.trim(),
+        fullName: _fullName.text.trim().isEmpty ? null : _fullName.text.trim(),
+        agency: _agency.text.trim(),
+        benefit: _benefit.text.trim(),
+        eligibility: _parsedEligibility,
+        criteria: criteria!,
+        deadline: _deadline,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(SupabaseService.isConfigured ? l10n.adminSchemesUpdatedMessage : l10n.adminSchemesDemoModeMessage),

@@ -7997,6 +7997,834 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bal'**
   String get financialLedgerBalancePrefix;
+
+  /// No description provided for @actionNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get actionNext;
+
+  /// No description provided for @actionBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get actionBack;
+
+  /// No description provided for @commonYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get commonYes;
+
+  /// No description provided for @commonNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get commonNo;
+
+  /// No description provided for @baselineSurveyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Baseline Survey'**
+  String get baselineSurveyTitle;
+
+  /// No description provided for @baselineSurveySectionOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Section {current} of {total}'**
+  String baselineSurveySectionOf(int current, int total);
+
+  /// No description provided for @baselineSurveyIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'A few more questions to finish registering. This helps the program understand who it serves — please answer every question on each section before continuing.'**
+  String get baselineSurveyIntro;
+
+  /// No description provided for @baselineSurveyLevelHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get baselineSurveyLevelHigh;
+
+  /// No description provided for @baselineSurveyLevelModerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate'**
+  String get baselineSurveyLevelModerate;
+
+  /// No description provided for @baselineSurveyLevelLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get baselineSurveyLevelLow;
+
+  /// No description provided for @baselineSurveyFreqNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get baselineSurveyFreqNever;
+
+  /// No description provided for @baselineSurveyFreqAlways.
+  ///
+  /// In en, this message translates to:
+  /// **'Always'**
+  String get baselineSurveyFreqAlways;
+
+  /// No description provided for @baselineSurveyFreqSometimes.
+  ///
+  /// In en, this message translates to:
+  /// **'Sometimes'**
+  String get baselineSurveyFreqSometimes;
+
+  /// No description provided for @baselineSurveyFreqOften.
+  ///
+  /// In en, this message translates to:
+  /// **'Often'**
+  String get baselineSurveyFreqOften;
+
+  /// No description provided for @baselineSurveyFreqRegular.
+  ///
+  /// In en, this message translates to:
+  /// **'Regular'**
+  String get baselineSurveyFreqRegular;
+
+  /// No description provided for @baselineSurveyFreqOccasional.
+  ///
+  /// In en, this message translates to:
+  /// **'Occasional'**
+  String get baselineSurveyFreqOccasional;
+
+  /// No description provided for @baselineSurveyFreqOccasionally.
+  ///
+  /// In en, this message translates to:
+  /// **'Occasionally'**
+  String get baselineSurveyFreqOccasionally;
+
+  /// No description provided for @baselineSurveyFreqDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get baselineSurveyFreqDaily;
+
+  /// No description provided for @baselineSurveyFreqWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get baselineSurveyFreqWeekly;
+
+  /// No description provided for @baselineSurveyFreqIrregular.
+  ///
+  /// In en, this message translates to:
+  /// **'Irregular'**
+  String get baselineSurveyFreqIrregular;
+
+  /// No description provided for @baselineSurveyNoneOption.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get baselineSurveyNoneOption;
+
+  /// No description provided for @baselineSurveyOtherOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get baselineSurveyOtherOption;
+
+  /// No description provided for @baselineSurveyOthersOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get baselineSurveyOthersOption;
+
+  /// No description provided for @baselineSurveySpecifyPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Specify'**
+  String get baselineSurveySpecifyPlaceholder;
+
+  /// No description provided for @baselineSurveySectionADemographics.
+  ///
+  /// In en, this message translates to:
+  /// **'Demographics'**
+  String get baselineSurveySectionADemographics;
+
+  /// No description provided for @baselineSurveySectionBEnterprise.
+  ///
+  /// In en, this message translates to:
+  /// **'Enterprise Profile'**
+  String get baselineSurveySectionBEnterprise;
+
+  /// No description provided for @baselineSurveySectionCDigital.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital Access & Usage'**
+  String get baselineSurveySectionCDigital;
+
+  /// No description provided for @baselineSurveySectionDFinancial.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial Inclusion'**
+  String get baselineSurveySectionDFinancial;
+
+  /// No description provided for @baselineSurveySectionEEntrepreneurial.
+  ///
+  /// In en, this message translates to:
+  /// **'Entrepreneurial Skills'**
+  String get baselineSurveySectionEEntrepreneurial;
+
+  /// No description provided for @baselineSurveySectionFEmpowerment.
+  ///
+  /// In en, this message translates to:
+  /// **'Empowerment & Agency'**
+  String get baselineSurveySectionFEmpowerment;
+
+  /// No description provided for @baselineSurveySectionGChallenges.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenges & Needs'**
+  String get baselineSurveySectionGChallenges;
+
+  /// No description provided for @baselineSurveySectionHExpectations.
+  ///
+  /// In en, this message translates to:
+  /// **'Expectations from Government or NGOs'**
+  String get baselineSurveySectionHExpectations;
+
+  /// No description provided for @baselineSurveySectionIConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Consent & Confidentiality'**
+  String get baselineSurveySectionIConsent;
+
+  /// No description provided for @baselineSurveyAge.
+  ///
+  /// In en, this message translates to:
+  /// **'Age'**
+  String get baselineSurveyAge;
+
+  /// No description provided for @baselineSurveyEducationLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Education Level'**
+  String get baselineSurveyEducationLevel;
+
+  /// No description provided for @baselineSurveyEducationNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No Formal Education'**
+  String get baselineSurveyEducationNone;
+
+  /// No description provided for @baselineSurveyEducationPrimary.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary'**
+  String get baselineSurveyEducationPrimary;
+
+  /// No description provided for @baselineSurveyEducationSecondary.
+  ///
+  /// In en, this message translates to:
+  /// **'Secondary'**
+  String get baselineSurveyEducationSecondary;
+
+  /// No description provided for @baselineSurveyEducationGraduate.
+  ///
+  /// In en, this message translates to:
+  /// **'Graduate'**
+  String get baselineSurveyEducationGraduate;
+
+  /// No description provided for @baselineSurveyEducationPostgraduate.
+  ///
+  /// In en, this message translates to:
+  /// **'Postgraduate'**
+  String get baselineSurveyEducationPostgraduate;
+
+  /// No description provided for @baselineSurveyCasteCommunity.
+  ///
+  /// In en, this message translates to:
+  /// **'Caste/Community'**
+  String get baselineSurveyCasteCommunity;
+
+  /// No description provided for @baselineSurveyMaritalStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Marital Status'**
+  String get baselineSurveyMaritalStatus;
+
+  /// No description provided for @baselineSurveyMaritalSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'Single'**
+  String get baselineSurveyMaritalSingle;
+
+  /// No description provided for @baselineSurveyMaritalMarried.
+  ///
+  /// In en, this message translates to:
+  /// **'Married'**
+  String get baselineSurveyMaritalMarried;
+
+  /// No description provided for @baselineSurveyMaritalWidowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Widowed'**
+  String get baselineSurveyMaritalWidowed;
+
+  /// No description provided for @baselineSurveyMaritalSeparated.
+  ///
+  /// In en, this message translates to:
+  /// **'Separated/Divorced'**
+  String get baselineSurveyMaritalSeparated;
+
+  /// No description provided for @baselineSurveyHouseholdSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Household Size'**
+  String get baselineSurveyHouseholdSize;
+
+  /// No description provided for @baselineSurveyLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get baselineSurveyLocation;
+
+  /// No description provided for @baselineSurveyLocationEastGodavari.
+  ///
+  /// In en, this message translates to:
+  /// **'East Godavari'**
+  String get baselineSurveyLocationEastGodavari;
+
+  /// No description provided for @baselineSurveyLocationWestGodavari.
+  ///
+  /// In en, this message translates to:
+  /// **'West Godavari'**
+  String get baselineSurveyLocationWestGodavari;
+
+  /// No description provided for @baselineSurveyLocationKrishna.
+  ///
+  /// In en, this message translates to:
+  /// **'Krishna'**
+  String get baselineSurveyLocationKrishna;
+
+  /// No description provided for @baselineSurveyAnnualIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual Household Income (approx.)'**
+  String get baselineSurveyAnnualIncome;
+
+  /// No description provided for @baselineSurveyPrimaryIncomeSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary Source of Income for Family'**
+  String get baselineSurveyPrimaryIncomeSource;
+
+  /// No description provided for @baselineSurveyEnterpriseType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type of Enterprise'**
+  String get baselineSurveyEnterpriseType;
+
+  /// No description provided for @baselineSurveyEnterpriseShgLed.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG-led'**
+  String get baselineSurveyEnterpriseShgLed;
+
+  /// No description provided for @baselineSurveyEnterpriseIndividual.
+  ///
+  /// In en, this message translates to:
+  /// **'Individual'**
+  String get baselineSurveyEnterpriseIndividual;
+
+  /// No description provided for @baselineSurveyEnterpriseCollective.
+  ///
+  /// In en, this message translates to:
+  /// **'Collective'**
+  String get baselineSurveyEnterpriseCollective;
+
+  /// No description provided for @baselineSurveySector.
+  ///
+  /// In en, this message translates to:
+  /// **'Sector'**
+  String get baselineSurveySector;
+
+  /// No description provided for @baselineSurveySectorAgriFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Agri/Food Processing'**
+  String get baselineSurveySectorAgriFood;
+
+  /// No description provided for @baselineSurveySectorTailoring.
+  ///
+  /// In en, this message translates to:
+  /// **'Tailoring/Textiles'**
+  String get baselineSurveySectorTailoring;
+
+  /// No description provided for @baselineSurveySectorRetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Retail'**
+  String get baselineSurveySectorRetail;
+
+  /// No description provided for @baselineSurveySectorServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Services'**
+  String get baselineSurveySectorServices;
+
+  /// No description provided for @baselineSurveyYearsInOperation.
+  ///
+  /// In en, this message translates to:
+  /// **'Years in Operation'**
+  String get baselineSurveyYearsInOperation;
+
+  /// No description provided for @baselineSurveyMonthlyRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly Revenue (approx.)'**
+  String get baselineSurveyMonthlyRevenue;
+
+  /// No description provided for @baselineSurveyEmployees.
+  ///
+  /// In en, this message translates to:
+  /// **'Employees (if any)'**
+  String get baselineSurveyEmployees;
+
+  /// No description provided for @baselineSurveyRegistrationStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration Status'**
+  String get baselineSurveyRegistrationStatus;
+
+  /// No description provided for @baselineSurveyRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'Registered'**
+  String get baselineSurveyRegistered;
+
+  /// No description provided for @baselineSurveyUnregistered.
+  ///
+  /// In en, this message translates to:
+  /// **'Unregistered'**
+  String get baselineSurveyUnregistered;
+
+  /// No description provided for @baselineSurveyMarketReach.
+  ///
+  /// In en, this message translates to:
+  /// **'Market Reach'**
+  String get baselineSurveyMarketReach;
+
+  /// No description provided for @baselineSurveyMarketLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get baselineSurveyMarketLocal;
+
+  /// No description provided for @baselineSurveyMarketDistrict.
+  ///
+  /// In en, this message translates to:
+  /// **'District'**
+  String get baselineSurveyMarketDistrict;
+
+  /// No description provided for @baselineSurveyMarketState.
+  ///
+  /// In en, this message translates to:
+  /// **'State'**
+  String get baselineSurveyMarketState;
+
+  /// No description provided for @baselineSurveyMarketNational.
+  ///
+  /// In en, this message translates to:
+  /// **'National'**
+  String get baselineSurveyMarketNational;
+
+  /// No description provided for @baselineSurveyMarketInternational.
+  ///
+  /// In en, this message translates to:
+  /// **'International'**
+  String get baselineSurveyMarketInternational;
+
+  /// No description provided for @baselineSurveyOwnsSmartphone.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you own a smartphone?'**
+  String get baselineSurveyOwnsSmartphone;
+
+  /// No description provided for @baselineSurveyInternetAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Internet Access'**
+  String get baselineSurveyInternetAccess;
+
+  /// No description provided for @baselineSurveyInternetType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type of Internet'**
+  String get baselineSurveyInternetType;
+
+  /// No description provided for @baselineSurveyInternetMobileData.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile Data'**
+  String get baselineSurveyInternetMobileData;
+
+  /// No description provided for @baselineSurveyInternetWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Wi-Fi'**
+  String get baselineSurveyInternetWifi;
+
+  /// No description provided for @baselineSurveyAppsUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps Used'**
+  String get baselineSurveyAppsUsed;
+
+  /// No description provided for @baselineSurveyAppWhatsapp.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get baselineSurveyAppWhatsapp;
+
+  /// No description provided for @baselineSurveyAppYoutube.
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube'**
+  String get baselineSurveyAppYoutube;
+
+  /// No description provided for @baselineSurveyAppUpi.
+  ///
+  /// In en, this message translates to:
+  /// **'UPI'**
+  String get baselineSurveyAppUpi;
+
+  /// No description provided for @baselineSurveyAppGovtPortals.
+  ///
+  /// In en, this message translates to:
+  /// **'Govt Portals'**
+  String get baselineSurveyAppGovtPortals;
+
+  /// No description provided for @baselineSurveyAppSocialMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Social Media'**
+  String get baselineSurveyAppSocialMedia;
+
+  /// No description provided for @baselineSurveyAppEcommerce.
+  ///
+  /// In en, this message translates to:
+  /// **'E-commerce Platforms'**
+  String get baselineSurveyAppEcommerce;
+
+  /// No description provided for @baselineSurveyReceivedDigitalTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Have you received digital training before?'**
+  String get baselineSurveyReceivedDigitalTraining;
+
+  /// No description provided for @baselineSurveyDigitalPaymentFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequency of Digital Payments'**
+  String get baselineSurveyDigitalPaymentFrequency;
+
+  /// No description provided for @baselineSurveyDigitalToolsComfort.
+  ///
+  /// In en, this message translates to:
+  /// **'Comfort Level in Using Digital Tools'**
+  String get baselineSurveyDigitalToolsComfort;
+
+  /// No description provided for @baselineSurveyBankAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Account'**
+  String get baselineSurveyBankAccount;
+
+  /// No description provided for @baselineSurveyCreditAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Access to Credit'**
+  String get baselineSurveyCreditAccess;
+
+  /// No description provided for @baselineSurveyCreditFormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Formal (Bank/SHG)'**
+  String get baselineSurveyCreditFormal;
+
+  /// No description provided for @baselineSurveyCreditInformal.
+  ///
+  /// In en, this message translates to:
+  /// **'Informal (Money Lenders)'**
+  String get baselineSurveyCreditInformal;
+
+  /// No description provided for @baselineSurveyDigitalPaymentUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Use of Digital Payments'**
+  String get baselineSurveyDigitalPaymentUsage;
+
+  /// No description provided for @baselineSurveySavingsPattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Savings Pattern'**
+  String get baselineSurveySavingsPattern;
+
+  /// No description provided for @baselineSurveyAwareGovtSchemes.
+  ///
+  /// In en, this message translates to:
+  /// **'Awareness of Government Schemes'**
+  String get baselineSurveyAwareGovtSchemes;
+
+  /// No description provided for @baselineSurveyGovtSchemesDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'If yes, please mention'**
+  String get baselineSurveyGovtSchemesDetail;
+
+  /// No description provided for @baselineSurveyBusinessPlanningKnowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Planning Knowledge'**
+  String get baselineSurveyBusinessPlanningKnowledge;
+
+  /// No description provided for @baselineSurveyRecordKeeping.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Keeping'**
+  String get baselineSurveyRecordKeeping;
+
+  /// No description provided for @baselineSurveyRecordManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get baselineSurveyRecordManual;
+
+  /// No description provided for @baselineSurveyRecordDigital.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital'**
+  String get baselineSurveyRecordDigital;
+
+  /// No description provided for @baselineSurveyInventorySystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory Management System'**
+  String get baselineSurveyInventorySystem;
+
+  /// No description provided for @baselineSurveyBusinessTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Participation in Business Workshops or Training'**
+  String get baselineSurveyBusinessTraining;
+
+  /// No description provided for @baselineSurveyOnlineMarketingAbility.
+  ///
+  /// In en, this message translates to:
+  /// **'Ability to Market Products Online'**
+  String get baselineSurveyOnlineMarketingAbility;
+
+  /// No description provided for @baselineSurveyInnovationLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Innovation Level in Products/Services'**
+  String get baselineSurveyInnovationLevel;
+
+  /// No description provided for @baselineSurveyDecisionMakingRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Decision-making role in household'**
+  String get baselineSurveyDecisionMakingRole;
+
+  /// No description provided for @baselineSurveyMobility.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobility (can travel alone)'**
+  String get baselineSurveyMobility;
+
+  /// No description provided for @baselineSurveyShgLeadershipRole.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG Leadership Role'**
+  String get baselineSurveyShgLeadershipRole;
+
+  /// No description provided for @baselineSurveyTechConfidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Confidence in using technology'**
+  String get baselineSurveyTechConfidence;
+
+  /// No description provided for @baselineSurveyCommunityInfluence.
+  ///
+  /// In en, this message translates to:
+  /// **'Community Influence/Leadership'**
+  String get baselineSurveyCommunityInfluence;
+
+  /// No description provided for @baselineSurveyNegotiationAbility.
+  ///
+  /// In en, this message translates to:
+  /// **'Ability to Negotiate with Customers/Suppliers'**
+  String get baselineSurveyNegotiationAbility;
+
+  /// No description provided for @baselineSurveyTopChallenges.
+  ///
+  /// In en, this message translates to:
+  /// **'Top 3 challenges you face as a woman entrepreneur'**
+  String get baselineSurveyTopChallenges;
+
+  /// No description provided for @baselineSurveyChallengeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge {n}'**
+  String baselineSurveyChallengeHint(int n);
+
+  /// No description provided for @baselineSurveyTrainingNeeds.
+  ///
+  /// In en, this message translates to:
+  /// **'What type of training or skill development would help you grow your enterprise?'**
+  String get baselineSurveyTrainingNeeds;
+
+  /// No description provided for @baselineSurveyTrainingDigitalMarketing.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital Marketing'**
+  String get baselineSurveyTrainingDigitalMarketing;
+
+  /// No description provided for @baselineSurveyTrainingFinancialManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial Management'**
+  String get baselineSurveyTrainingFinancialManagement;
+
+  /// No description provided for @baselineSurveyTrainingProductQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Quality Improvement'**
+  String get baselineSurveyTrainingProductQuality;
+
+  /// No description provided for @baselineSurveyTrainingEcommerce.
+  ///
+  /// In en, this message translates to:
+  /// **'E-commerce Training'**
+  String get baselineSurveyTrainingEcommerce;
+
+  /// No description provided for @baselineSurveySupportNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'What kind of support do you need most right now?'**
+  String get baselineSurveySupportNeeded;
+
+  /// No description provided for @baselineSurveySupportCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Access to Credit'**
+  String get baselineSurveySupportCredit;
+
+  /// No description provided for @baselineSurveySupportMarketing.
+  ///
+  /// In en, this message translates to:
+  /// **'Marketing Support'**
+  String get baselineSurveySupportMarketing;
+
+  /// No description provided for @baselineSurveySupportMentorship.
+  ///
+  /// In en, this message translates to:
+  /// **'Mentorship'**
+  String get baselineSurveySupportMentorship;
+
+  /// No description provided for @baselineSurveySupportGovtAwareness.
+  ///
+  /// In en, this message translates to:
+  /// **'Government Scheme Awareness'**
+  String get baselineSurveySupportGovtAwareness;
+
+  /// No description provided for @baselineSurveySupportNetworking.
+  ///
+  /// In en, this message translates to:
+  /// **'Networking Opportunities'**
+  String get baselineSurveySupportNetworking;
+
+  /// No description provided for @baselineSurveyInterestedInTrials.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you interested in participating in training or app trials?'**
+  String get baselineSurveyInterestedInTrials;
+
+  /// No description provided for @baselineSurveyExpectedBenefit.
+  ///
+  /// In en, this message translates to:
+  /// **'How do you expect this project to benefit you or your community?'**
+  String get baselineSurveyExpectedBenefit;
+
+  /// No description provided for @baselineSurveyGovtNgoSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'What government or NGO support do you think is essential for your growth?'**
+  String get baselineSurveyGovtNgoSupport;
+
+  /// No description provided for @baselineSurveySupportSubsidies.
+  ///
+  /// In en, this message translates to:
+  /// **'Subsidies or Financial Aid'**
+  String get baselineSurveySupportSubsidies;
+
+  /// No description provided for @baselineSurveySupportDigitalCenters.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital Training Centers'**
+  String get baselineSurveySupportDigitalCenters;
+
+  /// No description provided for @baselineSurveySupportMarketLinkages.
+  ///
+  /// In en, this message translates to:
+  /// **'Market Linkages'**
+  String get baselineSurveySupportMarketLinkages;
+
+  /// No description provided for @baselineSurveySupportInfrastructure.
+  ///
+  /// In en, this message translates to:
+  /// **'Improved Infrastructure'**
+  String get baselineSurveySupportInfrastructure;
+
+  /// No description provided for @baselineSurveyConsentStatement.
+  ///
+  /// In en, this message translates to:
+  /// **'I voluntarily agree to participate in this survey. I understand that my responses will be kept confidential and used only for research purposes.'**
+  String get baselineSurveyConsentStatement;
+
+  /// No description provided for @baselineSurveyConsentCheckbox.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree to the statement above'**
+  String get baselineSurveyConsentCheckbox;
+
+  /// No description provided for @baselineSurveySignatureLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your full name to sign'**
+  String get baselineSurveySignatureLabel;
+
+  /// No description provided for @baselineSurveySignaturePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Your full name'**
+  String get baselineSurveySignaturePlaceholder;
+
+  /// No description provided for @baselineSurveySubmitButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit & Continue'**
+  String get baselineSurveySubmitButton;
+
+  /// No description provided for @baselineSurveySubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting…'**
+  String get baselineSurveySubmitting;
+
+  /// No description provided for @baselineSurveySubmitError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not submit the survey. Please try again.'**
+  String get baselineSurveySubmitError;
 }
 
 class _AppLocalizationsDelegate

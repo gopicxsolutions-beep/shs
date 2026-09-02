@@ -171,6 +171,32 @@ atomically together, at approval time (see `approve_shg_join_request`,
 migration `0116`). There is no path to a `role='leader'` account with no
 SHG, because leader is never granted independently of that same approval.
 
+Immediately after the basic-info step, the same screen continues into the
+**ICSSR baseline survey** — a 9-section research questionnaire ("A
+Longitudinal Study of Women-Led Microenterprises and Social Transformation in
+Andhra Pradesh through Digital Empowerment"): Demographics, Enterprise
+Profile, Digital Access & Usage, Financial Inclusion, Entrepreneurial Skills,
+Empowerment & Agency, Challenges & Needs, Expectations from Government/NGOs,
+and Consent & Confidentiality. It's presented as a step-indexed wizard (chip
+pickers for single/multi-select questions, plain fields for free text/
+numbers) with a progress bar, and is **mandatory before dashboard access**:
+every field on a section — including a conditional "specify" field revealed
+by an "other(s)" choice — must be filled/selected before Next enables for
+that section, all the way through the final Consent step (a checkbox plus a
+typed signature). Submission writes to
+`public.member_baseline_surveys`, one row per profile
+(migration `0151`), alongside — not instead of — the `profiles`
+row/join-request writes above. An account that existed before this
+requirement shipped is routed back into the same wizard (survey-only, name/
+village/SHG steps skipped) the next time it reaches the router, via
+`AppState.needsBaselineSurvey`. This table is scoped to `member`/`leader`
+(the survey is about a woman running or working in an SHG-linked
+microenterprise, not the federation-oversight staff roles) and, unlike the
+SHG-transparency data described in [ARCHITECTURE.md](ARCHITECTURE.md), is
+**not** visible to a fellow member or even her own SHG leader — only the
+respondent herself and federation staff (CRP/CLF/Admin, for research
+reporting) can read it.
+
 Every fresh signup lands on **SHG Approval Pending**, which polls her own
 join-request status and offers "Choose a different SHG" if it's rejected —
 there is no separate Role Select step in live mode to pass through first (see
@@ -193,6 +219,7 @@ database defense-in-depth chain and its incident history.
 |---|---|---|
 | FR-AUTH-1 | Phone + OTP authentication, Indian mobile number format validated client-side | All |
 | FR-AUTH-2 | Profile setup: name (required), village/mandal/district, mandatory SHG search-and-request-to-join | All |
+| FR-AUTH-2b | Mandatory 9-section ICSSR baseline survey (demographics through consent) at registration time, stored in `member_baseline_surveys`; every field on every section is required — Next stays disabled until all of a section's fields are filled/selected — through submitting the final Consent step | Member, Leader |
 | FR-AUTH-3 | Role Select is demo-mode-only (all 5 roles explorable there); a live-mode visit to it is always redirected away | All |
 | FR-AUTH-4 | A fresh signup's `shg_id` stays null and an approval-pending screen shows until the target SHG's join request is decided | Member |
 | FR-AUTH-5 | Staff roles (CRP/CLF/Admin) are assignable only by an Admin via the Admin Users screen, never self-assigned, enforced at the RLS layer independent of the UI | Admin |

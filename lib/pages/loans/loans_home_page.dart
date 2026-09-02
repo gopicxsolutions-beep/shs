@@ -23,7 +23,7 @@ import '../../widgets/section_header.dart';
 import '../../widgets/stat_card.dart';
 
 
-class LoansHomePage extends StatelessWidget {
+class LoansHomePage extends StatefulWidget {
   // Injectable for tests (mirrors `SettingsPage`'s `notificationService`
   // seam) — defaults to the real on-device implementation.
   final NotificationService? notificationService;
@@ -32,6 +32,16 @@ class LoansHomePage extends StatelessWidget {
   // call — defaults to a real LoanRepository.
   final LoanRepository? repository;
   const LoansHomePage({super.key, this.notificationService, this.repository});
+  @override
+  State<LoansHomePage> createState() => _LoansHomePageState();
+}
+
+// Gap-hunt iteration 42: was `StatelessWidget` until this fix needed a
+// `mounted` check to safely show a one-time SnackBar after the fire-and-
+// forget permission-sync's async gap (see `_syncReminders` below) —
+// mirrors `AnnouncementsHomePage`'s existing State-based pattern for the
+// exact same reason.
+class _LoansHomePageState extends State<LoansHomePage> {
 
   /// Fetches the loans this page actually displays (group-wide for a
   /// leader/staff account, own-only for a member), and — best-effort,
@@ -75,7 +85,15 @@ class LoansHomePage extends StatelessWidget {
   }
 
   Future<void> _syncReminders(LoanRepository repo, bool isLeaderOrStaff, String? memberId, List<Loan> loans, NotificationService notifications, AppLocalizations l10n) async {
-    final enabled = await ensureNotificationPermissionForDefaultEnabled(notifications, kNotifyPaymentsPrefKey, await paymentAlertsEnabled());
+    final enabled = await ensureNotificationPermissionForDefaultEnabled(
+      notifications,
+      kNotifyPaymentsPrefKey,
+      await paymentAlertsEnabled(),
+      onPermissionDenied: () {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsNotifPermissionDenied)));
+      },
+    );
     if (enabled) {
       final ownLoans = isLeaderOrStaff ? await repo.fetchForMember(memberId) : loans;
       await syncLoanDueReminders(notifications, ownLoans, l10n);
@@ -111,8 +129,8 @@ class LoansHomePage extends StatelessWidget {
     final isLeaderOrStaff = role != Role.member;
     final shgId = context.select<AppState, String?>((s) => s.profile?.shgId);
     final memberId = context.select<AppState, String?>((s) => s.profile?.id);
-    final repo = repository ?? LoanRepository();
-    final notifications = notificationService ?? LocalNotificationService.instance;
+    final repo = widget.repository ?? LoanRepository();
+    final notifications = widget.notificationService ?? LocalNotificationService.instance;
     final l10n = AppLocalizations.of(context)!;
 
     // crp/clf/admin have no `profile.shgId` of their own — this used to mean

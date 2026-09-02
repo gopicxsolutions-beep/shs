@@ -67,6 +67,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.widgetWithText(TextField, 'Scheme name'), '__TEST__ Widget Scheme');
+    // The dialog grew a free-text eligibility field and a deadline picker
+    // ahead of the criteria section (gap-hunt iteration 42), pushing this
+    // checkbox below the fold of the fixed test viewport — scroll it into
+    // view before tapping, mirroring `admin_shgs_page_test.dart`'s pattern.
+    await tester.ensureVisible(find.text('Requires SHG membership'));
     await tester.tap(find.text('Requires SHG membership'));
     await tester.enterText(find.widgetWithText(TextField, 'Minimum SHG age in months (optional)'), '9');
     await tester.pumpAndSettle();

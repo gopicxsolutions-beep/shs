@@ -3,7 +3,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter_timezone/flutter_timezone.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../models/announcement.dart';
 import '../models/loan.dart';
@@ -191,26 +190,26 @@ class LocalNotificationService implements NotificationService {
   Future<void> _ensureInitialized() async {
     if (_initialized) return;
     tz_data.initializeTimeZones();
+    // Gap-hunt iteration 42: this used to trust `FlutterTimezone.
+    // getLocalTimezone()` — the DEVICE's ambient OS timezone — and only
+    // fell back to `Asia/Kolkata` if that lookup threw. But `Meeting.
+    // scheduledAt`/`Loan.nextDueDate` are naive local wall-clock values
+    // with no timezone tag, representing a fixed India-local instant (the
+    // SHG physically meets in India) — every real user of this app is in
+    // India, per this file's own iteration-35 fix. If the device's OS
+    // timezone genuinely isn't IST (auto-timezone briefly picking up a
+    // wrong zone via network/GPS, a relative helping remotely while
+    // traveling, a misconfigured device), the lookup above would SUCCEED
+    // with a non-IST answer — a case the old code never handled — and a
+    // "1 hour before the 5 PM meeting" reminder would fire offset by the
+    // full zone difference from the real 5 PM IST meeting. Pin
+    // `Asia/Kolkata` unconditionally instead of ever consulting the
+    // device's own reported zone; only a truly bare tz database (e.g.
+    // `flutter test`) falls through to `tz.local`'s own default.
     try {
-      final info = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(info.identifier));
+      tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
     } catch (_) {
-      // Device timezone lookup failed (unsupported platform, or a name the
-      // bundled tz database doesn't recognise, or — in `flutter test` — no
-      // platform channel registered at all). Gap-hunt iteration 35: this
-      // used to fall through to whatever `tz.local` already defaults to
-      // (UTC) — every real user of this app is in India, so a reminder
-      // scheduled under that fallback would fire ~5.5h off from the
-      // intended wall-clock time. `Asia/Kolkata` is a strictly safer
-      // fallback for an India-only app than UTC; still best-effort (the
-      // lookup below can itself throw on a truly bare `tz` database, e.g.
-      // in `flutter test`), so the app keeps working either way instead of
-      // the whole notification feature going down with it.
-      try {
-        tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
-      } catch (_) {
-        /* bare tz database (e.g. flutter test) — keep tz.local's own default */
-      }
+      /* bare tz database (e.g. flutter test) — keep tz.local's own default */
     }
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false);
@@ -505,7 +504,16 @@ Future<void> cancelAllLoanDueReminders(NotificationService service, List<Loan> l
 /// that would never actually show, rather than silently continuing to
 /// pretend they're on. Returns whether the caller should still treat this
 /// preference as enabled.
-Future<bool> ensureNotificationPermissionForDefaultEnabled(NotificationService service, String prefKey, bool currentlyEnabled) async {
+///
+/// Gap-hunt iteration 42: this used to flip `prefKey` off with nothing
+/// telling the member why reminders she never explicitly disabled stopped
+/// arriving — indistinguishable from a silent app bug. [onPermissionDenied],
+/// if given, is invoked exactly once, at the moment this call is the one
+/// that actually discovers/records a fresh denial for this specific
+/// preference (not on every subsequent load — once `prefKey` itself reads
+/// false, line 1 above short-circuits before ever reaching here) — callers
+/// use it to surface a one-time, mounted-checked SnackBar.
+Future<bool> ensureNotificationPermissionForDefaultEnabled(NotificationService service, String prefKey, bool currentlyEnabled, {void Function()? onPermissionDenied}) async {
   if (!currentlyEnabled) return false;
   SharedPreferences prefs;
   try {
@@ -536,6 +544,7 @@ Future<bool> ensureNotificationPermissionForDefaultEnabled(NotificationService s
       // Best-effort — worst case the preference still reads (default) true
       // and this same check runs again next load.
     }
+    onPermissionDenied?.call();
     return false;
   }
   return true;

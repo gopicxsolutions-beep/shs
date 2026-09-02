@@ -20604,6 +20604,75 @@ live-verified with negative (exploit-reproduction) and positive
 re-verified rather than blindly fixed, and found not reproducible against
 the existing code.
 
+## 2026-07-30 — Gap-hunt iteration 42
+
+Three fresh audits (SQL-boundary dogfooding, notification-path review, and
+an admin-form completeness pass) turned up five real gaps. All fixes were
+sitting uncommitted in the working tree until the 2026-09-02 push round,
+which is when this entry was written — the dating comes from the files'
+own mtimes and from migration `0149` sitting between iteration 41's `0148`
+and iteration 43's `0150`.
+
+**SQL (migration `0149`)** — three server-side gaps, each live-verified by
+reproducing the exploit before fixing it:
+1. [MEDIUM, dogfooding] `meeting_minutes_delete_staff` (0148) added the
+   cancel-guard but never restricted deletion to the current-latest row the
+   way its sibling `financial_ledger_delete_staff` does. `meeting_minutes`
+   is append-only by design (`saveMinutes()` always INSERTs, so a meeting
+   accumulates a real versioned history), so staff could silently erase an
+   **older** decision snapshot while the newest one survived — exactly the
+   historical-record corruption 0026/0079 reasoned this table must never
+   allow. Live-verified with a crp account deleting a non-latest minutes row
+   on a still-active meeting. Fixed with a `meeting_minutes_is_latest()`
+   helper mirroring `financial_ledger_is_latest()` (security definer, which
+   is what keeps it out of the 42P17 self-referencing-subquery recursion
+   class).
+2. [MEDIUM] `schemes` had no server-side content validation at all — a
+   direct write with `name=''` and a 50,000-character `benefit` succeeded,
+   because `schemes_write_admin` only checks the caller's role and no CHECK
+   constraint existed on any text column. The admin form's blank-name guard
+   and maxLength caps are client-side only, i.e. UX, not a boundary.
+3. [MEDIUM] `shgs.grade` had no server-side validation — a direct write
+   stored an arbitrary garbage string, which silently breaks
+   `EligibilityCriteria.minShgGrade`'s comparison: a malformed grade never
+   matches any real grade, so the SHG always fails eligibility with no error
+   surfaced to anyone.
+
+**Notifications** — two gaps:
+- `LocalNotificationService._ensureInitialized()` trusted
+  `FlutterTimezone.getLocalTimezone()` (the device's ambient OS timezone)
+  and only fell back to `Asia/Kolkata` when that lookup *threw*. But
+  `Meeting.scheduledAt`/`Loan.nextDueDate` are naive local wall-clock values
+  representing a fixed India-local instant, and the uncovered case is the
+  lookup **succeeding** with a non-IST answer (auto-timezone briefly picking
+  up a wrong zone, a relative helping remotely while travelling, a
+  misconfigured device) — a "1 hour before the 5 PM meeting" reminder would
+  then fire offset by the full zone difference. Now pins `Asia/Kolkata`
+  unconditionally and never consults the device's reported zone; only a bare
+  tz database (e.g. `flutter test`) falls through to `tz.local`'s default.
+  `flutter_timezone` dropped from `pubspec.yaml` as a result.
+- `ensureNotificationPermissionForDefaultEnabled()` flipped a default-on
+  preference off on OS-level permission denial with nothing telling the
+  member why reminders she never disabled had stopped arriving —
+  indistinguishable from a silent app bug. Added an `onPermissionDenied`
+  callback, invoked exactly once at the moment a fresh denial is recorded
+  for that preference (subsequent loads short-circuit on the now-false
+  pref), wired to a one-time mounted-checked SnackBar in
+  `AnnouncementsHomePage`, `LoansHomePage` and `MeetingsHomePage`.
+  `LoansHomePage`/`MeetingsHomePage` became `StatefulWidget`s purely so the
+  post-async-gap `mounted` check is legal, matching the pattern
+  `AnnouncementsHomePage` already used for the same reason.
+
+**Admin schemes form** — `SchemeRepository.updateScheme` accepted neither
+`eligibility` nor `deadline`, and `admin_schemes_page.dart` had no form
+field for either. A scheme created with a deadline or a free-text
+eligibility list (e.g. seeded directly via SQL) had **both permanently
+wiped** the first time an admin corrected a typo in its name through the
+Edit dialog. Added both to `createScheme`/`updateScheme` (with `eligibility`
+nullable so an omitted argument preserves rather than clears) and added the
+matching fields to both the Add and Edit dialogs — free-text eligibility one
+requirement per line, mirroring `SchemeDetailPage`'s bulleted rendering.
+
 ## 2026-08-18 — Bug fix: staff (crp/clf/admin) could not take attendance for any SHG with no leader account
 
 User-reported: "attendance feature have issue they have not able attendence
@@ -20762,3 +20831,180 @@ OTP, not completable in this sandboxed environment (a pre-existing,
 already-documented limitation) — SQL-layer live verification substituted,
 consistent with this session's earlier attendance-fix entry.
 
+## 2026-08-21 — Feature: ICSSR baseline survey at registration
+
+User-supplied the actual paper instrument (a WhatsApp-transferred .docx,
+"ICSSR Baseline Survey Form-13.09.2025.docx" — "A Longitudinal Study of
+Women-Led Microenterprises and Social Transformation in Andhra Pradesh
+through Digital Empowerment") and asked for its fields to be added at
+registration time and properly stored in Supabase, with end-to-end testing.
+Extracted the docx's `word/document.xml` directly (no `pandoc`/`python` on
+this machine) to get the real field list: 9 sections — Demographics,
+Enterprise Profile, Digital Access & Usage, Financial Inclusion,
+Entrepreneurial Skills, Empowerment & Agency, Challenges & Needs,
+Expectations from Government/NGOs, Consent & Confidentiality — roughly 50
+fields total. Clarified 3 scope questions with the user before building
+(placement, whether to include the narrative/consent sections, mandatory
+vs. optional): confirmed — inserted directly into the existing registration
+screen (not a separate later module), all 9 sections, mandatory before
+dashboard access.
+
+**Schema**: new `public.member_baseline_surveys` (migration `0151`), one
+row per profile (`profile_id` itself the primary key), columns mirroring
+every section 1:1 (enums as `text` + `check (... in (...))`, multi-select
+answers as `text[]`, `consent_given boolean` gated by a table-level
+`check (consent_given = true)` — there's no "saved but not consented" row,
+matching the paper form). RLS: owner can insert/select/update her own row;
+`is_staff()` (crp/clf/admin) can additionally select any row, for the
+federation-level research reporting the survey exists for — deliberately
+**not** `is_leader_or_staff()`, since this data (household income, caste,
+empowerment self-assessment) is materially more sensitive than the
+savings/loans/meetings transparency members of the same SHG normally share
+with each other; nobody gets a delete policy, mirroring the fact that a
+returned paper form was never something the respondent or the field staff
+could retroactively erase. Applied directly via `supabase db push` — this
+machine (unlike an earlier documented cloud-sandbox round) has working
+direct Postgres egress, so the Management-API-SQL-endpoint workaround
+wasn't needed this time.
+
+**App changes**: `lib/models/baseline_survey.dart` (write-only draft model
+— no `fromMap` yet, nothing reads a full row back), `lib/services/
+baseline_survey_repository.dart` (`hasSubmitted`/`submit`, same
+live-mode-only shape as `ProfileRepository`), `lib/widgets/choice_field.dart`
+(`ChoiceChipGroup`/`MultiChoiceChipGroup`, generalized from the existing
+`ChoiceChip` styling in `loan_apply_page.dart`'s tenure picker). `lib/pages/
+auth/profile_setup_page.dart` grew from a single screen into a 10-step
+wizard (step 0 = the original name/village/SHG fields, steps 1-9 = the
+survey sections) sharing one route/State object rather than 10 separate
+routes — matches this app's "state, not stack" navigation convention and
+lets a brand-new signup submit `profiles` + `member_baseline_surveys`
+together in one `_submit()`. `AppState.needsBaselineSurvey` (scoped to
+member/leader) plus a new router redirect block handle the two cases that
+land back on this same page: mid-registration (survey bundled into the
+same submit) and an account that predates this requirement (survey-only
+continuation, `_surveyOnly` in the page, detected from `profile != null`
+at `initState`). New ARB keys added to all three `.arb` files (`baselineSurvey*`
++ `actionNext`/`actionBack`/`commonYes`/`commonNo`, ~140 keys), Hindi and
+Telugu translated directly (no external translation tool available).
+
+**Bug found and fixed via testing, not review**: the original page's
+`_continue()` (preserved from before this change) always called
+`context.go(Paths.dashboard)` and relied on the router's redirect chain to
+land somewhere onboarding-appropriate — the doc comment claimed this
+resolves to Role Select for a demo-mode signup, but the router's
+`!hasProfile` block hardcodes its redirect target to `Paths.profileSetup`
+specifically, never `Paths.roleSelect`, so it actually bounces straight
+back to the same page (silently — same State object reused, no visible
+change) instead of ever reaching Role Select. Live mode was never affected
+(`completeProfileSetup` always makes `hasProfile` true first there). Fixed
+by mirroring `otp_page.dart`'s own established convention — an explicit
+`appState.hasProfile` check picks `Paths.roleSelect` vs. `Paths.dashboard`
+directly, instead of trusting the redirect chain to infer it. Caught only
+because this session did a real, fresh (`localStorage.clear()`ed) UI
+click-through in the Browser pane rather than stopping at `flutter
+analyze`.
+
+**Verification**:
+- `flutter analyze`: 0 new issues (2 pre-existing unrelated ones in
+  `admin_schemes_page.dart`/`scheme_repository.dart`, already mid-edit
+  before this round started).
+- **Live-mode RLS, directly against the real project** (`supabase db query
+  --linked`, `set local role authenticated` + `set_config('request.jwt.
+  claims', ...)`, `__TEST__`-prefixed fixtures — `auth.users` rows created
+  directly since no service-role/GoTrue-admin access was available,
+  cleaned up and re-queried to confirm 0 remain afterward): owner can
+  insert her own row (1 row); a different member cannot insert impersonating
+  her (blocked, `42501` RLS violation, not a silent no-op); a different
+  member cannot select her row (0 rows) or update it (0 rows, silent per
+  the `USING`-only semantics CLAUDE.md calls out); the admin fixture CAN
+  select her row (1 row, the intended staff-research-visibility case) but
+  CANNOT update it (0 rows — staff never got an UPDATE policy); the owner
+  can update her own row (1 row) and the upsert-retry path
+  `BaselineSurveyRepository.submit()` actually uses works correctly
+  end-to-end; a `consent_given = false` insert is correctly rejected by the
+  table check constraint.
+- **Live UI click-through, real build, Browser pane**: built and served
+  both `--dart-define-from-file=.env.json` (live) and plain (demo) release
+  bundles per this doc's own `flutter-web-release` methodology (confirmed
+  fresh via `fetch('/main.dart.js', {cache:'no-store'})` content checks
+  after each rebuild, not just server-log success). Live build's landing
+  page confirmed rendering against the real Supabase project. Full
+  demo-mode click-through completed end-to-end: OTP → Profile Setup basic
+  info → all 9 survey sections (verified single-select chips, independent
+  multi-select chips, a conditional "other/if yes" field appearing only
+  when its trigger option is picked, and the multiline free-text field) →
+  Consent (checkbox + signature, Submit disabled until both are set) →
+  Role Select → Member dashboard, confirming the navigation-bug fix above.
+  Real live-mode phone OTP itself is still not receivable in this
+  environment (same pre-existing limitation this doc has logged before);
+  demo mode substituted for the UI layer, live-mode RLS covered the actual
+  data-storage correctness the user's request was mainly about.
+- Docs updated in this same change: [SRS.md](SRS.md) §3.1 (new FR-AUTH-2b)
+  and [ARCHITECTURE.md](ARCHITECTURE.md) §2 (new table row, base-table
+  count).
+
+
+## 2026-09-02 — Push round: caught a corrupted generated-file commit and an incompletely-wired admin form before it reached `main`
+
+User asked to push everything sitting uncommitted in the working tree (the
+ICSSR baseline survey feature, iteration 42's gap fixes, and the
+`flutter_timezone` removal above). Before committing, ran the standard
+`flutter analyze` verification this repo's quality bar requires — it hung
+indefinitely (confirmed genuinely hung, not just slow, by watching CPU: one
+`dart` process pinned a full core for 50+ minutes with zero progress past
+"Analyzing shs flutter app...", reproduced twice). Root cause: all four
+generated `lib/l10n/gen/app_localizations*.dart` files sitting in the
+working tree were **100% null bytes** (`tr -d '\000'` on each returned zero
+non-null bytes, at exactly the byte counts `git diff --stat` had shown as
+opaque `Bin ... -> ...` deltas) — a prior session's `flutter gen-l10n` run
+apparently got interrupted mid-write. The analyzer wasn't hanging so much as
+choking on ~790KB of zero-filled "Dart source" across 4 files every other
+file transitively imports. Fixed by re-running `flutter gen-l10n` (regenerates
+deterministically from the `.arb` sources, which were never corrupted) —
+byte-for-byte identical sizes to what was staged, confirming the `.arb`
+edits underneath were correct all along. `flutter analyze` then completed
+in 31s with 0 issues.
+
+With the analyzer actually able to run, a scoped `dart analyze` over just
+the changed files (before the full-project run above) had already surfaced
+a second, independent, real gap: `admin_schemes_page.dart`'s `_basicFields`
+helper (containing the iteration-42 eligibility-textarea and deadline-picker
+fields) was flagged `unused_element` — it was written but never spliced into
+either the Add or Edit dialog, which still built their old 3-field
+(`name`/`agency`/`benefit`) `Column` inline. Net effect: the iteration-42
+admin-schemes fix had shipped its repository and RLS half but not its UI
+half — an admin could still not set a scheme's eligibility list or deadline
+through the form, and worse, `_editScheme` never read `s.deadline` back into
+`_deadline` state, so `updateScheme`'s unconditional `'deadline':
+deadline?.toIso8601String()` would have **silently wiped any deadline already
+set** the moment an admin corrected an unrelated typo — the exact bug the
+migration's own doc comment says it was fixing. Also affected: `fullName`
+had a controller but no field, and `_editScheme` echoed back `s.fullName`
+unchanged instead of the (nonexistent) edit. Fixed by wiring
+`..._basicFields(context, setDialogState, l10n)` into both dialogs in place
+of the duplicated inline fields, seeding/resetting `_fullName`/`_eligibility`
+/`_deadline` correctly in both `_addScheme` and `_editScheme`, adding a
+`_parsedEligibility` getter (textarea → `List<String>`, one requirement per
+line, blank lines dropped), and passing `fullName`/`eligibility`/`deadline`
+through on both `createScheme`/`updateScheme` calls. Also converted
+`scheme_repository.dart`'s `if (eligibility != null) 'eligibility':
+eligibility,` to the null-aware-element form (`'eligibility': ?eligibility,`)
+per a lint the scoped analyze also caught.
+
+Wiring `_basicFields` in made the Add-scheme dialog taller, which pushed
+`admin_schemes_page_test.dart`'s "Requires SHG membership" checkbox below
+the fixed 800×600 test viewport's fold — `tester.tap()` doesn't auto-scroll,
+so the tap silently missed and the test's later assertion on
+`criteria.requiresShgMembership` failed. Fixed with `tester.ensureVisible()`
+before the tap, mirroring the same pattern already used in
+`admin_shgs_page_test.dart`/`add_product_page_test.dart`.
+
+**Verification**: `flutter analyze` — 0 issues (31s, full project, not just
+the changed-file scope used mid-diagnosis). `flutter test` — full suite,
+**1100/1100 passing** (was 1099/1100 before the test fix above; every other
+test's apparent "-1" in the interim run was `package:test`'s running total
+re-flagging the one real failure on each line, not 76 separate regressions).
+Not independently re-verified against live Supabase this round (no live
+preview session available) — the ICSSR baseline survey feature and
+iteration-42 SQL migrations were already documented as applied/live-verified
+in their own entries above; this round's changes were Dart-only.

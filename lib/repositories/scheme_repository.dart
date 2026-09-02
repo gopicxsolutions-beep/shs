@@ -246,6 +246,7 @@ class SchemeRepository {
     String? benefit,
     List<String> eligibility = const [],
     EligibilityCriteria criteria = const EligibilityCriteria(),
+    DateTime? deadline,
   }) async {
     if (!_live) {
       _locallyAddedSchemes.add(Scheme(
@@ -256,6 +257,7 @@ class SchemeRepository {
         benefit: benefit,
         eligibility: eligibility,
         criteria: criteria,
+        deadline: deadline,
       ));
       return;
     }
@@ -266,14 +268,21 @@ class SchemeRepository {
       'benefit': ?benefit,
       'eligibility': eligibility,
       'eligibility_criteria': criteria.toMap(),
+      'deadline': deadline?.toIso8601String(),
     });
   }
 
-  Future<void> updateScheme(String id, {required String name, String? fullName, String? agency, String? benefit, EligibilityCriteria criteria = const EligibilityCriteria()}) async {
+  // Gap-hunt iteration 42: [eligibility]/[deadline] used to be silently
+  // dropped on every edit — `admin_schemes_page.dart` had no form fields for
+  // either, and this method didn't even accept them, so a scheme created
+  // with a deadline or free-text eligibility list (e.g. seeded directly via
+  // SQL) had both permanently wiped the first time an admin corrected a typo
+  // in its name/agency/benefit through the Edit dialog.
+  Future<void> updateScheme(String id, {required String name, String? fullName, String? agency, String? benefit, List<String>? eligibility, EligibilityCriteria criteria = const EligibilityCriteria(), DateTime? deadline}) async {
     if (!_live) {
       final current = (await fetchSchemes()).where((s) => s.id == id);
-      final eligibility = current.isEmpty ? const <String>[] : current.first.eligibility;
-      final updated = Scheme(id: id, name: name, fullName: fullName, agency: agency, benefit: benefit, eligibility: eligibility, criteria: criteria);
+      final resolvedEligibility = eligibility ?? (current.isEmpty ? const <String>[] : current.first.eligibility);
+      final updated = Scheme(id: id, name: name, fullName: fullName, agency: agency, benefit: benefit, eligibility: resolvedEligibility, criteria: criteria, deadline: deadline);
       final addedIdx = _locallyAddedSchemes.indexWhere((s) => s.id == id);
       if (addedIdx != -1) {
         _locallyAddedSchemes[addedIdx] = updated;
@@ -287,7 +296,9 @@ class SchemeRepository {
       'full_name': fullName,
       'agency': agency,
       'benefit': benefit,
+      'eligibility': ?eligibility,
       'eligibility_criteria': criteria.toMap(),
+      'deadline': deadline?.toIso8601String(),
     }).eq('id', id);
   }
 

@@ -59,9 +59,9 @@ complete, testable UI/UX today with a documented mock STT/TTS underneath (see
 
 ## 2. Data model
 
-33 base Postgres tables + 3 views (`shg_directory`, `shg_own_masked`,
+34 base Postgres tables + 3 views (`shg_directory`, `shg_own_masked`,
 `quiz_questions_public`), defined starting in
-`supabase/migrations/0001_init_schema.sql` and hardened across 55 further
+`supabase/migrations/0001_init_schema.sql` and hardened across 150 further
 migrations:
 
 | Table | Domain |
@@ -71,6 +71,7 @@ migrations:
 | `shg_directory` (view) | Safe public subset of `shgs` for onboarding search — excludes bank fields entirely |
 | `shg_own_masked` (view, migrations `0045`/`0056`) | What an ordinary member's/leader's own-SHG lookup (`fetchShg()`) actually reads — same row scope as `shgs`' own RLS, left-joined to `shg_bank_details`, with `bank_account`/`ifsc` additionally nulled server-side unless the caller is leader/staff for that SHG |
 | `profiles` | One row per user; `role`, `shg_id`, identity |
+| `member_baseline_surveys` (migration `0151`) | ICSSR baseline survey (demographics/enterprise/digital/financial/entrepreneurial/empowerment/challenges/govt-NGO/consent), one row per profile, filled once at registration time; owner + `is_staff()` only — not `is_leader_or_staff()`, unlike most SHG-scoped tables below, since this is more sensitive than the "SHG-scoped read transparency" §3.2 describes for savings/loans/meetings |
 | `shg_join_requests` | Member → SHG join workflow, one-pending-per-member |
 | `shg_documents` | Document metadata + real Storage `storage_path` (real `file_picker` upload UI, private `shg-documents` bucket) |
 | `savings_entries` | Member savings deposits, `pending`/`verified` |

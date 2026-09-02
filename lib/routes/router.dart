@@ -236,6 +236,17 @@ String? _computeRedirect(BuildContext context, GoRouterState state, AppState app
         return allowed ? null : Paths.shgApprovalPending;
       }
 
+      // The mandatory ICSSR baseline survey hasn't been submitted yet —
+      // either a brand-new signup still mid-registration (rare to observe
+      // here at all, since ProfileSetupPage submits profile + survey
+      // together — see AppState.needsBaselineSurvey) or an account that
+      // existed before this requirement shipped. Confined to Profile Setup
+      // itself, which detects which of the two cases this is and renders
+      // survey-only steps for the latter.
+      if (appState.needsBaselineSurvey) {
+        return state.matchedLocation == Paths.profileSetup ? null : Paths.profileSetup;
+      }
+
       // Fully onboarded — keep out of the auth flow.
       if (onAuthFlow) return Paths.dashboard;
 

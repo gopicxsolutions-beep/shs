@@ -4595,4 +4595,445 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get financialLedgerBalancePrefix => 'మిగులు';
+
+  @override
+  String get actionNext => 'తదుపరి';
+
+  @override
+  String get actionBack => 'వెనుకకు';
+
+  @override
+  String get commonYes => 'అవును';
+
+  @override
+  String get commonNo => 'కాదు';
+
+  @override
+  String get baselineSurveyTitle => 'ఆధార సర్వే';
+
+  @override
+  String baselineSurveySectionOf(int current, int total) {
+    return 'విభాగం $current / $total';
+  }
+
+  @override
+  String get baselineSurveyIntro =>
+      'నమోదును పూర్తి చేయడానికి మరికొన్ని ప్రశ్నలు. ఇది కార్యక్రమం ఎవరికి సేవ చేస్తుందో అర్థం చేసుకోవడానికి సహాయపడుతుంది — దయచేసి కొనసాగించే ముందు ప్రతి విభాగంలోని అన్ని ప్రశ్నలకు సమాధానం ఇవ్వండి.';
+
+  @override
+  String get baselineSurveyLevelHigh => 'అధికం';
+
+  @override
+  String get baselineSurveyLevelModerate => 'మధ్యస్థం';
+
+  @override
+  String get baselineSurveyLevelLow => 'తక్కువ';
+
+  @override
+  String get baselineSurveyFreqNever => 'ఎప్పుడూ లేదు';
+
+  @override
+  String get baselineSurveyFreqAlways => 'ఎల్లప్పుడూ';
+
+  @override
+  String get baselineSurveyFreqSometimes => 'కొన్నిసార్లు';
+
+  @override
+  String get baselineSurveyFreqOften => 'తరచుగా';
+
+  @override
+  String get baselineSurveyFreqRegular => 'క్రమం తప్పకుండా';
+
+  @override
+  String get baselineSurveyFreqOccasional => 'అప్పుడప్పుడు';
+
+  @override
+  String get baselineSurveyFreqOccasionally => 'అప్పుడప్పుడు';
+
+  @override
+  String get baselineSurveyFreqDaily => 'ప్రతిరోజూ';
+
+  @override
+  String get baselineSurveyFreqWeekly => 'వారానికొకసారి';
+
+  @override
+  String get baselineSurveyFreqIrregular => 'క్రమరహితం';
+
+  @override
+  String get baselineSurveyNoneOption => 'ఏదీ లేదు';
+
+  @override
+  String get baselineSurveyOtherOption => 'ఇతర';
+
+  @override
+  String get baselineSurveyOthersOption => 'ఇతరులు';
+
+  @override
+  String get baselineSurveySpecifyPlaceholder => 'తెలియజేయండి';
+
+  @override
+  String get baselineSurveySectionADemographics => 'జనాభా వివరాలు';
+
+  @override
+  String get baselineSurveySectionBEnterprise => 'వ్యాపార ప్రొఫైల్';
+
+  @override
+  String get baselineSurveySectionCDigital => 'డిజిటల్ యాక్సెస్ & వినియోగం';
+
+  @override
+  String get baselineSurveySectionDFinancial => 'ఆర్థిక చేరిక';
+
+  @override
+  String get baselineSurveySectionEEntrepreneurial => 'వ్యవస్థాపక నైపుణ్యాలు';
+
+  @override
+  String get baselineSurveySectionFEmpowerment =>
+      'సాధికారత & స్వయం నిర్ణయాధికారం';
+
+  @override
+  String get baselineSurveySectionGChallenges => 'సవాళ్లు & అవసరాలు';
+
+  @override
+  String get baselineSurveySectionHExpectations =>
+      'ప్రభుత్వం లేదా ఎన్జీఓల నుండి అంచనాలు';
+
+  @override
+  String get baselineSurveySectionIConsent => 'సమ్మతి & గోప్యత';
+
+  @override
+  String get baselineSurveyAge => 'వయస్సు';
+
+  @override
+  String get baselineSurveyEducationLevel => 'విద్యా స్థాయి';
+
+  @override
+  String get baselineSurveyEducationNone => 'అధికారిక విద్య లేదు';
+
+  @override
+  String get baselineSurveyEducationPrimary => 'ప్రాథమిక';
+
+  @override
+  String get baselineSurveyEducationSecondary => 'మాధ్యమిక';
+
+  @override
+  String get baselineSurveyEducationGraduate => 'గ్రాడ్యుయేట్';
+
+  @override
+  String get baselineSurveyEducationPostgraduate => 'పోస్ట్‌గ్రాడ్యుయేట్';
+
+  @override
+  String get baselineSurveyCasteCommunity => 'కులం/సముదాయం';
+
+  @override
+  String get baselineSurveyMaritalStatus => 'వైవాహిక స్థితి';
+
+  @override
+  String get baselineSurveyMaritalSingle => 'అవివాహిత';
+
+  @override
+  String get baselineSurveyMaritalMarried => 'వివాహిత';
+
+  @override
+  String get baselineSurveyMaritalWidowed => 'వితంతువు';
+
+  @override
+  String get baselineSurveyMaritalSeparated => 'విడిపోయిన/విడాకులు';
+
+  @override
+  String get baselineSurveyHouseholdSize => 'కుటుంబ సభ్యుల సంఖ్య';
+
+  @override
+  String get baselineSurveyLocation => 'ప్రాంతం';
+
+  @override
+  String get baselineSurveyLocationEastGodavari => 'తూర్పు గోదావరి';
+
+  @override
+  String get baselineSurveyLocationWestGodavari => 'పశ్చిమ గోదావరి';
+
+  @override
+  String get baselineSurveyLocationKrishna => 'కృష్ణా';
+
+  @override
+  String get baselineSurveyAnnualIncome => 'వార్షిక కుటుంబ ఆదాయం (సుమారు)';
+
+  @override
+  String get baselineSurveyPrimaryIncomeSource => 'కుటుంబ ప్రధాన ఆదాయ వనరు';
+
+  @override
+  String get baselineSurveyEnterpriseType => 'వ్యాపార రకం';
+
+  @override
+  String get baselineSurveyEnterpriseShgLed => 'SHG-నిర్వహిత';
+
+  @override
+  String get baselineSurveyEnterpriseIndividual => 'వ్యక్తిగత';
+
+  @override
+  String get baselineSurveyEnterpriseCollective => 'సామూహిక';
+
+  @override
+  String get baselineSurveySector => 'రంగం';
+
+  @override
+  String get baselineSurveySectorAgriFood => 'వ్యవసాయం/ఆహార ప్రాసెసింగ్';
+
+  @override
+  String get baselineSurveySectorTailoring => 'టైలరింగ్/వస్త్రాలు';
+
+  @override
+  String get baselineSurveySectorRetail => 'రిటైల్';
+
+  @override
+  String get baselineSurveySectorServices => 'సేవలు';
+
+  @override
+  String get baselineSurveyYearsInOperation => 'వ్యాపారం నడుస్తున్న సంవత్సరాలు';
+
+  @override
+  String get baselineSurveyMonthlyRevenue => 'నెలవారీ ఆదాయం (సుమారు)';
+
+  @override
+  String get baselineSurveyEmployees => 'ఉద్యోగులు (ఉంటే)';
+
+  @override
+  String get baselineSurveyRegistrationStatus => 'నమోదు స్థితి';
+
+  @override
+  String get baselineSurveyRegistered => 'నమోదైంది';
+
+  @override
+  String get baselineSurveyUnregistered => 'నమోదు కాలేదు';
+
+  @override
+  String get baselineSurveyMarketReach => 'మార్కెట్ పరిధి';
+
+  @override
+  String get baselineSurveyMarketLocal => 'స్థానిక';
+
+  @override
+  String get baselineSurveyMarketDistrict => 'జిల్లా';
+
+  @override
+  String get baselineSurveyMarketState => 'రాష్ట్రం';
+
+  @override
+  String get baselineSurveyMarketNational => 'జాతీయ';
+
+  @override
+  String get baselineSurveyMarketInternational => 'అంతర్జాతీయ';
+
+  @override
+  String get baselineSurveyOwnsSmartphone => 'మీకు స్మార్ట్‌ఫోన్ ఉందా?';
+
+  @override
+  String get baselineSurveyInternetAccess => 'ఇంటర్నెట్ యాక్సెస్';
+
+  @override
+  String get baselineSurveyInternetType => 'ఇంటర్నెట్ రకం';
+
+  @override
+  String get baselineSurveyInternetMobileData => 'మొబైల్ డేటా';
+
+  @override
+  String get baselineSurveyInternetWifi => 'వై-ఫై';
+
+  @override
+  String get baselineSurveyAppsUsed => 'ఉపయోగించే యాప్‌లు';
+
+  @override
+  String get baselineSurveyAppWhatsapp => 'వాట్సాప్';
+
+  @override
+  String get baselineSurveyAppYoutube => 'యూట్యూబ్';
+
+  @override
+  String get baselineSurveyAppUpi => 'యూపీఐ';
+
+  @override
+  String get baselineSurveyAppGovtPortals => 'ప్రభుత్వ పోర్టళ్లు';
+
+  @override
+  String get baselineSurveyAppSocialMedia => 'సోషల్ మీడియా';
+
+  @override
+  String get baselineSurveyAppEcommerce => 'ఈ-కామర్స్ ప్లాట్‌ఫారమ్‌లు';
+
+  @override
+  String get baselineSurveyReceivedDigitalTraining =>
+      'మీరు ఇంతకుముందు డిజిటల్ శిక్షణ పొందారా?';
+
+  @override
+  String get baselineSurveyDigitalPaymentFrequency =>
+      'డిజిటల్ చెల్లింపుల తరచుదనం';
+
+  @override
+  String get baselineSurveyDigitalToolsComfort =>
+      'డిజిటల్ టూల్స్ వాడకంలో సౌకర్యం';
+
+  @override
+  String get baselineSurveyBankAccount => 'బ్యాంక్ ఖాతా';
+
+  @override
+  String get baselineSurveyCreditAccess => 'రుణ సౌకర్యం';
+
+  @override
+  String get baselineSurveyCreditFormal => 'అధికారిక (బ్యాంక్/SHG)';
+
+  @override
+  String get baselineSurveyCreditInformal => 'అనధికారిక (వడ్డీ వ్యాపారులు)';
+
+  @override
+  String get baselineSurveyDigitalPaymentUsage => 'డిజిటల్ చెల్లింపుల వినియోగం';
+
+  @override
+  String get baselineSurveySavingsPattern => 'పొదుపు విధానం';
+
+  @override
+  String get baselineSurveyAwareGovtSchemes => 'ప్రభుత్వ పథకాల అవగాహన';
+
+  @override
+  String get baselineSurveyGovtSchemesDetail =>
+      'అవును అయితే, దయచేసి తెలియజేయండి';
+
+  @override
+  String get baselineSurveyBusinessPlanningKnowledge =>
+      'వ్యాపార ప్రణాళిక పరిజ్ఞానం';
+
+  @override
+  String get baselineSurveyRecordKeeping => 'రికార్డుల నిర్వహణ';
+
+  @override
+  String get baselineSurveyRecordManual => 'మాన్యువల్';
+
+  @override
+  String get baselineSurveyRecordDigital => 'డిజిటల్';
+
+  @override
+  String get baselineSurveyInventorySystem => 'ఇన్వెంటరీ నిర్వహణ వ్యవస్థ';
+
+  @override
+  String get baselineSurveyBusinessTraining =>
+      'వ్యాపార వర్క్‌షాప్ లేదా శిక్షణలో పాల్గొనడం';
+
+  @override
+  String get baselineSurveyOnlineMarketingAbility =>
+      'ఉత్పత్తులను ఆన్‌లైన్‌లో విక్రయించే సామర్థ్యం';
+
+  @override
+  String get baselineSurveyInnovationLevel =>
+      'ఉత్పత్తులు/సేవలలో నూతనత్వ స్థాయి';
+
+  @override
+  String get baselineSurveyDecisionMakingRole =>
+      'కుటుంబంలో నిర్ణయం తీసుకునే పాత్ర';
+
+  @override
+  String get baselineSurveyMobility => 'చలనశీలత (ఒంటరిగా ప్రయాణించగలగడం)';
+
+  @override
+  String get baselineSurveyShgLeadershipRole => 'SHG నాయకత్వ పాత్ర';
+
+  @override
+  String get baselineSurveyTechConfidence => 'సాంకేతికత వాడకంలో ఆత్మవిశ్వాసం';
+
+  @override
+  String get baselineSurveyCommunityInfluence => 'సముదాయ ప్రభావం/నాయకత్వం';
+
+  @override
+  String get baselineSurveyNegotiationAbility =>
+      'కస్టమర్లు/సరఫరాదారులతో బేరమాడే సామర్థ్యం';
+
+  @override
+  String get baselineSurveyTopChallenges =>
+      'మహిళా వ్యవస్థాపకురాలిగా మీరు ఎదుర్కొనే మొదటి 3 సవాళ్లు';
+
+  @override
+  String baselineSurveyChallengeHint(int n) {
+    return 'సవాలు $n';
+  }
+
+  @override
+  String get baselineSurveyTrainingNeeds =>
+      'మీ వ్యాపారాన్ని పెంచుకోవడానికి ఏ రకమైన శిక్షణ లేదా నైపుణ్య అభివృద్ధి సహాయపడుతుంది?';
+
+  @override
+  String get baselineSurveyTrainingDigitalMarketing => 'డిజిటల్ మార్కెటింగ్';
+
+  @override
+  String get baselineSurveyTrainingFinancialManagement => 'ఆర్థిక నిర్వహణ';
+
+  @override
+  String get baselineSurveyTrainingProductQuality => 'ఉత్పత్తి నాణ్యత మెరుగుదల';
+
+  @override
+  String get baselineSurveyTrainingEcommerce => 'ఈ-కామర్స్ శిక్షణ';
+
+  @override
+  String get baselineSurveySupportNeeded =>
+      'ప్రస్తుతం మీకు ఏ సహాయం అత్యంత అవసరం?';
+
+  @override
+  String get baselineSurveySupportCredit => 'రుణ సౌకర్యం';
+
+  @override
+  String get baselineSurveySupportMarketing => 'మార్కెటింగ్ మద్దతు';
+
+  @override
+  String get baselineSurveySupportMentorship => 'మార్గదర్శకత్వం';
+
+  @override
+  String get baselineSurveySupportGovtAwareness => 'ప్రభుత్వ పథకాల అవగాహన';
+
+  @override
+  String get baselineSurveySupportNetworking => 'నెట్‌వర్కింగ్ అవకాశాలు';
+
+  @override
+  String get baselineSurveyInterestedInTrials =>
+      'శిక్షణ లేదా యాప్ ట్రయల్స్‌లో పాల్గొనడానికి మీకు ఆసక్తి ఉందా?';
+
+  @override
+  String get baselineSurveyExpectedBenefit =>
+      'ఈ ప్రాజెక్ట్ మీకు లేదా మీ సముదాయానికి ఎలా ప్రయోజనం చేకూరుస్తుందని మీరు అనుకుంటున్నారు?';
+
+  @override
+  String get baselineSurveyGovtNgoSupport =>
+      'మీ ఎదుగుదలకు ఏ ప్రభుత్వ లేదా ఎన్జీఓ మద్దతు అవసరమని మీరు భావిస్తున్నారు?';
+
+  @override
+  String get baselineSurveySupportSubsidies => 'సబ్సిడీలు లేదా ఆర్థిక సహాయం';
+
+  @override
+  String get baselineSurveySupportDigitalCenters => 'డిజిటల్ శిక్షణ కేంద్రాలు';
+
+  @override
+  String get baselineSurveySupportMarketLinkages => 'మార్కెట్ అనుసంధానాలు';
+
+  @override
+  String get baselineSurveySupportInfrastructure => 'మెరుగైన మౌలిక సదుపాయాలు';
+
+  @override
+  String get baselineSurveyConsentStatement =>
+      'నేను స్వచ్ఛందంగా ఈ సర్వేలో పాల్గొనడానికి అంగీకరిస్తున్నాను. నా సమాధానాలు గోప్యంగా ఉంచబడతాయని మరియు పరిశోధన ప్రయోజనాల కోసం మాత్రమే ఉపయోగించబడతాయని నేను అర్థం చేసుకున్నాను.';
+
+  @override
+  String get baselineSurveyConsentCheckbox =>
+      'పైన పేర్కొన్న ప్రకటనతో నేను అంగీకరిస్తున్నాను';
+
+  @override
+  String get baselineSurveySignatureLabel =>
+      'సంతకం చేయడానికి మీ పూర్తి పేరు టైప్ చేయండి';
+
+  @override
+  String get baselineSurveySignaturePlaceholder => 'మీ పూర్తి పేరు';
+
+  @override
+  String get baselineSurveySubmitButton => 'సమర్పించి కొనసాగించండి';
+
+  @override
+  String get baselineSurveySubmitting => 'సమర్పిస్తోంది…';
+
+  @override
+  String get baselineSurveySubmitError =>
+      'సర్వేను సమర్పించడం సాధ్యం కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.';
 }

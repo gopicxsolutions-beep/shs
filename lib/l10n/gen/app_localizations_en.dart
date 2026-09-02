@@ -4586,4 +4586,447 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financialLedgerBalancePrefix => 'Bal';
+
+  @override
+  String get actionNext => 'Next';
+
+  @override
+  String get actionBack => 'Back';
+
+  @override
+  String get commonYes => 'Yes';
+
+  @override
+  String get commonNo => 'No';
+
+  @override
+  String get baselineSurveyTitle => 'Baseline Survey';
+
+  @override
+  String baselineSurveySectionOf(int current, int total) {
+    return 'Section $current of $total';
+  }
+
+  @override
+  String get baselineSurveyIntro =>
+      'A few more questions to finish registering. This helps the program understand who it serves — please answer every question on each section before continuing.';
+
+  @override
+  String get baselineSurveyLevelHigh => 'High';
+
+  @override
+  String get baselineSurveyLevelModerate => 'Moderate';
+
+  @override
+  String get baselineSurveyLevelLow => 'Low';
+
+  @override
+  String get baselineSurveyFreqNever => 'Never';
+
+  @override
+  String get baselineSurveyFreqAlways => 'Always';
+
+  @override
+  String get baselineSurveyFreqSometimes => 'Sometimes';
+
+  @override
+  String get baselineSurveyFreqOften => 'Often';
+
+  @override
+  String get baselineSurveyFreqRegular => 'Regular';
+
+  @override
+  String get baselineSurveyFreqOccasional => 'Occasional';
+
+  @override
+  String get baselineSurveyFreqOccasionally => 'Occasionally';
+
+  @override
+  String get baselineSurveyFreqDaily => 'Daily';
+
+  @override
+  String get baselineSurveyFreqWeekly => 'Weekly';
+
+  @override
+  String get baselineSurveyFreqIrregular => 'Irregular';
+
+  @override
+  String get baselineSurveyNoneOption => 'None';
+
+  @override
+  String get baselineSurveyOtherOption => 'Other';
+
+  @override
+  String get baselineSurveyOthersOption => 'Others';
+
+  @override
+  String get baselineSurveySpecifyPlaceholder => 'Specify';
+
+  @override
+  String get baselineSurveySectionADemographics => 'Demographics';
+
+  @override
+  String get baselineSurveySectionBEnterprise => 'Enterprise Profile';
+
+  @override
+  String get baselineSurveySectionCDigital => 'Digital Access & Usage';
+
+  @override
+  String get baselineSurveySectionDFinancial => 'Financial Inclusion';
+
+  @override
+  String get baselineSurveySectionEEntrepreneurial => 'Entrepreneurial Skills';
+
+  @override
+  String get baselineSurveySectionFEmpowerment => 'Empowerment & Agency';
+
+  @override
+  String get baselineSurveySectionGChallenges => 'Challenges & Needs';
+
+  @override
+  String get baselineSurveySectionHExpectations =>
+      'Expectations from Government or NGOs';
+
+  @override
+  String get baselineSurveySectionIConsent => 'Consent & Confidentiality';
+
+  @override
+  String get baselineSurveyAge => 'Age';
+
+  @override
+  String get baselineSurveyEducationLevel => 'Education Level';
+
+  @override
+  String get baselineSurveyEducationNone => 'No Formal Education';
+
+  @override
+  String get baselineSurveyEducationPrimary => 'Primary';
+
+  @override
+  String get baselineSurveyEducationSecondary => 'Secondary';
+
+  @override
+  String get baselineSurveyEducationGraduate => 'Graduate';
+
+  @override
+  String get baselineSurveyEducationPostgraduate => 'Postgraduate';
+
+  @override
+  String get baselineSurveyCasteCommunity => 'Caste/Community';
+
+  @override
+  String get baselineSurveyMaritalStatus => 'Marital Status';
+
+  @override
+  String get baselineSurveyMaritalSingle => 'Single';
+
+  @override
+  String get baselineSurveyMaritalMarried => 'Married';
+
+  @override
+  String get baselineSurveyMaritalWidowed => 'Widowed';
+
+  @override
+  String get baselineSurveyMaritalSeparated => 'Separated/Divorced';
+
+  @override
+  String get baselineSurveyHouseholdSize => 'Household Size';
+
+  @override
+  String get baselineSurveyLocation => 'Location';
+
+  @override
+  String get baselineSurveyLocationEastGodavari => 'East Godavari';
+
+  @override
+  String get baselineSurveyLocationWestGodavari => 'West Godavari';
+
+  @override
+  String get baselineSurveyLocationKrishna => 'Krishna';
+
+  @override
+  String get baselineSurveyAnnualIncome => 'Annual Household Income (approx.)';
+
+  @override
+  String get baselineSurveyPrimaryIncomeSource =>
+      'Primary Source of Income for Family';
+
+  @override
+  String get baselineSurveyEnterpriseType => 'Type of Enterprise';
+
+  @override
+  String get baselineSurveyEnterpriseShgLed => 'SHG-led';
+
+  @override
+  String get baselineSurveyEnterpriseIndividual => 'Individual';
+
+  @override
+  String get baselineSurveyEnterpriseCollective => 'Collective';
+
+  @override
+  String get baselineSurveySector => 'Sector';
+
+  @override
+  String get baselineSurveySectorAgriFood => 'Agri/Food Processing';
+
+  @override
+  String get baselineSurveySectorTailoring => 'Tailoring/Textiles';
+
+  @override
+  String get baselineSurveySectorRetail => 'Retail';
+
+  @override
+  String get baselineSurveySectorServices => 'Services';
+
+  @override
+  String get baselineSurveyYearsInOperation => 'Years in Operation';
+
+  @override
+  String get baselineSurveyMonthlyRevenue => 'Monthly Revenue (approx.)';
+
+  @override
+  String get baselineSurveyEmployees => 'Employees (if any)';
+
+  @override
+  String get baselineSurveyRegistrationStatus => 'Registration Status';
+
+  @override
+  String get baselineSurveyRegistered => 'Registered';
+
+  @override
+  String get baselineSurveyUnregistered => 'Unregistered';
+
+  @override
+  String get baselineSurveyMarketReach => 'Market Reach';
+
+  @override
+  String get baselineSurveyMarketLocal => 'Local';
+
+  @override
+  String get baselineSurveyMarketDistrict => 'District';
+
+  @override
+  String get baselineSurveyMarketState => 'State';
+
+  @override
+  String get baselineSurveyMarketNational => 'National';
+
+  @override
+  String get baselineSurveyMarketInternational => 'International';
+
+  @override
+  String get baselineSurveyOwnsSmartphone => 'Do you own a smartphone?';
+
+  @override
+  String get baselineSurveyInternetAccess => 'Internet Access';
+
+  @override
+  String get baselineSurveyInternetType => 'Type of Internet';
+
+  @override
+  String get baselineSurveyInternetMobileData => 'Mobile Data';
+
+  @override
+  String get baselineSurveyInternetWifi => 'Wi-Fi';
+
+  @override
+  String get baselineSurveyAppsUsed => 'Apps Used';
+
+  @override
+  String get baselineSurveyAppWhatsapp => 'WhatsApp';
+
+  @override
+  String get baselineSurveyAppYoutube => 'YouTube';
+
+  @override
+  String get baselineSurveyAppUpi => 'UPI';
+
+  @override
+  String get baselineSurveyAppGovtPortals => 'Govt Portals';
+
+  @override
+  String get baselineSurveyAppSocialMedia => 'Social Media';
+
+  @override
+  String get baselineSurveyAppEcommerce => 'E-commerce Platforms';
+
+  @override
+  String get baselineSurveyReceivedDigitalTraining =>
+      'Have you received digital training before?';
+
+  @override
+  String get baselineSurveyDigitalPaymentFrequency =>
+      'Frequency of Digital Payments';
+
+  @override
+  String get baselineSurveyDigitalToolsComfort =>
+      'Comfort Level in Using Digital Tools';
+
+  @override
+  String get baselineSurveyBankAccount => 'Bank Account';
+
+  @override
+  String get baselineSurveyCreditAccess => 'Access to Credit';
+
+  @override
+  String get baselineSurveyCreditFormal => 'Formal (Bank/SHG)';
+
+  @override
+  String get baselineSurveyCreditInformal => 'Informal (Money Lenders)';
+
+  @override
+  String get baselineSurveyDigitalPaymentUsage => 'Use of Digital Payments';
+
+  @override
+  String get baselineSurveySavingsPattern => 'Savings Pattern';
+
+  @override
+  String get baselineSurveyAwareGovtSchemes =>
+      'Awareness of Government Schemes';
+
+  @override
+  String get baselineSurveyGovtSchemesDetail => 'If yes, please mention';
+
+  @override
+  String get baselineSurveyBusinessPlanningKnowledge =>
+      'Business Planning Knowledge';
+
+  @override
+  String get baselineSurveyRecordKeeping => 'Record Keeping';
+
+  @override
+  String get baselineSurveyRecordManual => 'Manual';
+
+  @override
+  String get baselineSurveyRecordDigital => 'Digital';
+
+  @override
+  String get baselineSurveyInventorySystem => 'Inventory Management System';
+
+  @override
+  String get baselineSurveyBusinessTraining =>
+      'Participation in Business Workshops or Training';
+
+  @override
+  String get baselineSurveyOnlineMarketingAbility =>
+      'Ability to Market Products Online';
+
+  @override
+  String get baselineSurveyInnovationLevel =>
+      'Innovation Level in Products/Services';
+
+  @override
+  String get baselineSurveyDecisionMakingRole =>
+      'Decision-making role in household';
+
+  @override
+  String get baselineSurveyMobility => 'Mobility (can travel alone)';
+
+  @override
+  String get baselineSurveyShgLeadershipRole => 'SHG Leadership Role';
+
+  @override
+  String get baselineSurveyTechConfidence => 'Confidence in using technology';
+
+  @override
+  String get baselineSurveyCommunityInfluence =>
+      'Community Influence/Leadership';
+
+  @override
+  String get baselineSurveyNegotiationAbility =>
+      'Ability to Negotiate with Customers/Suppliers';
+
+  @override
+  String get baselineSurveyTopChallenges =>
+      'Top 3 challenges you face as a woman entrepreneur';
+
+  @override
+  String baselineSurveyChallengeHint(int n) {
+    return 'Challenge $n';
+  }
+
+  @override
+  String get baselineSurveyTrainingNeeds =>
+      'What type of training or skill development would help you grow your enterprise?';
+
+  @override
+  String get baselineSurveyTrainingDigitalMarketing => 'Digital Marketing';
+
+  @override
+  String get baselineSurveyTrainingFinancialManagement =>
+      'Financial Management';
+
+  @override
+  String get baselineSurveyTrainingProductQuality =>
+      'Product Quality Improvement';
+
+  @override
+  String get baselineSurveyTrainingEcommerce => 'E-commerce Training';
+
+  @override
+  String get baselineSurveySupportNeeded =>
+      'What kind of support do you need most right now?';
+
+  @override
+  String get baselineSurveySupportCredit => 'Access to Credit';
+
+  @override
+  String get baselineSurveySupportMarketing => 'Marketing Support';
+
+  @override
+  String get baselineSurveySupportMentorship => 'Mentorship';
+
+  @override
+  String get baselineSurveySupportGovtAwareness =>
+      'Government Scheme Awareness';
+
+  @override
+  String get baselineSurveySupportNetworking => 'Networking Opportunities';
+
+  @override
+  String get baselineSurveyInterestedInTrials =>
+      'Are you interested in participating in training or app trials?';
+
+  @override
+  String get baselineSurveyExpectedBenefit =>
+      'How do you expect this project to benefit you or your community?';
+
+  @override
+  String get baselineSurveyGovtNgoSupport =>
+      'What government or NGO support do you think is essential for your growth?';
+
+  @override
+  String get baselineSurveySupportSubsidies => 'Subsidies or Financial Aid';
+
+  @override
+  String get baselineSurveySupportDigitalCenters => 'Digital Training Centers';
+
+  @override
+  String get baselineSurveySupportMarketLinkages => 'Market Linkages';
+
+  @override
+  String get baselineSurveySupportInfrastructure => 'Improved Infrastructure';
+
+  @override
+  String get baselineSurveyConsentStatement =>
+      'I voluntarily agree to participate in this survey. I understand that my responses will be kept confidential and used only for research purposes.';
+
+  @override
+  String get baselineSurveyConsentCheckbox => 'I agree to the statement above';
+
+  @override
+  String get baselineSurveySignatureLabel => 'Type your full name to sign';
+
+  @override
+  String get baselineSurveySignaturePlaceholder => 'Your full name';
+
+  @override
+  String get baselineSurveySubmitButton => 'Submit & Continue';
+
+  @override
+  String get baselineSurveySubmitting => 'Submitting…';
+
+  @override
+  String get baselineSurveySubmitError =>
+      'Could not submit the survey. Please try again.';
 }
