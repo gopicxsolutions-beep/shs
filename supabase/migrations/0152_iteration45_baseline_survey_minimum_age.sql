@@ -1,0 +1,21 @@
+-- User-reported gap (found while checking that onboarding data lands
+-- correctly in Supabase): a real live submission stored `age = 15` in
+-- `member_baseline_surveys`. `0151`'s own `age` check only enforced a loose
+-- plausibility range (`between 10 and 120`) — wide enough to admit a survey
+-- respondent well below the age DAY-NRLM SHG membership itself requires
+-- (an adult woman, 18+), since `profile_setup_page.dart`'s client-side
+-- wizard had no age floor of its own either (fixed in the same round —
+-- `_sectionAValid()`/`_ageError()`).
+--
+-- Re-narrows the floor to 18. Added `NOT VALID` deliberately: a normal
+-- `ALTER TABLE ... ADD CONSTRAINT` re-validates every existing row and
+-- would fail outright against the real age=15 row already sitting in the
+-- live table — this repo's own convention (CLAUDE.md) is to never silently
+-- rewrite or delete a user's already-submitted data as a side effect of an
+-- unrelated schema change. `NOT VALID` skips that one-time bulk check but
+-- still enforces the tightened rule on every INSERT and UPDATE from this
+-- point forward (including any future update to that same pre-existing
+-- row) — the fix that actually matters for real going forward, without
+-- unilaterally deciding the existing respondent's data should be discarded.
+alter table public.member_baseline_surveys drop constraint member_baseline_surveys_age_check;
+alter table public.member_baseline_surveys add constraint member_baseline_surveys_age_check check (age is null or age between 18 and 120) not valid;

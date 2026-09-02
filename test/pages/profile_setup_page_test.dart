@@ -118,4 +118,47 @@ void main() {
     expect(nextButton().onPressed, isNotNull, reason: 'every Section A field, including the conditional one, is now filled');
     expect(tester.takeException(), isNull);
   });
+
+  /// Regression coverage: a live submission was found with `age: 15` — every
+  /// Section A field was "filled" (so the check above alone wouldn't have
+  /// caught it), but SHG membership requires an adult respondent and
+  /// nothing enforced that. Next must stay disabled for a below-minimum age
+  /// with a visible reason, not just silently refuse to advance.
+  testWidgets('Section A: an under-18 age keeps Next disabled and shows why, a corrected age clears it', (tester) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await boot(tester);
+    await tester.enterText(find.byType(TextField).first, 'Lakshmi Devi');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Search & select your SHG'));
+    await tester.pumpAndSettle();
+    continueButton(tester).onPressed!();
+    await tester.pumpAndSettle();
+
+    AppButton nextButton() => tester.widgetList<AppButton>(find.byType(AppButton)).firstWhere((b) => b.label == 'Next');
+
+    await tester.enterText(find.byType(TextField).at(0), '15'); // Age
+    await tester.tap(find.text('Secondary')); // Education Level
+    await tester.enterText(find.byType(TextField).at(1), 'OBC'); // Caste/Community
+    await tester.tap(find.text('Married')); // Marital Status
+    await tester.enterText(find.byType(TextField).at(2), '4'); // Household Size
+    await tester.tap(find.text('East Godavari')); // Location
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(3), '150000'); // Annual Household Income
+    await tester.enterText(fields.at(4), 'Farming'); // Primary Source of Income
+    await tester.pumpAndSettle();
+
+    expect(nextButton().onPressed, isNull, reason: 'every field is filled but the age is below the minimum');
+    expect(find.text('Must be at least 18 years old'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.enterText(fields.at(0), '32');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Must be at least 18 years old'), findsNothing);
+    expect(nextButton().onPressed, isNotNull, reason: 'a corrected, valid age clears the error and enables Next');
+  });
 }

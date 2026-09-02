@@ -21075,3 +21075,48 @@ copy, correctly localized). Not tested against live Supabase this round
 
 Docs updated in this same change: [SRS.md](SRS.md) §3.1 (new opening
 paragraph on the picker) and new FR-AUTH-0.
+
+## 2026-09-02 — Fix: baseline survey had no minimum-age enforcement
+
+Follow-up to the same-day "check onboarding details are properly stored"
+verification round, which found a real live `member_baseline_surveys`
+submission with `age: 15` — every Section A field was filled (so the
+existing "every field required" test coverage never caught it), but nothing
+anywhere enforced a plausible minimum age for an SHG member (DAY-NRLM SHG
+membership is adult women only). User asked for a minimum-age check.
+
+**Client-side** (`profile_setup_page.dart`): `_sectionAValid()` now requires
+`age >= 18` (a new `_minSurveyAge` constant), not just "non-empty." A filled
+but below-minimum age keeps Next disabled *with a visible reason* — added an
+optional `errorText` to the shared `_field`/`_numberField` helpers (red
+border + inline message below the field, mirroring `LoginPage`'s existing
+error-text convention) rather than just silently refusing to advance, since
+an empty field explains itself but a filled-and-still-wrong one doesn't.
+
+**Server-side** (migration `0152`): `0151`'s own `age` check was only a
+loose plausibility range (`between 10 and 120`), wide enough to admit the
+real age-15 row — confirmed via `pg_get_constraintdef` before touching
+anything. Re-narrowed the floor to 18. Added `NOT VALID` deliberately: a
+normal `ADD CONSTRAINT` re-validates every existing row and would have
+failed outright against that real age-15 row already live in the table —
+this repo's convention is to never silently rewrite or discard a user's
+already-submitted data as a side effect of an unrelated schema tightening.
+`NOT VALID` skips that one-time bulk check but still enforces the rule on
+every INSERT and UPDATE from this point forward.
+
+**Verification**: `flutter analyze` — 0 issues. `flutter test` —
+1108/1108 passing (+1 new: under-18 keeps Next disabled with the error
+text shown, a corrected age clears it and enables Next). Migration applied
+live via `supabase db push --linked`; confirmed via `pg_get_constraintdef`
+that the deployed constraint reads exactly `(age IS NULL) OR (age BETWEEN
+18 AND 120)`, `NOT VALID`. Live-tested directly against the real table
+inside a transaction that was always rolled back (`BEGIN; UPDATE ... SET
+age = 15 ...; ROLLBACK`) against the same pre-existing real row from the
+verification round above: the age-15 update correctly failed with `23514`
+check-violation, a same-row age-40 update correctly succeeded, and the
+rollback confirmed neither write persisted (`age` still reads its original
+`34` afterward) — the pre-existing real respondent's own data was read
+inside the test but never actually modified.
+
+Docs updated in this same change: [SRS.md](SRS.md) §3.1 (age-minimum
+sentence added to the baseline survey paragraph).

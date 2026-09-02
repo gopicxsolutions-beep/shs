@@ -4636,6 +4636,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get baselineSurveyAge => 'आयु';
 
   @override
+  String baselineSurveyAgeBelowMinimum(int minAge) {
+    return 'आयु कम से कम $minAge वर्ष होनी चाहिए';
+  }
+
+  @override
   String get baselineSurveyEducationLevel => 'शिक्षा स्तर';
 
   @override

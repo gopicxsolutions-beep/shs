@@ -8214,6 +8214,12 @@ abstract class AppLocalizations {
   /// **'Age'**
   String get baselineSurveyAge;
 
+  /// No description provided for @baselineSurveyAgeBelowMinimum.
+  ///
+  /// In en, this message translates to:
+  /// **'Must be at least {minAge} years old'**
+  String baselineSurveyAgeBelowMinimum(int minAge);
+
   /// No description provided for @baselineSurveyEducationLevel.
   ///
   /// In en, this message translates to:

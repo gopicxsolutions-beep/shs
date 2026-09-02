@@ -3140,6 +3140,12 @@
   "baselineSurveySectionIConsent": "Consent & Confidentiality",
 
   "baselineSurveyAge": "Age",
+  "baselineSurveyAgeBelowMinimum": "Must be at least {minAge} years old",
+  "@baselineSurveyAgeBelowMinimum": {
+    "placeholders": {
+      "minAge": {"type": "int"}
+    }
+  },
   "baselineSurveyEducationLevel": "Education Level",
   "baselineSurveyEducationNone": "No Formal Education",
   "baselineSurveyEducationPrimary": "Primary",

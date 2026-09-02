@@ -2450,6 +2450,12 @@
   "baselineSurveySectionIConsent": "సమ్మతి & గోప్యత",
 
   "baselineSurveyAge": "వయస్సు",
+  "baselineSurveyAgeBelowMinimum": "వయస్సు కనీసం {minAge} సంవత్సరాలు ఉండాలి",
+  "@baselineSurveyAgeBelowMinimum": {
+    "placeholders": {
+      "minAge": {"type": "int"}
+    }
+  },
   "baselineSurveyEducationLevel": "విద్యా స్థాయి",
   "baselineSurveyEducationNone": "అధికారిక విద్య లేదు",
   "baselineSurveyEducationPrimary": "ప్రాథమిక",

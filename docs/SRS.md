@@ -197,7 +197,11 @@ numbers) with a progress bar, and is **mandatory before dashboard access**:
 every field on a section — including a conditional "specify" field revealed
 by an "other(s)" choice — must be filled/selected before Next enables for
 that section, all the way through the final Consent step (a checkbox plus a
-typed signature). Submission writes to
+typed signature). Age has its own floor of 18 (SHG membership is an adult-
+women-only program) — a filled-but-below-minimum age keeps Next disabled
+with a visible reason shown under the field, the same "explain a filled-but-
+invalid field" treatment as every other validated field in this app, rather
+than looking like a silently broken button. Submission writes to
 `public.member_baseline_surveys`, one row per profile
 (migration `0151`), alongside — not instead of — the `profiles`
 row/join-request writes above. An account that existed before this

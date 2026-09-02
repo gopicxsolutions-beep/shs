@@ -34,6 +34,14 @@ class ProfileSetupPage extends StatefulWidget {
 class _ProfileSetupPageState extends State<ProfileSetupPage> {
   static const _totalSurveySections = 9;
 
+  // The survey is about a woman running (or working in) an SHG-linked
+  // microenterprise — DAY-NRLM SHG membership itself requires an adult
+  // (18+) member, so a submitted age below this was never a legitimate
+  // respondent, just an unvalidated field (see docs/DEVELOPMENT_PROGRESS.md,
+  // "check onboarding details are properly stored" round, which found a
+  // real live submission with age 15 sail straight through).
+  static const _minSurveyAge = 18;
+
   // Basic info (step 0)
   final _name = TextEditingController();
   final _village = TextEditingController();
@@ -160,7 +168,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     super.dispose();
   }
 
-  Widget _field(String label, {String? placeholder, TextEditingController? controller, TextInputAction? textInputAction, TextInputType? keyboardType, int maxLines = 1}) {
+  Widget _field(String label, {String? placeholder, TextEditingController? controller, TextInputAction? textInputAction, TextInputType? keyboardType, int maxLines = 1, String? errorText}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -168,7 +176,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
         const SizedBox(height: 6),
         Container(
           height: maxLines > 1 ? null : 44,
-          decoration: BoxDecoration(border: Border.all(color: Neutral.c200), borderRadius: BorderRadius.circular(12), color: Colors.white),
+          decoration: BoxDecoration(border: Border.all(color: errorText == null ? Neutral.c200 : Accent.red600), borderRadius: BorderRadius.circular(12), color: Colors.white),
           padding: EdgeInsets.symmetric(horizontal: 14, vertical: maxLines > 1 ? 10 : 0),
           alignment: maxLines > 1 ? Alignment.topLeft : Alignment.centerLeft,
           child: TextField(
@@ -181,12 +189,16 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
             style: AppTheme.sans(14),
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Semantics(liveRegion: true, child: Text(errorText, style: AppTheme.sans(11, color: Accent.red600))),
+        ],
       ],
     );
   }
 
-  Widget _numberField(String label, TextEditingController controller, {bool decimal = false}) =>
-      _field(label, controller: controller, keyboardType: TextInputType.numberWithOptions(decimal: decimal));
+  Widget _numberField(String label, TextEditingController controller, {bool decimal = false, String? errorText}) =>
+      _field(label, controller: controller, keyboardType: TextInputType.numberWithOptions(decimal: decimal), errorText: errorText);
 
   Widget _yesNo(AppLocalizations l10n, String label, bool? value, ValueChanged<bool> onChanged) => ChoiceChipGroup<bool>(
         label: label,
@@ -206,6 +218,22 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
   int? _parseInt(TextEditingController c) => int.tryParse(c.text.trim());
   double? _parseDouble(TextEditingController c) => double.tryParse(c.text.trim());
+
+  /// Null while `_age` is empty or holds a value that clears the minimum —
+  /// i.e. whenever there's nothing to tell the respondent about yet. Once
+  /// non-null, `_sectionAValid()` treats age as unfilled (keeping Next
+  /// disabled) and `_sectionA()` surfaces this text under the field, the
+  /// same "explain a filled-but-invalid field, don't just silently refuse
+  /// to advance" convention `admin_schemes_page.dart`'s min-age validator
+  /// already uses — an empty field's own empty appearance is enough
+  /// explanation on its own, but a *filled* field that's still wrong needs
+  /// to say why, or it looks identical to Next being silently broken.
+  String? _ageError(AppLocalizations l10n) {
+    if (_age.text.trim().isEmpty) return null;
+    final age = _parseInt(_age);
+    if (age == null || age < _minSurveyAge) return l10n.baselineSurveyAgeBelowMinimum(_minSurveyAge);
+    return null;
+  }
 
   Future<void> _pickShg() async {
     if (!SupabaseService.isConfigured) {
@@ -394,7 +422,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       ];
 
   List<Widget> _sectionA(AppLocalizations l10n) => _spaced([
-        _numberField(l10n.baselineSurveyAge, _age),
+        _numberField(l10n.baselineSurveyAge, _age, errorText: _ageError(l10n)),
         ChoiceChipGroup<String>(
           label: l10n.baselineSurveyEducationLevel,
           value: _educationLevel,
@@ -760,7 +788,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   // choice is required too, exactly like every other field on the section
   // it belongs to.
   bool _sectionAValid() =>
-      _age.text.trim().isNotEmpty &&
+      (_parseInt(_age) ?? -1) >= _minSurveyAge &&
       _educationLevel != null &&
       _casteCommunity.text.trim().isNotEmpty &&
       _maritalStatus != null &&

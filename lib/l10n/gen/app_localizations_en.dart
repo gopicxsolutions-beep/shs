@@ -4701,6 +4701,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get baselineSurveyAge => 'Age';
 
   @override
+  String baselineSurveyAgeBelowMinimum(int minAge) {
+    return 'Must be at least $minAge years old';
+  }
+
+  @override
   String get baselineSurveyEducationLevel => 'Education Level';
 
   @override

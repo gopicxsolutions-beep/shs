@@ -2450,6 +2450,12 @@
   "baselineSurveySectionIConsent": "सहमति और गोपनीयता",
 
   "baselineSurveyAge": "आयु",
+  "baselineSurveyAgeBelowMinimum": "आयु कम से कम {minAge} वर्ष होनी चाहिए",
+  "@baselineSurveyAgeBelowMinimum": {
+    "placeholders": {
+      "minAge": {"type": "int"}
+    }
+  },
   "baselineSurveyEducationLevel": "शिक्षा स्तर",
   "baselineSurveyEducationNone": "कोई औपचारिक शिक्षा नहीं",
   "baselineSurveyEducationPrimary": "प्राथमिक",
