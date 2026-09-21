@@ -7,6 +7,7 @@ import 'package:shg_saathi/models/shg.dart';
 import 'package:shg_saathi/repositories/shg_join_request_repository.dart';
 import 'package:shg_saathi/repositories/shg_repository.dart';
 import 'package:shg_saathi/services/auth_service.dart';
+import 'package:shg_saathi/services/baseline_survey_repository.dart';
 import 'package:shg_saathi/services/notification_service.dart';
 import 'package:shg_saathi/services/profile_repository.dart';
 import 'package:shg_saathi/services/supabase_service.dart';
@@ -30,6 +31,17 @@ class _FakeProfileRepository extends ProfileRepository {
 class _FakeAuthService extends AuthService {
   @override
   Future<void> signOut() async {}
+}
+
+/// Scripted `hasSubmitted` answers, one per call (a `Future` that errors
+/// simulates a dropped request / RLS hiccup on the survey lookup).
+class _FakeBaselineSurveyRepository extends BaselineSurveyRepository {
+  _FakeBaselineSurveyRepository(this._responses);
+  final List<Future<bool> Function()> _responses;
+  int _calls = 0;
+
+  @override
+  Future<bool> hasSubmitted(String profileId) => _responses[_calls++]();
 }
 
 /// Records whether `AppState.signOut()` actually called `cancelAllScheduled`
@@ -253,6 +265,78 @@ void main() {
 
       await appState.signOut();
       expect(appState.profileLoadFailedNetwork, isFalse, reason: 'a stale network-failure flag must not survive into a fresh, unauthenticated state');
+    });
+  });
+
+  /// Regression coverage for "already signed-in users are asked the onboarding
+  /// survey again": `needsBaselineSurvey` used to default to true whenever the
+  /// `hasSubmitted` lookup failed on a fresh app start, so one dropped request
+  /// sent an already-onboarded member back into the mandatory wizard.
+  group('AppState.needsBaselineSurvey', () {
+    const member = Profile(id: 'p1', name: 'Asha', role: 'member');
+
+    AppState build(List<Future<bool> Function()> surveyResponses, {List<Future<Profile?> Function()>? profiles, Profile? upsert}) => AppState(
+          profileRepository: _FakeProfileRepository(profiles ?? [() async => member, () async => member], upsertResponse: upsert),
+          authService: _FakeAuthService(),
+          joinRequestRepository: ShgJoinRequestRepository(),
+          shgRepository: _FakeShgRepository(null),
+          baselineSurveyRepository: _FakeBaselineSurveyRepository(surveyResponses),
+        );
+
+    test('a member the server says has submitted is not re-asked', () async {
+      final appState = build([() async => true]);
+      await appState.refreshProfile();
+      expect(appState.needsBaselineSurvey, isFalse);
+    });
+
+    test('a pre-survey account the server says has NOT submitted is asked once (intended gap-fill)', () async {
+      final appState = build([() async => false]);
+      await appState.refreshProfile();
+      expect(appState.needsBaselineSurvey, isTrue);
+    });
+
+    test('a failed lookup on a fresh load does NOT force the wizard on an onboarded member', () async {
+      final appState = build([() => Future<bool>.error(TimeoutException('timed out'))]);
+      await appState.refreshProfile();
+      expect(appState.hasProfile, isTrue);
+      expect(appState.needsBaselineSurvey, isFalse, reason: 'this was the bug: an unknown answer defaulted to "needs survey"');
+    });
+
+    test('a failed re-check keeps a previously-learned "not submitted" answer', () async {
+      final appState = build([() async => false, () => Future<bool>.error(Exception('blip'))]);
+      await appState.refreshProfile();
+      expect(appState.needsBaselineSurvey, isTrue);
+      await appState.refreshProfile();
+      expect(appState.needsBaselineSurvey, isTrue, reason: 'failing open only applies while the answer has never been learned');
+    });
+
+    test('a failed re-check keeps a previously-learned "submitted" answer', () async {
+      final appState = build([() async => true, () => Future<bool>.error(Exception('blip'))]);
+      await appState.refreshProfile();
+      await appState.refreshProfile();
+      expect(appState.needsBaselineSurvey, isFalse);
+    });
+
+    test('a brand-new profile mid-wizard stays in the survey even if a later lookup fails', () async {
+      final appState = build(
+        [() => Future<bool>.error(Exception('blip'))],
+        profiles: [() async => null, () async => member],
+        upsert: member,
+      );
+      await appState.refreshProfile(); // signed in, no profile row yet
+      await appState.completeProfileSetup(name: 'Asha');
+      expect(appState.needsBaselineSurvey, isTrue);
+      await appState.refreshProfile(); // e.g. a userUpdated event mid-wizard, lookup blips
+      expect(appState.needsBaselineSurvey, isTrue, reason: 'a just-created profile is known to have no survey row, so an unknown lookup must not let her skip it');
+    });
+
+    test('sign-out forgets the answer so the next account starts unknown', () async {
+      final appState = build([() async => false, () => Future<bool>.error(Exception('blip'))]);
+      await appState.refreshProfile();
+      expect(appState.needsBaselineSurvey, isTrue);
+      await appState.signOut();
+      await appState.refreshProfile();
+      expect(appState.needsBaselineSurvey, isFalse, reason: "account A's known-false must not leak into account B's failed lookup");
     });
   });
 

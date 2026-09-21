@@ -21169,3 +21169,49 @@ step.
 
 Docs updated in this same change: [SRS.md](SRS.md) §3.1 (numeric range
 validation sentence).
+
+## 2026-09-21 — Fix: already-onboarded members re-asked the survey when the "has she submitted?" lookup failed; onboarding storage verified live
+
+**Report**: signed-in users were being asked the onboarding survey again, and
+the tester wanted confirmation that onboarding answers are stored properly in
+Supabase.
+
+**Two distinct causes, only one a bug**
+1. *By design, not a bug:* 10 of the 14 live `member`/`leader` accounts have no
+   `member_baseline_surveys` row — all created before the survey shipped
+   (2026-08-21) or seed accounts. `AppState.needsBaselineSurvey` correctly
+   sends each through the survey-only wizard exactly once. Note this also
+   bites anyone who hit the earlier "Could not submit the survey" failure
+   (see the entry above): their profile exists but their survey doesn't, so
+   they are asked again next sign-in.
+2. *Bug (fixed):* `_loadProfile`'s `hasSubmitted` `catch` "left the existing
+   value in place" — but on a fresh app start the existing value is the
+   initial `false`, i.e. "not submitted". One failed lookup therefore forced a
+   member who HAD submitted back into the mandatory wizard, and re-submitting
+   the upsert would overwrite her earlier answers. New
+   `_baselineSurveyStatusKnown` flag: a failed lookup only fails **open** while
+   the answer has never been learned; a previously-learned answer is kept. A
+   profile row `completeProfileSetup` just created is marked known-not-submitted
+   (it cannot have a survey row), so a blip mid-wizard can't bounce her out.
+   Cleared on sign-out. Not reproduced from production data (no log of an
+   actual failed lookup exists) — found by reading the code path; the tests
+   below show the old behaviour fails them.
+
+**Storage verified against the live table**: the 53 keys `toMap()` writes are
+exactly the table's columns (less `profile_id` and the three timestamps); every
+single-select chip value is in its CHECK list and nothing the DB allows is
+unreachable; arrays land as arrays, blank optional text as `NULL`. The newest
+real row (today, a leader account, submitted via the real UI after OTP login)
+has every section populated. RLS re-checked as the `authenticated` role in an
+always-rolled-back `DO` block: the submitter's own lookup sees 1 row, another
+member sees 0 (cross-tenant), an existing account with no row can insert her
+own (gap-fill), inserting a row for another profile is denied `42501`, and an
+update of another profile's row affects 0 rows. `leaked = 0` afterwards.
+Data-quality notes only (no code issue): the oldest row (2026-08-21) is mostly
+`NULL` — it predates the "every field required" rule; the `age = 15` row is the
+one 0152 grandfathered `NOT VALID`.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1117/1117 (+7 in
+`app_state_test.dart`, 2 of which fail on the previous `app_state.dart`).
+**Not done**: a real UI click-through of an already-onboarded account in the
+live build — sign-in is a phone OTP that can't be received from here.

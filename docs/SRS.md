@@ -212,7 +212,11 @@ final submit. Submission writes to
 row/join-request writes above. An account that existed before this
 requirement shipped is routed back into the same wizard (survey-only, name/
 village/SHG steps skipped) the next time it reaches the router, via
-`AppState.needsBaselineSurvey`. This table is scoped to `member`/`leader`
+`AppState.needsBaselineSurvey` — asked once, and only until a `member_baseline_surveys`
+row exists for her. If the "has she submitted?" lookup itself fails on a fresh
+app start, the app fails **open** (no wizard that session; the next load asks
+again) rather than treating an unknown answer as "not submitted", so a dropped
+request can't push an already-onboarded member back through the survey. This table is scoped to `member`/`leader`
 (the survey is about a woman running or working in an SHG-linked
 microenterprise, not the federation-oversight staff roles) and, unlike the
 SHG-transparency data described in [ARCHITECTURE.md](ARCHITECTURE.md), is

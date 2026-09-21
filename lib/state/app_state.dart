@@ -85,6 +85,15 @@ class AppState extends ChangeNotifier {
   // flag for either (`submitBaselineSurvey`'s demo branch is a pure no-op).
   bool _baselineSurveyCompleted = false;
 
+  // Whether `_baselineSurveyCompleted` reflects a real answer from the server
+  // (or from this device just creating/submitting the row) rather than just
+  // its initial `false`. Without it, a failed `hasSubmitted` lookup on a
+  // fresh app start was indistinguishable from "server says not submitted" —
+  // `needsBaselineSurvey` then forced an already-onboarded member back into
+  // the survey wizard (and a re-submit would overwrite her earlier answers)
+  // over one dropped request. See the `hasSubmitted` catch in `_loadProfile`.
+  bool _baselineSurveyStatusKnown = false;
+
   // Set by `_loadProfile()` when its most recent attempt failed because of
   // a network/connectivity problem specifically (not a confirmed "no such
   // row" response) while no profile had ever been successfully loaded yet.
@@ -357,6 +366,7 @@ class AppState extends ChangeNotifier {
     if (profile == null) {
       _shgName = null;
       _baselineSurveyCompleted = false;
+      _baselineSurveyStatusKnown = false;
       return;
     }
     try {
@@ -376,8 +386,16 @@ class AppState extends ChangeNotifier {
       final completed = await _baselineSurveyRepository.hasSubmitted(profile.id);
       if (generation != _profileLoadGeneration) return;
       _baselineSurveyCompleted = completed;
+      _baselineSurveyStatusKnown = true;
     } catch (_) {
-      // Best-effort enrichment only — leave existing value in place.
+      // Best-effort enrichment only. If an earlier load already told us the
+      // answer, keep it. If we have never learned it (a fresh app start whose
+      // lookup failed), fail OPEN: this profile's row already exists, so the
+      // likelier truth is an already-onboarded member — forcing the mandatory
+      // wizard on her over a transient failure is worse than letting one
+      // session through. The next load (app start / sign-in) asks again, so a
+      // genuinely un-surveyed account is still caught, just not on a blip.
+      if (!_baselineSurveyStatusKnown) _baselineSurveyCompleted = true;
     }
   }
 
@@ -457,6 +475,14 @@ class AppState extends ChangeNotifier {
       mandal: mandal,
       district: district,
     );
+    // A profile row this call just created cannot have a survey row yet
+    // (`member_baseline_surveys.profile_id` cascades from it), so the answer is
+    // known — without this, a lookup that failed later in this same wizard
+    // would fail open (see `_loadProfile`) and bounce her out mid-survey.
+    if (isNewProfile) {
+      _baselineSurveyCompleted = false;
+      _baselineSurveyStatusKnown = true;
+    }
     notifyListeners();
     // Mandatory since profile_setup_page.dart requires `_selectedShg` before
     // Continue is even enabled — `_pendingShg` is only null here for the
@@ -479,6 +505,7 @@ class AppState extends ChangeNotifier {
     if (!SupabaseService.isConfigured) return;
     await _baselineSurveyRepository.submit(draft);
     _baselineSurveyCompleted = true;
+    _baselineSurveyStatusKnown = true;
     notifyListeners();
   }
 
@@ -537,6 +564,7 @@ class AppState extends ChangeNotifier {
     _pendingShg = null;
     _shgName = null;
     _baselineSurveyCompleted = false;
+    _baselineSurveyStatusKnown = false;
     _profileLoadFailedNetwork = false;
     // A pending deep link belongs to whoever is about to sign in next —
     // without this, signing out and back in as a different account could
