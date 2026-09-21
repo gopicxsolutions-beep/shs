@@ -8220,6 +8220,12 @@ abstract class AppLocalizations {
   /// **'Must be at least {minAge} years old'**
   String baselineSurveyAgeBelowMinimum(int minAge);
 
+  /// No description provided for @baselineSurveyNumberOutOfRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a number between {min} and {max}'**
+  String baselineSurveyNumberOutOfRange(String min, String max);
+
   /// No description provided for @baselineSurveyEducationLevel.
   ///
   /// In en, this message translates to:

@@ -161,4 +161,102 @@ void main() {
     expect(find.text('Must be at least 18 years old'), findsNothing);
     expect(nextButton().onPressed, isNotNull, reason: 'a corrected, valid age clears the error and enables Next');
   });
+
+  /// Regression coverage for the reported "Could not submit the survey": the
+  /// table's CHECKs/precision (household_size 1-50, non-negative money,
+  /// numeric(12,2), age <= 120, numeric(5,1) years) rejected values the
+  /// wizard used to accept as long as the field was merely non-empty, so the
+  /// user only found out at the final Submit, with no hint which answer was
+  /// wrong. Verified against the live table in the same round.
+  group('numeric answers are range-checked before the wizard advances', () {
+    Future<void> toSectionA(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await boot(tester);
+      await tester.enterText(find.byType(TextField).first, 'Lakshmi Devi');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Search & select your SHG'));
+      await tester.pumpAndSettle();
+      continueButton(tester).onPressed!();
+      await tester.pumpAndSettle();
+    }
+
+    AppButton nextButton(WidgetTester tester) => tester.widgetList<AppButton>(find.byType(AppButton)).firstWhere((b) => b.label == 'Next');
+
+    Future<void> fillSectionA(WidgetTester tester, {String age = '32', String household = '4', String income = '150000'}) async {
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), age);
+      await tester.tap(find.text('Secondary'));
+      await tester.enterText(fields.at(1), 'OBC');
+      await tester.tap(find.text('Married'));
+      await tester.enterText(fields.at(2), household);
+      await tester.tap(find.text('East Godavari'));
+      await tester.enterText(fields.at(3), income);
+      await tester.enterText(fields.at(4), 'Farming');
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Section A: household size, age ceiling and income are checked, each with a visible reason', (tester) async {
+      await toSectionA(tester);
+      await fillSectionA(tester);
+      expect(nextButton(tester).onPressed, isNotNull, reason: 'baseline: every answer valid');
+
+      final fields = find.byType(TextField);
+      for (final bad in ['0', '51', '100', 'abc', '2.5']) {
+        await tester.enterText(fields.at(2), bad);
+        await tester.pumpAndSettle();
+        expect(nextButton(tester).onPressed, isNull, reason: 'household size "$bad" is outside 1-50 / not a whole number');
+        expect(find.text('Enter a number between 1 and 50'), findsOneWidget, reason: 'household size "$bad" needs a visible reason');
+      }
+      await tester.enterText(fields.at(2), '50');
+      await tester.pumpAndSettle();
+      expect(nextButton(tester).onPressed, isNotNull, reason: 'the boundary value 50 is valid');
+
+      await tester.enterText(fields.at(0), '121');
+      await tester.pumpAndSettle();
+      expect(nextButton(tester).onPressed, isNull);
+      expect(find.text('Enter a number between 18 and 120'), findsOneWidget);
+      await tester.enterText(fields.at(0), '120');
+      await tester.pumpAndSettle();
+      expect(nextButton(tester).onPressed, isNotNull, reason: 'the boundary value 120 is valid');
+
+      for (final bad in ['-1', 'NaN', 'Infinity', '10000000000', 'lots']) {
+        await tester.enterText(fields.at(3), bad);
+        await tester.pumpAndSettle();
+        expect(nextButton(tester).onPressed, isNull, reason: 'income "$bad" is negative / non-finite / overflows numeric(12,2) / not a number');
+        expect(find.text('Enter a number between 0 and 9999999999'), findsOneWidget, reason: 'income "$bad" needs a visible reason');
+      }
+      await tester.enterText(fields.at(3), '0');
+      await tester.pumpAndSettle();
+      expect(nextButton(tester).onPressed, isNotNull, reason: 'zero income is a legitimate answer');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Section B: years in operation, revenue and employee count are range-checked', (tester) async {
+      await toSectionA(tester);
+      await fillSectionA(tester);
+      nextButton(tester).onPressed!();
+      await tester.pumpAndSettle();
+
+      // Section B's only free-text fields (no "Others" sector picked): years,
+      // monthly revenue, employees, in that order.
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), '2005'); // a calendar year typed instead of a duration
+      await tester.enterText(fields.at(1), '10000000000');
+      await tester.enterText(fields.at(2), '3000000000');
+      await tester.pumpAndSettle();
+      expect(find.text('Enter a number between 0 and 100'), findsOneWidget);
+      expect(find.text('Enter a number between 0 and 9999999999'), findsOneWidget);
+      expect(find.text('Enter a number between 0 and 10000'), findsOneWidget);
+
+      await tester.enterText(fields.at(0), '5.5');
+      await tester.enterText(fields.at(1), '25400');
+      await tester.enterText(fields.at(2), '5');
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Enter a number between'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

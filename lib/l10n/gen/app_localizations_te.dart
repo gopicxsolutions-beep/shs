@@ -4716,6 +4716,11 @@ class AppLocalizationsTe extends AppLocalizations {
   }
 
   @override
+  String baselineSurveyNumberOutOfRange(String min, String max) {
+    return '$min మరియు $max మధ్య ఒక సంఖ్యను నమోదు చేయండి';
+  }
+
+  @override
   String get baselineSurveyEducationLevel => 'విద్యా స్థాయి';
 
   @override

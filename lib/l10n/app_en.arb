@@ -3146,6 +3146,13 @@
       "minAge": {"type": "int"}
     }
   },
+  "baselineSurveyNumberOutOfRange": "Enter a number between {min} and {max}",
+  "@baselineSurveyNumberOutOfRange": {
+    "placeholders": {
+      "min": {"type": "String"},
+      "max": {"type": "String"}
+    }
+  },
   "baselineSurveyEducationLevel": "Education Level",
   "baselineSurveyEducationNone": "No Formal Education",
   "baselineSurveyEducationPrimary": "Primary",

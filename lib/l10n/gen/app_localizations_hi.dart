@@ -4641,6 +4641,11 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String baselineSurveyNumberOutOfRange(String min, String max) {
+    return '$min से $max के बीच की संख्या दर्ज करें';
+  }
+
+  @override
   String get baselineSurveyEducationLevel => 'शिक्षा स्तर';
 
   @override

@@ -42,6 +42,20 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   // real live submission with age 15 sail straight through).
   static const _minSurveyAge = 18;
 
+  // Upper/lower bounds for the survey's numeric answers. Each one mirrors (or
+  // is tighter than) the column's own limit in `member_baseline_surveys`
+  // (migrations 0151/0152) — the client used to check only "non-empty" for
+  // these, so a value the table's CHECK / numeric precision rejects (e.g.
+  // household size 0 or 100, a negative income, an age of 200, years in
+  // operation typed as a calendar year like 20005) passed every wizard step
+  // and only failed at the very last one, as the generic "Could not submit
+  // the survey" with no hint which answer was wrong.
+  static const _maxSurveyAge = 120; // DB: age between 18 and 120
+  static const _maxHouseholdSize = 50; // DB: household_size between 1 and 50
+  static const _maxYearsInOperation = 100; // DB: numeric(5,1); 100 is the plausibility cap
+  static const _maxMoney = 9999999999; // DB: numeric(12,2) overflows at 1e10
+  static const _maxEmployees = 10000; // DB: int4; 10000 is the plausibility cap
+
   // Basic info (step 0)
   final _name = TextEditingController();
   final _village = TextEditingController();
@@ -232,7 +246,27 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     if (_age.text.trim().isEmpty) return null;
     final age = _parseInt(_age);
     if (age == null || age < _minSurveyAge) return l10n.baselineSurveyAgeBelowMinimum(_minSurveyAge);
+    if (age > _maxSurveyAge) return l10n.baselineSurveyNumberOutOfRange('$_minSurveyAge', '$_maxSurveyAge');
     return null;
+  }
+
+  /// The parsed value if [c] holds a finite number within [min]..[max]
+  /// (whole numbers only when [integer]), else null. `double.tryParse` accepts
+  /// "NaN"/"Infinity", which `jsonEncode` then refuses to serialise — hence
+  /// the `isFinite` check.
+  num? _parseInRange(TextEditingController c, num min, num max, {bool integer = false}) {
+    final text = c.text.trim();
+    final num? v = integer ? int.tryParse(text) : double.tryParse(text);
+    if (v == null || !v.isFinite || v < min || v > max) return null;
+    return v;
+  }
+
+  /// Like `_ageError`: null for an empty field (its emptiness already keeps
+  /// Next disabled) or a valid one, else the reason a *filled* field is
+  /// still rejected.
+  String? _rangeError(AppLocalizations l10n, TextEditingController c, num min, num max, {bool integer = false}) {
+    if (c.text.trim().isEmpty) return null;
+    return _parseInRange(c, min, max, integer: integer) == null ? l10n.baselineSurveyNumberOutOfRange('$min', '$max') : null;
   }
 
   Future<void> _pickShg() async {
@@ -352,7 +386,12 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       // `Paths.dashboard` there, and the router's own (correctly-targeted)
       // `needsShgApproval` redirect takes it from there if needed.
       if (mounted) context.go(appState.hasProfile ? Paths.dashboard : Paths.roleSelect);
-    } catch (_) {
+    } catch (e, st) {
+      // The user-facing text stays generic, but the real cause (a Postgres
+      // CHECK/overflow, an RLS denial, a dropped connection…) must not vanish
+      // — this catch used to swallow it, which is why the reported "Could not
+      // submit the survey" had nothing to diagnose from.
+      debugPrint('Onboarding submit failed: $e\n$st');
       if (mounted) setState(() => _error = AppLocalizations.of(context)!.baselineSurveySubmitError);
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -447,7 +486,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
             ChoiceOption('separated_divorced', l10n.baselineSurveyMaritalSeparated),
           ],
         ),
-        _numberField(l10n.baselineSurveyHouseholdSize, _householdSize),
+        _numberField(l10n.baselineSurveyHouseholdSize, _householdSize, errorText: _rangeError(l10n, _householdSize, 1, _maxHouseholdSize, integer: true)),
         ChoiceChipGroup<String>(
           label: l10n.baselineSurveyLocation,
           value: _surveyLocation,
@@ -460,7 +499,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           ],
         ),
         if (_surveyLocation == 'other') _field(l10n.baselineSurveySpecifyPlaceholder, controller: _surveyLocationOther),
-        _numberField(l10n.baselineSurveyAnnualIncome, _annualIncome, decimal: true),
+        _numberField(l10n.baselineSurveyAnnualIncome, _annualIncome, decimal: true, errorText: _rangeError(l10n, _annualIncome, 0, _maxMoney)),
         _field(l10n.baselineSurveyPrimaryIncomeSource, controller: _primaryIncomeSource),
       ]);
 
@@ -488,9 +527,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           ],
         ),
         if (_enterpriseSector == 'others') _field(l10n.baselineSurveySpecifyPlaceholder, controller: _enterpriseSectorOther),
-        _numberField(l10n.baselineSurveyYearsInOperation, _yearsInOperation, decimal: true),
-        _numberField(l10n.baselineSurveyMonthlyRevenue, _monthlyRevenue, decimal: true),
-        _numberField(l10n.baselineSurveyEmployees, _employeesCount),
+        _numberField(l10n.baselineSurveyYearsInOperation, _yearsInOperation, decimal: true, errorText: _rangeError(l10n, _yearsInOperation, 0, _maxYearsInOperation)),
+        _numberField(l10n.baselineSurveyMonthlyRevenue, _monthlyRevenue, decimal: true, errorText: _rangeError(l10n, _monthlyRevenue, 0, _maxMoney)),
+        _numberField(l10n.baselineSurveyEmployees, _employeesCount, errorText: _rangeError(l10n, _employeesCount, 0, _maxEmployees, integer: true)),
         ChoiceChipGroup<String>(
           label: l10n.baselineSurveyRegistrationStatus,
           value: _registrationStatus,
@@ -788,23 +827,23 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   // choice is required too, exactly like every other field on the section
   // it belongs to.
   bool _sectionAValid() =>
-      (_parseInt(_age) ?? -1) >= _minSurveyAge &&
+      _parseInRange(_age, _minSurveyAge, _maxSurveyAge, integer: true) != null &&
       _educationLevel != null &&
       _casteCommunity.text.trim().isNotEmpty &&
       _maritalStatus != null &&
-      _householdSize.text.trim().isNotEmpty &&
+      _parseInRange(_householdSize, 1, _maxHouseholdSize, integer: true) != null &&
       _surveyLocation != null &&
       (_surveyLocation != 'other' || _surveyLocationOther.text.trim().isNotEmpty) &&
-      _annualIncome.text.trim().isNotEmpty &&
+      _parseInRange(_annualIncome, 0, _maxMoney) != null &&
       _primaryIncomeSource.text.trim().isNotEmpty;
 
   bool _sectionBValid() =>
       _enterpriseType != null &&
       _enterpriseSector != null &&
       (_enterpriseSector != 'others' || _enterpriseSectorOther.text.trim().isNotEmpty) &&
-      _yearsInOperation.text.trim().isNotEmpty &&
-      _monthlyRevenue.text.trim().isNotEmpty &&
-      _employeesCount.text.trim().isNotEmpty &&
+      _parseInRange(_yearsInOperation, 0, _maxYearsInOperation) != null &&
+      _parseInRange(_monthlyRevenue, 0, _maxMoney) != null &&
+      _parseInRange(_employeesCount, 0, _maxEmployees, integer: true) != null &&
       _registrationStatus != null &&
       _marketReach != null;
 

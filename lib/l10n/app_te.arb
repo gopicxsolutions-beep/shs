@@ -2456,6 +2456,13 @@
       "minAge": {"type": "int"}
     }
   },
+  "baselineSurveyNumberOutOfRange": "{min} మరియు {max} మధ్య ఒక సంఖ్యను నమోదు చేయండి",
+  "@baselineSurveyNumberOutOfRange": {
+    "placeholders": {
+      "min": {"type": "String"},
+      "max": {"type": "String"}
+    }
+  },
   "baselineSurveyEducationLevel": "విద్యా స్థాయి",
   "baselineSurveyEducationNone": "అధికారిక విద్య లేదు",
   "baselineSurveyEducationPrimary": "ప్రాథమిక",

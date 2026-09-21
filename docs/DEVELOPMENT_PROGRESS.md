@@ -21120,3 +21120,52 @@ inside the test but never actually modified.
 
 Docs updated in this same change: [SRS.md](SRS.md) §3.1 (age-minimum
 sentence added to the baseline survey paragraph).
+
+## 2026-09-21 — Fix: "Could not submit the survey" — unvalidated numeric answers rejected by the table
+
+**Report**: a tester's onboarding ended on the generic "Could not submit the
+survey. Please try again." and could not get past it.
+
+**Diagnosis (live, not guessed)**: the failing account (`xxxx`, created
+2026-09-21 10:20 UTC) had a `profiles` row and a pending `shg_join_requests`
+row but **no** `member_baseline_surveys` row — so `completeProfileSetup` and
+the join-request RPC had succeeded and only the final survey upsert failed
+(`ProfileSetupPage._submit`'s single `catch (_)` covers both, and used to
+discard the exception entirely, so nothing recorded *which* answer). Replayed
+the exact write path against the live table as that profile's `authenticated`
+role (RLS on) inside a single `DO` block that always ends in `RAISE
+EXCEPTION`, with each case in its own sub-block, so nothing persisted: a
+fully valid payload is **accepted** (RLS and grants are fine), while
+`household_size` 0/51 (`23514`), `age` 17/200 (`23514`), a negative income
+(`23514`), `years_in_operation` ≥ 10000, money ≥ 1e10 (`22003 numeric field
+overflow`), and `employees_count` > int4 (`22003 integer out of range`) are
+all rejected. The wizard's Section A/B `_valid()` checks only tested
+"non-empty", so every one of those passed every step and failed only at the
+very last submit — and non-numeric text (`int.tryParse`) was silently sent as
+`null` instead. The exact value the tester typed is not recoverable (the error
+was swallowed), so this is the confirmed failure *class*, not a single value.
+The retry path was also checked and is safe: `submit_shg_join_request`
+replaces a pending row rather than colliding with the one-pending-per-member
+index, so re-tapping Submit after a survey failure re-runs cleanly.
+
+**Fix** (`profile_setup_page.dart`): `_parseInRange` + `_rangeError` — every
+numeric answer must parse as a finite number inside its range (age 18–120,
+household size 1–50 whole, income/revenue 0–9,999,999,999, years 0–100,
+employees 0–10,000 whole) or Next stays disabled with an "Enter a number
+between X and Y" reason under the field (new key `baselineSurveyNumberOutOfRange`
+in all three `.arb` files). The `catch` now `debugPrint`s the real exception
+(user-facing text unchanged) so the next failure is diagnosable.
+
+**Verification**: `flutter analyze` clean; `profile_setup_page_test.dart`
+6/6 (+2 new: Section A household/age/income and Section B years/revenue/
+employees, each bad value asserted disabled-with-reason, boundary values
+asserted valid). Live DB: every boundary value the client now allows
+(all maxima at once, all minima at once, decimals) is **accepted** by the real
+table under RLS, and no probe rows remain. **Not done**: a real UI
+click-through in the live build — login is a phone OTP that can't be received
+from here, and minting a test session needs the service-role key, which was
+(rightly) not fetched; see the session hand-off for the one remaining manual
+step.
+
+Docs updated in this same change: [SRS.md](SRS.md) §3.1 (numeric range
+validation sentence).

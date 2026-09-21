@@ -201,7 +201,12 @@ typed signature). Age has its own floor of 18 (SHG membership is an adult-
 women-only program) — a filled-but-below-minimum age keeps Next disabled
 with a visible reason shown under the field, the same "explain a filled-but-
 invalid field" treatment as every other validated field in this app, rather
-than looking like a silently broken button. Submission writes to
+than looking like a silently broken button. Every numeric answer is likewise
+range-checked client-side against what the table accepts (age 18–120,
+household size 1–50, income/revenue 0–9,999,999,999, years in operation
+0–100, employees 0–10,000) with an "Enter a number between X and Y" reason,
+so an out-of-range value is caught on its own section instead of failing the
+final submit. Submission writes to
 `public.member_baseline_surveys`, one row per profile
 (migration `0151`), alongside — not instead of — the `profiles`
 row/join-request writes above. An account that existed before this
