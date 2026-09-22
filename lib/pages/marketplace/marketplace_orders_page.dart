@@ -22,19 +22,22 @@ const _statusTones = <String, BadgeTone>{
   'delivered': BadgeTone.success,
 };
 
-/// Missing feature: nowhere in the app could a seller see how much she'd
-/// actually earned — only a scrollable list of individual order amounts,
-/// no total. Only `'delivered'` orders count as real revenue — a
-/// `'new'`/`'packed'`/`'shipped'` order hasn't been fulfilled (or paid, in
-/// the cash-on-delivery/manual-UPI sense this app's Marketplace uses) yet,
-/// and a `'cancelled'` one never will be. A top-level function (not inlined
-/// in the widget build method) so it's directly unit-testable — demo mode's
-/// `fetchOrdersForSeller` always returns `[]` (no simulated second buyer to
-/// have ever bought from the demo persona — see its own doc comment), so
-/// this widget's revenue card can never actually render through demo mode
-/// at all; this is the only way to verify the arithmetic without a live
-/// seller account.
-({num total, int deliveredCount}) marketplaceSellerRevenueSummary(List<MarketOrder> orders) {
+/// Missing feature: nowhere in the app could either side of a purchase see
+/// a running total — a seller had no way to see how much she'd actually
+/// earned, and a buyer had no way to see how much she'd actually spent —
+/// only a scrollable list of individual order amounts, no sum, on either
+/// tab. Only `'delivered'` orders count — a `'new'`/`'packed'`/`'shipped'`
+/// order hasn't been fulfilled (or paid, in the cash-on-delivery/manual-UPI
+/// sense this app's Marketplace uses) yet, and a `'cancelled'` one never
+/// will be. A top-level function (not inlined in the widget build method)
+/// so it's directly unit-testable — demo mode's `fetchOrdersForSeller`
+/// always returns `[]` (no simulated second buyer to have ever bought from
+/// the demo persona — see its own doc comment), so the "My Sales" card can
+/// never actually render through demo mode at all; this is the only way to
+/// verify the arithmetic without a live seller account. Used by both tabs
+/// (the exact same arithmetic — "revenue" from the seller's side is
+/// "spend" from the buyer's — only the wording around it differs).
+({num total, int deliveredCount}) marketplaceDeliveredOrdersSummary(List<MarketOrder> orders) {
   final delivered = orders.where((o) => o.status == 'delivered');
   return (total: delivered.fold<num>(0, (sum, o) => sum + o.amount), deliveredCount: delivered.length);
 }
@@ -79,8 +82,8 @@ class MarketplaceOrdersPage extends StatelessWidget {
             Expanded(
               child: TabBarView(
                 children: [
-                  _OrderList(future: () => repo.fetchOrdersForBuyer(myId), emptyMessage: l10n.marketplaceOrdersBuyerEmpty, showBuyerName: false),
-                  _OrderList(future: () => repo.fetchOrdersForSeller(myId), emptyMessage: l10n.marketplaceOrdersEmpty, showBuyerName: true, showRevenueSummary: true),
+                  _OrderList(future: () => repo.fetchOrdersForBuyer(myId), emptyMessage: l10n.marketplaceOrdersBuyerEmpty, showBuyerName: false, summary: _SummaryKind.spend),
+                  _OrderList(future: () => repo.fetchOrdersForSeller(myId), emptyMessage: l10n.marketplaceOrdersEmpty, showBuyerName: true, summary: _SummaryKind.revenue),
                 ],
               ),
             ),
@@ -91,6 +94,8 @@ class MarketplaceOrdersPage extends StatelessWidget {
   }
 }
 
+enum _SummaryKind { none, spend, revenue }
+
 class _OrderList extends StatelessWidget {
   final Future<List<MarketOrder>> Function() future;
   final String emptyMessage;
@@ -98,14 +103,14 @@ class _OrderList extends StatelessWidget {
   // seller); the buyer's own tab already knows it's her — showing her own
   // name back to her on every row would be redundant noise.
   final bool showBuyerName;
-  // Missing feature: nowhere in the app could a seller see how much she'd
-  // actually earned — only a scrollable list of individual orders, each
-  // with its own amount, no total. Only 'delivered' orders count as real
-  // revenue (a 'new'/'packed'/'shipped' order hasn't been paid out/
-  // confirmed yet, and a 'cancelled' one never will be) — the same status
+  // Missing feature: nowhere in the app could either side of a purchase see
+  // a running total — only a scrollable list of individual orders, each
+  // with its own amount, no sum. Only 'delivered' orders count as real
+  // revenue/spend (a 'new'/'packed'/'shipped' order hasn't been fulfilled/
+  // paid out yet, and a 'cancelled' one never will be) — the same status
   // this repository already uses to gate review eligibility.
-  final bool showRevenueSummary;
-  const _OrderList({required this.future, required this.emptyMessage, required this.showBuyerName, this.showRevenueSummary = false});
+  final _SummaryKind summary;
+  const _OrderList({required this.future, required this.emptyMessage, required this.showBuyerName, this.summary = _SummaryKind.none});
 
   @override
   Widget build(BuildContext context) {
@@ -122,14 +127,15 @@ class _OrderList extends StatelessWidget {
           // of hard-overflowing.
           return ListView(children: [AppEmptyState(icon: Icons.receipt_long_rounded, message: emptyMessage)]);
         }
-        final revenue = marketplaceSellerRevenueSummary(orders);
-        final showSummaryRow = showRevenueSummary && revenue.deliveredCount > 0;
+        final delivered = marketplaceDeliveredOrdersSummary(orders);
+        final showSummaryRow = summary != _SummaryKind.none && delivered.deliveredCount > 0;
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: orders.length + (showSummaryRow ? 1 : 0),
           itemBuilder: (context, i) {
             if (showSummaryRow) {
               if (i == 0) {
+                final total = NumberFormat('#,##,##0', 'en_IN').format(delivered.total);
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: AppCard(
@@ -139,7 +145,9 @@ class _OrderList extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            l10n.marketplaceOrdersRevenueSummary(NumberFormat('#,##,##0', 'en_IN').format(revenue.total), revenue.deliveredCount),
+                            summary == _SummaryKind.revenue
+                                ? l10n.marketplaceOrdersRevenueSummary(total, delivered.deliveredCount)
+                                : l10n.marketplaceOrdersSpendSummary(total, delivered.deliveredCount),
                             style: AppTheme.sans(13, weight: FontWeight.w700),
                           ),
                         ),

@@ -933,6 +933,14 @@
     }
   },
 
+  "marketplaceOrdersSpendSummary": "₹{total} spent on {count} delivered {count, plural, =1{order} other{orders}}",
+  "@marketplaceOrdersSpendSummary": {
+    "placeholders": {
+      "total": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+
   "marketplaceReviewsTitle": "Reviews",
 
   "marketplaceReviewsEmpty": "No reviews on your products yet",

@@ -678,6 +678,8 @@
 
   "marketplaceOrdersRevenueSummary": "{count} डिलीवर किए गए {count, plural, =1{ऑर्डर} other{ऑर्डरों}} से ₹{total} कमाए गए",
 
+  "marketplaceOrdersSpendSummary": "{count} डिलीवर किए गए {count, plural, =1{ऑर्डर} other{ऑर्डरों}} पर ₹{total} खर्च किए गए",
+
   "marketplaceReviewsTitle": "समीक्षाएं",
 
   "marketplaceReviewsEmpty": "आपके उत्पादों पर अभी तक कोई समीक्षा नहीं है",

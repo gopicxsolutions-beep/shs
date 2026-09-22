@@ -1417,6 +1417,17 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String marketplaceOrdersSpendSummary(String total, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ऑर्डरों',
+      one: 'ऑर्डर',
+    );
+    return '$count डिलीवर किए गए $_temp0 पर ₹$total खर्च किए गए';
+  }
+
+  @override
   String get marketplaceReviewsTitle => 'समीक्षाएं';
 
   @override

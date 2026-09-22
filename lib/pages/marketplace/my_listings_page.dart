@@ -117,8 +117,18 @@ class _MyListingsPageState extends State<MyListingsPage> {
                               ],
                             ]),
                             const SizedBox(height: 2),
+                            // Missing feature: a seller managing her listings
+                            // had no visibility at all into how each one was
+                            // actually rated — she'd have to separately open
+                            // "Reviews" (which shows reviews, not a per-
+                            // listing summary) or the product page itself.
+                            // Appended to the SAME line rather than a new
+                            // one, same reasoning as the browse grid's own
+                            // rating chip (round 12).
                             Text(
-                              '₹${NumberFormat('#,##,##0', 'en_IN').format(product.price)} · ${l10n.productDetailInStock(product.stock)}',
+                              product.reviewCount > 0
+                                  ? '₹${NumberFormat('#,##,##0', 'en_IN').format(product.price)} · ${l10n.productDetailInStock(product.stock)} · ★ ${product.avgRating!.toStringAsFixed(1)} (${product.reviewCount})'
+                                  : '₹${NumberFormat('#,##,##0', 'en_IN').format(product.price)} · ${l10n.productDetailInStock(product.stock)}',
                               style: AppTheme.sans(11, color: Neutral.c500),
                             ),
                           ],

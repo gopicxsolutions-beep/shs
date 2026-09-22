@@ -1443,6 +1443,17 @@ class AppLocalizationsTe extends AppLocalizations {
   }
 
   @override
+  String marketplaceOrdersSpendSummary(String total, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ఆర్డర్‌ల',
+      one: 'ఆర్డర్',
+    );
+    return '$count డెలివరీ అయిన $_temp0 పై ₹$total ఖర్చు చేశారు';
+  }
+
+  @override
   String get marketplaceReviewsTitle => 'సమీక్షలు';
 
   @override

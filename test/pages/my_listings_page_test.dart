@@ -37,6 +37,19 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  // Missing feature: a seller managing her listings had no visibility into
+  // how each one was actually rated — she'd have to separately open
+  // "Reviews" (reviews, not a per-listing summary) or the product page
+  // itself. Demo mode's mock catalog has one 5-star review for 'p1'
+  // ("Handwoven Cotton Saree") baked into its fixture data.
+  testWidgets('shows a rating summary for a reviewed listing', (tester) async {
+    await tester.pumpWidget(harness());
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('★ 5.0 (1)'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('delisting a listing shows a confirm dialog, then flips its badge', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;

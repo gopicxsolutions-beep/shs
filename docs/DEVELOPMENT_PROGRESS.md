@@ -22085,3 +22085,38 @@ affects 1 row and the trigger correctly recomputes `avg_rating` from the new
 value (not just on insert/delete), and an attempt to smuggle a `product_id`
 change through the same UPDATE is correctly rejected — deployed via
 `supabase db push --linked`.
+
+## 2026-09-22 — Marketplace audit round 14: a buyer spend summary, and ratings on "My Listings" (2 findings, batched)
+
+Batching two smaller, additive findings this round — both reuse data models
+already built in rounds 11/12, no new migration needed.
+
+**Symmetry gap — round 11 gave sellers a revenue total on "My Sales" but
+buyers had no equivalent spend total on "My Purchases".** Generalized
+`marketplaceSellerRevenueSummary()` into `marketplaceDeliveredOrdersSummary()`
+(renamed — same arithmetic works for both directions, "revenue" from the
+seller's side is "spend" from the buyer's, only the wording differs) and
+introduced a `_SummaryKind {none, spend, revenue}` enum on `_OrderList` in
+place of the old single `showRevenueSummary` bool, so each tab picks its own
+wording. Unlike the seller-side card (verified only via unit test, since
+demo mode's `fetchOrdersForSeller` always returns `[]`), the buyer-side card
+IS reachable through demo mode — `fetchOrdersForBuyer` genuinely returns
+`_locallyPlaced` orders — so this one got a real widget-level test placing
+and delivering a demo order, not just a unit test.
+
+**Finding — a seller managing "My Listings" had no visibility into how each
+individual listing was actually rated**, only "Reviews" (a flat review list,
+not a per-listing summary) or opening each product page separately. Now
+that round 12 pinned `avgRating`/`reviewCount` onto `Product` itself, this
+was a small, free addition: appended to the same price/stock line (not a
+new one, matching the established discipline for this app's compact list
+rows).
+
+**Verification**: `flutter analyze` clean; `flutter test` 1167/1167 (+2 new:
+My Purchases shows the spend summary for a delivered demo order; My
+Listings shows the rating summary for a reviewed one). Both new gates
+mutation-checked — forcing the buyer tab's summary kind to `none` and
+forcing My Listings' rating condition to `false` each fail their respective
+test. No new migration — both reuse existing, already-verified data
+(`'delivered'`-status filtering from round 11, `avgRating`/`reviewCount`
+from round 12).

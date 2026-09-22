@@ -2536,6 +2536,12 @@ abstract class AppLocalizations {
   /// **'₹{total} earned from {count} delivered {count, plural, =1{order} other{orders}}'**
   String marketplaceOrdersRevenueSummary(String total, int count);
 
+  /// No description provided for @marketplaceOrdersSpendSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'₹{total} spent on {count} delivered {count, plural, =1{order} other{orders}}'**
+  String marketplaceOrdersSpendSummary(String total, int count);
+
   /// No description provided for @marketplaceReviewsTitle.
   ///
   /// In en, this message translates to:
