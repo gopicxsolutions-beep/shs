@@ -21812,3 +21812,49 @@ additive column on an already-proven-working embed (same pattern already
 live-verified for `fetchOrdersForSeller`); confirmed the RLS SELECT policy
 on `marketplace_reviews` has no restriction that would block reading `name`
 specifically.
+
+## 2026-09-22 — Marketplace audit round 7: editing a listing hid its existing photo, and 3 optional fields could never actually be cleared
+
+Continuing the audit. Two closely-related bugs in `add_product_page.dart`'s
+Edit mode, found and fixed together.
+
+**Editing a listing that already had a photo showed the empty "Add a photo"
+placeholder anyway.** `_photoPicker()` branched solely on `_image` (a
+freshly-picked file this session) — `_existingImageUrl` (what
+`_loadForEdit` had already fetched) was silently preserved and would still
+be submitted unchanged, but the UI looked exactly like "no photo at all,"
+and there was no remove control since only the `_image != null` branch ever
+offered one — so there was also no way to remove a photo, only to replace
+one.
+
+**A second, more serious bug in the exact same area**: even once a photo (or
+UPI ID, or payment note) genuinely gets cleared client-side,
+`MarketplaceRepository.updateProduct`'s live-mode write used `'field':
+?value` — Dart's null-aware map-entry spread, which OMITS the key entirely
+whenever the value is null. Every caller of this method already resolves a
+final, deliberate value before calling (existing/replacement/explicit-null-
+to-clear), so there is no genuine "leave unchanged" case being served here —
+a seller clearing her UPI ID, payment note, or photo and saving had that
+change silently discarded: the OLD value stayed in the database untouched,
+and reopening Edit showed it right back as if nothing had happened.
+
+**Fix**: the photo picker now shows `_existingImageUrl` whenever no new file
+has been picked, with the same remove control (clearing whichever is
+currently showing) instead of only ever appearing for a freshly-picked file.
+`updateProduct`'s write sends `image_url`/`upi_id`/`payment_note`
+unconditionally now, matching `category`'s already-correct convention.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1154/1154 (+3 new:
+an existing photo shows correctly on Edit, removing it and saving actually
+clears it, clearing the UPI field and saving actually clears it).
+Mutation-checked both fixes independently — reverting the photo-picker
+condition breaks 2 tests as expected. Reverting the repository write back to
+`?field`, however, did **not** break any test — demo mode's `updateProduct`
+constructs a `Product` object directly and was never affected by this bug at
+all (the `?field` omission is Dart map-literal syntax specific to the live
+branch's real `.update()` call), so the widget tests alone couldn't prove
+the live-mode fix. Verified that half live instead, rolled back: an explicit
+`image_url: null, upi_id: null, payment_note: null` UPDATE — exactly what
+this method's live branch now always sends — confirmed to actually persist
+as NULL, and the probe's own insert confirmed rolled back afterward with
+nothing left behind.

@@ -178,15 +178,29 @@ class MarketplaceRepository {
     // be told apart from a real success — without this, both AddProductPage
     // and MyListingsPage reported "updated"/"delisted" on a write that
     // silently changed nothing.
+    // `image_url`/`upi_id`/`payment_note` used to be `?field` (the
+    // null-aware spread that OMITS the key entirely whenever the value is
+    // null) — the same "leave unchanged if absent" semantics `addProduct`'s
+    // INSERT correctly wants, but wrong here: every caller of `updateProduct`
+    // already resolves a definite, final value before calling (the existing
+    // one, a freshly-uploaded replacement, or a deliberate null to CLEAR
+    // it — `add_product_page.dart`'s `upiIdValue`/`imageUrl` locals, echoed
+    // straight back by `my_listings_page.dart`'s delist/relist toggle), so
+    // there is no "absent, leave alone" case to preserve. A seller clearing
+    // her UPI ID or removing a photo and saving used to have that change
+    // silently discarded — the OLD value stayed in the database untouched,
+    // and reopening Edit would show it right back as if nothing had
+    // happened. Sent unconditionally now, matching `category`'s own
+    // already-correct convention.
     final rows = await _client.from('marketplace_products').update({
       'name': name,
       'description': description,
       'price': price,
       'stock': stock,
       'category': category,
-      'image_url': ?imageUrl,
-      'upi_id': ?upiId,
-      'payment_note': ?paymentNote,
+      'image_url': imageUrl,
+      'upi_id': upiId,
+      'payment_note': paymentNote,
       'is_active': isActive,
     }).eq('id', id).select('id');
     return (rows as List).isNotEmpty;

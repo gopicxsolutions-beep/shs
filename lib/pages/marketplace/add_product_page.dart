@@ -268,7 +268,19 @@ class _AddProductPageState extends State<AddProductPage> {
   // storefront-icon placeholder every product used to show (see
   // `marketplace_home_page.dart`/`product_detail_page.dart`), so this never
   // blocks listing a product.
+  //
+  // Used to branch solely on `_image` (a freshly-PICKED file this session) —
+  // opening Edit on a listing that already had a photo (`_existingImageUrl`,
+  // set by `_loadForEdit`, still correctly carried through to submit) showed
+  // the EMPTY "Add a photo" placeholder anyway, indistinguishable from "the
+  // photo is gone." And since only the `_image != null` branch ever offered
+  // a remove button, there was no way to clear a photo at all — only to
+  // replace one. Now: a freshly-picked `_image` always takes priority over
+  // the existing URL (she just chose to replace it); otherwise the existing
+  // photo shows if there is one; the remove button clears whichever is
+  // actually showing.
   Widget _photoPicker() {
+    final hasImage = _image != null || _existingImageUrl != null;
     return AppCard(
       padded: false,
       onTap: _saving ? null : _pickImage,
@@ -276,7 +288,7 @@ class _AddProductPageState extends State<AddProductPage> {
         borderRadius: BorderRadius.circular(16),
         child: SizedBox(
           height: 140,
-          child: _image == null
+          child: !hasImage
               ? Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -288,7 +300,22 @@ class _AddProductPageState extends State<AddProductPage> {
               : Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.memory(_image!.bytes!, fit: BoxFit.cover),
+                    _image != null
+                        ? Image.memory(_image!.bytes!, fit: BoxFit.cover)
+                        : Image.network(
+                            _existingImageUrl!,
+                            fit: BoxFit.cover,
+                            // Same fallback as every other product photo in
+                            // this app (product_detail_page.dart/
+                            // marketplace_home_page.dart) — a broken/expired
+                            // URL shouldn't crash this form or block editing
+                            // everything else about the listing.
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: Brand.c50,
+                              alignment: Alignment.center,
+                              child: Icon(Icons.storefront_rounded, color: Brand.c500, size: 28),
+                            ),
+                          ),
                     Positioned(
                       top: 0,
                       right: 0,
@@ -303,6 +330,7 @@ class _AddProductPageState extends State<AddProductPage> {
                             ? null
                             : () => setState(() {
                                   _image = null;
+                                  _existingImageUrl = null;
                                   _markDirty();
                                 }),
                         icon: Container(

@@ -126,7 +126,7 @@ void main() {
     // page in edit mode against that id — mirrors the same
     // schedule-then-look-up-the-generated-id technique already used in
     // test/pages/meeting_attendance_page_test.dart.
-    Future<String> seedProduct(MarketplaceRepository repo, String name) async {
+    Future<String> seedProduct(MarketplaceRepository repo, String name, {String? imageUrl}) async {
       await repo.addProduct(
         sellerId: null,
         name: name,
@@ -136,6 +136,7 @@ void main() {
         category: 'Food',
         upiId: 'seller@upi',
         paymentNote: 'Cash also accepted',
+        imageUrl: imageUrl,
       );
       final list = await repo.fetchMyProducts(null);
       return list.firstWhere((p) => p.name == name).id;
@@ -193,6 +194,89 @@ void main() {
       // survive unchanged, not get wiped by omission.
       expect(updated?.upiId, 'seller@upi');
       expect(updated?.isActive, isTrue);
+    });
+
+    // Marketplace audit finding: opening Edit on a listing that already had
+    // a photo showed the EMPTY "Add a photo" placeholder anyway — the photo
+    // picker only ever checked a freshly-picked file, never the existing
+    // photo `_loadForEdit` had already fetched — indistinguishable from "the
+    // photo is gone," even though it was silently still there and would
+    // have been echoed back unchanged on save.
+    testWidgets('edit mode shows the existing photo (not the empty placeholder), with a remove control', (tester) async {
+      final repo = MarketplaceRepository();
+      final id = await seedProduct(repo, '__TEST__ edit-mode product 3', imageUrl: 'https://example.com/photo.jpg');
+
+      await tester.pumpWidget(editHarness(id));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Add a photo (optional)'), findsNothing, reason: 'this was the bug: an existing photo looked identical to having none at all');
+      expect(find.byTooltip('Remove photo'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    // Second bug found in the same area, same root cause:
+    // MarketplaceRepository.updateProduct used the null-aware `?field`
+    // spread for image_url/upi_id/payment_note, which OMITS the key
+    // entirely whenever the value is null — so clearing any of these three
+    // fields and saving silently left the OLD value in the database,
+    // reappearing right back if she reopened Edit.
+    //
+    // These next two tests only cover the WIDGET-level behavior (the
+    // picker/field correctly reaching a null value and calling through) —
+    // demo mode's updateProduct() constructs a Product object directly and
+    // was never affected by the `?field` bug at all (that's Dart map-literal
+    // syntax specific to the live branch's real PostgREST .update() call),
+    // so they can't by themselves prove the live-mode fix. That half is
+    // verified separately, live against the real database, rolled back: an
+    // explicit `image_url: null, upi_id: null, payment_note: null` UPDATE —
+    // exactly the shape this method's live branch now always sends —
+    // confirmed to actually persist as NULL (see this round's
+    // DEVELOPMENT_PROGRESS.md entry).
+    testWidgets('removing the existing photo and saving actually clears it', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = MarketplaceRepository();
+      final id = await seedProduct(repo, '__TEST__ edit-mode product 4', imageUrl: 'https://example.com/photo.jpg');
+
+      await tester.pumpWidget(editHarness(id));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Remove photo'));
+      await tester.pumpAndSettle();
+      expect(find.text('Add a photo (optional)'), findsOneWidget);
+
+      await tester.ensureVisible(find.text('Save Changes'));
+      await tester.tap(find.text('Save Changes'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      final updated = await repo.fetchProductById(id);
+      expect(updated?.imageUrl, isNull, reason: 'this was the bug: the OLD photo URL used to survive the save untouched');
+    });
+
+    testWidgets('clearing the UPI ID field and saving actually clears it', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = MarketplaceRepository();
+      final id = await seedProduct(repo, '__TEST__ edit-mode product 5');
+
+      await tester.pumpWidget(editHarness(id));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.widgetWithText(TextField, 'e.g. 9876543210@upi', skipOffstage: false), '');
+      await tester.ensureVisible(find.text('Save Changes'));
+      await tester.tap(find.text('Save Changes'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      final updated = await repo.fetchProductById(id);
+      expect(updated?.upiId, isNull, reason: 'this was the bug: the OLD UPI ID used to survive the save untouched');
     });
   });
 }
