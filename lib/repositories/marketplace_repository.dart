@@ -415,6 +415,28 @@ class MarketplaceRepository {
     return (rows as List).map((r) => Review.fromMap(r as Map<String, dynamic>)).toList();
   }
 
+  /// Whether [viewerId] is currently allowed to review [productId] —
+  /// mirrors `marketplace_reviews_insert_authenticated` (RLS) exactly: a
+  /// `'delivered'` order for this product by her, AND no existing review
+  /// from her already (`marketplace_reviews_product_reviewer_uniq`, one per
+  /// reviewer per product — a second attempt is rejected outright, not
+  /// merged/replaced). Missing feature: "Write a Review" was offered
+  /// regardless of either condition — a stranger who never bought it, a
+  /// buyer whose order was still `'new'`/`'packed'`/`'shipped'`, or someone
+  /// who'd already reviewed it, could all fill out the whole rating+comment
+  /// dialog only to hit a flat, unexplained "could not submit" error,
+  /// correctly but unhelpfully enforced server-side.
+  Future<bool> canReviewProduct(String productId, String? viewerId) async {
+    if (!_live || viewerId == null) return false;
+    final results = await Future.wait([
+      _client.from('marketplace_orders').select('id').eq('product_id', productId).eq('buyer_id', viewerId).eq('status', 'delivered').limit(1),
+      _client.from('marketplace_reviews').select('id').eq('product_id', productId).eq('reviewer_id', viewerId).limit(1),
+    ]);
+    final hasDeliveredOrder = (results[0] as List).isNotEmpty;
+    final alreadyReviewed = (results[1] as List).isNotEmpty;
+    return hasDeliveredOrder && !alreadyReviewed;
+  }
+
   // `reviewer_id` must be the caller's own id (or omitted) — enforced by
   // `marketplace_reviews_insert_authenticated` (see
   // supabase/migrations/0032_marketplace_reviews_authorship_and_dupes.sql),

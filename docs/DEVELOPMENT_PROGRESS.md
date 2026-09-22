@@ -21877,3 +21877,37 @@ for `!p.isActive`.
 a delisted product alongside a live one in a demo-mode catalog shows the
 badge, the live one doesn't). Mutation-checked — disabling the badge
 condition fails the new test.
+
+## 2026-09-22 — Marketplace audit round 9: "Write a Review" was offered regardless of real eligibility
+
+Continuing the audit. `product_detail_page.dart` showed the "Write a Review"
+action to any signed-in viewer who wasn't the product's own seller —
+regardless of whether she'd actually bought and received the item. The real
+live-mode RLS policy, `marketplace_reviews_insert_authenticated`, only
+allows the insert for a reviewer with a `'delivered'` order for that product;
+tapping through with no such order silently failed the insert (or worse,
+looked like it should work and confused her about why nothing happened).
+While confirming the exact RLS condition, found a second, undocumented
+constraint the original audit finding didn't name:
+`marketplace_reviews_product_reviewer_uniq`, a unique index limiting each
+reviewer to exactly one review per product — a second attempt is rejected
+outright, not merged or replaced, so "already reviewed" is its own
+eligibility condition alongside "never delivered."
+
+**Fix**: new `MarketplaceRepository.canReviewProduct(productId, viewerId)`
+mirrors both live conditions via two existence checks (a `'delivered'` order
+for this product by her, and no existing review from her already). Wired into
+`ProductDetailPage` via a new `_canReview` field loaded in `initState()` (live
+mode only) and a `canOfferReview` gate (`!isOwnProduct && (!live ||
+_canReview)`) that replaces the old `isOwnProduct`-only check on the Reviews
+section's action. Demo mode is deliberately unaffected — its own `addReview()`
+is a no-op regardless of eligibility, same as it always was.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1156/1156 (+1 new:
+demo mode still always offers the action). Mutation-checked — removing the
+demo-mode bypass (`canOfferReview = !isOwnProduct && _canReview`) fails the
+new test as expected. Live-mode eligibility logic verified directly against
+the real database via a rolled-back probe covering all 5 scenarios (never
+bought, order still `'new'`, delivered+unreviewed, delivered+already-reviewed,
+and the unique-index rejection itself) — all matched expectations, confirmed
+clean rollback afterward.

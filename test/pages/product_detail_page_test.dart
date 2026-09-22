@@ -67,6 +67,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  // Marketplace audit finding: "Write a Review" used to be offered
+  // regardless of real eligibility (a delivered order + no existing review —
+  // see MarketplaceRepository.canReviewProduct's own doc comment) — live
+  // mode now gates it on that. Demo mode is deliberately unaffected (its own
+  // addReview() is a no-op either way, matching isOwnProduct's identical
+  // SupabaseService.isConfigured gate), which this confirms stays true after
+  // the change; the live-mode gating logic itself is verified directly
+  // against the real database instead (see this round's
+  // DEVELOPMENT_PROGRESS.md entry) — canReviewProduct() talks straight to
+  // Supabase, so it can't be driven through demo mode's mock catalog at all.
+  testWidgets('demo mode still always offers Write a Review (its own addReview is a no-op regardless)', (tester) async {
+    tester.view.physicalSize = const Size(400, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(harness('p1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Write a Review'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a delisted product shows a Delisted badge and disables Place Order', (tester) async {
     MarketplaceRepository.debugProductsOverride = const [
       mock.ProductMock(id: 'delisted-1', sellerName: 'Test Seller', name: 'A Delisted Product', description: 'no longer available', price: 100, stock: 5, category: 'Other', upiId: 'seller@upi', isActive: false),

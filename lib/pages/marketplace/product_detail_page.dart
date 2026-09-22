@@ -53,6 +53,26 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   bool _placing = false;
   bool _submittingReview = false;
   bool _launchingUpi = false;
+  // Missing feature: "Write a Review" used to be offered regardless of
+  // eligibility — see `MarketplaceRepository.canReviewProduct`'s own doc
+  // comment. Demo mode never needed this (its own `isOwnProduct` guard is
+  // already `SupabaseService.isConfigured`-gated, so this only ever matters
+  // in live mode, where `canReviewProduct` itself is), so this simply stays
+  // false — matching demo mode's existing "review action always offered,
+  // addReview() itself is a no-op" behavior, unchanged.
+  bool _canReview = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (SupabaseService.isConfigured) _loadCanReview();
+  }
+
+  Future<void> _loadCanReview() async {
+    final viewerId = context.read<AppState>().profile?.id;
+    final canReview = await _repo.canReviewProduct(widget.productId, viewerId);
+    if (mounted) setState(() => _canReview = canReview);
+  }
   // User-reported gap: the Buy flow had no quantity concept at all — every
   // order was hard-coded to exactly 1 unit, with no way to ask for more.
   // Clamped against the loaded product's current stock in `build` (never
@@ -148,6 +168,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           content: Text(SupabaseService.isConfigured ? l10n.productDetailReviewSubmitted : l10n.productDetailReviewDemoMode),
         ));
         _reviewsKey.currentState?.reload();
+        // She's used up her one review for this product — the action must
+        // not still offer itself (the unique index would reject a second
+        // attempt outright).
+        if (SupabaseService.isConfigured) setState(() => _canReview = false);
       }
     } catch (_) {
       // RLS rejects this (e.g. no order yet for this product) as a plain
@@ -309,6 +333,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           // mock id, `appState.profile` is always null), so this check
           // would otherwise hide the action for every demo persona.
           final isOwnProduct = SupabaseService.isConfigured && viewerId != null && product.sellerId == viewerId;
+          final canOfferReview = !isOwnProduct && (!SupabaseService.isConfigured || _canReview);
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -395,8 +420,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               const SizedBox(height: 24),
               SectionHeader(
                 title: l10n.productDetailReviewsSection,
-                action: isOwnProduct ? null : (_submittingReview ? l10n.productDetailSubmittingAction : l10n.productDetailWriteReviewAction),
-                onAction: isOwnProduct ? null : () => _writeReview(productId),
+                // Live mode gates the action on real eligibility
+                // (`_canReview` — see its own doc comment): a stranger who
+                // never bought this product, a buyer whose order isn't
+                // `'delivered'` yet, or someone who's already reviewed it no
+                // longer sees "Write a Review" at all, instead of filling
+                // out the whole dialog only to hit a flat, unexplained
+                // error. Demo mode is unaffected — its own `addReview()` is
+                // a no-op regardless, matching `isOwnProduct`'s identical
+                // `SupabaseService.isConfigured` gate just above.
+                action: !canOfferReview ? null : (_submittingReview ? l10n.productDetailSubmittingAction : l10n.productDetailWriteReviewAction),
+                onAction: !canOfferReview ? null : () => _writeReview(productId),
               ),
               AppAsyncBuilder<List<Review>>(
                 key: _reviewsKey,
