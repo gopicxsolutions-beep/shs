@@ -21994,3 +21994,50 @@ all, since demo mode's `fetchOrdersForSeller` always returns `[]` and can
 never actually render the revenue card through the widget tree). Both new
 UI gates (`showSellerName`, the delivered-only filter) mutation-checked —
 forcing each to its broken value fails its respective test.
+
+## 2026-09-22 — Marketplace audit round 12: no average rating shown anywhere in the app
+
+Continuing the audit, batching per user request (this round: 1 substantial
+new finding). Neither the browse grid nor the product detail page ever
+showed any rating summary — a buyer had to open a listing and scroll all
+the way to its reviews just to get any sense of quality, undermining the
+entire point of having reviews. Computing this live per product would be an
+N+1 aggregate query across every card in the grid (explicitly the pattern
+this repo's own CLAUDE.md calls out to avoid) — instead, mirrored the exact
+pattern migration 0124 already established for `seller_name`: pin the
+aggregate onto `marketplace_products` itself, kept current by a trigger, so
+every existing read path (`fetchProducts`/`fetchProductById`/
+`fetchMyProducts`, all bare `.select()`) gets it for free, zero extra round
+trips.
+
+**Fix**: `supabase/migrations/0158_iteration50_marketplace_rating_stats.sql`
+adds `avg_rating numeric(3,2)` / `review_count int` to `marketplace_products`,
+maintained by a `security definer` AFTER INSERT-OR-DELETE trigger on
+`marketplace_reviews` (there's no review UPDATE path yet — round 10's own
+scoping note) that recomputes both from a full aggregate over that product's
+reviews. `avg_rating` stays `null` (not `0`) for a product with zero
+reviews — "no reviews yet" is a different fact than "rated zero stars,"
+which a 1-5 scale can never actually produce. A one-time backfill covers
+every review posted before this migration existed. `Product.avgRating`/
+`reviewCount` now parse these columns; demo mode's `_mockProducts()`
+computes the equivalent from `mock.marketplaceReviews` directly (no trigger
+to rely on there). Rendered as a compact `★ 4.5` chip on the SAME line as
+price in the browse grid (this card's height is already a tight fit at a
+large accessibility text scale — see its own existing comments on the
+overflow fight that already happened here once — so a new line was avoided
+entirely), and as `★ 4.5 (12)` under the seller's name on the product detail
+header.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1164/1164 (+3 new:
+product detail shows/hides the rating for a reviewed/unreviewed product; the
+browse grid shows the rating chip for a reviewed product). Both new UI gates
+mutation-checked — forcing each to `false` fails its respective test. Trigger
+verified directly against the real database via a rolled-back probe
+(`probe15_rating_stats.sql`, `__TEST__`-prefixed reviews on a real
+zero-review product): confirmed correct after 1st review (count 1, avg
+4.00), after a 2nd from a different reviewer (count 2, avg 3.00), after
+deleting the first (count 1, avg 2.00 — the delete path matters specifically
+because round 10 added reviewer self-delete), and after deleting the last
+one (count 0, avg back to `null`, not `0.00`) — deployed via `supabase db
+push --linked`. Also confirmed the backfill left an existing zero-review
+product untouched (`count 0, avg null`) before running the probe against it.

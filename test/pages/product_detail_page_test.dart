@@ -111,6 +111,27 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  // Missing feature: this page never showed a rating summary anywhere —
+  // the only way to gauge a product's quality was scrolling all the way
+  // down to its reviews list. `Product.avgRating`/`reviewCount` are demo-mode
+  // computed from mock.marketplaceReviews (mirrors the live trigger's own
+  // aggregate — see migration 0158); live-mode's actual trigger-maintained
+  // values are verified directly against the real database instead (see
+  // this round's DEVELOPMENT_PROGRESS.md entry, probe15_rating_stats.sql).
+  testWidgets('shows a star rating summary for a reviewed product, none for an unreviewed one', (tester) async {
+    await tester.pumpWidget(harness('p1')); // has 1 mock review, rating 5
+    await tester.pumpAndSettle();
+    expect(find.text('5.0 (1)'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an unreviewed product shows no rating summary', (tester) async {
+    await tester.pumpWidget(harness('p2')); // no mock reviews
+    await tester.pumpAndSettle();
+    expect(find.textContaining('('), findsNothing, reason: 'no "(count)" rating chip should render at all when reviewCount is 0');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a delisted product shows a Delisted badge and disables Place Order', (tester) async {
     MarketplaceRepository.debugProductsOverride = const [
       mock.ProductMock(id: 'delisted-1', sellerName: 'Test Seller', name: 'A Delisted Product', description: 'no longer available', price: 100, stock: 5, category: 'Other', upiId: 'seller@upi', isActive: false),

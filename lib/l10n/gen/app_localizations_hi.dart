@@ -1374,6 +1374,17 @@ class AppLocalizationsHi extends AppLocalizations {
       'आपकी खोज से कोई उत्पाद मेल नहीं खाता';
 
   @override
+  String marketplaceHomeProductRatingSemantics(String rating, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'समीक्षाओं',
+      one: 'समीक्षा',
+    );
+    return '5 में से $rating रेटिंग, $count $_temp0 के आधार पर';
+  }
+
+  @override
   String get marketplaceOrdersTitle => 'ऑर्डर';
 
   @override

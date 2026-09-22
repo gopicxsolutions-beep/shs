@@ -399,6 +399,25 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ]),
               const SizedBox(height: 6),
               Text(l10n.productDetailBySeller(product.sellerName), style: AppTheme.sans(12, color: Neutral.c500)),
+              // Missing feature: this header never showed a rating summary
+              // at all — the only way to gauge quality was scrolling all
+              // the way down to the reviews list.
+              if (product.reviewCount > 0) ...[
+                const SizedBox(height: 4),
+                Semantics(
+                  label: l10n.marketplaceHomeProductRatingSemantics(product.avgRating!.toStringAsFixed(1), product.reviewCount),
+                  child: ExcludeSemantics(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.star_rounded, size: 14, color: Gold.c500),
+                        const SizedBox(width: 3),
+                        Text('${product.avgRating!.toStringAsFixed(1)} (${product.reviewCount})', style: AppTheme.sans(12, weight: FontWeight.w600, color: Neutral.c600)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               Text('₹${NumberFormat('#,##,##0', 'en_IN').format(product.price)}', style: AppTheme.display(22, color: Brand.c700)),
               const SizedBox(height: 4),

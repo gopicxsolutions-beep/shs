@@ -468,19 +468,23 @@ class MarketplaceRepository {
     await _client.from('marketplace_reviews').delete().eq('id', reviewId);
   }
 
-  List<Product> _mockProducts() => (debugProductsOverride ?? mock.marketplaceProducts)
-      .map((p) => Product(
-            id: p.id,
-            sellerId: p.id,
-            sellerName: p.sellerName,
-            name: p.name,
-            description: p.description,
-            price: p.price,
-            stock: p.stock,
-            category: p.category,
-            upiId: p.upiId,
-            paymentNote: p.paymentNote,
-            isActive: p.isActive,
-          ))
-      .toList();
+  List<Product> _mockProducts() => (debugProductsOverride ?? mock.marketplaceProducts).map((p) {
+        final productReviews = mock.marketplaceReviews.where((r) => r.productId == p.id);
+        final reviewCount = productReviews.length;
+        return Product(
+          id: p.id,
+          sellerId: p.id,
+          sellerName: p.sellerName,
+          name: p.name,
+          description: p.description,
+          price: p.price,
+          stock: p.stock,
+          category: p.category,
+          upiId: p.upiId,
+          paymentNote: p.paymentNote,
+          isActive: p.isActive,
+          avgRating: reviewCount == 0 ? null : productReviews.map((r) => r.rating).reduce((a, b) => a + b) / reviewCount,
+          reviewCount: reviewCount,
+        );
+      }).toList();
 }

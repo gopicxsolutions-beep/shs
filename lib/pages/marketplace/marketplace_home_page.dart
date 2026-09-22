@@ -236,7 +236,34 @@ class _MarketplaceHomePageState extends State<MarketplaceHomePage> {
                               const SizedBox(height: 8),
                               Text(p.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700)),
                               const SizedBox(height: 4),
-                              Text('₹${NumberFormat('#,##,##0', 'en_IN').format(p.price)}', style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600)),
+                              // Missing feature: no average rating was shown
+                              // anywhere in the browse grid — a buyer had to
+                              // open every listing individually just to get
+                              // any sense of quality. Kept on the SAME line
+                              // as price (not a new line) since this card's
+                              // height is already a tight fit at a large
+                              // accessibility text scale — see this cell's
+                              // own comments above on the overflow fight
+                              // that already happened here once.
+                              Row(
+                                children: [
+                                  Expanded(child: Text('₹${NumberFormat('#,##,##0', 'en_IN').format(p.price)}', overflow: TextOverflow.ellipsis, style: AppTheme.sans(13, weight: FontWeight.w700, color: Brand.c600))),
+                                  if (p.reviewCount > 0)
+                                    Semantics(
+                                      label: l10n.marketplaceHomeProductRatingSemantics(p.avgRating!.toStringAsFixed(1), p.reviewCount),
+                                      child: ExcludeSemantics(
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.star_rounded, size: 12, color: Gold.c500),
+                                            const SizedBox(width: 2),
+                                            Text(p.avgRating!.toStringAsFixed(1), style: AppTheme.sans(11, weight: FontWeight.w700, color: Neutral.c600)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                               Text(p.sellerName, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(10, color: Neutral.c500)),
                             ],
                           ),

@@ -664,6 +664,8 @@
   "marketplaceHomeCategoryAll": "सभी",
   "marketplaceHomeNoSearchResults": "आपकी खोज से कोई उत्पाद मेल नहीं खाता",
 
+  "marketplaceHomeProductRatingSemantics": "5 में से {rating} रेटिंग, {count} {count, plural, =1{समीक्षा} other{समीक्षाओं}} के आधार पर",
+
   "marketplaceOrdersTitle": "ऑर्डर",
 
   "marketplaceOrdersTitleWithQuantity": "{productName} × {quantity}",

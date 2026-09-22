@@ -901,6 +901,14 @@
 
   "marketplaceHomeNoSearchResults": "No products match your search",
 
+  "marketplaceHomeProductRatingSemantics": "Rated {rating} out of 5, from {count} {count, plural, =1{review} other{reviews}}",
+  "@marketplaceHomeProductRatingSemantics": {
+    "placeholders": {
+      "rating": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+
   "marketplaceOrdersTitle": "Orders",
 
   "marketplaceOrdersTitleWithQuantity": "{productName} × {quantity}",

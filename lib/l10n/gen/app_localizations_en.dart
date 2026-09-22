@@ -1398,6 +1398,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get marketplaceHomeNoSearchResults => 'No products match your search';
 
   @override
+  String marketplaceHomeProductRatingSemantics(String rating, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'reviews',
+      one: 'review',
+    );
+    return 'Rated $rating out of 5, from $count $_temp0';
+  }
+
+  @override
   String get marketplaceOrdersTitle => 'Orders';
 
   @override

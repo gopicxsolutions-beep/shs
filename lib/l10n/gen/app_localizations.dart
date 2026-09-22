@@ -2488,6 +2488,12 @@ abstract class AppLocalizations {
   /// **'No products match your search'**
   String get marketplaceHomeNoSearchResults;
 
+  /// No description provided for @marketplaceHomeProductRatingSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Rated {rating} out of 5, from {count} {count, plural, =1{review} other{reviews}}'**
+  String marketplaceHomeProductRatingSemantics(String rating, int count);
+
   /// No description provided for @marketplaceOrdersTitle.
   ///
   /// In en, this message translates to:

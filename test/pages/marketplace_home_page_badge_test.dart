@@ -79,4 +79,33 @@ void main() {
     expect(find.text('Delisted Item'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  // Missing feature: the browse grid never showed any rating at all — a
+  // buyer comparing listings had to open each one individually to see if
+  // it had good reviews. `Product.avgRating`/`reviewCount` are demo-mode
+  // computed from mock.marketplaceReviews (real product 'p1' has one
+  // 5-star review baked into that fixture data); live mode's actual
+  // trigger-maintained aggregate is verified directly against the real
+  // database instead (probe15_rating_stats.sql).
+  testWidgets('the browse grid shows a star rating chip for a reviewed product', (tester) async {
+    tester.view.physicalSize = const Size(400, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AppState>(
+        create: (_) => AppState(),
+        child: MaterialApp(
+          home: const MarketplaceHomePage(),
+          localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('5.0'), findsOneWidget, reason: 'p1 has exactly one 5-star mock review');
+    expect(tester.takeException(), isNull);
+  });
 }

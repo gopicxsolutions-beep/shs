@@ -1400,6 +1400,17 @@ class AppLocalizationsTe extends AppLocalizations {
       'మీ శోధనకు సరిపోలే ఉత్పత్తులు లేవు';
 
   @override
+  String marketplaceHomeProductRatingSemantics(String rating, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'సమీక్షల',
+      one: 'సమీక్ష',
+    );
+    return '5లో $rating రేటింగ్, $count $_temp0 ఆధారంగా';
+  }
+
+  @override
   String get marketplaceOrdersTitle => 'ఆర్డర్లు';
 
   @override

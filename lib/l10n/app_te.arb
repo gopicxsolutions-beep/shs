@@ -664,6 +664,8 @@
   "marketplaceHomeCategoryAll": "అన్నీ",
   "marketplaceHomeNoSearchResults": "మీ శోధనకు సరిపోలే ఉత్పత్తులు లేవు",
 
+  "marketplaceHomeProductRatingSemantics": "5లో {rating} రేటింగ్, {count} {count, plural, =1{సమీక్ష} other{సమీక్షల}} ఆధారంగా",
+
   "marketplaceOrdersTitle": "ఆర్డర్లు",
 
   "marketplaceOrdersTitleWithQuantity": "{productName} × {quantity}",

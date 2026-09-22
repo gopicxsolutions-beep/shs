@@ -53,6 +53,15 @@ class Product {
   // read as active — matches every other bool-ish column this repository
   // simplifies away in _mockProducts().
   final bool isActive;
+  // Missing feature: no average rating was shown anywhere in the app, not
+  // even the browse grid — a buyer had to open every listing individually
+  // and scroll to its reviews just to get any sense of quality. Pinned onto
+  // this row (not computed from a live join — see migration 0158's own
+  // doc comment on why) so it's free on every existing read path. Null
+  // means "no reviews yet" — distinct from a real 0-star rating, which this
+  // 1-5 scale can never actually produce anyway.
+  final num? avgRating;
+  final int reviewCount;
 
   const Product({
     required this.id,
@@ -67,6 +76,8 @@ class Product {
     this.upiId,
     this.paymentNote,
     this.isActive = true,
+    this.avgRating,
+    this.reviewCount = 0,
   });
 
   factory Product.fromMap(Map<String, dynamic> map) => Product(
@@ -82,6 +93,8 @@ class Product {
         upiId: map['upi_id'] as String?,
         paymentNote: map['payment_note'] as String?,
         isActive: map['is_active'] as bool? ?? true,
+        avgRating: map['avg_rating'] as num?,
+        reviewCount: map['review_count'] as int? ?? 0,
       );
 }
 

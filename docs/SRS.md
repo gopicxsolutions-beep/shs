@@ -889,6 +889,7 @@ here, not client-side hiding.
 | FR-MKT-8 | Buyer sees a seller's UPI ID/payment note on the product detail page and can open her own UPI app pre-filled to pay manually — no real payment gateway, no order-payment linkage | All |
 | FR-MKT-9 | Buyer may cancel her own order while it is still `'new'` (before the seller has packed it); stock is restored atomically. A cancelled order can never be resurrected by anyone, including staff | Member (own order, as buyer) |
 | FR-MKT-10 | An order's detail page shows the seller's name to the buyer (and vice versa is implicit — the seller already sees the buyer's name); a seller sees a running total of revenue earned from her `'delivered'` orders on the "My Sales" tab | All |
+| FR-MKT-11 | The browse grid and product detail page show a `★ average (count)` rating summary wherever a product has at least one review, maintained by a trigger on `marketplace_reviews` insert/delete (not a live per-product aggregate query) | All |
 
 ### 3.9 Government Schemes (`schemes/`)
 
