@@ -308,6 +308,28 @@ class MarketplaceRepository {
     return (rows as List).map((r) => MarketOrder.fromMap(r as Map<String, dynamic>)).toList();
   }
 
+  /// Missing feature: a seller had no way to know a new order arrived at
+  /// all — nothing on the dashboard, no badge, no notification of any kind;
+  /// the only way to find out was to open Marketplace > Orders > "My Sales"
+  /// and read the list. Backs a badge on the Orders tile
+  /// (`marketplace_home_page.dart`), same visual/accessibility pattern
+  /// `IconTile`'s own `badge` parameter already supports (built, but with
+  /// zero callers anywhere in the app before this). A row-count, not
+  /// `.count()`'s cheaper HEAD-request form — that variant can't filter on
+  /// an embedded table's column (`marketplace_products.seller_id` here),
+  /// only a plain column on `marketplace_orders` itself — but a seller's own
+  /// unfulfilled order count is inherently small, unlike the catalog-wide
+  /// scale concerns elsewhere in this repository.
+  Future<int> fetchPendingSalesCount(String? sellerId) async {
+    if (!_live || sellerId == null) return 0;
+    final rows = await _client
+        .from('marketplace_orders')
+        .select('id, marketplace_products!inner(seller_id)')
+        .eq('marketplace_products.seller_id', sellerId)
+        .eq('status', 'new');
+    return (rows as List).length;
+  }
+
   Future<MarketOrder?> fetchOrderById(String id) async {
     if (!_live) {
       final matches = _locallyPlaced.where((o) => o.id == id);

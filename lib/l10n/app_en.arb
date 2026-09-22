@@ -878,6 +878,13 @@
 
   "marketplaceHomeOrdersTile": "Orders",
 
+  "marketplaceHomeNewOrdersBadge": "Orders, {count} new {count, plural, =1{order} other{orders}} to fulfil",
+  "@marketplaceHomeNewOrdersBadge": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
   "marketplaceHomeReviewsTile": "Reviews",
 
   "marketplaceHomeBrowseProducts": "Browse Products",

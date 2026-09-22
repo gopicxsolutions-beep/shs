@@ -2434,6 +2434,12 @@ abstract class AppLocalizations {
   /// **'Orders'**
   String get marketplaceHomeOrdersTile;
 
+  /// No description provided for @marketplaceHomeNewOrdersBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders, {count} new {count, plural, =1{order} other{orders}} to fulfil'**
+  String marketplaceHomeNewOrdersBadge(int count);
+
   /// No description provided for @marketplaceHomeReviewsTile.
   ///
   /// In en, this message translates to:

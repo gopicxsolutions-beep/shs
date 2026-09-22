@@ -1368,6 +1368,11 @@ class AppLocalizationsTe extends AppLocalizations {
   String get marketplaceHomeOrdersTile => 'ఆర్డర్లు';
 
   @override
+  String marketplaceHomeNewOrdersBadge(int count) {
+    return 'ఆర్డర్లు, $count కొత్త ఆర్డర్‌లు పూర్తి చేయాలి';
+  }
+
+  @override
   String get marketplaceHomeReviewsTile => 'సమీక్షలు';
 
   @override

@@ -1361,6 +1361,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get marketplaceHomeOrdersTile => 'Orders';
 
   @override
+  String marketplaceHomeNewOrdersBadge(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'orders',
+      one: 'order',
+    );
+    return 'Orders, $count new $_temp0 to fulfil';
+  }
+
+  @override
   String get marketplaceHomeReviewsTile => 'Reviews';
 
   @override

@@ -649,6 +649,8 @@
 
   "marketplaceHomeOrdersTile": "ఆర్డర్లు",
 
+  "marketplaceHomeNewOrdersBadge": "ఆర్డర్లు, {count} కొత్త ఆర్డర్‌లు పూర్తి చేయాలి",
+
   "marketplaceHomeReviewsTile": "సమీక్షలు",
 
   "marketplaceHomeBrowseProducts": "ఉత్పత్తులను చూడండి",

@@ -649,6 +649,8 @@
 
   "marketplaceHomeOrdersTile": "ऑर्डर",
 
+  "marketplaceHomeNewOrdersBadge": "ऑर्डर, {count} नए ऑर्डर पूरे करने हैं",
+
   "marketplaceHomeReviewsTile": "समीक्षाएं",
 
   "marketplaceHomeBrowseProducts": "उत्पाद देखें",

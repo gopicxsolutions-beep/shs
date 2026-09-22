@@ -21726,3 +21726,39 @@ and order counts unchanged, nothing left behind.
 
 Docs updated in this same change: [SRS.md](SRS.md)'s Marketplace order-history
 paragraph.
+
+## 2026-09-22 — Marketplace audit round 4: a seller had no way to know a new order arrived
+
+Continuing the audit. Confirmed real, not hypothetical: a real live seller
+("Sunitha Rani") currently has 5 orders sitting in `'new'` status with
+nothing ever fulfilled — some from 2026-07-29, one from today — and nothing
+in the app has ever told her. `IconTile` (the widget every quick-access tile
+on this page already uses) has had a `badge` parameter, including its own
+accessibility handling, since it was written — with zero callers anywhere in
+the app.
+
+**Fix**: `MarketplaceRepository.fetchPendingSalesCount(sellerId)` — a
+row-count of this seller's own products' `'new'`-status orders (a plain
+row-fetch-then-`.length`, not `.count()`'s cheaper HEAD-request form, since
+that variant can't filter on an embedded table's column — only a direct
+column on the queried table itself; a seller's own unfulfilled-order count
+is inherently small, unlike this repository's catalog-wide scaling
+concerns elsewhere). `marketplace_home_page.dart` loads it on mount
+(separately from the product catalog fetch, so it doesn't block the main
+grid) and wires it into the existing Orders `IconTile`'s `badge` — a small
+red count badge, capped at "9+", with its own accessible label ("Orders, N
+new orders to fulfil"), hidden entirely at 0 rather than shown as "0"
+(matches this app's existing pending-count convention elsewhere, e.g. the
+staff dashboards' join-request banners).
+
+**Verification**: `flutter analyze` clean; `flutter test` 1147/1147 (+1,
+confirming no badge renders in demo mode — `fetchPendingSalesCount` is
+live-mode only, matching `fetchOrdersForSeller`'s own "no real seller/buyer
+split to fabricate a sale for" precedent, so the nonzero-count UI path can't
+be driven through demo mode at all). The query's join+filter shape verified
+directly against the live database instead: placed 2 real orders against a
+real seller's product (left 'new'), advanced a 3rd past 'new', and confirmed
+the equivalent SQL count increased by exactly 2 — while incidentally
+surfacing (and then correctly excluding) that seller's real pre-existing
+count of 5 unfulfilled orders, all rolled back, re-confirmed by a direct,
+RLS-free count afterward (still exactly 5, nothing left over from testing).

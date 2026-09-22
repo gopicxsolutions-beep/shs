@@ -1341,6 +1341,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get marketplaceHomeOrdersTile => 'ऑर्डर';
 
   @override
+  String marketplaceHomeNewOrdersBadge(int count) {
+    return 'ऑर्डर, $count नए ऑर्डर पूरे करने हैं';
+  }
+
+  @override
   String get marketplaceHomeReviewsTile => 'समीक्षाएं';
 
   @override

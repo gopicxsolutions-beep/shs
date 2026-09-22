@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/marketplace.dart';
 import '../../repositories/marketplace_repository.dart';
 import '../../routes/paths.dart';
+import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_card.dart';
@@ -27,6 +29,23 @@ class _MarketplaceHomePageState extends State<MarketplaceHomePage> {
   final _repo = MarketplaceRepository();
   final _search = TextEditingController();
   String? _category;
+  // Missing feature: a seller had no way to know a new order arrived at
+  // all — see `fetchPendingSalesCount`'s own doc comment. Loaded separately
+  // from the product catalog (not blocking the main AppAsyncBuilder below on
+  // it, and not reloaded every time she merely opens/closes the search box).
+  int _pendingSalesCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPendingSalesCount();
+  }
+
+  Future<void> _loadPendingSalesCount() async {
+    final sellerId = context.read<AppState>().profile?.id;
+    final count = await _repo.fetchPendingSalesCount(sellerId);
+    if (mounted) setState(() => _pendingSalesCount = count);
+  }
 
   @override
   void dispose() {
@@ -85,7 +104,14 @@ class _MarketplaceHomePageState extends State<MarketplaceHomePage> {
                         children: [
                           IconTile(onTap: () => context.go(Paths.marketplaceAddProduct), icon: Icons.add_business_rounded, label: l10n.marketplaceHomeSellTile, tone: TileTone.brand),
                           IconTile(onTap: () => context.go(Paths.marketplaceMyListings), icon: Icons.storefront_rounded, label: l10n.marketplaceHomeMyListingsTile, tone: TileTone.violet),
-                          IconTile(onTap: () => context.go(Paths.marketplaceOrders), icon: Icons.receipt_long_rounded, label: l10n.marketplaceHomeOrdersTile, tone: TileTone.gold),
+                          IconTile(
+                            onTap: () => context.go(Paths.marketplaceOrders),
+                            icon: Icons.receipt_long_rounded,
+                            label: l10n.marketplaceHomeOrdersTile,
+                            tone: TileTone.gold,
+                            badge: _pendingSalesCount == 0 ? null : (_pendingSalesCount > 9 ? '9+' : '$_pendingSalesCount'),
+                            badgeSemanticLabel: l10n.marketplaceHomeNewOrdersBadge(_pendingSalesCount),
+                          ),
                           IconTile(onTap: () => context.go(Paths.marketplaceReviews), icon: Icons.star_rounded, label: l10n.marketplaceHomeReviewsTile, tone: TileTone.sky),
                         ],
                       ),
