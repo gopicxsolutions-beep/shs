@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shg_saathi/data/marketplace.dart' as mock;
 import 'package:shg_saathi/l10n/gen/app_localizations.dart';
+import 'package:shg_saathi/l10n/gen/app_localizations_en.dart';
 import 'package:shg_saathi/pages/marketplace/product_detail_page.dart';
 import 'package:shg_saathi/repositories/marketplace_repository.dart';
 import 'package:shg_saathi/services/supabase_service.dart';
@@ -155,6 +157,46 @@ void main() {
       expect(find.byTooltip('Increase quantity'), findsNothing);
       expect(find.byTooltip('Decrease quantity'), findsNothing);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  // Marketplace audit finding: every rejection reason place_marketplace_order
+  // can raise (out of stock, a deactivated account, a delisted product, a
+  // self-order attempt, the 20-orders/hour rate limit) used to collapse into
+  // one generic "Could not place this order" — a buyer had no way to tell
+  // "try again later" apart from "this will never work." A top-level
+  // function (not a widget), so tested directly without pumping one.
+  group('marketplaceOrderErrorMessage maps each rejection reason to its own explanation', () {
+    final l10n = AppLocalizationsEn();
+
+    test('out-of-stock exception', () {
+      expect(marketplaceOrderErrorMessage(MarketplaceOutOfStockException(), l10n), l10n.productDetailOrderErrorOutOfStock);
+    });
+
+    test('a deactivated account', () {
+      final e = const PostgrestException(message: 'your account has been deactivated');
+      expect(marketplaceOrderErrorMessage(e, l10n), l10n.productDetailOrderErrorAccountDeactivated);
+    });
+
+    test('the hourly rate limit', () {
+      final e = const PostgrestException(message: 'too many orders placed in the last hour');
+      expect(marketplaceOrderErrorMessage(e, l10n), l10n.productDetailOrderErrorRateLimited);
+    });
+
+    test('ordering your own product', () {
+      final e = const PostgrestException(message: 'you cannot order your own product');
+      expect(marketplaceOrderErrorMessage(e, l10n), l10n.productDetailOrderErrorSelfOrder);
+    });
+
+    test('a delisted / deactivated-seller product', () {
+      final e = const PostgrestException(message: 'this product is no longer available');
+      expect(marketplaceOrderErrorMessage(e, l10n), l10n.productDetailOrderErrorUnavailable);
+    });
+
+    test('an unrecognized error still falls back to the generic message, not a crash', () {
+      final e = const PostgrestException(message: 'something entirely unexpected');
+      expect(marketplaceOrderErrorMessage(e, l10n), l10n.productDetailOrderPlaceError);
+      expect(marketplaceOrderErrorMessage(Exception('network down'), l10n), l10n.productDetailOrderPlaceError);
     });
   });
 }

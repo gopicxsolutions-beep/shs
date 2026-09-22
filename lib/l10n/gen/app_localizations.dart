@@ -2728,6 +2728,36 @@ abstract class AppLocalizations {
   /// **'Could not place this order. Please try again.'**
   String get productDetailOrderPlaceError;
 
+  /// No description provided for @productDetailOrderErrorOutOfStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough stock left for the quantity you picked. Try a smaller quantity.'**
+  String get productDetailOrderErrorOutOfStock;
+
+  /// No description provided for @productDetailOrderErrorAccountDeactivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has been deactivated. Contact an administrator for help.'**
+  String get productDetailOrderErrorAccountDeactivated;
+
+  /// No description provided for @productDetailOrderErrorRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve placed a lot of orders in the last hour. Please try again later.'**
+  String get productDetailOrderErrorRateLimited;
+
+  /// No description provided for @productDetailOrderErrorSelfOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t order your own product.'**
+  String get productDetailOrderErrorSelfOrder;
+
+  /// No description provided for @productDetailOrderErrorUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This product is no longer available.'**
+  String get productDetailOrderErrorUnavailable;
+
   /// No description provided for @productDetailBySeller.
   ///
   /// In en, this message translates to:

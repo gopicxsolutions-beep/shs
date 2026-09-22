@@ -1536,6 +1536,26 @@ class AppLocalizationsHi extends AppLocalizations {
       'यह ऑर्डर नहीं दिया जा सका। कृपया फिर से कोशिश करें।';
 
   @override
+  String get productDetailOrderErrorOutOfStock =>
+      'आपके द्वारा चुनी गई मात्रा के लिए पर्याप्त स्टॉक नहीं है। कम मात्रा आज़माएं।';
+
+  @override
+  String get productDetailOrderErrorAccountDeactivated =>
+      'आपका खाता निष्क्रिय कर दिया गया है। सहायता के लिए किसी एडमिन से संपर्क करें।';
+
+  @override
+  String get productDetailOrderErrorRateLimited =>
+      'आपने पिछले एक घंटे में बहुत सारे ऑर्डर दिए हैं। कृपया बाद में फिर से कोशिश करें।';
+
+  @override
+  String get productDetailOrderErrorSelfOrder =>
+      'आप अपना खुद का उत्पाद ऑर्डर नहीं कर सकतीं।';
+
+  @override
+  String get productDetailOrderErrorUnavailable =>
+      'यह उत्पाद अब उपलब्ध नहीं है।';
+
+  @override
   String productDetailBySeller(String name) {
     return '$name द्वारा';
   }

@@ -5,6 +5,13 @@ import '../models/marketplace.dart';
 import '../models/types.dart';
 import '../services/supabase_service.dart';
 
+/// Thrown by [MarketplaceRepository.placeOrder] specifically for "not enough
+/// stock remains for the quantity requested" — `place_marketplace_order`'s
+/// own designed `success: false` path, not a thrown `PostgrestException`
+/// (see that method's doc comment for why every OTHER rejection reason is
+/// left to propagate as one instead).
+class MarketplaceOutOfStockException implements Exception {}
+
 /// Backed by `public.marketplace_products` / `_orders` / `_reviews` when
 /// Supabase is configured; falls back to `lib/data/marketplace.dart`
 /// otherwise. Marketplace is cross-SHG — products are browsable by any
@@ -246,10 +253,21 @@ class MarketplaceRepository {
     // buyer identity from `auth.uid()`/`profiles.name` rather than trusting
     // any client-supplied value — there is no longer a window between
     // "stock verified" and "order recorded" for a client to skip or forge.
+    // Every OTHER rejection (deactivated buyer/seller, delisted product,
+    // self-order, the 20/hour rate limit — migrations 0091/0098/0111/0131,
+    // restored after a same-day regression in 0154) reaches the caller as a
+    // thrown `PostgrestException` with a specific `.message`, left to
+    // propagate here rather than swallowed — `product_detail_page.dart`'s
+    // `_placeOrder` maps each one to its own localized explanation instead
+    // of the single generic message every one of these used to collapse
+    // into. This one case — `success: false`, no exception — is the RPC's
+    // own designed non-exceptional path for "not enough stock remains,"
+    // distinguished from the others with a dedicated exception type so the
+    // UI can tell it apart without string-matching a message.
     final rows = await _client.rpc('place_marketplace_order', params: {'p_product_id': productId, 'p_quantity': quantity}) as List;
     final row = rows.first as Map<String, dynamic>;
     final ok = row['success'] as bool;
-    if (!ok) throw StateError('This item is out of stock.');
+    if (!ok) throw MarketplaceOutOfStockException();
   }
 
   /// A buyer's own purchase history — was entirely missing (gap-hunt round

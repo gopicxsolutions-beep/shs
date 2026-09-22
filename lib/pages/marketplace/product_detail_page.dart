@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
@@ -21,6 +22,27 @@ class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();
+}
+
+/// Every rejection reason `place_marketplace_order` can raise now maps to its
+/// own explanation — before this, ALL of them (out of stock, a deactivated
+/// account, a delisted product, a self-order attempt, the 20-orders/hour
+/// rate limit) collapsed into one generic "Could not place this order,"
+/// giving a buyer no way to tell "try again later" apart from "this will
+/// never work" or "pick a smaller quantity." Matched by the exact `RAISE
+/// EXCEPTION` message text each check in the function uses — see
+/// supabase/migrations/0154_iteration47_marketplace_order_regression_fix.sql
+/// for the current source of truth on what those strings are. A top-level
+/// function (not a private method on the page's State) so it's testable
+/// without pumping a widget.
+String marketplaceOrderErrorMessage(Object error, AppLocalizations l10n) {
+  if (error is MarketplaceOutOfStockException) return l10n.productDetailOrderErrorOutOfStock;
+  final message = error is PostgrestException ? error.message : error.toString();
+  if (message.contains('deactivated')) return l10n.productDetailOrderErrorAccountDeactivated;
+  if (message.contains('too many orders')) return l10n.productDetailOrderErrorRateLimited;
+  if (message.contains('cannot order your own product')) return l10n.productDetailOrderErrorSelfOrder;
+  if (message.contains('no longer available')) return l10n.productDetailOrderErrorUnavailable;
+  return l10n.productDetailOrderPlaceError;
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
@@ -162,9 +184,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           SnackBar(content: Text(SupabaseService.isConfigured ? l10n.productDetailOrderPlaced : l10n.productDetailOrderDemoMode)),
         );
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.productDetailOrderPlaceError)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(marketplaceOrderErrorMessage(e, AppLocalizations.of(context)!))));
       }
     } finally {
       if (mounted) setState(() => _placing = false);

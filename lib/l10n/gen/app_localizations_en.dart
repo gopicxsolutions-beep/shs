@@ -1552,6 +1552,26 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not place this order. Please try again.';
 
   @override
+  String get productDetailOrderErrorOutOfStock =>
+      'Not enough stock left for the quantity you picked. Try a smaller quantity.';
+
+  @override
+  String get productDetailOrderErrorAccountDeactivated =>
+      'Your account has been deactivated. Contact an administrator for help.';
+
+  @override
+  String get productDetailOrderErrorRateLimited =>
+      'You\'ve placed a lot of orders in the last hour. Please try again later.';
+
+  @override
+  String get productDetailOrderErrorSelfOrder =>
+      'You can\'t order your own product.';
+
+  @override
+  String get productDetailOrderErrorUnavailable =>
+      'This product is no longer available.';
+
+  @override
   String productDetailBySeller(String name) {
     return 'by $name';
   }

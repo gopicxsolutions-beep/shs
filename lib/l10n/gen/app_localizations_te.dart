@@ -1561,6 +1561,26 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఈ ఆర్డర్‌ను చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
+  String get productDetailOrderErrorOutOfStock =>
+      'మీరు ఎంచుకున్న పరిమాణానికి తగినంత స్టాక్ లేదు. తక్కువ పరిమాణం ప్రయత్నించండి.';
+
+  @override
+  String get productDetailOrderErrorAccountDeactivated =>
+      'మీ ఖాతా నిష్క్రియం చేయబడింది. సహాయం కోసం అడ్మిన్‌ను సంప్రదించండి.';
+
+  @override
+  String get productDetailOrderErrorRateLimited =>
+      'మీరు గత గంటలో చాలా ఆర్డర్‌లు పెట్టారు. దయచేసి తర్వాత మళ్ళీ ప్రయత్నించండి.';
+
+  @override
+  String get productDetailOrderErrorSelfOrder =>
+      'మీరు మీ స్వంత ఉత్పత్తిని ఆర్డర్ చేయలేరు.';
+
+  @override
+  String get productDetailOrderErrorUnavailable =>
+      'ఈ ఉత్పత్తి ఇప్పుడు అందుబాటులో లేదు.';
+
+  @override
   String productDetailBySeller(String name) {
     return '$name ద్వారా';
   }

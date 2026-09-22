@@ -742,6 +742,16 @@
 
   "productDetailOrderPlaceError": "यह ऑर्डर नहीं दिया जा सका। कृपया फिर से कोशिश करें।",
 
+  "productDetailOrderErrorOutOfStock": "आपके द्वारा चुनी गई मात्रा के लिए पर्याप्त स्टॉक नहीं है। कम मात्रा आज़माएं।",
+
+  "productDetailOrderErrorAccountDeactivated": "आपका खाता निष्क्रिय कर दिया गया है। सहायता के लिए किसी एडमिन से संपर्क करें।",
+
+  "productDetailOrderErrorRateLimited": "आपने पिछले एक घंटे में बहुत सारे ऑर्डर दिए हैं। कृपया बाद में फिर से कोशिश करें।",
+
+  "productDetailOrderErrorSelfOrder": "आप अपना खुद का उत्पाद ऑर्डर नहीं कर सकतीं।",
+
+  "productDetailOrderErrorUnavailable": "यह उत्पाद अब उपलब्ध नहीं है।",
+
   "productDetailBySeller": "{name} द्वारा",
 
   "productDetailInStock": "स्टॉक में {count}",

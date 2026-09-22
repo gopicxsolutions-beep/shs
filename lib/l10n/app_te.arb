@@ -742,6 +742,16 @@
 
   "productDetailOrderPlaceError": "ఈ ఆర్డర్‌ను చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
 
+  "productDetailOrderErrorOutOfStock": "మీరు ఎంచుకున్న పరిమాణానికి తగినంత స్టాక్ లేదు. తక్కువ పరిమాణం ప్రయత్నించండి.",
+
+  "productDetailOrderErrorAccountDeactivated": "మీ ఖాతా నిష్క్రియం చేయబడింది. సహాయం కోసం అడ్మిన్‌ను సంప్రదించండి.",
+
+  "productDetailOrderErrorRateLimited": "మీరు గత గంటలో చాలా ఆర్డర్‌లు పెట్టారు. దయచేసి తర్వాత మళ్ళీ ప్రయత్నించండి.",
+
+  "productDetailOrderErrorSelfOrder": "మీరు మీ స్వంత ఉత్పత్తిని ఆర్డర్ చేయలేరు.",
+
+  "productDetailOrderErrorUnavailable": "ఈ ఉత్పత్తి ఇప్పుడు అందుబాటులో లేదు.",
+
   "productDetailBySeller": "{name} ద్వారా",
 
   "productDetailInStock": "స్టాక్‌లో {count}",

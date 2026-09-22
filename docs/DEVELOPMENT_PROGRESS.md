@@ -21644,3 +21644,28 @@ catalog cap makes older listings unreachable, delisted products show no
 badge in the browse grid to the seller/staff who can see them, a reviewer
 can't edit/delete her own review. Digital payment gateway integration
 explicitly excluded per instruction (manual UPI deep-link stays as-is).
+
+## 2026-09-22 — Marketplace audit round 2: buyers now see WHY an order was refused
+
+Continuing the same audit. `place_marketplace_order` can refuse an order for
+five distinct reasons (not enough stock, a deactivated buyer, a deactivated
+seller's/delisted product, a self-order attempt, the 20-orders/hour rate
+limit) — all five collapsed into the one generic "Could not place this
+order. Please try again." with nothing to tell a buyer "try later" apart
+from "this will never work" or "pick fewer units."
+
+**Fix**: `MarketplaceRepository.placeOrder` now throws a dedicated
+`MarketplaceOutOfStockException` for the RPC's own designed `success: false`
+path (not enough stock), and leaves every other rejection to propagate as
+the `PostgrestException` it already is. `product_detail_page.dart`'s new
+top-level `marketplaceOrderErrorMessage()` (deliberately not a private
+State method, so it's testable without pumping a widget) matches each one's
+exact `RAISE EXCEPTION` text and returns its own localized explanation, in
+all 3 `.arb` files, falling back to the original generic message for
+anything unrecognized.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1143/1143 (+6 new,
+one per rejection reason plus the unrecognized-error fallback) — confirmed
+against the exact `RAISE EXCEPTION` strings in
+`0154_iteration47_marketplace_order_regression_fix.sql`, not just against
+strings this same round wrote.
