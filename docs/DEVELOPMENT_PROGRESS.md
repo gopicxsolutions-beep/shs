@@ -21591,3 +21591,56 @@ zero leftover probe products, zero leftover orders.
 
 Docs updated in this same change: [ARCHITECTURE.md](ARCHITECTURE.md)'s
 `place_marketplace_order` RPC table row.
+
+## 2026-09-22 — Marketplace audit round 1: 2 more real gaps fixed (silent update failures, a permanent delist dead-end)
+
+Continuing the same marketplace audit (dynamic /loop, "fix all the issues and
+gaps... don't add digital payment"). Two more fixed this iteration, on top of
+the critical regression fix above:
+
+**A null-category listing could never be delisted or relisted, ever.**
+`my_listings_page.dart`'s toggle sent `category: product.category ?? ''` —
+`''` is neither NULL nor a valid category, so the live
+`marketplace_products_category_check` rejects it outright on every attempt,
+with only the generic "could not update" error and no explanation.
+`category` is nullable in the schema; a legacy/imported listing with no
+category was a real, previously-observed live state (migration 0137's own
+header describes fixing exactly one such fixture row — this bug is why that
+was needed at all, and would have recurred for any FUTURE null-category row).
+Fixed by widening `MarketplaceRepository.updateProduct`'s `category` param
+to nullable and passing `product.category` straight through instead of
+substituting `''`.
+
+**Both `AddProductPage`'s edit-save and `MyListingsPage`'s delist/relist
+reported success on a write RLS silently rejected.** `updateProduct` had no
+`.select()` — a PostgREST UPDATE that matches 0 rows (another seller's
+listing; a listing whose seller was deactivated mid-session; the router has
+no ownership guard on `/edit-product/:id`, so any product id loads into the
+edit form) returns success with an empty result, not an exception. Both
+pages then showed "Product updated"/"Delisted" and navigated away as if the
+write had actually happened. `updateProduct` now returns `Future<bool>`
+(chaining `.select('id')` and checking the result), and both call sites
+throw/surface the existing generic error when it comes back false instead of
+reporting a false success.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1137/1137 (+1 new
+in `my_listings_page_test.dart`, covering the null-category fix directly at
+the repository layer, since neither the app's own `addProduct()` nor its
+mock data can construct a null-category product to drive this through the
+full page). Mutation-checked — reverting `category` to non-nullable is a
+compile error that names the exact two call sites the fix touches. No
+currently-live product has a null category to re-verify the delist path
+against directly (the one prior fixture row was already fixed in 0137), so
+this is verified at the repository/type level, not a live click-through of
+that exact scenario.
+
+Continuing the marketplace audit in subsequent iterations: no order
+cancellation/stock-restore, no seller notification of new orders, edit mode
+never shows/lets you remove an existing photo, no stock-field validation, no
+buyer-facing reason when an order is refused, seller Reviews page doesn't
+name which product a review is about, "Write a Review" is offered to
+server-side-ineligible viewers, no seller revenue/sales view, 500-product
+catalog cap makes older listings unreachable, delisted products show no
+badge in the browse grid to the seller/staff who can see them, a reviewer
+can't edit/delete her own review. Digital payment gateway integration
+explicitly excluded per instruction (manual UPI deep-link stays as-is).

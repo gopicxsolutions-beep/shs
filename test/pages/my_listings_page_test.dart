@@ -78,4 +78,34 @@ void main() {
     expect(find.text('Delisted'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  // Marketplace audit finding: `my_listings_page.dart`'s delist/relist toggle
+  // used to send `category: product.category ?? ''` — `''` is neither NULL
+  // nor a valid category, so `marketplace_products_category_check` (live)
+  // rejects it outright. Any listing with a genuinely null category (a real,
+  // reachable state — `category` is nullable in the schema) could never be
+  // delisted or relisted at all, every single attempt failing with the
+  // generic "could not update" error. Covers the repository layer directly
+  // (MarketplaceRepository.updateProduct), since neither this app's mock
+  // product data nor its own addProduct() can construct a null-category
+  // product to drive this through the full page.
+  test('updateProduct accepts and persists a null category, not the empty string', () async {
+    final repo = MarketplaceRepository();
+    await repo.addProduct(sellerId: null, name: '__TEST__ null-category product', description: 'd', price: 100, stock: 1, category: 'Other');
+    final added = (await repo.fetchMyProducts(null)).firstWhere((p) => p.name == '__TEST__ null-category product');
+
+    final updated = await repo.updateProduct(
+      id: added.id,
+      name: added.name,
+      description: added.description ?? '',
+      price: added.price,
+      stock: added.stock,
+      category: null,
+      isActive: added.isActive,
+    );
+
+    expect(updated, isTrue, reason: 'this was the bug: a null category used to be sent as the invalid empty string');
+    final result = (await repo.fetchMyProducts(null)).firstWhere((p) => p.id == added.id);
+    expect(result.category, isNull);
+  });
 }

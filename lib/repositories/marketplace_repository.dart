@@ -122,13 +122,21 @@ class MarketplaceRepository {
   /// echoes back every other field unchanged. `seller_id`/`created_at` are
   /// locked columns (`marketplace_products_locked_fields`, RLS) — never
   /// sent here, since this never needs to change either.
-  Future<void> updateProduct({
+  /// Returns whether the update actually matched a row — see the RLS note
+  /// on the write itself, below, for why this can't just be `Future<void>`.
+  Future<bool> updateProduct({
     required String id,
     required String name,
     required String description,
     required num price,
     required int stock,
-    required String category,
+    // Nullable — matches `marketplace_products.category`'s own nullability
+    // and `Product.category`'s type. `my_listings_page.dart`'s delist/relist
+    // toggle used to pass `''` for a null category (neither a valid value
+    // nor null itself), which `marketplace_products_category_check` (0131,
+    // validated in 0137) rejects outright — any listing with a null
+    // category could never be delisted or relisted from that page at all.
+    String? category,
     String? imageUrl,
     String? upiId,
     String? paymentNote,
@@ -136,7 +144,7 @@ class MarketplaceRepository {
   }) async {
     if (!_live) {
       final idx = _locallyAddedProducts.indexWhere((p) => p.id == id);
-      if (idx == -1) return;
+      if (idx == -1) return false;
       final existing = _locallyAddedProducts[idx];
       _locallyAddedProducts[idx] = Product(
         id: existing.id,
@@ -152,9 +160,18 @@ class MarketplaceRepository {
         paymentNote: paymentNote,
         isActive: isActive,
       );
-      return;
+      return true;
     }
-    await _client.from('marketplace_products').update({
+    // `marketplace_products_update_seller_or_staff`'s USING clause silently
+    // matches 0 rows — no exception — for a caller it doesn't authorize
+    // (another seller's listing; a listing whose seller was deactivated
+    // mid-session; the router has no ownership guard on `/edit-product/:id`,
+    // so any product id loads into the edit form for anyone to attempt).
+    // Chaining `.select('id')` gets the matched rows back so that case can
+    // be told apart from a real success — without this, both AddProductPage
+    // and MyListingsPage reported "updated"/"delisted" on a write that
+    // silently changed nothing.
+    final rows = await _client.from('marketplace_products').update({
       'name': name,
       'description': description,
       'price': price,
@@ -164,7 +181,8 @@ class MarketplaceRepository {
       'upi_id': ?upiId,
       'payment_note': ?paymentNote,
       'is_active': isActive,
-    }).eq('id', id);
+    }).eq('id', id).select('id');
+    return (rows as List).isNotEmpty;
   }
 
   /// Uploads a picked image's bytes to the `product-images` bucket under

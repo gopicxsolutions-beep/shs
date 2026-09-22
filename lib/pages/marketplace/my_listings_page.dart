@@ -51,18 +51,23 @@ class _MyListingsPageState extends State<MyListingsPage> {
     if (confirmed != true || !mounted) return;
     setState(() => _busyId = product.id);
     try {
-      await _repo.updateProduct(
+      // See MarketplaceRepository.updateProduct's own doc comment — RLS
+      // silently matches 0 rows (no exception) rather than erroring, so the
+      // result must be checked or a rejected toggle looks identical to a
+      // successful one.
+      final updated = await _repo.updateProduct(
         id: product.id,
         name: product.name,
         description: product.description ?? '',
         price: product.price,
         stock: product.stock,
-        category: product.category ?? '',
+        category: product.category,
         imageUrl: product.imageUrl,
         upiId: product.upiId,
         paymentNote: product.paymentNote,
         isActive: !product.isActive,
       );
+      if (!updated) throw StateError('This listing could not be updated.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(product.isActive ? l10n.myListingsDelistedSuccess : l10n.myListingsRelistedSuccess),

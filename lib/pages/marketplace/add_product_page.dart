@@ -193,7 +193,11 @@ class _AddProductPageState extends State<AddProductPage> {
       final upiIdValue = upiId.isEmpty ? null : upiId;
       final paymentNoteValue = _paymentNote.text.trim().isEmpty ? null : _paymentNote.text.trim();
       if (isEditing) {
-        await _repo.updateProduct(
+        // RLS silently matches 0 rows (no exception) for a listing this
+        // caller doesn't own, or whose seller account was deactivated
+        // mid-session — without checking the result, this branch reported
+        // "Product updated" on a write that changed nothing.
+        final updated = await _repo.updateProduct(
           id: widget.productId!,
           name: _name.text.trim(),
           description: _description.text.trim(),
@@ -205,6 +209,7 @@ class _AddProductPageState extends State<AddProductPage> {
           paymentNote: paymentNoteValue,
           isActive: _existingIsActive,
         );
+        if (!updated) throw StateError('This listing could not be updated.');
       } else {
         await _repo.addProduct(
           sellerId: sellerId,
