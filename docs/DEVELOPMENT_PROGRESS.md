@@ -21271,3 +21271,77 @@ asking anyone to re-test the release preview, and confirm the served bundle
 contains a string unique to the change.**
 
 Docs updated in this same change: [SRS.md](SRS.md) FR-SAV-1.
+
+## 2026-09-22 — Fix: "Your request to join has been sent to your SHG leader…" shown to an already-decided, removed member
+
+**Report**: asked to audit the SHG join-request/approval flow end to end
+starting from that exact on-screen message.
+
+**Backend verified airtight first.** Live, RLS-on, rolled back inside a
+single `DO` block (nothing persisted, re-queried after to confirm): normal
+submit→leader-sees→approve; a leaderless SHG ("new shg group" — 4 real
+members, 0 leaders, a genuinely current live state) correctly refuses a
+DIFFERENT SHG's leader and correctly lets staff approve-as-leader for it;
+double-deciding an already-decided request is refused; rejecting leaves the
+profile untouched; self-withdraw works; another member withdrawing someone
+else's pending request affects 0 rows; approving a deactivated requester is
+refused. `approve_shg_join_request` (0119) and the RLS policies are all
+correct. Also confirmed (not a bug): an already-linked member's re-submit is
+correctly blocked by `shg_join_requests_insert_self`'s WITH CHECK.
+
+**The real bug was client-side, in `ShgApprovalPendingPage`.** `fetchMine()`
+returns the requester's MOST RECENT `shg_join_requests` row regardless of its
+`status` ('pending' | 'approved' | 'rejected'), but the page only ever
+branched on `rejected` vs `null` vs "everything else" — so a row with
+`status: 'approved'` silently fell into the same "everything else" bucket as
+a genuine pending request, showing "Waiting for approval… sent to your SHG
+leader" with Check Status / Withdraw buttons.
+
+This is reachable, and IS live right now: `needsShgApproval` only checks the
+CURRENT profile (`role == 'member' && shgId == null`) — it says nothing about
+whether a request row exists or what it says. An admin unlinking a member
+from her SHG (`AdminRepository.assignShg`/`updateUserRole`, e.g. Admin >
+Manage Users) never touches `shg_join_requests` at all, so her old 'approved'
+row is left standing forever. Found a real, currently-live account in exactly
+this state: `rama` (d59bc9d7…) — 3 real savings entries, 2 loans, 1 meeting
+attendance (a genuinely once-active member), approved into "testing group" on
+2026-07-29, then unlinked by an admin's SHG reassignment on 2026-09-22 (per
+`audit_log`) — her profile is `role: member, shg_id: null` right now, and if
+she signs in she is misrouted to "Waiting for approval" for a decision that
+was already made and then undone, with no explanation and no useful action
+(Check Status can never change anything; **Withdraw would have silently
+no-op'd** — see below).
+
+**Fix** (`lib/pages/auth/shg_approval_pending_page.dart`): a new `removed`
+case (`request?.status == 'approved'`, only reachable when she's not
+currently linked) gets its own copy ("No longer linked to an SHG" /
+"shgApprovalRemovedTitle"/"Message", new keys in all 3 `.arb` files) and a
+"Choose an SHG" button — not the pending-state button block. Also softened
+`shgApprovalWaitingMessage` itself (no longer says "leader" unconditionally,
+since a leaderless SHG is a real live state where only staff can decide).
+Page now takes an injectable `repository` (same seam as
+`MeetingSchedulePage`/`SavingsEntryPage`) so this is testable.
+
+**Second bug found in the same audit, in `ShgJoinRequestRepository.withdraw`**:
+a plain `DELETE ... eq(id)` with no `.select()` — exactly the
+CLAUDE.md-documented anti-pattern (a `USING`-only RLS policy denial is
+silent, not an error). `shg_join_requests_delete_self_pending` only matches
+`status = 'pending'`, so tapping "Withdraw request" on an already-decided
+row (reachable before this fix, on the exact `removed` state above) would
+have appeared to succeed while deleting nothing. Fixed by chaining
+`.select('id')` and throwing when it comes back empty — confirmed live (rolled
+back) against rama's real 'approved' row: the delete affects 0 rows, exactly
+as the new client code now expects.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1129/1129 (+2 new
+in `shg_join_approval_test.dart` for the `removed` vs genuinely-`pending`
+states); mutation-checked — forcing `removed = false` makes the new test fail
+with the exact pre-fix assertion. Live DB: the withdraw-hardening assumption
+(0 affected rows on an already-decided row) confirmed against rama's real row,
+rolled back, `status` unchanged (`approved`) afterward. **Not done**: signing
+in as `rama` herself in the live build to see the corrected screen — this
+needs her real phone OTP, which this session can't receive; the fix was
+verified via injected-repository widget tests plus direct live-DB
+confirmation of the data shape instead.
+
+Docs updated in this same change: [SRS.md](SRS.md) FR-AUTH-4.
