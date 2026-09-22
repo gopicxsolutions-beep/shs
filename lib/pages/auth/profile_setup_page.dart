@@ -138,10 +138,12 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   final _signatureName = TextEditingController();
 
   int _step = 0;
-  // True for an account that already has a `profiles` row (and may already
-  // be an approved member) but is missing only the baseline survey — see
-  // AppState.needsBaselineSurvey's doc comment. Step 0 (name/village/SHG)
-  // doesn't apply to her: that data already exists.
+  // True for an account that already has a `profiles` row AND no longer
+  // needs an SHG (already has one, or is staff) but is missing only the
+  // baseline survey — see AppState.needsBaselineSurvey's doc comment. Step 0
+  // (name/village/SHG) doesn't apply to her: that data already exists. Set
+  // in `initState` — see its own comment for why "a profile exists" alone
+  // is NOT sufficient (a profile can exist with no SHG at all).
   bool _surveyOnly = false;
   bool _saving = false;
   String? _error;
@@ -149,9 +151,39 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   @override
   void initState() {
     super.initState();
-    final profile = context.read<AppState>().profile;
-    _surveyOnly = profile != null;
-    if (_surveyOnly) _step = 1;
+    final appState = context.read<AppState>();
+    final profile = appState.profile;
+    // Real, live-observed bug (a genuine account, no SHG and no baseline
+    // survey, stuck relogging in with the whole wizard blank every time):
+    // `_surveyOnly` used to be true for ANY existing `profiles` row,
+    // conflating two different reasons one can exist — (a) she completed
+    // full registration before the survey requirement shipped and needs
+    // ONLY the survey (this flag's original, intended purpose), and (b) she
+    // has a `profiles` row but never actually submitted an SHG join request
+    // at all (reachable via ShgApprovalPendingPage's "Choose an SHG"/
+    // "Choose a different SHG" buttons — see `_basicInfoFields`'s own doc
+    // comment below on that retry path). For (b), `_surveyOnly` skipped
+    // straight to the survey (step 1), permanently hiding the SHG picker —
+    // the ONE thing `completeProfileSetup` (which submits the join request)
+    // needs and which only step 0 offers — so submitting the survey never
+    // actually requested an SHG, `needsShgApproval` stayed true forever, and
+    // every subsequent visit re-showed the same blank 9-section survey with
+    // no way out. `needsShgApproval` (not merely "a profile exists") is the
+    // correct signal for whether she still needs step 0 at all.
+    _surveyOnly = profile != null && !appState.needsShgApproval;
+    if (_surveyOnly) {
+      _step = 1;
+    } else if (profile != null) {
+      // She's on step 0 with an existing profile (the retry path above, or
+      // an account view that predates this fix) — pre-fill from it. Fields
+      // left blank here previously, even though the server already has her
+      // answer, which is its own "asking for details again" complaint
+      // independent of the routing bug above.
+      _name.text = profile.name;
+      _village.text = profile.village ?? '';
+      _mandal.text = profile.mandal ?? '';
+      _district.text = profile.district ?? '';
+    }
   }
 
   @override

@@ -2,10 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shg_saathi/l10n/gen/app_localizations.dart';
+import 'package:shg_saathi/models/profile.dart';
 import 'package:shg_saathi/pages/auth/profile_setup_page.dart';
+import 'package:shg_saathi/repositories/shg_join_request_repository.dart';
+import 'package:shg_saathi/services/auth_service.dart';
+import 'package:shg_saathi/services/profile_repository.dart';
+import 'package:shg_saathi/services/supabase_service.dart';
 import 'package:shg_saathi/state/app_state.dart';
 import 'package:shg_saathi/widgets/app_button.dart';
+
+class _FixedProfileRepository extends ProfileRepository {
+  _FixedProfileRepository(this._profile);
+  final Profile? _profile;
+  @override
+  Future<Profile?> fetchMyProfile(String? uid) async => _profile;
+}
+
+class _FakeAuthServiceWithSession extends AuthService {
+  @override
+  Session? get currentSession => Session(
+        accessToken: 'token',
+        tokenType: 'bearer',
+        refreshToken: 'refresh',
+        user: User(id: 'p1', appMetadata: const {}, userMetadata: const {}, aud: 'authenticated', createdAt: DateTime(2026).toIso8601String()),
+      );
+
+  @override
+  Stream<AuthState> get onAuthStateChange => const Stream.empty();
+}
 
 /// Regression coverage for the mandatory-SHG-selection redesign: an SHG pick
 /// is now required before Continue enables (previously optional), so that a
@@ -256,6 +283,70 @@ void main() {
       await tester.enterText(fields.at(2), '5');
       await tester.pumpAndSettle();
       expect(find.textContaining('Enter a number between'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  // Live-audited (2026-09-22) real bug, found via a real account (a
+  // `profiles` row exists — name/village were saved once — but no SHG and no
+  // `shg_join_requests` row was ever filed, reachable via ShgApprovalPending
+  // Page's "Choose an SHG" button): `_surveyOnly` used to be true for ANY
+  // existing profile, which skipped step 0 (the SHG picker) straight to the
+  // survey. Since `completeProfileSetup` — the only thing that submits a
+  // join request — only ever runs when `!_surveyOnly`, submitting the
+  // survey left her exactly as unlinked as before, `needsShgApproval` never
+  // cleared, and every relogin re-showed the same blank 9-section survey
+  // with no way out: from her side, "already registered, asked for the same
+  // details all over again," forever.
+  group('an existing profile that still needs an SHG is not dropped straight into the survey', () {
+    setUp(() {
+      SupabaseService.isConfigured = true;
+      SharedPreferences.setMockInitialValues({});
+    });
+    tearDown(() {
+      SupabaseService.isConfigured = false;
+    });
+
+    Future<AppState> loadedProfile(Profile profile) async {
+      final appState = AppState(profileRepository: _FixedProfileRepository(profile), authService: _FakeAuthServiceWithSession(), joinRequestRepository: ShgJoinRequestRepository());
+      await appState.refreshProfile();
+      return appState;
+    }
+
+    testWidgets('shows step 0 (name + SHG picker), not the survey, and pre-fills her existing name/village', (tester) async {
+      const profile = Profile(id: 'p1', name: 'Uma', role: 'member', shgId: null, village: 'Rangampeta');
+      final appState = await loadedProfile(profile);
+      expect(appState.needsShgApproval, isTrue, reason: 'precondition: an existing profile with no SHG and no request at all');
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppState>.value(
+          value: appState,
+          child: MaterialApp(home: const ProfileSetupPage(), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Search & select your SHG'), findsOneWidget, reason: 'this was the bug: she was dropped straight into the survey with no way to ever pick an SHG');
+      expect(find.textContaining('Section'), findsNothing, reason: 'no survey-section heading should be showing yet — this is step 0');
+      final nameField = tester.widget<TextField>(find.byType(TextField).first);
+      expect(nameField.controller?.text, 'Uma', reason: 'already-known info must not be asked for again from a blank field');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('an account that only needs the survey (already has an SHG) still skips straight to it, unaffected', (tester) async {
+      const profile = Profile(id: 'p1', name: 'Asha', role: 'member', shgId: 'shg-1');
+      final appState = await loadedProfile(profile);
+      expect(appState.needsShgApproval, isFalse);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppState>.value(
+          value: appState,
+          child: MaterialApp(home: const ProfileSetupPage(), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Search & select your SHG'), findsNothing, reason: 'her SHG is already settled — step 0 must not reappear');
       expect(tester.takeException(), isNull);
     });
   });

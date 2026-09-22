@@ -21412,3 +21412,63 @@ actually set (a build missing them silently produces a demo-mode build with
 no real backend at all — `scripts/vercel_build.sh` already reconstructs
 `.env.json` from them, but only if Vercel's project settings actually have
 them configured).
+
+## 2026-09-22 — Fix: an account with no SHG and no join request was permanently stuck re-filling the survey
+
+**Report**: "the issue is not solved" — a follow-up after the `fetchMyProfile`
+session-id fix. Asked the user directly what they saw ("logged in fine, but
+the onboarding form is empty again") and for a phone number to trace; got
+`6305194950`.
+
+**Traced live**: that number resolves to a real account ("uma",
+`a8fe99d2-2bc5-4197-bd96-b4d98a4f07b6`, `role: member`, `shg_id: null`,
+`created_at: 2026-07-29`) with **zero** `shg_join_requests` rows and **zero**
+`member_baseline_surveys` rows — a `profiles` row exists (name/village were
+saved once, long ago) but she never submitted an SHG join request at all.
+She last signed in TODAY at 05:04:59 UTC, a few hours before this report.
+
+**Root cause**: `ProfileSetupPage._surveyOnly` was `true` for ANY account
+with an existing `profiles` row, on the assumption that "a profile exists"
+means "only the survey is missing." That's the CORRECT read for the flag's
+original purpose (an account that predates the survey requirement — see
+`AppState.needsBaselineSurvey`'s doc comment) but WRONG for an account like
+this one, reachable via `ShgApprovalPendingPage`'s "Choose an SHG"/"Choose a
+different SHG" buttons (`profile_setup_page.dart`'s own `_basicInfoFields`
+doc comment already documents this as an intended retry path — `_surveyOnly`
+just never actually honored it). `_surveyOnly=true` skips straight to step 1
+(the survey), permanently hiding step 0 — the ONLY place the SHG picker
+lives, and the only step that calls `completeProfileSetup` (which submits the
+join request; skipped whenever `_surveyOnly` is true). So she could fill and
+submit the entire 9-section survey, it would upsert successfully every time,
+and she would remain exactly as unlinked as before — `needsShgApproval` never
+clears, and every subsequent relogin re-shows the identical blank survey with
+no way to ever actually request an SHG. From her side: "already registered,
+asked for the same details again," indefinitely.
+
+**Second, compounding gap found in the same page**: step 0's name/village/
+mandal/district `TextEditingController`s were never pre-filled from an
+existing profile, even on the (now-fixed) retry path — so even after fixing
+the routing, she'd still be asked to retype her name from a blank field.
+
+**Fix** (`lib/pages/auth/profile_setup_page.dart`): `_surveyOnly` is now
+`profile != null && !appState.needsShgApproval` — she only skips step 0 when
+she genuinely has nothing left to do there. When step 0 IS shown for an
+existing profile (the retry path), the basic-info controllers are now
+pre-filled from it.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1133/1133 (+2 new
+in `profile_setup_page_test.dart`: an unlinked-with-no-request account sees
+step 0 with her name pre-filled and the SHG picker, not the survey; an
+account that only needs the survey is unaffected). Mutation-checked —
+reverting `_surveyOnly`'s condition makes the new test fail with exactly the
+reported shape. The backend path itself (submitting a join request for this
+exact account) was already confirmed correct in this same round's earlier
+live RLS probe (`uma` was one of the accounts used there, transaction rolled
+back, her real state unaffected). **Not done**: clicking through as `uma`
+herself in the deployed app — this needs her real OTP.
+
+**Also confirmed this round**: Vercel auto-deploys on push to `main` — the
+deployed bundle's `last-modified` (05:44:35 UTC) lands ~19 minutes after the
+`fetchMyProfile`-fix push (05:25:46 UTC), and already contains every fix
+through that commit. Production deploy is not the gap; this fix still needs
+its own push to reach it.
