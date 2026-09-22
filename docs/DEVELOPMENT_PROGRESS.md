@@ -21858,3 +21858,22 @@ the live-mode fix. Verified that half live instead, rolled back: an explicit
 this method's live branch now always sends — confirmed to actually persist
 as NULL, and the probe's own insert confirmed rolled back afterward with
 nothing left behind.
+
+## 2026-09-22 — Marketplace audit round 8: delisted products showed no badge in the browse grid
+
+Continuing the audit. `marketplace_products_select_all` (RLS) deliberately
+lets a seller keep seeing her own delisted listing when browsing (and lets
+staff see every delisted listing platform-wide, for moderation) — by design,
+not a leak, since a stranger never gets a delisted row back at all. But
+`marketplace_home_page.dart`'s grid cell had no `isActive` check anywhere —
+a delisted item looked exactly like a live one, only revealing itself as
+"Delisted" after tapping through to the product page.
+
+**Fix**: the grid cell's image block now overlays the same `Delisted`
+`AppBadge` already used on the product detail page, top-left corner, only
+for `!p.isActive`.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1155/1155 (+1 new:
+a delisted product alongside a live one in a demo-mode catalog shows the
+badge, the live one doesn't). Mutation-checked — disabling the badge
+condition fails the new test.

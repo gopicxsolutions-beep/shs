@@ -10,6 +10,7 @@ import '../../routes/paths.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
+import '../../widgets/app_badge.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/icon_tile.dart';
@@ -197,19 +198,38 @@ class _MarketplaceHomePageState extends State<MarketplaceHomePage> {
                               Expanded(
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
-                                  child: Container(
-                                    decoration: BoxDecoration(color: Brand.c50),
-                                    alignment: Alignment.center,
-                                    width: double.infinity,
-                                    child: p.imageUrl == null
-                                        ? Icon(Icons.storefront_rounded, color: Brand.c500, size: 28)
-                                        : Image.network(
-                                            p.imageUrl!,
-                                            fit: BoxFit.cover,
-                                            width: double.infinity,
-                                            height: double.infinity,
-                                            errorBuilder: (context, error, stackTrace) => Icon(Icons.storefront_rounded, color: Brand.c500, size: 28),
-                                          ),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(color: Brand.c50),
+                                        alignment: Alignment.center,
+                                        width: double.infinity,
+                                        child: p.imageUrl == null
+                                            ? Icon(Icons.storefront_rounded, color: Brand.c500, size: 28)
+                                            : Image.network(
+                                                p.imageUrl!,
+                                                fit: BoxFit.cover,
+                                                width: double.infinity,
+                                                height: double.infinity,
+                                                errorBuilder: (context, error, stackTrace) => Icon(Icons.storefront_rounded, color: Brand.c500, size: 28),
+                                              ),
+                                      ),
+                                      // Audit gap: `fetchProducts()` deliberately still shows a
+                                      // seller her own delisted listing (and shows staff every
+                                      // delisted listing, for moderation) — RLS's SELECT policy
+                                      // permits it — but this grid never said so, making it look
+                                      // exactly like a live one until tapping through to the
+                                      // product page's own badge. Only she (or staff) can ever
+                                      // reach this state at all: `fetchProducts()` never returns a
+                                      // delisted row to anyone else.
+                                      if (!p.isActive)
+                                        Positioned(
+                                          top: 6,
+                                          left: 6,
+                                          child: AppBadge(text: l10n.productDetailDelistedBadge, tone: BadgeTone.neutral),
+                                        ),
+                                    ],
                                   ),
                                 ),
                               ),
