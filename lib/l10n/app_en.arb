@@ -836,6 +836,10 @@
 
   "addProductPriceTooLarge": "Price seems unusually large — please check and re-enter",
 
+  "addProductInvalidStock": "Enter how many are in stock (0 or more)",
+
+  "addProductStockTooLarge": "Stock seems unusually large — please check and re-enter",
+
   "addProductSubmitError": "Could not list this product. Please try again.",
 
   "addProductListedSuccess": "Product listed",

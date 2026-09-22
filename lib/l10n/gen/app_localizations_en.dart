@@ -1294,6 +1294,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Price seems unusually large — please check and re-enter';
 
   @override
+  String get addProductInvalidStock =>
+      'Enter how many are in stock (0 or more)';
+
+  @override
+  String get addProductStockTooLarge =>
+      'Stock seems unusually large — please check and re-enter';
+
+  @override
   String get addProductSubmitError =>
       'Could not list this product. Please try again.';
 

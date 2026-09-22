@@ -1273,6 +1273,14 @@ class AppLocalizationsHi extends AppLocalizations {
       'कीमत असामान्य रूप से ज़्यादा लग रही है — कृपया जांचकर फिर से दर्ज करें';
 
   @override
+  String get addProductInvalidStock =>
+      'स्टॉक में कितने हैं यह दर्ज करें (0 या ज़्यादा)';
+
+  @override
+  String get addProductStockTooLarge =>
+      'स्टॉक असामान्य रूप से ज़्यादा लग रहा है — कृपया जांचकर फिर से दर्ज करें';
+
+  @override
   String get addProductSubmitError =>
       'इस उत्पाद को सूचीबद्ध नहीं किया जा सका। कृपया फिर से कोशिश करें।';
 

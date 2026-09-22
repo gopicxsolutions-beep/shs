@@ -1300,6 +1300,14 @@ class AppLocalizationsTe extends AppLocalizations {
       'ధర అసాధారణంగా ఎక్కువగా ఉన్నట్టు అనిపిస్తోంది — దయచేసి తనిఖీ చేసి మళ్ళీ నమోదు చేయండి';
 
   @override
+  String get addProductInvalidStock =>
+      'స్టాక్‌లో ఎన్ని ఉన్నాయో నమోదు చేయండి (0 లేదా అంతకంటే ఎక్కువ)';
+
+  @override
+  String get addProductStockTooLarge =>
+      'స్టాక్ అసాధారణంగా ఎక్కువగా ఉన్నట్టు అనిపిస్తోంది — దయచేసి తనిఖీ చేసి మళ్ళీ నమోదు చేయండి';
+
+  @override
   String get addProductSubmitError =>
       'ఈ ఉత్పత్తిని జాబితా చేయలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 

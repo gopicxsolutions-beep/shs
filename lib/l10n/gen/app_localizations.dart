@@ -2308,6 +2308,18 @@ abstract class AppLocalizations {
   /// **'Price seems unusually large — please check and re-enter'**
   String get addProductPriceTooLarge;
 
+  /// No description provided for @addProductInvalidStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter how many are in stock (0 or more)'**
+  String get addProductInvalidStock;
+
+  /// No description provided for @addProductStockTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock seems unusually large — please check and re-enter'**
+  String get addProductStockTooLarge;
+
   /// No description provided for @addProductSubmitError.
   ///
   /// In en, this message translates to:

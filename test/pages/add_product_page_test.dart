@@ -48,7 +48,8 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.widgetWithText(TextField, 'e.g. Handwoven Cotton Saree'), 'A test product');
-    await tester.enterText(find.widgetWithText(TextField, '0').first, '199');
+    await tester.enterText(find.widgetWithText(TextField, '0').at(0), '199'); // price
+    await tester.enterText(find.widgetWithText(TextField, '0').at(1), '10'); // stock
     await tester.ensureVisible(find.text('List Product'));
     await tester.tap(find.text('List Product'));
     await tester.pumpAndSettle();
@@ -66,13 +67,56 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.widgetWithText(TextField, 'e.g. Handwoven Cotton Saree'), 'A test product');
-    await tester.enterText(find.widgetWithText(TextField, '0').first, '199');
+    await tester.enterText(find.widgetWithText(TextField, '0').at(0), '199'); // price
+    await tester.enterText(find.widgetWithText(TextField, '0').at(1), '10'); // stock
     await tester.enterText(find.widgetWithText(TextField, 'e.g. 9876543210@upi'), 'no-at-symbol');
     await tester.ensureVisible(find.text('List Product'));
     await tester.tap(find.text('List Product'));
     await tester.pumpAndSettle();
 
     expect(find.text('Enter a valid UPI ID (e.g. name@bank)'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  // User-reported audit gap: `stock` had no validation at all — a blank or
+  // unparseable field silently listed the product at `stock ?? 0`,
+  // indistinguishable from a deliberate "sold out" listing.
+  testWidgets('a blank stock field blocks submit with a validation error', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(harness());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'e.g. Handwoven Cotton Saree'), 'A test product');
+    await tester.enterText(find.widgetWithText(TextField, '0').at(0), '199'); // price only — stock left blank
+    await tester.ensureVisible(find.text('List Product'));
+    await tester.tap(find.text('List Product'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter how many are in stock (0 or more)'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a stock of exactly 0 is accepted — it is a legitimate "sold out but still listed" value', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(harness());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'e.g. Handwoven Cotton Saree'), 'A test product');
+    await tester.enterText(find.widgetWithText(TextField, '0').at(0), '199');
+    await tester.enterText(find.widgetWithText(TextField, '0').at(1), '0');
+    await tester.ensureVisible(find.text('List Product'));
+    await tester.tap(find.text('List Product'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter how many are in stock (0 or more)'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

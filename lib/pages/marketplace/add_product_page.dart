@@ -71,6 +71,10 @@ class _AddProductPageState extends State<AddProductPage> {
   // so a stray extra digit (e.g. ₹5000 fat-fingered as ₹500000) would list
   // silently with no warning, unlike its sibling money-entry forms.
   static const _maxPrice = 1000000;
+  // Same sanity-check convention as `_maxPrice` — this field had no
+  // sanity ceiling at all (only the `maxLength: 6` text-field cap, which
+  // silently refuses a 7th keystroke rather than explaining why).
+  static const _maxStock = 999999;
   // Mirrors the `product-images` bucket's own server-side cap
   // (`0028_storage_bucket_size_and_type_limits.sql`) so an oversized image
   // is rejected immediately at picking time with a clear reason, instead of
@@ -160,6 +164,20 @@ class _AddProductPageState extends State<AddProductPage> {
       setState(() => _error = AppLocalizations.of(context)!.addProductPriceTooLarge);
       return;
     }
+    // Was entirely unvalidated — a blank or unparseable field (`stock` is
+    // parsed above via `int.tryParse`, same as `price`) silently listed the
+    // product at `stock ?? 0` with no warning, indistinguishable from a
+    // deliberate "sold out" listing. 0 itself is a legitimate value once a
+    // listing already exists (out of stock, restocking later, still visible)
+    // — this only rejects a genuinely blank/invalid field, not a real zero.
+    if (stock == null || stock < 0) {
+      setState(() => _error = AppLocalizations.of(context)!.addProductInvalidStock);
+      return;
+    }
+    if (stock > _maxStock) {
+      setState(() => _error = AppLocalizations.of(context)!.addProductStockTooLarge);
+      return;
+    }
     final upiId = _upiId.text.trim();
     // Light sanity check only — real validation happens in the buyer's own
     // UPI app once the deep link opens, not something worth a full-grammar
@@ -202,7 +220,7 @@ class _AddProductPageState extends State<AddProductPage> {
           name: _name.text.trim(),
           description: _description.text.trim(),
           price: price,
-          stock: stock ?? 0,
+          stock: stock,
           category: _category,
           imageUrl: imageUrl,
           upiId: upiIdValue,
@@ -216,7 +234,7 @@ class _AddProductPageState extends State<AddProductPage> {
           name: _name.text.trim(),
           description: _description.text.trim(),
           price: price,
-          stock: stock ?? 0,
+          stock: stock,
           category: _category,
           imageUrl: imageUrl,
           upiId: upiIdValue,

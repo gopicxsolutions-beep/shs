@@ -21762,3 +21762,26 @@ the equivalent SQL count increased by exactly 2 — while incidentally
 surfacing (and then correctly excluding) that seller's real pre-existing
 count of 5 unfulfilled orders, all rolled back, re-confirmed by a direct,
 RLS-free count afterward (still exactly 5, nothing left over from testing).
+
+## 2026-09-22 — Marketplace audit round 5: stock field had no validation at all
+
+Continuing the audit. `add_product_page.dart`'s Stock field (unlike its
+sibling Price field, which already validates non-empty/positive/a sanity
+ceiling) had none — a blank or unparseable value silently listed the
+product at `stock ?? 0`, indistinguishable from a deliberate "sold out"
+listing, with no warning to the seller that anything was wrong.
+
+**Fix**: stock must now parse to a valid integer `>= 0` (0 itself stays a
+legitimate value — "sold out but still listed, restocking soon" is real and
+should not be blocked) and below a new sanity ceiling (999999, matching
+`_maxPrice`'s existing convention). Two new localized error messages in all
+3 `.arb` files.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1149/1149 (+2 new:
+a blank stock field is rejected with the right message, an explicit 0 is
+accepted). Fixed 2 existing tests that had (accidentally, per this bug)
+always left stock blank — one of them relied on a UPI-format error
+surfacing, which the new stock check (checked earlier in `_submit`) would
+otherwise have masked. Mutation-checked — disabling the new validation
+check doesn't even compile with `stock` used elsewhere in the same function,
+confirming it's load-bearing.
