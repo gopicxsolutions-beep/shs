@@ -883,10 +883,12 @@ here, not client-side hiding.
 | FR-MKT-2 | Any user browses the cross-SHG product catalog and product detail; a delisted product is hidden from general browsing but stays visible to its own seller, staff, and a past buyer | All |
 | FR-MKT-3 | Any user places an order for a chosen quantity (1 up to current stock, via a stepper on the product detail page); stock decrement, price-locking (order `amount` = unit price x quantity), and the delisted-product check happen atomically | All |
 | FR-MKT-4 | Seller sets order status one step forward/back at a time (RLS-guarded); staff may override to any value for a dispute they don't personally own | Member, Leader (seller), staff |
-| FR-MKT-5 | Only a verified past buyer of the specific product may post a review; one review per reviewer per product | All |
-| FR-MKT-6 | Review moderation (edit/delete another user's review) is staff-only | Staff |
+| FR-MKT-5 | Only a verified past buyer of the specific product may post a review — "Write a Review" is only offered once she actually qualifies (a `'delivered'` order for it, and no existing review from her already); one review per reviewer per product | All |
+| FR-MKT-6 | A reviewer may delete her own review at any time (`marketplace_reviews_delete_own`); editing is not yet supported. Moderating (deleting) another user's review is staff-only, and excludes a staff member's own review (anti-self-dealing) | All (own review), Staff (others') |
 | FR-MKT-7 | Seller edits her own listing (including payment details) or delists/relists it via "My Listings"; sellers cannot delete a listing outright | Member, Leader (seller) |
 | FR-MKT-8 | Buyer sees a seller's UPI ID/payment note on the product detail page and can open her own UPI app pre-filled to pay manually — no real payment gateway, no order-payment linkage | All |
+| FR-MKT-9 | Buyer may cancel her own order while it is still `'new'` (before the seller has packed it); stock is restored atomically. A cancelled order can never be resurrected by anyone, including staff | Member (own order, as buyer) |
+| FR-MKT-10 | An order's detail page shows the seller's name to the buyer (and vice versa is implicit — the seller already sees the buyer's name); a seller sees a running total of revenue earned from her `'delivered'` orders on the "My Sales" tab | All |
 
 ### 3.9 Government Schemes (`schemes/`)
 

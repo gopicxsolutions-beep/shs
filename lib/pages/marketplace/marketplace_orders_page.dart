@@ -22,6 +22,23 @@ const _statusTones = <String, BadgeTone>{
   'delivered': BadgeTone.success,
 };
 
+/// Missing feature: nowhere in the app could a seller see how much she'd
+/// actually earned — only a scrollable list of individual order amounts,
+/// no total. Only `'delivered'` orders count as real revenue — a
+/// `'new'`/`'packed'`/`'shipped'` order hasn't been fulfilled (or paid, in
+/// the cash-on-delivery/manual-UPI sense this app's Marketplace uses) yet,
+/// and a `'cancelled'` one never will be. A top-level function (not inlined
+/// in the widget build method) so it's directly unit-testable — demo mode's
+/// `fetchOrdersForSeller` always returns `[]` (no simulated second buyer to
+/// have ever bought from the demo persona — see its own doc comment), so
+/// this widget's revenue card can never actually render through demo mode
+/// at all; this is the only way to verify the arithmetic without a live
+/// seller account.
+({num total, int deliveredCount}) marketplaceSellerRevenueSummary(List<MarketOrder> orders) {
+  final delivered = orders.where((o) => o.status == 'delivered');
+  return (total: delivered.fold<num>(0, (sum, o) => sum + o.amount), deliveredCount: delivered.length);
+}
+
 /// Gap-hunt round 184: this page previously only ever showed orders for
 /// products the viewer *sells* (`fetchOrdersForSeller`) — a member who
 /// bought something had no way, anywhere in the app, to see that purchase
@@ -63,7 +80,7 @@ class MarketplaceOrdersPage extends StatelessWidget {
               child: TabBarView(
                 children: [
                   _OrderList(future: () => repo.fetchOrdersForBuyer(myId), emptyMessage: l10n.marketplaceOrdersBuyerEmpty, showBuyerName: false),
-                  _OrderList(future: () => repo.fetchOrdersForSeller(myId), emptyMessage: l10n.marketplaceOrdersEmpty, showBuyerName: true),
+                  _OrderList(future: () => repo.fetchOrdersForSeller(myId), emptyMessage: l10n.marketplaceOrdersEmpty, showBuyerName: true, showRevenueSummary: true),
                 ],
               ),
             ),
@@ -81,7 +98,14 @@ class _OrderList extends StatelessWidget {
   // seller); the buyer's own tab already knows it's her — showing her own
   // name back to her on every row would be redundant noise.
   final bool showBuyerName;
-  const _OrderList({required this.future, required this.emptyMessage, required this.showBuyerName});
+  // Missing feature: nowhere in the app could a seller see how much she'd
+  // actually earned — only a scrollable list of individual orders, each
+  // with its own amount, no total. Only 'delivered' orders count as real
+  // revenue (a 'new'/'packed'/'shipped' order hasn't been paid out/
+  // confirmed yet, and a 'cancelled' one never will be) — the same status
+  // this repository already uses to gate review eligibility.
+  final bool showRevenueSummary;
+  const _OrderList({required this.future, required this.emptyMessage, required this.showBuyerName, this.showRevenueSummary = false});
 
   @override
   Widget build(BuildContext context) {
@@ -98,10 +122,34 @@ class _OrderList extends StatelessWidget {
           // of hard-overflowing.
           return ListView(children: [AppEmptyState(icon: Icons.receipt_long_rounded, message: emptyMessage)]);
         }
+        final revenue = marketplaceSellerRevenueSummary(orders);
+        final showSummaryRow = showRevenueSummary && revenue.deliveredCount > 0;
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: orders.length,
+          itemCount: orders.length + (showSummaryRow ? 1 : 0),
           itemBuilder: (context, i) {
+            if (showSummaryRow) {
+              if (i == 0) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: AppCard(
+                    child: Row(
+                      children: [
+                        Icon(Icons.payments_outlined, color: Brand.c600),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            l10n.marketplaceOrdersRevenueSummary(NumberFormat('#,##,##0', 'en_IN').format(revenue.total), revenue.deliveredCount),
+                            style: AppTheme.sans(13, weight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              i -= 1;
+            }
             final o = orders[i];
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),

@@ -674,6 +674,8 @@
   "marketplaceOrdersMySalesTab": "నా అమ్మకాలు",
   "marketplaceOrdersBuyerEmpty": "మీరు ఇంకా మార్కెట్‌ప్లేస్ నుండి ఏమీ కొనలేదు",
 
+  "marketplaceOrdersRevenueSummary": "{count} డెలివరీ అయిన {count, plural, =1{ఆర్డర్} other{ఆర్డర్‌ల}} నుండి ₹{total} సంపాదించారు",
+
   "marketplaceReviewsTitle": "సమీక్షలు",
 
   "marketplaceReviewsEmpty": "మీ ఉత్పత్తులపై ఇంకా సమీక్షలు లేవు",
@@ -733,6 +735,8 @@
   "orderDetailUpdateStatusLabel": "స్థితిని నవీకరించండి",
 
   "orderDetailBuyerLabel": "కొనుగోలుదారు: {name}",
+
+  "orderDetailSellerLabel": "విక్రేత: {name}",
 
   "orderDetailQuantity": "పరిమాణం: {count}",
 

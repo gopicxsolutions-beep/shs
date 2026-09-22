@@ -130,6 +130,14 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           // for (migration 0156), so it stays a dedicated buyer action, not
           // folded into staff's broader status-override powers.
           final canCancel = order.status == 'new' && (!SupabaseService.isConfigured || (order.buyerId != null && order.buyerId == appState.profile?.id));
+          // Missing feature: the buyer's own order detail page showed the
+          // product name and her own purchase details, but never who she'd
+          // actually bought from — only opening the product page separately
+          // (if she still remembered which one) surfaced the seller's name.
+          // Hidden for the seller's own "My Sales" view of this same order —
+          // showing her own name back to her would be redundant, same
+          // reasoning as `showBuyerName` in the orders list.
+          final showSellerName = order.sellerName != null && order.sellerId != appState.profile?.id;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -143,6 +151,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     ]),
                     const SizedBox(height: 6),
                     Text(l10n.orderDetailBuyerLabel(order.buyerName), style: AppTheme.sans(12, color: Neutral.c500)),
+                    if (showSellerName) Text(l10n.orderDetailSellerLabel(order.sellerName!), style: AppTheme.sans(12, color: Neutral.c500)),
                     Text(l10n.orderDetailOrderedOn(DateFormat('dd MMM yyyy').format(order.orderDate)), style: AppTheme.sans(12, color: Neutral.c500)),
                     if (order.quantity > 1) Text(l10n.orderDetailQuantity(order.quantity), style: AppTheme.sans(12, color: Neutral.c500)),
                     const SizedBox(height: 8),

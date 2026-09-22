@@ -1419,6 +1419,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'You haven\'t bought anything from the marketplace yet';
 
   @override
+  String marketplaceOrdersRevenueSummary(String total, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'orders',
+      one: 'order',
+    );
+    return '₹$total earned from $count delivered $_temp0';
+  }
+
+  @override
   String get marketplaceReviewsTitle => 'Reviews';
 
   @override
@@ -1532,6 +1543,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String orderDetailBuyerLabel(String name) {
     return 'Buyer: $name';
+  }
+
+  @override
+  String orderDetailSellerLabel(String name) {
+    return 'Seller: $name';
   }
 
   @override

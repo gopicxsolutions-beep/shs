@@ -83,4 +83,20 @@ void main() {
     expect(find.text('Cancel Order'), findsNothing, reason: 'this was the bug this page used to have no answer for at all — no cancellation existed for any order, at any status');
     expect(tester.takeException(), isNull);
   });
+
+  // Missing feature: this page showed the buyer's name but never the
+  // seller's — a buyer looking at her own purchase had no way to tell who
+  // she'd actually bought it from without separately reopening the product
+  // page. MarketOrder.sellerName is now populated (demo mode: from the mock
+  // product's own sellerName, mirroring placeOrder's real live-mode embed).
+  testWidgets('shows the seller\'s name on the order', (tester) async {
+    final repo = MarketplaceRepository();
+    final orderId = await placeOrder(repo, productId: 'p1');
+
+    await tester.pumpWidget(harness(orderId));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Seller: Lakshmi Devi'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

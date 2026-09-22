@@ -1395,6 +1395,17 @@ class AppLocalizationsHi extends AppLocalizations {
       'आपने अभी तक मार्केटप्लेस से कुछ नहीं खरीदा है';
 
   @override
+  String marketplaceOrdersRevenueSummary(String total, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ऑर्डरों',
+      one: 'ऑर्डर',
+    );
+    return '$count डिलीवर किए गए $_temp0 से ₹$total कमाए गए';
+  }
+
+  @override
   String get marketplaceReviewsTitle => 'समीक्षाएं';
 
   @override
@@ -1510,6 +1521,11 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String orderDetailBuyerLabel(String name) {
     return 'खरीदार: $name';
+  }
+
+  @override
+  String orderDetailSellerLabel(String name) {
+    return 'विक्रेता: $name';
   }
 
   @override

@@ -240,6 +240,9 @@ class MarketplaceRepository {
         id: 'local-${DateTime.now().microsecondsSinceEpoch}',
         productId: productId,
         productName: matches.isEmpty ? productId : matches.first.name,
+        sellerId: matches.isEmpty ? null : matches.first.sellerId,
+        sellerName: matches.isEmpty ? null : matches.first.sellerName,
+        buyerId: buyerId,
         buyerName: buyerName,
         amount: amount,
         quantity: quantity,
@@ -297,7 +300,7 @@ class MarketplaceRepository {
     // belongs on this tab only, no filtering needed.
     if (!_live) return _locallyPlaced.reversed.toList();
     if (buyerId == null) return [];
-    final rows = await _client.from('marketplace_orders').select('*, marketplace_products(name, seller_id)').eq('buyer_id', buyerId).order('created_at', ascending: false).limit(200);
+    final rows = await _client.from('marketplace_orders').select('*, marketplace_products(name, seller_id, seller_name)').eq('buyer_id', buyerId).order('created_at', ascending: false).limit(200);
     return (rows as List).map((r) => MarketOrder.fromMap(r as Map<String, dynamic>)).toList();
   }
 
@@ -315,7 +318,7 @@ class MarketplaceRepository {
     if (sellerId == null) return [];
     final rows = await _client
         .from('marketplace_orders')
-        .select('*, marketplace_products!inner(name, seller_id)')
+        .select('*, marketplace_products!inner(name, seller_id, seller_name)')
         .eq('marketplace_products.seller_id', sellerId)
         .order('created_at', ascending: false)
         .limit(200);
@@ -349,7 +352,7 @@ class MarketplaceRepository {
       final matches = _locallyPlaced.where((o) => o.id == id);
       return matches.isEmpty ? null : matches.first;
     }
-    final row = await _client.from('marketplace_orders').select('*, marketplace_products(name, seller_id)').eq('id', id).maybeSingle();
+    final row = await _client.from('marketplace_orders').select('*, marketplace_products(name, seller_id, seller_name)').eq('id', id).maybeSingle();
     return row == null ? null : MarketOrder.fromMap(row);
   }
 
@@ -358,7 +361,7 @@ class MarketplaceRepository {
       final idx = _locallyPlaced.indexWhere((o) => o.id == id);
       if (idx != -1) {
         final o = _locallyPlaced[idx];
-        _locallyPlaced[idx] = MarketOrder(id: o.id, productId: o.productId, productName: o.productName, sellerId: o.sellerId, buyerName: o.buyerName, amount: o.amount, quantity: o.quantity, status: status, orderDate: o.orderDate);
+        _locallyPlaced[idx] = MarketOrder(id: o.id, productId: o.productId, productName: o.productName, sellerId: o.sellerId, sellerName: o.sellerName, buyerId: o.buyerId, buyerName: o.buyerName, amount: o.amount, quantity: o.quantity, status: status, orderDate: o.orderDate);
       }
       return;
     }
@@ -376,7 +379,7 @@ class MarketplaceRepository {
       final idx = _locallyPlaced.indexWhere((o) => o.id == id);
       if (idx != -1) {
         final o = _locallyPlaced[idx];
-        _locallyPlaced[idx] = MarketOrder(id: o.id, productId: o.productId, productName: o.productName, sellerId: o.sellerId, buyerName: o.buyerName, amount: o.amount, quantity: o.quantity, status: 'cancelled', orderDate: o.orderDate);
+        _locallyPlaced[idx] = MarketOrder(id: o.id, productId: o.productId, productName: o.productName, sellerId: o.sellerId, sellerName: o.sellerName, buyerId: o.buyerId, buyerName: o.buyerName, amount: o.amount, quantity: o.quantity, status: 'cancelled', orderDate: o.orderDate);
       }
       return;
     }

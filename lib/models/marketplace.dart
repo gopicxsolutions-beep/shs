@@ -91,6 +91,11 @@ class MarketOrder {
   final String productId;
   final String productName;
   final String? sellerId;
+  // Missing feature: the buyer's own order detail page never showed who she
+  // bought from — only the product name. Null wherever a caller never asked
+  // for the embed (mirrors Review.productName's own null-when-unneeded
+  // pattern) — every call site that constructs a MarketOrder now does.
+  final String? sellerName;
   final String? buyerId;
   final String buyerName;
   final num amount;
@@ -109,6 +114,7 @@ class MarketOrder {
     required this.productId,
     required this.productName,
     this.sellerId,
+    this.sellerName,
     this.buyerId,
     required this.buyerName,
     required this.amount,
@@ -122,6 +128,7 @@ class MarketOrder {
         productId: map['product_id'] as String,
         productName: (map['marketplace_products'] as Map<String, dynamic>?)?['name'] as String? ?? 'Product',
         sellerId: (map['marketplace_products'] as Map<String, dynamic>?)?['seller_id'] as String?,
+        sellerName: (map['marketplace_products'] as Map<String, dynamic>?)?['seller_name'] as String?,
         buyerId: map['buyer_id'] as String?,
         buyerName: map['buyer_name'] as String,
         amount: map['amount'] as num,

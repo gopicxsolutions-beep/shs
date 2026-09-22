@@ -2524,6 +2524,12 @@ abstract class AppLocalizations {
   /// **'You haven\'t bought anything from the marketplace yet'**
   String get marketplaceOrdersBuyerEmpty;
 
+  /// No description provided for @marketplaceOrdersRevenueSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'₹{total} earned from {count} delivered {count, plural, =1{order} other{orders}}'**
+  String marketplaceOrdersRevenueSummary(String total, int count);
+
   /// No description provided for @marketplaceReviewsTitle.
   ///
   /// In en, this message translates to:
@@ -2703,6 +2709,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Buyer: {name}'**
   String orderDetailBuyerLabel(String name);
+
+  /// No description provided for @orderDetailSellerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Seller: {name}'**
+  String orderDetailSellerLabel(String name);
 
   /// No description provided for @orderDetailQuantity.
   ///

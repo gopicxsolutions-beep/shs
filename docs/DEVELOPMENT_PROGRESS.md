@@ -21948,3 +21948,49 @@ policy verified directly against the real database via a rolled-back probe
 member's delete attempt affects 0 rows, the reviewer's own delete affects 1
 row, and a service-role re-query afterward confirms 0 rows remain — deployed
 via `supabase db push --linked`.
+
+## 2026-09-22 — Marketplace audit round 11: seller name on a buyer's order, and a seller revenue total (2 findings, batched per user request)
+
+Batching two findings this round instead of one, per explicit user
+instruction to tackle more per `/loop` iteration.
+
+**Finding #16 — a buyer's order detail page never showed who she bought
+from.** Only the product name and her own buyer info were shown; the
+seller's name required separately reopening the product page (if she still
+remembered which listing it was). `marketplace_products.seller_name` has
+been a pinned, always-readable column since migration 0124 specifically to
+avoid the cross-SHG `profiles(name)` embed gap that migration originally
+fixed — so this was purely a matter of actually selecting it. Widened the
+`marketplace_products` embed in `fetchOrdersForBuyer`/`fetchOrdersForSeller`/
+`fetchOrderById` to include `seller_name`; added `MarketOrder.sellerName`;
+`OrderDetailPage` now shows "Seller: {name}" whenever the viewer isn't the
+seller herself (mirrors `showBuyerName`'s own reasoning in the orders list —
+showing her own name back to her would be redundant). Confirmed the read is
+safe even for a buyer viewing an order on a since-delisted product:
+`marketplace_products_select_all`'s `buyer_has_order_for_product(id)` branch
+keeps the row visible to her regardless of the product's current
+active/seller state.
+
+While wiring this, found and fixed 3 further field-dropping bugs in demo
+mode's local order reconstruction (same bug class as `updateOrderStatus`'s
+earlier one — see round 3/8's entries): `placeOrder`'s original demo-mode
+order never set `sellerId`/`sellerName`, and both `updateOrderStatus` and
+`cancelOrder`'s demo branches dropped `sellerName`/`buyerId` entirely when
+rebuilding the local `MarketOrder`. All fixed to carry every field through.
+
+**Finding #12 — no seller revenue view anywhere in the app.** A seller could
+see each order's amount individually in "My Sales" but never a total.
+`marketplaceSellerRevenueSummary()` (new top-level function, `marketplace_
+orders_page.dart`) sums only `'delivered'` orders — the same status this
+repository already treats as "actually happened" for review eligibility —
+excluding `'new'`/`'packed'`/`'shipped'` (not fulfilled yet) and
+`'cancelled'` (never will be). Rendered as a card above the "My Sales" list.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1161/1161 (+4 new:
+order detail shows the seller's name; 3 unit tests on
+`marketplaceSellerRevenueSummary` — sums only delivered, empty list, no
+delivered orders — a top-level function specifically so it's testable at
+all, since demo mode's `fetchOrdersForSeller` always returns `[]` and can
+never actually render the revenue card through the widget tree). Both new
+UI gates (`showSellerName`, the delivered-only filter) mutation-checked —
+forcing each to its broken value fails its respective test.

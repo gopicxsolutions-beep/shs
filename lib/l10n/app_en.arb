@@ -917,6 +917,14 @@
   "marketplaceOrdersMySalesTab": "My Sales",
   "marketplaceOrdersBuyerEmpty": "You haven't bought anything from the marketplace yet",
 
+  "marketplaceOrdersRevenueSummary": "₹{total} earned from {count} delivered {count, plural, =1{order} other{orders}}",
+  "@marketplaceOrdersRevenueSummary": {
+    "placeholders": {
+      "total": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+
   "marketplaceReviewsTitle": "Reviews",
 
   "marketplaceReviewsEmpty": "No reviews on your products yet",
@@ -1012,6 +1020,13 @@
 
   "orderDetailBuyerLabel": "Buyer: {name}",
   "@orderDetailBuyerLabel": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "orderDetailSellerLabel": "Seller: {name}",
+  "@orderDetailSellerLabel": {
     "placeholders": {
       "name": {"type": "String"}
     }
