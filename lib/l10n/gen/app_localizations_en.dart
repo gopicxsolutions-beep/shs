@@ -1695,6 +1695,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get productDetailReviewDeleteError => 'Could not delete this review';
 
   @override
+  String get productDetailEditReviewTooltip => 'Edit your review';
+
+  @override
+  String get productDetailEditReviewTitle => 'Edit your review';
+
+  @override
+  String get productDetailReviewUpdated => 'Review updated';
+
+  @override
+  String get productDetailReviewUpdateError => 'Could not update this review';
+
+  @override
   String get productDetailPlacingInProgress => 'Placing…';
 
   @override

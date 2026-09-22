@@ -1143,6 +1143,14 @@
 
   "productDetailReviewDeleteError": "Could not delete this review",
 
+  "productDetailEditReviewTooltip": "Edit your review",
+
+  "productDetailEditReviewTitle": "Edit your review",
+
+  "productDetailReviewUpdated": "Review updated",
+
+  "productDetailReviewUpdateError": "Could not update this review",
+
   "productDetailPlacingInProgress": "Placing…",
 
   "productDetailPlaceOrderButton": "Place Order",

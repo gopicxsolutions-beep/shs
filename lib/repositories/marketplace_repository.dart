@@ -468,6 +468,18 @@ class MarketplaceRepository {
     await _client.from('marketplace_reviews').delete().eq('id', reviewId);
   }
 
+  // Completes the finding `deleteReview` above only partly closed (see its
+  // own doc comment): a reviewer had no way to fix a typo or correct a
+  // rating without deleting and losing her place entirely (the unique
+  // index would then also block a fresh review until the DELETE landed).
+  // `marketplace_reviews_update_own` (migration 0159) locks product_id/
+  // reviewer_id/reviewer_name/created_at — only rating/comment are settable
+  // here, matching what this call sends.
+  Future<void> updateReview({required String reviewId, required int rating, required String comment}) async {
+    if (!_live) return;
+    await _client.from('marketplace_reviews').update({'rating': rating, 'comment': comment}).eq('id', reviewId);
+  }
+
   List<Product> _mockProducts() => (debugProductsOverride ?? mock.marketplaceProducts).map((p) {
         final productReviews = mock.marketplaceReviews.where((r) => r.productId == p.id);
         final reviewCount = productReviews.length;

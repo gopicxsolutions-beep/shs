@@ -2926,6 +2926,30 @@ abstract class AppLocalizations {
   /// **'Could not delete this review'**
   String get productDetailReviewDeleteError;
 
+  /// No description provided for @productDetailEditReviewTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit your review'**
+  String get productDetailEditReviewTooltip;
+
+  /// No description provided for @productDetailEditReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit your review'**
+  String get productDetailEditReviewTitle;
+
+  /// No description provided for @productDetailReviewUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Review updated'**
+  String get productDetailReviewUpdated;
+
+  /// No description provided for @productDetailReviewUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update this review'**
+  String get productDetailReviewUpdateError;
+
   /// No description provided for @productDetailPlacingInProgress.
   ///
   /// In en, this message translates to:

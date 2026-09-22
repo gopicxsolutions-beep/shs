@@ -1673,6 +1673,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String get productDetailReviewDeleteError => 'यह समीक्षा हटाई नहीं जा सकी';
 
   @override
+  String get productDetailEditReviewTooltip => 'अपनी समीक्षा संपादित करें';
+
+  @override
+  String get productDetailEditReviewTitle => 'अपनी समीक्षा संपादित करें';
+
+  @override
+  String get productDetailReviewUpdated => 'समीक्षा अपडेट की गई';
+
+  @override
+  String get productDetailReviewUpdateError =>
+      'यह समीक्षा अपडेट नहीं की जा सकी';
+
+  @override
   String get productDetailPlacingInProgress => 'ऑर्डर दिया जा रहा है…';
 
   @override

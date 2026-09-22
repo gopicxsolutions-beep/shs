@@ -1697,6 +1697,18 @@ class AppLocalizationsTe extends AppLocalizations {
   String get productDetailReviewDeleteError => 'ఈ సమీక్షను తొలగించలేకపోయాము';
 
   @override
+  String get productDetailEditReviewTooltip => 'మీ సమీక్షను సవరించండి';
+
+  @override
+  String get productDetailEditReviewTitle => 'మీ సమీక్షను సవరించండి';
+
+  @override
+  String get productDetailReviewUpdated => 'సమీక్ష నవీకరించబడింది';
+
+  @override
+  String get productDetailReviewUpdateError => 'ఈ సమీక్షను నవీకరించలేకపోయాము';
+
+  @override
   String get productDetailPlacingInProgress => 'ఆర్డర్ చేస్తోంది…';
 
   @override

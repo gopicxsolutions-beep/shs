@@ -216,6 +216,72 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
+  // Completes the finding `_deleteReview` above only partly closed — round
+  // 10's own scoping note. Mirrors `_writeReview`'s dialog exactly, just
+  // pre-filled from the existing review and calling `updateReview` instead
+  // of `addReview` on submit.
+  Future<void> _editReview(Review review) async {
+    if (_submittingReview) return;
+    _commentController.text = review.comment ?? '';
+    int rating = review.rating;
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(l10n.productDetailEditReviewTitle),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    5,
+                    (i) => IconButton(
+                      icon: Icon(i < rating ? Icons.star_rounded : Icons.star_border_rounded, color: Gold.c500, size: 28),
+                      onPressed: () => setDialogState(() => rating = i + 1),
+                      tooltip: l10n.productDetailStarTooltip(i + 1),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _commentController,
+                  maxLength: 300,
+                  maxLines: 3,
+                  textInputAction: TextInputAction.done,
+                  decoration: InputDecoration(hintText: l10n.productDetailReviewHint),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.actionSave)),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _submittingReview = true);
+    try {
+      await _repo.updateReview(reviewId: review.id, rating: rating, comment: _commentController.text.trim());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.productDetailReviewUpdated)));
+        _reviewsKey.currentState?.reload();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.productDetailReviewUpdateError)));
+      }
+    } finally {
+      if (mounted) setState(() => _submittingReview = false);
+    }
+  }
+
   Future<void> _placeOrder(Product product) async {
     final appState = context.read<AppState>();
     final quantity = _quantityFor(product);
@@ -514,15 +580,24 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                       child: Row(children: List.generate(5, (i) => Icon(i < r.rating ? Icons.star_rounded : Icons.star_border_rounded, size: 14, color: Gold.c500))),
                                     ),
                                   ),
-                                  if (isOwnReview)
+                                  if (isOwnReview) ...[
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, size: 18),
+                                      color: Neutral.c600,
+                                      tooltip: l10n.productDetailEditReviewTooltip,
+                                      onPressed: () => _editReview(r),
+                                      constraints: const BoxConstraints(),
+                                      padding: const EdgeInsets.only(left: 8),
+                                    ),
                                     IconButton(
                                       icon: const Icon(Icons.delete_outline_rounded, size: 18),
                                       color: Neutral.c600,
                                       tooltip: l10n.productDetailDeleteReviewTooltip,
                                       onPressed: () => _deleteReview(r),
                                       constraints: const BoxConstraints(),
-                                      padding: const EdgeInsets.only(left: 8),
+                                      padding: const EdgeInsets.only(left: 4),
                                     ),
+                                  ],
                                 ]),
                                 if (r.comment != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(r.comment!, style: AppTheme.sans(12, color: Neutral.c600))),
                               ],

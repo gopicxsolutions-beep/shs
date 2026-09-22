@@ -808,6 +808,14 @@
 
   "productDetailReviewDeleteError": "ఈ సమీక్షను తొలగించలేకపోయాము",
 
+  "productDetailEditReviewTooltip": "మీ సమీక్షను సవరించండి",
+
+  "productDetailEditReviewTitle": "మీ సమీక్షను సవరించండి",
+
+  "productDetailReviewUpdated": "సమీక్ష నవీకరించబడింది",
+
+  "productDetailReviewUpdateError": "ఈ సమీక్షను నవీకరించలేకపోయాము",
+
   "productDetailPlacingInProgress": "ఆర్డర్ చేస్తోంది…",
 
   "productDetailPlaceOrderButton": "ఆర్డర్ చేయండి",

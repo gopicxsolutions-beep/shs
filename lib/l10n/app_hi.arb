@@ -808,6 +808,14 @@
 
   "productDetailReviewDeleteError": "यह समीक्षा हटाई नहीं जा सकी",
 
+  "productDetailEditReviewTooltip": "अपनी समीक्षा संपादित करें",
+
+  "productDetailEditReviewTitle": "अपनी समीक्षा संपादित करें",
+
+  "productDetailReviewUpdated": "समीक्षा अपडेट की गई",
+
+  "productDetailReviewUpdateError": "यह समीक्षा अपडेट नहीं की जा सकी",
+
   "productDetailPlacingInProgress": "ऑर्डर दिया जा रहा है…",
 
   "productDetailPlaceOrderButton": "ऑर्डर करें",

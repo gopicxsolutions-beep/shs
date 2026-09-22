@@ -111,6 +111,22 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  // Completes finding #17 — round 10 shipped delete-only; this is the edit
+  // half (migration 0159). Same gate, same demo-mode-never-shows reasoning
+  // as the delete action above.
+  testWidgets('demo mode never shows an edit-review action (updateReview is live-only)', (tester) async {
+    tester.view.physicalSize = const Size(400, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(harness('p1'));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.edit_outlined), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   // Missing feature: this page never showed a rating summary anywhere —
   // the only way to gauge a product's quality was scrolling all the way
   // down to its reviews list. `Product.avgRating`/`reviewCount` are demo-mode

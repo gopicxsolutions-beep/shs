@@ -22041,3 +22041,47 @@ because round 10 added reviewer self-delete), and after deleting the last
 one (count 0, avg back to `null`, not `0.00`) — deployed via `supabase db
 push --linked`. Also confirmed the backfill left an existing zero-review
 product untouched (`count 0, avg null`) before running the probe against it.
+
+## 2026-09-22 — Marketplace audit round 13: reviewers can now edit their own review (completes finding #17)
+
+Round 10 shipped delete-only for a reviewer's own review, deliberately
+scoped (its own migration's note: "the simpler, safety-critical half of the
+gap"). This round adds the edit half — fixing a typo or correcting a rating
+no longer requires deleting the whole review and losing her place (the
+unique index would also block posting a fresh one until the DELETE had
+actually landed).
+
+**Fix**: `supabase/migrations/0159_iteration51_marketplace_review_self_edit.sql`
+adds `marketplace_reviews_update_own` (`reviewer_id = auth.uid()`, WITH
+CHECK locking `product_id`/`reviewer_id`/`reviewer_name`/`created_at` — only
+rating/comment are left open), mirroring `marketplace_reviews_moderate_
+staff`'s shape but with no self-exclusion, since a staff member editing her
+OWN review is an ordinary reviewer's right, not a moderation power — the
+same distinction `marketplace_reviews_delete_own` already drew. Required
+widening `marketplace_reviews_locked_fields` (previously gated `and
+public.is_staff()`, so it returned nothing for an ordinary reviewer
+checking her own row — every locked-field comparison would have silently
+evaluated against NULL and rejected every edit) to also match the row's own
+author; this discloses nothing new since those 4 fields are already
+readable by anyone via `marketplace_reviews_select_all`. Also widened round
+12's rating-stats trigger from `after insert or delete` to `after insert or
+update or delete` — an edited rating would otherwise leave `avg_rating`
+silently stale until an unrelated insert/delete on the same product
+happened to refresh it.
+
+`MarketplaceRepository.updateReview()` calls it; `ProductDetailPage` gained
+`_editReview()` (mirrors `_writeReview`'s dialog exactly, pre-filled from
+the existing rating/comment) and a new edit icon next to the delete icon,
+both behind the same `isOwnReview` gate from round 10.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1165/1165 (+1 new:
+demo mode never shows the edit action, matching the delete action's own
+identical reasoning). The shared `isOwnReview` gate mutation-checked — both
+the edit and delete tests fail together when forced to `true`. Live-mode
+policy verified directly against the real database via a rolled-back probe
+(`probe16_review_self_edit.sql`, `__TEST__`-prefixed row): a different
+member's edit attempt affects 0 rows, the reviewer's own rating+comment edit
+affects 1 row and the trigger correctly recomputes `avg_rating` from the new
+value (not just on insert/delete), and an attempt to smuggle a `product_id`
+change through the same UPDATE is correctly rejected — deployed via
+`supabase db push --linked`.
