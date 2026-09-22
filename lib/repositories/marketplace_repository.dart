@@ -33,6 +33,19 @@ class MarketplaceRepository {
   // for the rest of the session, mirroring AnnouncementRepository._locallyRead.
   static final List<Product> _locallyAddedProducts = [];
 
+  // User bug report: picking any star rating in "Write a Review" and
+  // submitting always seemed to leave the review as 5 stars — reproduced
+  // directly: the dialog's own star picker was working correctly (confirmed
+  // via a widget test tapping each star), but `addReview` was a pure no-op
+  // in demo mode (unlike `placeOrder` above, which DOES do a real local
+  // write via `_locallyPlaced`) — so whatever was picked never actually
+  // landed anywhere, and the review list kept showing only the pre-seeded
+  // mock review, which happens to be 5 stars for product 'p1'. Mirrors
+  // `_locallyPlaced`'s pattern so a demo-mode review submission is now a
+  // genuine (if session-only) write, consistent with every other demo-mode
+  // write in this repository.
+  static final List<Review> _locallyAddedReviews = [];
+
   // Test-only seam (null by default, so every existing test keeps seeing
   // the exact short mock.marketplaceProducts it always has).
   // test/routes/long_content_stress_test.dart sets this to exercise a
@@ -40,6 +53,14 @@ class MarketplaceRepository {
   // resets it — no change to lib/data/marketplace.dart's shared mock
   // records themselves.
   static List<mock.ProductMock>? debugProductsOverride;
+
+  // Test-only seam — `_locallyAddedReviews` is static (deliberately, so a
+  // demo-mode review survives page reloads within one session), which means
+  // it also survives across tests within the same test file unless cleared.
+  // A test that submits a review for a shared product like 'p1' must call
+  // this in tearDown, or a later test asserting that product's exact
+  // rating/review-count will see this one's leftover state too.
+  static void debugClearLocalReviews() => _locallyAddedReviews.clear();
 
   Future<List<Product>> fetchProducts() async {
     if (!_live) return [..._locallyAddedProducts.reversed, ..._mockProducts()];
@@ -393,10 +414,15 @@ class MarketplaceRepository {
     // only to FILTER (`seller_id`), `name` was never selected even though
     // MarketplaceReviewsPage needed exactly that.
     if (!_live) {
-      return mock.marketplaceReviews.map((r) {
+      final seeded = mock.marketplaceReviews.map((r) {
         final matches = mock.marketplaceProducts.where((p) => p.id == r.productId);
         return Review(id: r.id, productId: r.productId, productName: matches.isEmpty ? null : matches.first.name, reviewerName: r.reviewerName, rating: r.rating, comment: r.comment);
-      }).toList();
+      });
+      final local = _locallyAddedReviews.map((r) {
+        final matches = mock.marketplaceProducts.where((p) => p.id == r.productId);
+        return Review(id: r.id, productId: r.productId, productName: matches.isEmpty ? null : matches.first.name, reviewerName: r.reviewerName, rating: r.rating, comment: r.comment);
+      });
+      return [...local.toList().reversed, ...seeded];
     }
     if (sellerId == null) return [];
     final rows = await _client
@@ -409,7 +435,11 @@ class MarketplaceRepository {
   }
 
   Future<List<Review>> fetchReviewsForProduct(String productId) async {
-    if (!_live) return mock.marketplaceReviews.where((r) => r.productId == productId).map((r) => Review(id: r.id, productId: r.productId, reviewerName: r.reviewerName, rating: r.rating, comment: r.comment)).toList();
+    if (!_live) {
+      final local = _locallyAddedReviews.where((r) => r.productId == productId).toList().reversed;
+      final seeded = mock.marketplaceReviews.where((r) => r.productId == productId).map((r) => Review(id: r.id, productId: r.productId, reviewerName: r.reviewerName, rating: r.rating, comment: r.comment));
+      return [...local, ...seeded];
+    }
     // Matches this file's other bounded list queries (fetchOrdersForBuyer/
     // fetchOrdersForSeller at 200, fetchReviewsForSeller at 300) — was the
     // one remaining unbounded query here, a genuinely popular product could
@@ -448,7 +478,17 @@ class MarketplaceRepository {
   // rejects a second review from the same identified reviewer on the same
   // product. Pass the caller's own profile id here, never anyone else's.
   Future<void> addReview({required String productId, required String? reviewerId, required String reviewerName, required int rating, required String comment}) async {
-    if (!_live) return;
+    if (!_live) {
+      _locallyAddedReviews.add(Review(
+        id: 'local-review-${DateTime.now().microsecondsSinceEpoch}',
+        productId: productId,
+        reviewerId: reviewerId,
+        reviewerName: reviewerName,
+        rating: rating,
+        comment: comment.isEmpty ? null : comment,
+      ));
+      return;
+    }
     await _client.from('marketplace_reviews').insert({
       'product_id': productId,
       'reviewer_id': ?reviewerId,
@@ -481,8 +521,14 @@ class MarketplaceRepository {
   }
 
   List<Product> _mockProducts() => (debugProductsOverride ?? mock.marketplaceProducts).map((p) {
-        final productReviews = mock.marketplaceReviews.where((r) => r.productId == p.id);
-        final reviewCount = productReviews.length;
+        // Includes locally-added demo reviews (see addReview's own doc
+        // comment) so a just-submitted rating actually moves the average
+        // shown, not just the seeded mock data.
+        final ratings = [
+          ...mock.marketplaceReviews.where((r) => r.productId == p.id).map((r) => r.rating),
+          ..._locallyAddedReviews.where((r) => r.productId == p.id).map((r) => r.rating),
+        ];
+        final reviewCount = ratings.length;
         return Product(
           id: p.id,
           sellerId: p.id,
@@ -495,7 +541,7 @@ class MarketplaceRepository {
           upiId: p.upiId,
           paymentNote: p.paymentNote,
           isActive: p.isActive,
-          avgRating: reviewCount == 0 ? null : productReviews.map((r) => r.rating).reduce((a, b) => a + b) / reviewCount,
+          avgRating: reviewCount == 0 ? null : ratings.reduce((a, b) => a + b) / reviewCount,
           reviewCount: reviewCount,
         );
       }).toList();

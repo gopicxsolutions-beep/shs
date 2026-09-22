@@ -22,6 +22,7 @@ void main() {
   });
   tearDown(() {
     MarketplaceRepository.debugProductsOverride = null;
+    MarketplaceRepository.debugClearLocalReviews();
   });
 
   Widget harness(String productId) => ChangeNotifierProvider<AppState>(
@@ -70,14 +71,17 @@ void main() {
   // Marketplace audit finding: "Write a Review" used to be offered
   // regardless of real eligibility (a delivered order + no existing review —
   // see MarketplaceRepository.canReviewProduct's own doc comment) — live
-  // mode now gates it on that. Demo mode is deliberately unaffected (its own
-  // addReview() is a no-op either way, matching isOwnProduct's identical
-  // SupabaseService.isConfigured gate), which this confirms stays true after
-  // the change; the live-mode gating logic itself is verified directly
-  // against the real database instead (see this round's
+  // mode now gates it on that. Demo mode is deliberately unaffected — it has
+  // no delivered-order/eligibility concept at all, matching isOwnProduct's
+  // identical SupabaseService.isConfigured gate — which this confirms stays
+  // true after the change; the live-mode gating logic itself is verified
+  // directly against the real database instead (see this round's
   // DEVELOPMENT_PROGRESS.md entry) — canReviewProduct() talks straight to
   // Supabase, so it can't be driven through demo mode's mock catalog at all.
-  testWidgets('demo mode still always offers Write a Review (its own addReview is a no-op regardless)', (tester) async {
+  // (Demo mode's addReview() DOES genuinely persist locally for the
+  // session, same as placeOrder — see addReview's own doc comment — just
+  // not gated by eligibility the way live mode is.)
+  testWidgets('demo mode still always offers Write a Review, regardless of eligibility', (tester) async {
     tester.view.physicalSize = const Size(400, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -87,6 +91,79 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Write a Review'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  // User bug report: tapping a star in the "Write a Review" dialog appeared
+  // to have no effect — the rating stayed shown as 5 stars no matter which
+  // one was tapped. Reproducing directly: open the dialog, tap the "2
+  // stars" button, and confirm the dialog's OWN icon state actually
+  // reflects rating=2 (exactly 2 filled stars, 3 outline) rather than still
+  // showing all 5 filled.
+  testWidgets('tapping a star in the Write a Review dialog actually changes the selected rating', (tester) async {
+    tester.view.physicalSize = const Size(400, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(harness('p1'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Write a Review'));
+    await tester.pumpAndSettle();
+
+    // Scoped to the dialog only — the page's own review list underneath
+    // also renders star_rounded/star_border_rounded icons (at a smaller
+    // size) for each existing review, which would otherwise be miscounted
+    // as part of the dialog's 5-star picker.
+    final dialogStars = find.descendant(of: find.byType(AlertDialog), matching: find.byIcon(Icons.star_rounded));
+    final dialogEmptyStars = find.descendant(of: find.byType(AlertDialog), matching: find.byIcon(Icons.star_border_rounded));
+
+    // Default is 5 stars — all filled.
+    expect(dialogStars, findsNWidgets(5));
+    expect(dialogEmptyStars, findsNothing);
+
+    await tester.tap(find.byTooltip('2 stars'));
+    await tester.pumpAndSettle();
+
+    expect(dialogStars, findsNWidgets(2), reason: 'this was the bug: the rating never actually changed after tapping a star');
+    expect(dialogEmptyStars, findsNWidgets(3));
+    expect(tester.takeException(), isNull);
+  });
+
+  // Continuing the same bug report investigation. The dialog's OWN star
+  // picker works correctly (confirmed above) — but `addReview` used to be a
+  // pure no-op in demo mode (unlike `placeOrder`, which genuinely writes to
+  // `_locallyPlaced`), so whatever was picked never actually landed
+  // anywhere: the review list kept showing only the pre-seeded 5-star
+  // review ("Padma Reddy"), which is indistinguishable, at a glance, from
+  // "my rating always ends up as 5" — exactly the reported symptom. Fixed
+  // by giving `addReview` a real local write in demo mode too, mirroring
+  // `placeOrder`'s own established pattern.
+  testWidgets('demo mode: submitting a 2-star review actually adds it to the list, distinct from the original 5-star one', (tester) async {
+    tester.view.physicalSize = const Size(400, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(harness('p1'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Write a Review'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('2 stars'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'test comment');
+    await tester.tap(find.text('Submit'));
+    await tester.pumpAndSettle();
+
+    // Both the pre-seeded review AND the just-submitted one are now present.
+    expect(find.text('Padma Reddy'), findsOneWidget, reason: 'the original seeded review is untouched');
+    expect(find.text('test comment'), findsOneWidget, reason: 'this was the bug: her own submitted rating/comment never actually landed anywhere before');
+    final reviewListStars = find.descendant(of: find.byType(ListView), matching: find.byIcon(Icons.star_rounded));
+    // 5 (seeded review) + 2 (her new one) + 1 (the header's own average-
+    // rating summary icon, now (5+2)/2 = 3.5, still rounds to one star icon).
+    expect(reviewListStars, findsNWidgets(8));
     expect(tester.takeException(), isNull);
   });
 

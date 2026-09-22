@@ -58,8 +58,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   // comment. Demo mode never needed this (its own `isOwnProduct` guard is
   // already `SupabaseService.isConfigured`-gated, so this only ever matters
   // in live mode, where `canReviewProduct` itself is), so this simply stays
-  // false — matching demo mode's existing "review action always offered,
-  // addReview() itself is a no-op" behavior, unchanged.
+  // false — demo mode keeps offering the review action unconditionally,
+  // unchanged (its `addReview()` does genuinely persist locally now, but
+  // still isn't gated by delivered-order eligibility the way live mode is).
   bool _canReview = false;
 
   @override
@@ -542,9 +543,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 // `'delivered'` yet, or someone who's already reviewed it no
                 // longer sees "Write a Review" at all, instead of filling
                 // out the whole dialog only to hit a flat, unexplained
-                // error. Demo mode is unaffected — its own `addReview()` is
-                // a no-op regardless, matching `isOwnProduct`'s identical
-                // `SupabaseService.isConfigured` gate just above.
+                // error. Demo mode is unaffected — it has no delivered-
+                // order/eligibility concept at all, matching `isOwnProduct`'s
+                // identical `SupabaseService.isConfigured` gate just above.
                 action: !canOfferReview ? null : (_submittingReview ? l10n.productDetailSubmittingAction : l10n.productDetailWriteReviewAction),
                 onAction: !canOfferReview ? null : () => _writeReview(productId),
               ),

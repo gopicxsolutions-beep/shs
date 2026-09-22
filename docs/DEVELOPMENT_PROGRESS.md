@@ -22120,3 +22120,53 @@ forcing My Listings' rating condition to `false` each fail their respective
 test. No new migration — both reuse existing, already-verified data
 (`'delivered'`-status filtering from round 11, `avgRating`/`reviewCount`
 from round 12).
+
+## 2026-09-22 — Bug fix: picking a star rating in "Write a Review" appeared to always default to 5 stars
+
+User-reported bug: "buyers whats to give rating on product... no option to
+select star rating it gives default as 5 star rating."
+
+Reproduced directly with two widget tests before touching any code. First
+confirmed the dialog's OWN star picker (`IconButton.onPressed: () =>
+setDialogState(() => rating = i + 1)`) works correctly in isolation —
+tapping "2 stars" genuinely flips the icon state to 2 filled/3 outline.
+Then reproduced the actual reported symptom: submitting that 2-star pick in
+demo mode left the review list showing only the pre-seeded mock review
+("Padma Reddy," 5 stars) — because `MarketplaceRepository.addReview()` was
+a pure no-op in demo mode (`if (!_live) return;`), unlike `placeOrder`
+above it in the same file, which genuinely writes to a static
+`_locallyPlaced` list so a demo purchase survives the session. Whatever
+star she picked never landed anywhere; what she saw afterward was just the
+unchanged seed data, which happens to be 5 stars for 'p1' — visually
+indistinguishable from "my rating always resets to 5." A "Demo mode —
+review not saved" SnackBar does explain this, but it's easy to miss.
+
+**Fix**: gave `addReview` a real local write in demo mode, mirroring
+`placeOrder`'s own established pattern — a new static `_locallyAddedReviews`
+list, merged into `fetchReviewsForProduct`/`fetchReviewsForSeller`'s demo
+branches (newest first, ahead of the seeded mock reviews) and into
+`_mockProducts()`'s avgRating/reviewCount calculation (round 12), so a
+just-submitted rating now actually shows up and moves the average, not just
+the seeded data. `deleteReview`/`updateReview` are unaffected (still no-ops
+in demo mode) — their UI actions are gated behind `SupabaseService.
+isConfigured` and never show there regardless (rounds 10/13), so there was
+no user-visible bug to fix on that side.
+
+Also live-mode-checked by re-reading the write path end to end: the
+dialog's local `rating` variable is captured by the same closure that later
+calls `_repo.addReview(..., rating: rating, ...)`, and the repository's live
+branch sends `'rating': rating` straight through to the INSERT with no
+hardcoding anywhere — `marketplace_reviews.rating` has no default value in
+the schema either. No live-mode bug found; this was a demo-mode-only gap.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1169/1169 (+2 new:
+tapping a star genuinely changes the dialog's own selected rating; a
+submitted demo-mode review now actually appears in the list alongside the
+original seeded one, distinct rating and comment). Mutation-checked —
+reverting `addReview`'s demo branch to a bare no-op fails the new
+regression test. Found and fixed a same-shaped issue along the way: since
+`_locallyAddedReviews` is static, a review submitted by one test now
+leaked into later tests asserting an exact rating/count for the same shared
+product ('p1') — added `MarketplaceRepository.debugClearLocalReviews()`
+(mirrors the existing `debugProductsOverride = null` test seam) and wired
+it into this test file's `tearDown`.
