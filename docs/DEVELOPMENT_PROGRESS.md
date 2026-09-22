@@ -21534,3 +21534,60 @@ live build (this session's usual OTP limitation).
 Docs updated in this same change: [SRS.md](SRS.md) FR-MKT-3 and the
 marketplace paragraph, [ARCHITECTURE.md](ARCHITECTURE.md)'s
 `place_marketplace_order` RPC table row.
+
+## 2026-09-22 — CRITICAL, same-day, self-caused regression: 0153 silently dropped 5 live guards from place_marketplace_order
+
+**Context**: user asked for a broader marketplace audit ("fix all the issues
+and gaps... missing features... don't add digital payment"). Root-caused
+this before doing anything else in the audit, because it was found to be
+live and exploitable right now.
+
+**What happened**: earlier today's migration 0153 (adding quantity support)
+rewrote `place_marketplace_order` via `drop function ...; create or replace
+function ...`, written from the migration-0057 definition that happened to
+be the one cited nearby. Four intermediate migrations — 0091, 0098, 0111,
+0131 — had each independently hardened this exact function since 0057, and
+every one of those guards was silently lost:
+1. `profile_is_active(auth.uid())` (0131) — a deactivated buyer could keep
+   ordering.
+2. 20-orders/hour rate limit (0131) — reopened the exact unlimited
+   stock-draining DoS that migration documented finding live.
+3. `profile_is_active(seller_id)` (0098/0111) — a deactivated seller's
+   products became orderable again.
+4. Self-order block (0131) — a seller could buy her own listing again.
+5. `is_active` (delisted) check (0150) — **the entire point of that
+   migration** — reopened; a delisted product could be ordered again via a
+   direct RPC call.
+
+**Root cause**: didn't grep for every migration touching the function name
+before rewriting it — relied on one nearby doc-comment citation instead of
+the actual live definition. **Lesson recorded in the fix migration itself**:
+before any `drop ...; create or replace ...` on a `security definer`
+function, `grep -rl "function public.<name>" supabase/migrations/` first, or
+read the live `pg_get_functiondef` — never assume the migration a doc
+comment happens to cite is the current definition.
+
+**Fix** (`0154_iteration47_marketplace_order_regression_fix.sql`): restores
+all five guards on top of the quantity support (which was itself correct and
+is kept). Also closes two more gaps a self-review of 0153 caught in the same
+pass, before either was exploited: `quantity` was added to `marketplace_
+orders` but never added to the locked-column list (`marketplace_order_
+locked_fields`/`marketplace_orders_update_seller_or_staff`), so a seller's
+status-advance PATCH could silently rewrite it — now locked the same way
+every other order column is; and 0153's `revoke ... from public` omitted
+`, anon` (every sibling migration revokes from both) — fixed to match this
+schema's standing grant-hygiene convention.
+
+**Verification**: live, RLS on, one rolled-back transaction covering all six
+scenarios individually (ordered so the rate-limit test, which exhausts a
+buyer's quota, runs last and can't mask the others): deactivated buyer
+refused, deactivated seller's product refused, self-order refused, delisted
+product refused, 21st order in an hour refused, and — for the quantity lock
+— a seller's combined status+quantity PATCH is refused outright (`42501`,
+RLS WITH CHECK violation) while a legitimate status-only update on the same
+order still succeeds and the order's quantity is confirmed unchanged
+afterward. Re-queried after rollback: both accounts' `is_active` restored,
+zero leftover probe products, zero leftover orders.
+
+Docs updated in this same change: [ARCHITECTURE.md](ARCHITECTURE.md)'s
+`place_marketplace_order` RPC table row.
