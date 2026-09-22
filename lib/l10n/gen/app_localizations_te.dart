@@ -1744,6 +1744,14 @@ class AppLocalizationsTe extends AppLocalizations {
       'UPI యాప్‌ను తెరవలేకపోయాము. దయచేసి పైన చూపిన UPI IDని ఉపయోగించి చెల్లించండి.';
 
   @override
+  String get productDetailScanToPay => 'లేదా స్కాన్ చేసి చెల్లించండి';
+
+  @override
+  String productDetailQrCodeSemantics(String upiId, String amount) {
+    return '$upiId కోసం UPI చెల్లింపు QR కోడ్, మొత్తం ₹$amount';
+  }
+
+  @override
   String get productDetailDelistedBadge => 'తీసివేయబడింది';
 
   @override

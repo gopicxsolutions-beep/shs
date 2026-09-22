@@ -1742,6 +1742,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not open a UPI app. Please pay using the UPI ID shown above.';
 
   @override
+  String get productDetailScanToPay => 'Or scan to pay';
+
+  @override
+  String productDetailQrCodeSemantics(String upiId, String amount) {
+    return 'UPI payment QR code for $upiId, amount ₹$amount';
+  }
+
+  @override
   String get productDetailDelistedBadge => 'Delisted';
 
   @override

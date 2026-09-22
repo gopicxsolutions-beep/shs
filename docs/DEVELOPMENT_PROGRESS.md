@@ -22170,3 +22170,41 @@ leaked into later tests asserting an exact rating/count for the same shared
 product ('p1') — added `MarketplaceRepository.debugClearLocalReviews()`
 (mirrors the existing `debugProductsOverride = null` test seam) and wired
 it into this test file's `tearDown`.
+
+## 2026-09-22 — Feature: a UPI payment QR code alongside "Pay via UPI"
+
+User request: add a QR code to the marketplace payment flow, alongside the
+existing "Pay via UPI" button. Explicitly still not a real payment
+gateway/processor — this app has none, by design (see MANIFESTO.md/SRS.md
+§3.8) — the QR just renders a scannable version of the exact same `upi://
+pay?...` deep link the button already launches, for a buyer whose phone has
+no UPI app configured to resolve that deep link (or who's on a desktop
+browser), the same fallback this app already offers for SHG savings
+payments (`payments_qr_page.dart` scans a QR; this is the first place that
+*generates* one).
+
+**Implementation**: added `qr_flutter` (pure Dart/`CustomPainter`-based —
+no platform channel, so none of the stale-`web_plugin_registrant.dart`
+risk a real plugin package would carry, per this file's own earlier
+documented lesson on that). Extracted the UPI URI construction, previously
+inlined in `_payViaUpi`, into a top-level `marketplaceUpiPaymentUri()`
+function so both the button and the new `QrImageView` build from the exact
+same payee/amount/note data and can never drift apart — also makes it
+directly unit-testable, since `QrImageView`'s encoded data has no public
+getter to inspect via a widget test. Rendered inside the existing Payment
+Details card, below the "Pay via UPI" button, gated on the identical
+condition (a UPI ID set, not the seller's own listing, not delisted).
+
+**Verification**: `flutter analyze` clean; `flutter test` 1172/1172 (+3
+new: `marketplaceUpiPaymentUri` unit tests covering payee/amount/currency/
+note, omitting `tn` when there's no note, and using the multi-unit TOTAL
+not a bare unit price; a widget test confirming the QR renders alongside
+"Pay via UPI" and is absent when there's no UPI ID at all). Both the URI
+builder and the card's presence gate mutation-checked. Attempted a full
+live-browser click-through (`flutter build web --release` +
+`flutter-web-release` preview) but the marketplace is gated behind a
+9-section baseline survey for a freshly-registered demo persona, which
+wasn't practical to fill out just for a visual QR check — relying on the
+automated coverage above instead, which directly exercises the same
+rendering path (`QrImageView` mounts, doesn't throw, encodes the correct
+data) without needing a live click-through.

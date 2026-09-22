@@ -2998,6 +2998,18 @@ abstract class AppLocalizations {
   /// **'Could not open a UPI app. Please pay using the UPI ID shown above.'**
   String get productDetailUpiLaunchError;
 
+  /// No description provided for @productDetailScanToPay.
+  ///
+  /// In en, this message translates to:
+  /// **'Or scan to pay'**
+  String get productDetailScanToPay;
+
+  /// No description provided for @productDetailQrCodeSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'UPI payment QR code for {upiId}, amount ₹{amount}'**
+  String productDetailQrCodeSemantics(String upiId, String amount);
+
   /// No description provided for @productDetailDelistedBadge.
   ///
   /// In en, this message translates to:

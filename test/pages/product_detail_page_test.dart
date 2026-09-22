@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shg_saathi/data/marketplace.dart' as mock;
 import 'package:shg_saathi/l10n/gen/app_localizations.dart';
@@ -40,6 +41,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Pay via UPI'), findsNothing);
+    expect(find.byType(QrImageView), findsNothing, reason: 'no UPI ID at all means nothing to encode');
     expect(tester.takeException(), isNull);
   });
 
@@ -61,6 +63,12 @@ void main() {
     expect(find.text('UPI ID: lakshmidevi@upi'), findsOneWidget);
     expect(find.text('Cash on delivery also accepted'), findsOneWidget);
     expect(find.text('Pay via UPI'), findsOneWidget);
+
+    // Missing feature: a buyer whose phone has no UPI app configured to
+    // resolve the "Pay via UPI" button's deep link had no fallback — a QR
+    // code of the exact same payment URI lets any UPI app scan it instead.
+    expect(find.text('Or scan to pay'), findsOneWidget);
+    expect(find.byType(QrImageView), findsOneWidget);
 
     await tester.tap(find.text('Pay via UPI'));
     await tester.pumpAndSettle();
@@ -355,6 +363,36 @@ void main() {
       final e = const PostgrestException(message: 'something entirely unexpected');
       expect(marketplaceOrderErrorMessage(e, l10n), l10n.productDetailOrderPlaceError);
       expect(marketplaceOrderErrorMessage(Exception('network down'), l10n), l10n.productDetailOrderPlaceError);
+    });
+  });
+
+  // User-requested feature: the "Pay via UPI" button's deep link needs a
+  // UPI app already configured on the buyer's phone to actually do
+  // anything — a QR code of the exact same payment URI is a scannable
+  // fallback. A top-level function (not a widget), so the encoded data is
+  // directly testable — `QrImageView` has no public getter for it.
+  group('marketplaceUpiPaymentUri builds the correct upi:// deep link', () {
+    test('includes payee, amount, currency and note', () {
+      final uri = marketplaceUpiPaymentUri(upiId: 'lakshmidevi@upi', payeeName: 'Lakshmi Devi', amount: 1200, note: 'Cash on delivery also accepted');
+      expect(uri.scheme, 'upi');
+      expect(uri.host, 'pay');
+      expect(uri.queryParameters, {
+        'pa': 'lakshmidevi@upi',
+        'pn': 'Lakshmi Devi',
+        'am': '1200',
+        'cu': 'INR',
+        'tn': 'Cash on delivery also accepted',
+      });
+    });
+
+    test('omits tn entirely when there is no payment note, rather than sending an empty one', () {
+      final uri = marketplaceUpiPaymentUri(upiId: 'seller@upi', payeeName: 'A Seller', amount: 500);
+      expect(uri.queryParameters.containsKey('tn'), isFalse);
+    });
+
+    test('a multi-unit quantity\'s TOTAL amount, not a bare unit price', () {
+      final uri = marketplaceUpiPaymentUri(upiId: 'seller@upi', payeeName: 'A Seller', amount: 100 * 3);
+      expect(uri.queryParameters['am'], '300');
     });
   });
 }

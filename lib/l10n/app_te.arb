@@ -832,6 +832,10 @@
 
   "productDetailUpiLaunchError": "UPI యాప్‌ను తెరవలేకపోయాము. దయచేసి పైన చూపిన UPI IDని ఉపయోగించి చెల్లించండి.",
 
+  "productDetailScanToPay": "లేదా స్కాన్ చేసి చెల్లించండి",
+
+  "productDetailQrCodeSemantics": "{upiId} కోసం UPI చెల్లింపు QR కోడ్, మొత్తం ₹{amount}",
+
   "productDetailDelistedBadge": "తీసివేయబడింది",
 
   "meetingsHomeTitle": "సమావేశాలు",

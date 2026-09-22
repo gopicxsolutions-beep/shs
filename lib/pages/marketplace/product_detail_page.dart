@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -44,6 +45,30 @@ String marketplaceOrderErrorMessage(Object error, AppLocalizations l10n) {
   if (message.contains('no longer available')) return l10n.productDetailOrderErrorUnavailable;
   return l10n.productDetailOrderPlaceError;
 }
+
+/// Missing feature: the "Pay via UPI" button's deep link required the
+/// buyer's phone to already have a UPI app configured to resolve `upi://`
+/// — with none, or on a desktop browser, tapping it silently does nothing
+/// useful. A QR code of this exact same URI lets any UPI app scan it
+/// instead, the same fallback already offered for SHG savings payments
+/// (`payments_qr_page.dart`). No real payment-gateway integration exists in
+/// this app (no gateway credentials to wire one up) — this only builds a
+/// manual-pay deep link, the identical one the button already launches; a
+/// top-level function (not inlined in the widget) so both call sites can
+/// never drift apart, and so it's directly testable without pumping a
+/// widget (`QrImageView`'s own encoded data isn't otherwise inspectable —
+/// it's a private field with no public getter).
+Uri marketplaceUpiPaymentUri({required String upiId, required String payeeName, required num amount, String? note}) => Uri(
+      scheme: 'upi',
+      host: 'pay',
+      queryParameters: {
+        'pa': upiId,
+        'pn': payeeName,
+        'am': amount.toString(),
+        'cu': 'INR',
+        if (note != null && note.isNotEmpty) 'tn': note,
+      },
+    );
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
   final _repo = MarketplaceRepository();
@@ -315,32 +340,26 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
-  // No real payment-gateway integration exists in this app (no gateway
-  // credentials to wire one up) — this opens the buyer's OWN UPI app
-  // pre-filled with the seller's UPI ID, mirroring the manual-pay pattern
-  // this app already uses for SHG savings payments. The order itself is
-  // still placed through the normal `_placeOrder` flow above; there is no
-  // payment-reference/order linkage in this pass.
+  // The picked quantity, not the bare unit price — this is a manual,
+  // order-independent payment (see `marketplaceUpiPaymentUri`'s own doc
+  // comment), so nothing else here accounts for buying more than 1. Shared
+  // by both the "Pay via UPI" button (`_payViaUpi`, launches it directly)
+  // and the QR code below (renders the identical URI as a scannable code)
+  // so the two can never show different amounts/payees for the same
+  // product.
+  Uri _upiPaymentUri(Product product) => marketplaceUpiPaymentUri(
+        upiId: product.upiId!,
+        payeeName: product.sellerName,
+        amount: product.price * _quantityFor(product),
+        note: product.paymentNote,
+      );
+
   Future<void> _payViaUpi(Product product) async {
     if (_launchingUpi) return;
     setState(() => _launchingUpi = true);
     final l10n = AppLocalizations.of(context)!;
     try {
-      final uri = Uri(
-        scheme: 'upi',
-        host: 'pay',
-        queryParameters: {
-          'pa': product.upiId!,
-          'pn': product.sellerName,
-          // The picked quantity, not the bare unit price — this is a manual,
-          // order-independent payment (see this method's own doc comment
-          // above), so nothing else here accounts for buying more than 1.
-          'am': (product.price * _quantityFor(product)).toString(),
-          'cu': 'INR',
-          if (product.paymentNote != null && product.paymentNote!.isNotEmpty) 'tn': product.paymentNote!,
-        },
-      );
-      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final opened = await launchUrl(_upiPaymentUri(product), mode: LaunchMode.externalApplication);
       if (!opened && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.productDetailUpiLaunchError)));
       }
@@ -522,6 +541,39 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         label: _launchingUpi ? l10n.productDetailUpiOpeningInProgress : l10n.productDetailPayViaUpiButton,
                         fullWidth: true,
                         onPressed: _launchingUpi ? null : () => _payViaUpi(product),
+                      ),
+                      // Missing feature: the UPI ID/"Pay via UPI" button
+                      // requires the buyer's phone to actually resolve a
+                      // `upi://` deep link into an installed app — on a
+                      // device without one configured (or a desktop
+                      // browser), that silently does nothing useful. A QR
+                      // code of the exact same payment URI lets any UPI
+                      // app scan it directly instead, the same fallback
+                      // already offered for SHG savings payments
+                      // (payments_qr_page.dart). Still no real
+                      // gateway/processor — this only renders a scannable
+                      // version of data already sent to the button above.
+                      const SizedBox(height: 16),
+                      Center(
+                        child: Column(
+                          children: [
+                            Text(l10n.productDetailScanToPay, style: AppTheme.sans(11, color: Neutral.c500)),
+                            const SizedBox(height: 8),
+                            Semantics(
+                              label: l10n.productDetailQrCodeSemantics(product.upiId!, NumberFormat('#,##,##0', 'en_IN').format(product.price * _quantityFor(product))),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Neutral.c200)),
+                                child: QrImageView(
+                                  data: _upiPaymentUri(product).toString(),
+                                  version: QrVersions.auto,
+                                  size: 160,
+                                  gapless: false,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

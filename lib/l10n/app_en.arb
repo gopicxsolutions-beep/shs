@@ -1178,6 +1178,16 @@
 
   "productDetailUpiLaunchError": "Could not open a UPI app. Please pay using the UPI ID shown above.",
 
+  "productDetailScanToPay": "Or scan to pay",
+
+  "productDetailQrCodeSemantics": "UPI payment QR code for {upiId}, amount ₹{amount}",
+  "@productDetailQrCodeSemantics": {
+    "placeholders": {
+      "upiId": {"type": "String"},
+      "amount": {"type": "String"}
+    }
+  },
+
   "productDetailDelistedBadge": "Delisted",
 
   "meetingsHomeTitle": "Meetings",
