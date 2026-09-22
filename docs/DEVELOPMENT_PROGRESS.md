@@ -21215,3 +21215,59 @@ one 0152 grandfathered `NOT VALID`.
 `app_state_test.dart`, 2 of which fail on the previous `app_state.dart`).
 **Not done**: a real UI click-through of an already-onboarded account in the
 live build — sign-in is a phone OTP that can't be received from here.
+
+## 2026-09-21 — Fix: admin/CRP/CLF "Add Savings" said "No members found in your SHG yet" while SHGs full of members existed
+
+**Report**: on the admin's Add Savings page the member list showed "No members
+found in your SHG yet" even though an SHG's members existed.
+
+**Root cause**: `SavingsEntryPage._loadMembers` fetched the roster with
+`appState.profile?.shgId`. crp/clf/admin are platform-wide by design and have
+`shg_id = NULL` (all four live admins do; "testing group" has 6 members, "new
+shg group" 4), so `fetchMembers(null)` returned `[]` and the page fell through
+to the "no members" text. Even had the roster loaded, `addEntry` was also
+handed the same null `shgId` and would have returned `false` ("no SHG").
+`MeetingSchedulePage` had already been fixed for the same class of bug (staff
+SHG picker); this page was missed.
+
+**Fix** (`lib/pages/savings/savings_entry_page.dart`): for a live-mode
+crp/clf/admin account with no SHG, show an SHG picker first (`fetchAllShgs`),
+load THAT SHG's active members when one is picked (stale-response guard so a
+slow earlier SHG can't overwrite a later one; member selection cleared on
+switch), and pass the picked `shgId` to `addEntry`. Submitting without an SHG
+is refused with a reason. A failed roster fetch now shows the generic error
+instead of falling through to the misleading "no members" message, and an
+SHG that genuinely has no active members says "This SHG has no active members
+yet". Leaders and members are unchanged. New keys
+`savingsEntryShgLabel`/`SelectShgHint`/`SelectShgFirst`/`NoMembersInShg` in all
+three `.arb` files. The page now takes optional injected repositories (same
+seam as `MeetingSchedulePage`) so it is testable.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1127/1127 (+10 in
+`savings_entry_page_test.dart`); mutation-checked — with the platform-wide
+branch disabled 9 of them fail. **Live DB, RLS on, always rolled back**: the
+page's roster query as admin returns 6 / 4 / 0 rows for testing group / new shg
+group / the empty SHG; entry inserts — admin→member of own-choice SHG OK,
+admin cross-SHG OK, crp OK, leader→own SHG OK, member→self OK, and all of
+admin with mismatched `shg_id`, admin with `shg_id = NULL` (the old client
+bug), leader→another SHG's member, leader claiming her own `shg_id` for
+another SHG's member, and member→another member denied `42501`. `0` rows
+left behind.
+
+**Follow-up, same day — "issue not solved" was a stale bundle, not a missed route.** The
+reporter re-tested and still saw the message. The only route to this page is
+`Paths.savingsEntry` (Savings home tile + ledger `+` + member dashboard tile +
+voice assistant), all into the same `SavingsEntryPage`, so no second code path
+existed. The cause: the `flutter-web-release` preview serves the static
+`build/web`, which had been built BEFORE the fix — the served `main.dart.js`
+still contained `No members found in your SHG yet` and none of the new strings —
+and the commit was neither pushed nor deployed. Rebuilt with `flutter build web
+--release --dart-define-from-file=.env.json`, reloaded with a fresh query string,
+and verified in the already-signed-in admin session: the page shows an SHG
+picker with all 3 SHGs, picking "testing group" loads its 6 members
+(veeramani, veera, Rams, priya, mani, kvm — matches the DB), no console errors.
+Nothing was submitted. **Lesson: after any code change, rebuild `build/web` before
+asking anyone to re-test the release preview, and confirm the served bundle
+contains a string unique to the change.**
+
+Docs updated in this same change: [SRS.md](SRS.md) FR-SAV-1.

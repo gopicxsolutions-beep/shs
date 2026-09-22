@@ -167,9 +167,11 @@
   "dashboardGreeting": "Welcome back",
 
   "shgApprovalWaitingTitle": "Waiting for approval",
-  "shgApprovalWaitingMessage": "Your request to join has been sent to your SHG leader. You will get access once it is approved.",
+  "shgApprovalWaitingMessage": "Your request to join has been sent for approval. You will get access once your SHG leader or program staff approves it.",
   "shgApprovalRejectedTitle": "Request not approved",
   "shgApprovalRejectedMessage": "Your SHG leader did not approve this request. You can pick a different SHG and try again.",
+  "shgApprovalRemovedTitle": "No longer linked to an SHG",
+  "shgApprovalRemovedMessage": "Your earlier request was approved, but you're not currently linked to an SHG. Choose one to request access again.",
   "shgApprovalNoneTitle": "No SHG selected yet",
   "shgApprovalNoneMessage": "You don't currently have a pending request to join an SHG. Choose one to get started.",
   "unknownShg": "Unknown SHG",
@@ -1280,6 +1282,14 @@
   "savingsEntryMemberLabel": "Member",
 
   "savingsEntryNoMembersFound": "No members found in your SHG yet — there's no one to record this entry against.",
+
+  "savingsEntryNoMembersInShg": "This SHG has no active members yet — there's no one to record this entry against.",
+
+  "savingsEntryShgLabel": "SHG",
+
+  "savingsEntrySelectShgHint": "Select an SHG",
+
+  "savingsEntrySelectShgFirst": "Select an SHG first.",
 
   "savingsEntrySelectMember": "Select a member",
 

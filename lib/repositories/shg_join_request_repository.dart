@@ -130,6 +130,20 @@ class ShgJoinRequestRepository {
   /// different SHG", with no way to just stop waiting.
   Future<void> withdraw(String requestId) async {
     if (!_live) return;
-    await _client.from('shg_join_requests').delete().eq('id', requestId);
+    // `shg_join_requests_delete_self_pending`'s RLS only matches a row that
+    // is STILL `status = 'pending'` — a plain `DELETE ... eq(id)` with no
+    // `.select()` returns success even when it matched 0 rows (this repo's
+    // own CLAUDE.md-documented anti-pattern: a USING-only policy denial is
+    // silent, not an error). Found live-auditing this page: a request that
+    // was already decided (e.g. a stale 'approved' row an admin later
+    // unlinked the member from outside the join-request flow entirely — see
+    // ShgApprovalPendingPage's `removed` case) would make "Withdraw request"
+    // appear to succeed while changing nothing, reloading to the exact same
+    // stuck screen with no explanation. Chaining `.select('id')` gets the
+    // matched rows back so that case can be told apart from a real success.
+    final rows = await _client.from('shg_join_requests').delete().eq('id', requestId).select('id');
+    if ((rows as List).isEmpty) {
+      throw StateError('This request has already been decided and can no longer be withdrawn.');
+    }
   }
 }

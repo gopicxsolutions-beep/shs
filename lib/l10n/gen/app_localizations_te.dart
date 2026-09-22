@@ -440,7 +440,7 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get shgApprovalWaitingMessage =>
-      'మీ చేరిక అభ్యర్థన మీ SHG నాయకుడికి పంపబడింది. ఆమోదం లభించిన తర్వాత మీకు యాక్సెస్ లభిస్తుంది.';
+      'మీ చేరిక అభ్యర్థన ఆమోదం కోసం పంపబడింది. మీ SHG నాయకుడు లేదా ప్రోగ్రామ్ సిబ్బంది ఆమోదించిన తర్వాత మీకు యాక్సెస్ లభిస్తుంది.';
 
   @override
   String get shgApprovalRejectedTitle => 'అభ్యర్థన ఆమోదించబడలేదు';
@@ -448,6 +448,13 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get shgApprovalRejectedMessage =>
       'మీ SHG నాయకుడు ఈ అభ్యర్థనను ఆమోదించలేదు. మీరు వేరే SHGని ఎంచుకుని మళ్ళీ ప్రయత్నించవచ్చు.';
+
+  @override
+  String get shgApprovalRemovedTitle => 'ఇక ఏ SHGతోనూ అనుసంధానించబడలేదు';
+
+  @override
+  String get shgApprovalRemovedMessage =>
+      'మీ మునుపటి అభ్యర్థన ఆమోదించబడింది, కానీ మీరు ప్రస్తుతం ఏ SHGతోనూ అనుసంధానించబడలేదు. మళ్ళీ యాక్సెస్ కోసం ఒక SHGని ఎంచుకోండి.';
 
   @override
   String get shgApprovalNoneTitle => 'ఇంకా SHG ఎంచుకోలేదు';
@@ -1885,6 +1892,19 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get savingsEntryNoMembersFound =>
       'మీ SHGలో ఇంకా సభ్యులు లేరు — ఈ ఎంట్రీని ఎవరి పేరు మీద నమోదు చేయాలో లేదు.';
+
+  @override
+  String get savingsEntryNoMembersInShg =>
+      'ఈ SHGలో ఇంకా క్రియాశీల సభ్యులు లేరు — ఈ ఎంట్రీని ఎవరి పేరు మీద నమోదు చేయాలో లేదు.';
+
+  @override
+  String get savingsEntryShgLabel => 'SHG';
+
+  @override
+  String get savingsEntrySelectShgHint => 'ఒక SHGని ఎంచుకోండి';
+
+  @override
+  String get savingsEntrySelectShgFirst => 'ముందుగా ఒక SHGని ఎంచుకోండి.';
 
   @override
   String get savingsEntrySelectMember => 'ఒక సభ్యురాలిని ఎంచుకోండి';

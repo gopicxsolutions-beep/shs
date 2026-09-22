@@ -436,7 +436,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get shgApprovalWaitingMessage =>
-      'आपका जुड़ने का अनुरोध आपके SHG लीडर को भेज दिया गया है। स्वीकृति मिलते ही आपको पहुंच मिल जाएगी।';
+      'आपका जुड़ने का अनुरोध स्वीकृति के लिए भेज दिया गया है। आपके SHG लीडर या प्रोग्राम स्टाफ़ द्वारा स्वीकृति मिलते ही आपको पहुंच मिल जाएगी।';
 
   @override
   String get shgApprovalRejectedTitle => 'अनुरोध स्वीकृत नहीं हुआ';
@@ -444,6 +444,13 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get shgApprovalRejectedMessage =>
       'आपके SHG लीडर ने इस अनुरोध को स्वीकृत नहीं किया। आप कोई दूसरा SHG चुनकर फिर से कोशिश कर सकते हैं।';
+
+  @override
+  String get shgApprovalRemovedTitle => 'अब किसी SHG से जुड़े नहीं हैं';
+
+  @override
+  String get shgApprovalRemovedMessage =>
+      'आपका पहला अनुरोध स्वीकृत हुआ था, लेकिन अभी आप किसी SHG से जुड़े नहीं हैं। फिर से पहुंच पाने के लिए एक SHG चुनें।';
 
   @override
   String get shgApprovalNoneTitle => 'अभी तक कोई SHG चयनित नहीं';
@@ -1860,6 +1867,19 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get savingsEntryNoMembersFound =>
       'आपके SHG में अभी तक कोई सदस्य नहीं है — इस एंट्री को किसी के नाम दर्ज करने के लिए कोई नहीं है।';
+
+  @override
+  String get savingsEntryNoMembersInShg =>
+      'इस SHG में अभी तक कोई सक्रिय सदस्य नहीं है — इस एंट्री को किसी के नाम दर्ज करने के लिए कोई नहीं है।';
+
+  @override
+  String get savingsEntryShgLabel => 'SHG';
+
+  @override
+  String get savingsEntrySelectShgHint => 'एक SHG चुनें';
+
+  @override
+  String get savingsEntrySelectShgFirst => 'पहले एक SHG चुनें।';
 
   @override
   String get savingsEntrySelectMember => 'एक सदस्य चुनें';

@@ -162,9 +162,11 @@
   "dashboardGreeting": "తిరిగి స్వాగతం",
 
   "shgApprovalWaitingTitle": "ఆమోదం కోసం వేచి ఉంది",
-  "shgApprovalWaitingMessage": "మీ చేరిక అభ్యర్థన మీ SHG నాయకుడికి పంపబడింది. ఆమోదం లభించిన తర్వాత మీకు యాక్సెస్ లభిస్తుంది.",
+  "shgApprovalWaitingMessage": "మీ చేరిక అభ్యర్థన ఆమోదం కోసం పంపబడింది. మీ SHG నాయకుడు లేదా ప్రోగ్రామ్ సిబ్బంది ఆమోదించిన తర్వాత మీకు యాక్సెస్ లభిస్తుంది.",
   "shgApprovalRejectedTitle": "అభ్యర్థన ఆమోదించబడలేదు",
   "shgApprovalRejectedMessage": "మీ SHG నాయకుడు ఈ అభ్యర్థనను ఆమోదించలేదు. మీరు వేరే SHGని ఎంచుకుని మళ్ళీ ప్రయత్నించవచ్చు.",
+  "shgApprovalRemovedTitle": "ఇక ఏ SHGతోనూ అనుసంధానించబడలేదు",
+  "shgApprovalRemovedMessage": "మీ మునుపటి అభ్యర్థన ఆమోదించబడింది, కానీ మీరు ప్రస్తుతం ఏ SHGతోనూ అనుసంధానించబడలేదు. మళ్ళీ యాక్సెస్ కోసం ఒక SHGని ఎంచుకోండి.",
   "shgApprovalNoneTitle": "ఇంకా SHG ఎంచుకోలేదు",
   "shgApprovalNoneMessage": "ప్రస్తుతం మీకు SHGలో చేరడానికి పెండింగ్‌లో ఉన్న అభ్యర్థన లేదు. ప్రారంభించడానికి ఒక SHGని ఎంచుకోండి.",
   "unknownShg": "తెలియని SHG",
@@ -931,6 +933,14 @@
   "savingsEntryMemberLabel": "సభ్యురాలు",
 
   "savingsEntryNoMembersFound": "మీ SHGలో ఇంకా సభ్యులు లేరు — ఈ ఎంట్రీని ఎవరి పేరు మీద నమోదు చేయాలో లేదు.",
+
+  "savingsEntryNoMembersInShg": "ఈ SHGలో ఇంకా క్రియాశీల సభ్యులు లేరు — ఈ ఎంట్రీని ఎవరి పేరు మీద నమోదు చేయాలో లేదు.",
+
+  "savingsEntryShgLabel": "SHG",
+
+  "savingsEntrySelectShgHint": "ఒక SHGని ఎంచుకోండి",
+
+  "savingsEntrySelectShgFirst": "ముందుగా ఒక SHGని ఎంచుకోండి.",
 
   "savingsEntrySelectMember": "ఒక సభ్యురాలిని ఎంచుకోండి",
 

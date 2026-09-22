@@ -420,7 +420,7 @@ Financial Ledger, and Livelihood — see those sections' own notes.
 
 | ID | Requirement | Roles |
 |---|---|---|
-| FR-SAV-1 | Member (or leader/staff for a roster member) records a savings entry, always starting `pending` | Member, Leader, staff |
+| FR-SAV-1 | Member (or leader/staff for a roster member) records a savings entry, always starting `pending`. A leader picks from her own SHG's active members; crp/clf/admin have no SHG of their own, so they pick an SHG first and then one of that SHG's active members (`savings_insert_self_leader_or_staff` permits this for any SHG) | Member, Leader, staff |
 | FR-SAV-2 | Member views own savings history and a running-balance statement (verified entries only) | Member |
 | FR-SAV-3 | SHG members share realtime read access to the group's savings ledger | Member, Leader |
 | FR-SAV-4 | Leader verifies a pending entry from her own SHG's queue (flat status flip; self-verification blocked as of round 190 — the button doesn't render for her own row); CRP/CLF/Admin verify platform-wide across every SHG (since round 168) | Leader, CRP, CLF, Admin |

@@ -15,13 +15,16 @@ import '../../widgets/async_state.dart';
 /// Shown to a member whose SHG join request hasn't been decided yet — see
 /// `AppState.needsShgApproval` and the router redirect that gates on it.
 class ShgApprovalPendingPage extends StatefulWidget {
-  const ShgApprovalPendingPage({super.key});
+  // Injectable for tests (same seam as MeetingSchedulePage/SavingsEntryPage)
+  // — defaults to the real repository.
+  final ShgJoinRequestRepository? repository;
+  const ShgApprovalPendingPage({super.key, this.repository});
   @override
   State<ShgApprovalPendingPage> createState() => _ShgApprovalPendingPageState();
 }
 
 class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
-  final _repo = ShgJoinRequestRepository();
+  late final _repo = widget.repository ?? ShgJoinRequestRepository();
   final GlobalKey<AppAsyncBuilderState<ShgJoinRequest?>> _key = GlobalKey();
   bool _checking = false;
   bool _withdrawing = false;
@@ -95,6 +98,23 @@ class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
               // that no longer exists.
               final noRequest = request == null;
               final rejected = request?.status == 'rejected';
+              // A live-observed real state (found while auditing this page
+              // end to end, not hypothetical): `request.status == 'approved'`
+              // yet the router still sent her here — `needsShgApproval` only
+              // checks the CURRENT profile (`role == 'member' && shgId ==
+              // null`), so this combination is only reachable when something
+              // unlinked her from her SHG AFTER a genuine approval (e.g. an
+              // admin's "Assign SHG" removal/reassignment — that action never
+              // touches this now-stale `shg_join_requests` row, since it
+              // doesn't go through `approve_shg_join_request` at all). Before
+              // this fix, the code below had no explicit branch for
+              // 'approved' at all, so it silently fell into the same
+              // "waiting for approval" copy as a genuine first-time pending
+              // request — telling an already-vetted, previously-active
+              // member (with real savings/loan/attendance history) to sit
+              // and wait for a decision that was already made and then
+              // undone, with no explanation of what actually happened.
+              final removed = request?.status == 'approved';
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -102,24 +122,28 @@ class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
                     width: 64, height: 64,
                     margin: const EdgeInsets.symmetric(horizontal: 100),
                     decoration: BoxDecoration(
-                      color: rejected ? Accent.red50 : Gold.c50,
+                      color: rejected || removed ? Accent.red50 : Gold.c50,
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: Icon(
-                      rejected ? Icons.cancel_rounded : (noRequest ? Icons.info_outline_rounded : Icons.hourglass_top_rounded),
-                      color: rejected ? Accent.red600 : Gold.c600,
+                      rejected || removed ? Icons.cancel_rounded : (noRequest ? Icons.info_outline_rounded : Icons.hourglass_top_rounded),
+                      color: rejected || removed ? Accent.red600 : Gold.c600,
                       size: 30,
                     ),
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    rejected ? l10n.shgApprovalRejectedTitle : (noRequest ? l10n.shgApprovalNoneTitle : l10n.shgApprovalWaitingTitle),
+                    rejected
+                        ? l10n.shgApprovalRejectedTitle
+                        : (removed ? l10n.shgApprovalRemovedTitle : (noRequest ? l10n.shgApprovalNoneTitle : l10n.shgApprovalWaitingTitle)),
                     textAlign: TextAlign.center,
                     style: AppTheme.display(20),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    rejected ? l10n.shgApprovalRejectedMessage : (noRequest ? l10n.shgApprovalNoneMessage : l10n.shgApprovalWaitingMessage),
+                    rejected
+                        ? l10n.shgApprovalRejectedMessage
+                        : (removed ? l10n.shgApprovalRemovedMessage : (noRequest ? l10n.shgApprovalNoneMessage : l10n.shgApprovalWaitingMessage)),
                     textAlign: TextAlign.center,
                     style: AppTheme.sans(13, color: Neutral.c500),
                   ),
@@ -138,6 +162,16 @@ class _ShgApprovalPendingPageState extends State<ShgApprovalPendingPage> {
                   const SizedBox(height: 24),
                   if (rejected)
                     AppButton(label: l10n.chooseDifferentShg, fullWidth: true, size: ButtonSize.lg, onPressed: () => context.go(Paths.profileSetup))
+                  else if (removed)
+                    // Deliberately NOT the "still waiting" button block below
+                    // (Check Status / Withdraw) — her request is already
+                    // decided ('approved'), so Check Status can never change
+                    // anything, and Withdraw would silently no-op: `shg_join_
+                    // requests_delete_self_pending`'s RLS only matches
+                    // `status = 'pending'`, so the DELETE affects 0 rows and
+                    // still returns success (see ShgJoinRequestRepository.
+                    // withdraw's own hardening for this same class of bug).
+                    AppButton(label: l10n.chooseAnShg, fullWidth: true, size: ButtonSize.lg, onPressed: () => context.go(Paths.profileSetup))
                   else if (noRequest)
                     AppButton(label: l10n.chooseAnShg, fullWidth: true, size: ButtonSize.lg, onPressed: () => context.go(Paths.profileSetup))
                   else ...[

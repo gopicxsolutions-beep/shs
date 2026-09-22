@@ -17,7 +17,11 @@ import '../../widgets/app_card.dart';
 import '../../widgets/input_formatters.dart';
 
 class SavingsEntryPage extends StatefulWidget {
-  const SavingsEntryPage({super.key});
+  // Injectable for tests (same seam as `MeetingSchedulePage`) — default to
+  // the real repositories.
+  final SavingsRepository? repository;
+  final ShgRepository? shgRepository;
+  const SavingsEntryPage({super.key, this.repository, this.shgRepository});
   @override
   State<SavingsEntryPage> createState() => _SavingsEntryPageState();
 }
@@ -25,8 +29,8 @@ class SavingsEntryPage extends StatefulWidget {
 class _SavingsEntryPageState extends State<SavingsEntryPage> {
   final _formKey = GlobalKey<FormState>();
   final _amount = TextEditingController();
-  final _repo = SavingsRepository();
-  final _shgRepo = ShgRepository();
+  late final SavingsRepository _repo = widget.repository ?? SavingsRepository();
+  late final ShgRepository _shgRepo = widget.shgRepository ?? ShgRepository();
   String _mode = 'Cash';
   String _frequency = 'Weekly';
   bool _saving = false;
@@ -34,26 +38,103 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
   List<Member> _members = [];
   String? _selectedMemberId;
   bool _loadingMembers = true;
+  bool _membersLoadFailed = false;
+
+  // crp/clf/admin have no `profile.shgId` of their own (platform-wide by
+  // design — see `MeetingSchedulePage`'s identical doc comment). This page
+  // used to load members with `profile.shgId` regardless, so every such
+  // account got an empty roster and the misleading "No members found in your
+  // SHG yet" even when SHGs full of members existed — and `addEntry` was then
+  // handed a null `shgId` too. `savings_insert_self_leader_or_staff` already
+  // lets staff record an entry for any SHG's active member (its `is_staff()`
+  // branch), so this was purely a client gap: pick the SHG first, then the
+  // member from that SHG.
+  List<ShgProfile> _shgs = [];
+  String? _selectedShgId;
+  bool _loadingShgs = false;
+  // Bumped on every roster fetch so a slower response for a previously-picked
+  // SHG can't overwrite the members of the one picked after it.
+  int _membersRequest = 0;
 
   static const _modes = ['Cash', 'UPI', 'Bank Transfer'];
   static const _frequencies = ['Weekly', 'Monthly', 'Daily'];
   static const _maxAmount = 1000000;
 
+  bool _isPlatformWide(AppState appState) {
+    final role = appState.user.role;
+    return SupabaseService.isConfigured && role != Role.member && role != Role.leader && appState.profile?.shgId == null;
+  }
+
   @override
   void initState() {
     super.initState();
-    _loadMembers();
+    final appState = context.read<AppState>();
+    if (_isPlatformWide(appState)) {
+      // No roster to load until an SHG is picked.
+      _loadingMembers = false;
+      _loadShgs();
+    } else {
+      _loadMembers(appState.profile?.shgId);
+    }
   }
 
-  Future<void> _loadMembers() async {
+  Future<void> _loadShgs() async {
+    setState(() => _loadingShgs = true);
+    try {
+      final page = await _shgRepo.fetchAllShgs();
+      if (mounted) {
+        setState(() {
+          _shgs = page.items;
+          _loadingShgs = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loadingShgs = false;
+          _error = AppLocalizations.of(context)!.asyncErrorGeneric;
+        });
+      }
+    }
+  }
+
+  void _onShgPicked(String? shgId) {
+    setState(() {
+      _selectedShgId = shgId;
+      _selectedMemberId = null;
+      _members = [];
+      _membersLoadFailed = false;
+      _error = null;
+      _loadingMembers = shgId != null;
+    });
+    if (shgId != null) _loadMembers(shgId);
+  }
+
+  Future<void> _loadMembers(String? shgId) async {
     final appState = context.read<AppState>();
     if (appState.user.role == Role.member) {
       setState(() => _loadingMembers = false);
       return;
     }
-    final members = await _shgRepo.fetchMembers(appState.profile?.shgId);
-    if (mounted) {
+    final request = ++_membersRequest;
+    final List<Member> members;
+    try {
+      members = await _shgRepo.fetchMembers(shgId);
+    } catch (_) {
+      // A failed fetch must not fall through to the "no members" message —
+      // that reads as "this SHG is empty", the very misleading state this
+      // page is being fixed for.
+      if (mounted && request == _membersRequest) {
+        setState(() {
+          _membersLoadFailed = true;
+          _loadingMembers = false;
+        });
+      }
+      return;
+    }
+    if (mounted && request == _membersRequest) {
       setState(() {
+        _membersLoadFailed = false;
         // A deactivated member can't log in to submit her own entries, but
         // nothing stopped a leader/staff from picking her here and logging
         // a NEW savings entry against her closed account — `fetchMembers`
@@ -88,6 +169,12 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
     final l10n = AppLocalizations.of(context)!;
     final appState = context.read<AppState>();
     final isLeaderOrStaff = appState.user.role != Role.member;
+    final isPlatformWide = _isPlatformWide(appState);
+    final shgId = isPlatformWide ? _selectedShgId : appState.profile?.shgId;
+    if (isPlatformWide && shgId == null) {
+      setState(() => _error = l10n.savingsEntrySelectShgFirst);
+      return;
+    }
     if (isLeaderOrStaff && _selectedMemberId == null) {
       setState(() => _error = l10n.savingsEntrySelectMember);
       return;
@@ -100,7 +187,7 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
     try {
       final saved = await _repo.addEntry(
         memberId: isLeaderOrStaff ? _selectedMemberId : appState.profile?.id,
-        shgId: appState.profile?.shgId,
+        shgId: shgId,
         amount: amount,
         mode: _mode,
         frequency: _frequency,
@@ -158,7 +245,9 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isLeaderOrStaff = context.watch<AppState>().user.role != Role.member;
+    final appState = context.watch<AppState>();
+    final isLeaderOrStaff = appState.user.role != Role.member;
+    final isPlatformWide = _isPlatformWide(appState);
     return Scaffold(
       appBar: PageHeader(title: l10n.savingsEntryTitle),
       body: SingleChildScrollView(
@@ -166,6 +255,31 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (isPlatformWide) ...[
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.savingsEntryShgLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                    const SizedBox(height: 8),
+                    _loadingShgs
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : _shgs.isEmpty
+                            // Same silently-inert-empty-dropdown gap as the
+                            // member picker below.
+                            ? Text(l10n.adminShgsEmptyState, style: AppTheme.sans(13, color: Neutral.c500))
+                            : DropdownButtonFormField<String>(
+                                initialValue: _selectedShgId,
+                                isExpanded: true,
+                                decoration: InputDecoration(border: InputBorder.none, hintText: l10n.savingsEntrySelectShgHint),
+                                items: _shgs.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))).toList(),
+                                onChanged: _onShgPicked,
+                              ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             if (isLeaderOrStaff) ...[
               AppCard(
                 child: Column(
@@ -176,7 +290,11 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
                     _loadingMembers
                         ? const SizedBox(
                             height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : _members.isEmpty
+                        : isPlatformWide && _selectedShgId == null
+                            ? Text(l10n.savingsEntrySelectShgFirst, style: AppTheme.sans(13, color: Neutral.c500))
+                            : _membersLoadFailed
+                                ? Text(l10n.asyncErrorGeneric, style: AppTheme.sans(13, color: Accent.red600))
+                                : _members.isEmpty
                             // `DropdownButtonFormField` silently disables
                             // itself when `items` is empty — no error, no
                             // visual "disabled" styling, just a
@@ -187,10 +305,14 @@ class _SavingsEntryPageState extends State<SavingsEntryPage> {
                             // this session: tapping the hint text did
                             // nothing at all.
                             ? Text(
-                                l10n.savingsEntryNoMembersFound,
+                                isPlatformWide ? l10n.savingsEntryNoMembersInShg : l10n.savingsEntryNoMembersFound,
                                 style: AppTheme.sans(13, color: Neutral.c500),
                               )
                             : DropdownButtonFormField<String>(
+                                // Keyed by SHG so switching SHGs rebuilds the
+                                // field with a cleared selection instead of
+                                // keeping a member id from the previous SHG.
+                                key: ValueKey(_selectedShgId),
                                 initialValue: _selectedMemberId,
                                 isExpanded: true,
                                 decoration: InputDecoration(border: InputBorder.none, hintText: l10n.savingsEntrySelectMember),

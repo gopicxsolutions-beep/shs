@@ -883,7 +883,7 @@ abstract class AppLocalizations {
   /// No description provided for @shgApprovalWaitingMessage.
   ///
   /// In en, this message translates to:
-  /// **'Your request to join has been sent to your SHG leader. You will get access once it is approved.'**
+  /// **'Your request to join has been sent for approval. You will get access once your SHG leader or program staff approves it.'**
   String get shgApprovalWaitingMessage;
 
   /// No description provided for @shgApprovalRejectedTitle.
@@ -897,6 +897,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your SHG leader did not approve this request. You can pick a different SHG and try again.'**
   String get shgApprovalRejectedMessage;
+
+  /// No description provided for @shgApprovalRemovedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No longer linked to an SHG'**
+  String get shgApprovalRemovedTitle;
+
+  /// No description provided for @shgApprovalRemovedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your earlier request was approved, but you\'re not currently linked to an SHG. Choose one to request access again.'**
+  String get shgApprovalRemovedMessage;
 
   /// No description provided for @shgApprovalNoneTitle.
   ///
@@ -3297,6 +3309,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No members found in your SHG yet — there\'s no one to record this entry against.'**
   String get savingsEntryNoMembersFound;
+
+  /// No description provided for @savingsEntryNoMembersInShg.
+  ///
+  /// In en, this message translates to:
+  /// **'This SHG has no active members yet — there\'s no one to record this entry against.'**
+  String get savingsEntryNoMembersInShg;
+
+  /// No description provided for @savingsEntryShgLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SHG'**
+  String get savingsEntryShgLabel;
+
+  /// No description provided for @savingsEntrySelectShgHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an SHG'**
+  String get savingsEntrySelectShgHint;
+
+  /// No description provided for @savingsEntrySelectShgFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an SHG first.'**
+  String get savingsEntrySelectShgFirst;
 
   /// No description provided for @savingsEntrySelectMember.
   ///

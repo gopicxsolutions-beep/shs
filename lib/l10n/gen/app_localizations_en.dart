@@ -433,7 +433,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shgApprovalWaitingMessage =>
-      'Your request to join has been sent to your SHG leader. You will get access once it is approved.';
+      'Your request to join has been sent for approval. You will get access once your SHG leader or program staff approves it.';
 
   @override
   String get shgApprovalRejectedTitle => 'Request not approved';
@@ -441,6 +441,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get shgApprovalRejectedMessage =>
       'Your SHG leader did not approve this request. You can pick a different SHG and try again.';
+
+  @override
+  String get shgApprovalRemovedTitle => 'No longer linked to an SHG';
+
+  @override
+  String get shgApprovalRemovedMessage =>
+      'Your earlier request was approved, but you\'re not currently linked to an SHG. Choose one to request access again.';
 
   @override
   String get shgApprovalNoneTitle => 'No SHG selected yet';
@@ -1876,6 +1883,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get savingsEntryNoMembersFound =>
       'No members found in your SHG yet — there\'s no one to record this entry against.';
+
+  @override
+  String get savingsEntryNoMembersInShg =>
+      'This SHG has no active members yet — there\'s no one to record this entry against.';
+
+  @override
+  String get savingsEntryShgLabel => 'SHG';
+
+  @override
+  String get savingsEntrySelectShgHint => 'Select an SHG';
+
+  @override
+  String get savingsEntrySelectShgFirst => 'Select an SHG first.';
 
   @override
   String get savingsEntrySelectMember => 'Select a member';

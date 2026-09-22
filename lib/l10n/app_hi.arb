@@ -162,9 +162,11 @@
   "dashboardGreeting": "वापसी पर स्वागत है",
 
   "shgApprovalWaitingTitle": "अनुमोदन का इंतज़ार है",
-  "shgApprovalWaitingMessage": "आपका जुड़ने का अनुरोध आपके SHG लीडर को भेज दिया गया है। स्वीकृति मिलते ही आपको पहुंच मिल जाएगी।",
+  "shgApprovalWaitingMessage": "आपका जुड़ने का अनुरोध स्वीकृति के लिए भेज दिया गया है। आपके SHG लीडर या प्रोग्राम स्टाफ़ द्वारा स्वीकृति मिलते ही आपको पहुंच मिल जाएगी।",
   "shgApprovalRejectedTitle": "अनुरोध स्वीकृत नहीं हुआ",
   "shgApprovalRejectedMessage": "आपके SHG लीडर ने इस अनुरोध को स्वीकृत नहीं किया। आप कोई दूसरा SHG चुनकर फिर से कोशिश कर सकते हैं।",
+  "shgApprovalRemovedTitle": "अब किसी SHG से जुड़े नहीं हैं",
+  "shgApprovalRemovedMessage": "आपका पहला अनुरोध स्वीकृत हुआ था, लेकिन अभी आप किसी SHG से जुड़े नहीं हैं। फिर से पहुंच पाने के लिए एक SHG चुनें।",
   "shgApprovalNoneTitle": "अभी तक कोई SHG चयनित नहीं",
   "shgApprovalNoneMessage": "फ़िलहाल आपका किसी SHG से जुड़ने का कोई लंबित अनुरोध नहीं है। शुरू करने के लिए एक SHG चुनें।",
   "unknownShg": "अज्ञात SHG",
@@ -931,6 +933,14 @@
   "savingsEntryMemberLabel": "सदस्य",
 
   "savingsEntryNoMembersFound": "आपके SHG में अभी तक कोई सदस्य नहीं है — इस एंट्री को किसी के नाम दर्ज करने के लिए कोई नहीं है।",
+
+  "savingsEntryNoMembersInShg": "इस SHG में अभी तक कोई सक्रिय सदस्य नहीं है — इस एंट्री को किसी के नाम दर्ज करने के लिए कोई नहीं है।",
+
+  "savingsEntryShgLabel": "SHG",
+
+  "savingsEntrySelectShgHint": "एक SHG चुनें",
+
+  "savingsEntrySelectShgFirst": "पहले एक SHG चुनें।",
 
   "savingsEntrySelectMember": "एक सदस्य चुनें",
 
