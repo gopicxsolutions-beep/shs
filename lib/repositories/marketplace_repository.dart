@@ -371,11 +371,20 @@ class MarketplaceRepository {
 
   /// Reviews across every product this seller lists.
   Future<List<Review>> fetchReviewsForSeller(String? sellerId) async {
-    if (!_live) return mock.marketplaceReviews.map((r) => Review(id: r.id, productId: r.productId, reviewerName: r.reviewerName, rating: r.rating, comment: r.comment)).toList();
+    // Missing feature: a seller with more than one listing had no way to
+    // tell which product a review was even about — the embed below existed
+    // only to FILTER (`seller_id`), `name` was never selected even though
+    // MarketplaceReviewsPage needed exactly that.
+    if (!_live) {
+      return mock.marketplaceReviews.map((r) {
+        final matches = mock.marketplaceProducts.where((p) => p.id == r.productId);
+        return Review(id: r.id, productId: r.productId, productName: matches.isEmpty ? null : matches.first.name, reviewerName: r.reviewerName, rating: r.rating, comment: r.comment);
+      }).toList();
+    }
     if (sellerId == null) return [];
     final rows = await _client
         .from('marketplace_reviews')
-        .select('*, marketplace_products!inner(seller_id)')
+        .select('*, marketplace_products!inner(seller_id, name)')
         .eq('marketplace_products.seller_id', sellerId)
         .order('created_at', ascending: false)
         .limit(300);

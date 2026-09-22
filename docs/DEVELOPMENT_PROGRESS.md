@@ -21785,3 +21785,30 @@ surfacing, which the new stock check (checked earlier in `_submit`) would
 otherwise have masked. Mutation-checked — disabling the new validation
 check doesn't even compile with `stock` used elsewhere in the same function,
 confirming it's load-bearing.
+
+## 2026-09-22 — Marketplace audit round 6: a seller's Reviews page never said which product a review was about
+
+Continuing the audit. `MarketplaceReviewsPage` lists every review across a
+seller's whole catalog, but `fetchReviewsForSeller`'s embed of
+`marketplace_products` existed only to FILTER by `seller_id` — `name` was
+never selected, so a seller with more than one listing had no way to tell
+which item a 1-star "arrived damaged" review was even about.
+
+**Fix**: `Review.productName` (null wherever a caller doesn't need it —
+`ProductDetailPage`'s own review list is already scoped to one product it
+displays, so it stays null there by design). `fetchReviewsForSeller`'s embed
+widened to `marketplace_products!inner(seller_id, name)`; demo mode resolves
+the name from the mock catalog by `productId`. The reviews list now shows
+each review's product name above the reviewer/rating line, and — a natural
+extension of actually knowing which product it is — tapping a review opens
+that product's detail page.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1151/1151 (+2 new:
+both demo-mode reviews show their real product name, and tapping one
+navigates to that product). Mutation-checked — nulling out the resolved name
+fails to compile with the test file's own assertions on it. No live reviews
+currently exist to re-verify the join shape against real rows, but it's an
+additive column on an already-proven-working embed (same pattern already
+live-verified for `fetchOrdersForSeller`); confirmed the RLS SELECT policy
+on `marketplace_reviews` has no restriction that would block reading `name`
+specifically.

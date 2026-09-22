@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../layout/page_header.dart';
 import '../../models/marketplace.dart';
 import '../../repositories/marketplace_repository.dart';
+import '../../routes/paths.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -45,23 +47,36 @@ class MarketplaceReviewsPage extends StatelessWidget {
               AppCard(
                 padded: false,
                 child: Column(
-                  children: reviews.map((r) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(children: [
-                              Flexible(child: Text(r.reviewerName, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700))),
-                              const SizedBox(width: 8),
-                              Semantics(
-                                label: l10n.marketplaceReviewsRatingSemantics(r.rating),
-                                child: ExcludeSemantics(
-                                  child: Row(children: List.generate(5, (i) => Icon(i < r.rating ? Icons.star_rounded : Icons.star_border_rounded, size: 14, color: Gold.c500))),
+                  children: reviews.map((r) => InkWell(
+                        // Missing feature: a seller with more than one
+                        // listing had no way to tell which product a
+                        // review was even about — tapping through to it is
+                        // a natural extension of now actually showing the
+                        // name at all.
+                        onTap: () => context.go(Paths.marketplaceProduct(r.productId)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (r.productName != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 2),
+                                  child: Text(r.productName!, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(11, weight: FontWeight.w700, color: Brand.c600)),
                                 ),
-                              ),
-                            ]),
-                            if (r.comment != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(r.comment!, style: AppTheme.sans(12, color: Neutral.c600))),
-                          ],
+                              Row(children: [
+                                Flexible(child: Text(r.reviewerName, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.sans(12, weight: FontWeight.w700))),
+                                const SizedBox(width: 8),
+                                Semantics(
+                                  label: l10n.marketplaceReviewsRatingSemantics(r.rating),
+                                  child: ExcludeSemantics(
+                                    child: Row(children: List.generate(5, (i) => Icon(i < r.rating ? Icons.star_rounded : Icons.star_border_rounded, size: 14, color: Gold.c500))),
+                                  ),
+                                ),
+                              ]),
+                              if (r.comment != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(r.comment!, style: AppTheme.sans(12, color: Neutral.c600))),
+                            ],
+                          ),
                         ),
                       )).toList(),
                 ),

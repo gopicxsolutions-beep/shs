@@ -135,16 +135,21 @@ class MarketOrder {
 class Review {
   final String id;
   final String productId;
+  // Null wherever a caller never needed it (e.g. ProductDetailPage's own
+  // review list, already scoped to one product it already displays) — only
+  // MarketplaceReviewsPage's seller-wide, cross-product list needs this.
+  final String? productName;
   final String? reviewerId;
   final String reviewerName;
   final int rating;
   final String? comment;
 
-  const Review({required this.id, required this.productId, this.reviewerId, required this.reviewerName, required this.rating, this.comment});
+  const Review({required this.id, required this.productId, this.productName, this.reviewerId, required this.reviewerName, required this.rating, this.comment});
 
   factory Review.fromMap(Map<String, dynamic> map) => Review(
         id: map['id'] as String,
         productId: map['product_id'] as String,
+        productName: (map['marketplace_products'] as Map<String, dynamic>?)?['name'] as String?,
         reviewerId: map['reviewer_id'] as String?,
         reviewerName: map['reviewer_name'] as String,
         rating: map['rating'] as int,
