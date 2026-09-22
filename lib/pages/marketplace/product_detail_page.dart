@@ -185,6 +185,37 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
+  // Missing feature: a reviewer had no way to delete her own review — see
+  // MarketplaceRepository.deleteReview's own doc comment and migration 0157.
+  Future<void> _deleteReview(Review review) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.productDetailDeleteReviewConfirmTitle),
+        content: Text(l10n.productDetailDeleteReviewConfirmMessage),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.actionDelete)),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await _repo.deleteReview(review.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.productDetailReviewDeleted)));
+        _reviewsKey.currentState?.reload();
+        // She can review this product again now that her old review is gone.
+        if (SupabaseService.isConfigured) setState(() => _canReview = true);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.productDetailReviewDeleteError)));
+      }
+    }
+  }
+
   Future<void> _placeOrder(Product product) async {
     final appState = context.read<AppState>();
     final quantity = _quantityFor(product);
@@ -442,7 +473,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   return AppCard(
                     padded: false,
                     child: Column(
-                      children: reviews.map((r) => Padding(
+                      children: reviews.map((r) {
+                            // Only the review's own author sees a delete
+                            // action for it — matches `marketplace_reviews_
+                            // delete_own`'s `reviewer_id = auth.uid()` scope
+                            // exactly, so this button is never offered for a
+                            // review it wouldn't actually be allowed to
+                            // delete.
+                            final isOwnReview = SupabaseService.isConfigured && viewerId != null && r.reviewerId == viewerId;
+                            return Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,11 +495,21 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                       child: Row(children: List.generate(5, (i) => Icon(i < r.rating ? Icons.star_rounded : Icons.star_border_rounded, size: 14, color: Gold.c500))),
                                     ),
                                   ),
+                                  if (isOwnReview)
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                                      color: Neutral.c600,
+                                      tooltip: l10n.productDetailDeleteReviewTooltip,
+                                      onPressed: () => _deleteReview(r),
+                                      constraints: const BoxConstraints(),
+                                      padding: const EdgeInsets.only(left: 8),
+                                    ),
                                 ]),
                                 if (r.comment != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(r.comment!, style: AppTheme.sans(12, color: Neutral.c600))),
                               ],
                             ),
-                          )).toList(),
+                          );
+                          }).toList(),
                     ),
                   );
                 },

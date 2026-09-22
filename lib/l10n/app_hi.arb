@@ -792,6 +792,16 @@
 
   "productDetailReviewRatingSemantics": "5 में से {rating} सितारे",
 
+  "productDetailDeleteReviewTooltip": "अपनी समीक्षा हटाएं",
+
+  "productDetailDeleteReviewConfirmTitle": "यह समीक्षा हटाएं?",
+
+  "productDetailDeleteReviewConfirmMessage": "इसे पूर्ववत नहीं किया जा सकता।",
+
+  "productDetailReviewDeleted": "समीक्षा हटाई गई",
+
+  "productDetailReviewDeleteError": "यह समीक्षा हटाई नहीं जा सकी",
+
   "productDetailPlacingInProgress": "ऑर्डर दिया जा रहा है…",
 
   "productDetailPlaceOrderButton": "ऑर्डर करें",

@@ -1630,6 +1630,22 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get productDetailDeleteReviewTooltip => 'अपनी समीक्षा हटाएं';
+
+  @override
+  String get productDetailDeleteReviewConfirmTitle => 'यह समीक्षा हटाएं?';
+
+  @override
+  String get productDetailDeleteReviewConfirmMessage =>
+      'इसे पूर्ववत नहीं किया जा सकता।';
+
+  @override
+  String get productDetailReviewDeleted => 'समीक्षा हटाई गई';
+
+  @override
+  String get productDetailReviewDeleteError => 'यह समीक्षा हटाई नहीं जा सकी';
+
+  @override
   String get productDetailPlacingInProgress => 'ऑर्डर दिया जा रहा है…';
 
   @override

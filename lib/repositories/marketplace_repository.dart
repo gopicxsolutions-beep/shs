@@ -455,6 +455,16 @@ class MarketplaceRepository {
     });
   }
 
+  // Missing feature: a reviewer had no way to delete her own review at all —
+  // only staff could remove someone else's (see
+  // supabase/migrations/0157_iteration49_marketplace_review_self_delete.sql).
+  // `marketplace_reviews_delete_own` scopes this to `reviewer_id = auth.uid()`
+  // — passing any other review's id here is simply a no-op (0 rows match).
+  Future<void> deleteReview(String reviewId) async {
+    if (!_live) return;
+    await _client.from('marketplace_reviews').delete().eq('id', reviewId);
+  }
+
   List<Product> _mockProducts() => (debugProductsOverride ?? mock.marketplaceProducts)
       .map((p) => Product(
             id: p.id,

@@ -1110,6 +1110,16 @@
     }
   },
 
+  "productDetailDeleteReviewTooltip": "Delete your review",
+
+  "productDetailDeleteReviewConfirmTitle": "Delete this review?",
+
+  "productDetailDeleteReviewConfirmMessage": "This can't be undone.",
+
+  "productDetailReviewDeleted": "Review deleted",
+
+  "productDetailReviewDeleteError": "Could not delete this review",
+
   "productDetailPlacingInProgress": "Placing…",
 
   "productDetailPlaceOrderButton": "Place Order",

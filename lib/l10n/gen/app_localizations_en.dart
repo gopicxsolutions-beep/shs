@@ -1652,6 +1652,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get productDetailDeleteReviewTooltip => 'Delete your review';
+
+  @override
+  String get productDetailDeleteReviewConfirmTitle => 'Delete this review?';
+
+  @override
+  String get productDetailDeleteReviewConfirmMessage =>
+      'This can\'t be undone.';
+
+  @override
+  String get productDetailReviewDeleted => 'Review deleted';
+
+  @override
+  String get productDetailReviewDeleteError => 'Could not delete this review';
+
+  @override
   String get productDetailPlacingInProgress => 'Placing…';
 
   @override

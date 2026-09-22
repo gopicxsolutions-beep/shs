@@ -21911,3 +21911,40 @@ the real database via a rolled-back probe covering all 5 scenarios (never
 bought, order still `'new'`, delivered+unreviewed, delivered+already-reviewed,
 and the unique-index rejection itself) — all matched expectations, confirmed
 clean rollback afterward.
+
+## 2026-09-22 — Marketplace audit round 10: a reviewer had no way to delete her own review
+
+Continuing the audit. Only staff could remove a review
+(`marketplace_reviews_delete_staff`, and deliberately excluding a staff
+member's own review — see migration 0106's anti-self-dealing note), so a
+buyer who regretted a comment or got a rating wrong had no in-product way to
+fix it, and no way to even ask — the app has no review-moderation-request
+flow either. Scoped to delete-only this round (not edit) — it's the simpler,
+more safety-critical half of the gap (retracting something already posted)
+and needs no locked-fields `WITH CHECK` machinery an edit policy would.
+
+**Fix**: `supabase/migrations/0157_iteration49_marketplace_review_self_delete.sql`
+adds `marketplace_reviews_delete_own` (`for delete using (reviewer_id =
+auth.uid())`) — additive alongside the existing staff policy, since Postgres
+OR's multiple permissive policies of the same command together.
+`MarketplaceRepository.deleteReview(reviewId)` calls it; `ProductDetailPage`'s
+review list now shows a delete icon only on the viewer's own review
+(`SupabaseService.isConfigured && viewerId != null && r.reviewerId ==
+viewerId` — mirrors the RLS scope exactly, so it's never offered for a
+review it wouldn't actually be allowed to delete), with a confirm dialog
+before the irreversible delete. Deleting also flips `_canReview` back to
+`true` (she's free to review this product again once her old review is
+gone). Added `productDetailDeleteReviewTooltip/ConfirmTitle/ConfirmMessage`,
+`productDetailReviewDeleted`, `productDetailReviewDeleteError` to all three
+`.arb` files.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1157/1157 (+1 new:
+demo mode never shows the delete action, matching `isOwnProduct`'s identical
+`SupabaseService.isConfigured` gate — the RLS-backed delete itself is
+live-only and untestable through demo mode's mock catalog). Mutation-checked
+— forcing `isOwnReview = true` unconditionally fails the new test. Live-mode
+policy verified directly against the real database via a rolled-back probe
+(`probe14_review_self_delete.sql`, `__TEST__`-prefixed row): a different
+member's delete attempt affects 0 rows, the reviewer's own delete affects 1
+row, and a service-role re-query afterward confirms 0 rows remain — deployed
+via `supabase db push --linked`.

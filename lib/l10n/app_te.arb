@@ -792,6 +792,16 @@
 
   "productDetailReviewRatingSemantics": "5లో {rating} నక్షత్రాలు",
 
+  "productDetailDeleteReviewTooltip": "మీ సమీక్షను తొలగించండి",
+
+  "productDetailDeleteReviewConfirmTitle": "ఈ సమీక్షను తొలగించాలా?",
+
+  "productDetailDeleteReviewConfirmMessage": "దీన్ని రద్దు చేయలేరు.",
+
+  "productDetailReviewDeleted": "సమీక్ష తొలగించబడింది",
+
+  "productDetailReviewDeleteError": "ఈ సమీక్షను తొలగించలేకపోయాము",
+
   "productDetailPlacingInProgress": "ఆర్డర్ చేస్తోంది…",
 
   "productDetailPlaceOrderButton": "ఆర్డర్ చేయండి",

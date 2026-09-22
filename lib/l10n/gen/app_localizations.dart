@@ -2878,6 +2878,36 @@ abstract class AppLocalizations {
   /// **'{rating} out of 5 stars'**
   String productDetailReviewRatingSemantics(int rating);
 
+  /// No description provided for @productDetailDeleteReviewTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your review'**
+  String get productDetailDeleteReviewTooltip;
+
+  /// No description provided for @productDetailDeleteReviewConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this review?'**
+  String get productDetailDeleteReviewConfirmTitle;
+
+  /// No description provided for @productDetailDeleteReviewConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This can\'t be undone.'**
+  String get productDetailDeleteReviewConfirmMessage;
+
+  /// No description provided for @productDetailReviewDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Review deleted'**
+  String get productDetailReviewDeleted;
+
+  /// No description provided for @productDetailReviewDeleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete this review'**
+  String get productDetailReviewDeleteError;
+
   /// No description provided for @productDetailPlacingInProgress.
   ///
   /// In en, this message translates to:

@@ -90,6 +90,27 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  // Marketplace audit finding #17: a reviewer had no way to delete her own
+  // review at all. The delete action is gated the same way `isOwnProduct` is
+  // (`SupabaseService.isConfigured && viewerId != null && ...`), so it can
+  // never appear in demo mode — this confirms that stays true. The actual
+  // RLS-backed delete itself (`marketplace_reviews_delete_own`) is live-only
+  // and can't be driven through demo mode's mock catalog at all — verified
+  // directly against the real database instead (see this round's
+  // DEVELOPMENT_PROGRESS.md entry, probe14_review_self_delete.sql).
+  testWidgets('demo mode never shows a delete-review action (deleteReview is live-only)', (tester) async {
+    tester.view.physicalSize = const Size(400, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(harness('p1'));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.delete_outline_rounded), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a delisted product shows a Delisted badge and disables Place Order', (tester) async {
     MarketplaceRepository.debugProductsOverride = const [
       mock.ProductMock(id: 'delisted-1', sellerName: 'Test Seller', name: 'A Delisted Product', description: 'no longer available', price: 100, stock: 5, category: 'Other', upiId: 'seller@upi', isActive: false),
