@@ -5,8 +5,26 @@ import 'supabase_service.dart';
 class ProfileRepository {
   SupabaseClient get _client => SupabaseService.instance.client;
 
-  Future<Profile?> fetchMyProfile() async {
-    final uid = _client.auth.currentUser?.id;
+  // [uid] is caller-resolved (from `AppState._session?.user.id`), not
+  // re-derived here from `_client.auth.currentUser` — this repository's own
+  // established convention (see e.g. `ShgRepository.fetchMembers(shgId)`),
+  // and the reason this specific method is the fix for a real reported bug:
+  // an already-registered member relogging in (or resuming the app after a
+  // while) was sometimes asked to redo the ENTIRE onboarding wizard — basic
+  // info AND the baseline survey — with no error shown at all. Root cause:
+  // `_client.auth.currentUser` is the underlying Supabase client's OWN
+  // internal field, populated by its auth listener asynchronously — it is
+  // not guaranteed to already reflect the session at every moment
+  // `_loadProfile()` runs (app-resume, a background token refresh still
+  // settling, …). When it was transiently null, this method returned `null`
+  // WITHOUT throwing — indistinguishable from "no profile row exists yet" —
+  // and `AppState._loadProfile()` treated that as a **confirmed** empty
+  // result, overwriting an already-loaded `_profile` and sending a genuine
+  // returning member straight back into the full wizard. `AppState._session`
+  // is set directly from the auth event/session object itself (the same
+  // source `completeProfileSetup`'s `mobile: _session?.user.phone` already
+  // reads from), not from this separate, independently-timed client field.
+  Future<Profile?> fetchMyProfile(String? uid) async {
     if (uid == null) return null;
     final row = await _client.from('profiles').select().eq('id', uid).maybeSingle();
     if (row == null) return null;

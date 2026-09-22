@@ -21345,3 +21345,70 @@ verified via injected-repository widget tests plus direct live-DB
 confirmation of the data shape instead.
 
 Docs updated in this same change: [SRS.md](SRS.md) FR-AUTH-4.
+
+## 2026-09-22 — Fix: already-registered candidates asked to redo the FULL onboarding wizard (info + survey) on relogin
+
+**Report**: "already registered candidates" were being asked for their basic
+details again AND the baseline survey again, on relogin — after this
+session's earlier `d728f15` fix (which only covered the survey-completion
+flag specifically failing open). This report meant the FULL wizard
+(name/village/SHG, step 0) was showing, which only happens when `AppState.
+hasProfile` itself is false — a strictly bigger problem than `d728f15`
+addressed.
+
+**Root cause**: `ProfileRepository.fetchMyProfile()` re-derived the user id
+itself, internally, from `_client.auth.currentUser?.id` — the ONLY method in
+this repository that does that instead of taking a caller-resolved id (every
+other repository in this codebase follows the "read methods take
+caller-resolved ids" convention, e.g. `ShgRepository.fetchMembers(shgId)`).
+`_client.auth.currentUser` is the underlying Supabase client's own
+internally-managed field, updated by its auth listener — nothing guarantees
+it already reflects the session at every moment `AppState._loadProfile()`
+runs (app resume, a background token refresh still settling, a
+listener-driven reload, …). When transiently null, `fetchMyProfile()`
+returned `null` **without throwing** — indistinguishable from "no `profiles`
+row exists yet" — and `_loadProfile()`'s success branch treated that as a
+**confirmed** empty result, overwriting an already-loaded `_profile` and
+sending a genuine returning, already-registered member straight back into
+the full onboarding wizard, survey included, with no error shown anywhere.
+Compare the other 4 methods in this same file, which all use `_client.auth.
+currentUser!.id` (force-unwrap) — a transient null there THROWS, which
+propagates as a visible error instead of silently corrupting `AppState`;
+`fetchMyProfile` was uniquely dangerous because its failure mode looks
+identical to success.
+
+**Fix**: `fetchMyProfile` now takes `String? uid` from the caller.
+`AppState._loadProfile()` passes `_session?.user.id` — the same session
+object `completeProfileSetup`'s `mobile: _session?.user.phone` already reads
+from, set directly from the auth event/session, never re-derived from a
+separate, independently-timed client field. Updated the 12 test doubles
+across the suite that override `fetchMyProfile()` to match the new
+signature (mechanical — none of them cared about the argument).
+
+**Verification**: `flutter analyze` clean; `flutter test` 1131/1131 (+2 new
+in `app_state_test.dart`: the id passed to `fetchMyProfile` is identical
+across the initial load and a subsequent re-fetch, and a genuinely absent
+session passes `null` rather than guessing). Mutation-checked — reverting
+the call site to ignore the session id makes the new test fail with exactly
+the reported shape. **Not fully reproduced live**: the precise moment
+`_client.auth.currentUser` goes transiently null couldn't be forced from
+this session (would need to race the real GoTrue client's internal auth
+listener, not just simulate at the `AppState`/`AuthService` seam) — this is
+a structural fix closing the ONLY silent-failure path of this shape in the
+repository, matching the reported symptom exactly, not a fix verified
+against a captured live repro of the exact race.
+
+**Separately (unprompted but worth surfacing)**: `origin` was found pointing
+at a different, unwritable repo (`nevergiveupvenkat305-source/app`) earlier
+this session, which had blocked every push; it now points at
+`gopicxsolutions-beep/shs` and `git push` succeeds. `origin/main` on the
+correct remote already carried this session's fixes through `42ec412` before
+this round started — if Vercel's production deploy builds `main` (the
+repo's default branch) and auto-deploys on push, today's earlier fixes may
+already have reached production before this bug was reported; worth
+confirming Vercel's dashboard shows a deploy matching the `42ec412`/`965b9e3`
+commits, and whether its `SUPABASE_URL`/`SUPABASE_ANON_KEY` env vars are
+actually set (a build missing them silently produces a demo-mode build with
+no real backend at all — `scripts/vercel_build.sh` already reconstructs
+`.env.json` from them, but only if Vercel's project settings actually have
+them configured).

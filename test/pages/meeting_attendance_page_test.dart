@@ -19,7 +19,7 @@ class _FixedProfileRepository extends ProfileRepository {
   _FixedProfileRepository(this._profile);
   final Profile? _profile;
   @override
-  Future<Profile?> fetchMyProfile() async => _profile;
+  Future<Profile?> fetchMyProfile(String? uid) async => _profile;
 }
 
 class _FakeAuthServiceWithSession extends AuthService {

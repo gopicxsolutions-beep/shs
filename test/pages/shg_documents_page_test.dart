@@ -22,7 +22,7 @@ class _FixedProfileRepository extends ProfileRepository {
   _FixedProfileRepository(this._profile);
   final Profile? _profile;
   @override
-  Future<Profile?> fetchMyProfile() async => _profile;
+  Future<Profile?> fetchMyProfile(String? uid) async => _profile;
 }
 
 /// A profile-repository fake whose `fetchMyProfile()` doesn't resolve until
@@ -34,7 +34,7 @@ class _DelayedProfileRepository extends ProfileRepository {
   _DelayedProfileRepository(this._future);
   final Future<Profile?> _future;
   @override
-  Future<Profile?> fetchMyProfile() => _future;
+  Future<Profile?> fetchMyProfile(String? uid) => _future;
 }
 
 /// Supplies a non-null `currentSession` so `AppState.init()` takes the

@@ -340,7 +340,9 @@ class AppState extends ChangeNotifier {
   Future<void> _loadProfile() async {
     final generation = ++_profileLoadGeneration;
     try {
-      final profile = await _profileRepository.fetchMyProfile();
+      // `_session`, not a fresh `_client.auth.currentUser` read inside the
+      // repository — see `ProfileRepository.fetchMyProfile`'s doc comment.
+      final profile = await _profileRepository.fetchMyProfile(_session?.user.id);
       if (generation != _profileLoadGeneration) return;
       // A successful fetch — even one that confirms `profile == null` (a
       // genuinely new user, no `profiles` row yet) — means we definitively

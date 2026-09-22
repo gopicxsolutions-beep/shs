@@ -20,9 +20,16 @@ class _FakeProfileRepository extends ProfileRepository {
   final List<Future<Profile?> Function()> _responses;
   final Profile? _upsertResponse;
   int _calls = 0;
+  // Every uid `_loadProfile` actually passed in, in call order — lets a test
+  // assert it always came from `AppState._session`, never re-derived some
+  // other way.
+  final List<String?> uidCalls = [];
 
   @override
-  Future<Profile?> fetchMyProfile() => _responses[_calls++]();
+  Future<Profile?> fetchMyProfile(String? uid) {
+    uidCalls.add(uid);
+    return _responses[_calls++]();
+  }
 
   @override
   Future<Profile> upsertMyProfile({required String name, String? mobile, String role = 'member', String? shgId, String? village, String? mandal, String? district}) async => _upsertResponse!;
@@ -479,6 +486,54 @@ void main() {
       expect(appState.hasProfile, isFalse, reason: 'local profile state must be cleared so the router redirect (!hasSession) takes the user to login instead of leaving stale UI up');
 
       appState.dispose();
+    });
+  });
+
+  // Regression coverage for a real reported bug: an already-registered
+  // member relogging in (or the app resuming after a while) was sometimes
+  // asked to redo the ENTIRE onboarding wizard — basic info AND the baseline
+  // survey — with no error shown. Root cause: `ProfileRepository.
+  // fetchMyProfile()` used to re-derive the user id from `_client.auth.
+  // currentUser` internally instead of taking it from the caller — the one
+  // place in this repository that broke the "read methods take caller-
+  // resolved ids" convention every other repository follows, and the only
+  // one whose wrong answer (a transiently-null `currentUser`) is a silent
+  // `null` return rather than a thrown exception. `AppState` must always
+  // resolve the id from its own `_session` (set directly from the auth
+  // event/session object, the same source `completeProfileSetup`'s `mobile:
+  // _session?.user.phone` already reads from) and pass it in explicitly.
+  group('AppState resolves the profile-fetch id from its own session', () {
+    test('the initial load and every subsequent re-fetch pass the SAME session-derived id', () async {
+      final fakeAuth = _FakeAuthServiceWithStream(_fakeSession('member-42'));
+      final fakeRepo = _FakeProfileRepository([
+        () async => const Profile(id: 'member-42', name: 'Asha', role: 'member'),
+        () async => const Profile(id: 'member-42', name: 'Asha', role: 'member'),
+      ]);
+      final appState = AppState(profileRepository: fakeRepo, authService: fakeAuth, joinRequestRepository: ShgJoinRequestRepository(), shgRepository: _FakeShgRepository(null));
+
+      await appState.init();
+      expect(fakeRepo.uidCalls, ['member-42']);
+      expect(appState.hasProfile, isTrue);
+
+      // A non-refresh auth event (app resume, a re-signed-in listener tick,
+      // …) re-fetches — the id passed must be identical every time, not
+      // something re-derived that could transiently disagree.
+      fakeAuth.emit(AuthChangeEvent.signedIn, _fakeSession('member-42'));
+      await Future<void>.delayed(Duration.zero);
+      expect(fakeRepo.uidCalls, ['member-42', 'member-42']);
+      expect(appState.hasProfile, isTrue, reason: 'a returning, already-registered member must not be treated as unregistered on a routine re-fetch');
+
+      appState.dispose();
+    });
+
+    test('a genuinely absent session passes a null id rather than throwing or guessing', () async {
+      final fakeRepo = _FakeProfileRepository([() async => null]);
+      final appState = AppState(profileRepository: fakeRepo, authService: _FakeAuthService(), joinRequestRepository: ShgJoinRequestRepository());
+
+      await appState.refreshProfile();
+
+      expect(fakeRepo.uidCalls, [null]);
+      expect(appState.hasProfile, isFalse);
     });
   });
 
