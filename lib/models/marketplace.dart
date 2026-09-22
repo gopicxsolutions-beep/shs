@@ -92,6 +92,13 @@ class MarketOrder {
   final String? sellerId;
   final String buyerName;
   final num amount;
+  // Units purchased — `amount` is already the TOTAL for all of them (unit
+  // price x quantity at order time, computed server-side in
+  // `place_marketplace_order`, migration 0153), not a per-unit price.
+  // Defaults to 1 for any row from before this column existed (every order
+  // placed before this migration genuinely was single-unit — there was no
+  // way to request otherwise).
+  final int quantity;
   final String status; // new | packed | shipped | delivered
   final DateTime orderDate;
 
@@ -102,6 +109,7 @@ class MarketOrder {
     this.sellerId,
     required this.buyerName,
     required this.amount,
+    this.quantity = 1,
     required this.status,
     required this.orderDate,
   });
@@ -113,6 +121,7 @@ class MarketOrder {
         sellerId: (map['marketplace_products'] as Map<String, dynamic>?)?['seller_id'] as String?,
         buyerName: map['buyer_name'] as String,
         amount: map['amount'] as num,
+        quantity: map['quantity'] as int? ?? 1,
         status: map['status'] as String,
         orderDate: DateTime.parse(map['order_date'] as String),
       );

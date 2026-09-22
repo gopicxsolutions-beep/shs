@@ -108,7 +108,11 @@ class _OrderList extends StatelessWidget {
               child: AppCard(
                 padded: false,
                 child: AppListRow(
-                  title: o.productName,
+                  // "× 3" etc. — without this, a multi-unit order (see
+                  // migration 0153) looked identical to a single-unit one in
+                  // this list; only opening the order detail page showed the
+                  // real quantity.
+                  title: o.quantity > 1 ? l10n.marketplaceOrdersTitleWithQuantity(o.productName, o.quantity) : o.productName,
                   subtitle: showBuyerName ? '${o.buyerName} · ${DateFormat('dd MMM yyyy').format(o.orderDate)}' : DateFormat('dd MMM yyyy').format(o.orderDate),
                   trailing: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,

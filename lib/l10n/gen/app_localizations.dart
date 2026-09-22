@@ -2476,6 +2476,12 @@ abstract class AppLocalizations {
   /// **'Orders'**
   String get marketplaceOrdersTitle;
 
+  /// No description provided for @marketplaceOrdersTitleWithQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'{productName} × {quantity}'**
+  String marketplaceOrdersTitleWithQuantity(String productName, int quantity);
+
   /// No description provided for @marketplaceOrdersEmpty.
   ///
   /// In en, this message translates to:
@@ -2644,6 +2650,12 @@ abstract class AppLocalizations {
   /// **'Buyer: {name}'**
   String orderDetailBuyerLabel(String name);
 
+  /// No description provided for @orderDetailQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity: {count}'**
+  String orderDetailQuantity(int count);
+
   /// No description provided for @orderDetailOrderedOn.
   ///
   /// In en, this message translates to:
@@ -2727,6 +2739,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} in stock'**
   String productDetailInStock(int count);
+
+  /// No description provided for @productDetailQuantityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get productDetailQuantityLabel;
+
+  /// No description provided for @productDetailQuantityTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total: {amount}'**
+  String productDetailQuantityTotal(String amount);
+
+  /// No description provided for @productDetailDecreaseQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease quantity'**
+  String get productDetailDecreaseQuantity;
+
+  /// No description provided for @productDetailIncreaseQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase quantity'**
+  String get productDetailIncreaseQuantity;
 
   /// No description provided for @productDetailReviewsSection.
   ///

@@ -1382,6 +1382,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get marketplaceOrdersTitle => 'Orders';
 
   @override
+  String marketplaceOrdersTitleWithQuantity(String productName, int quantity) {
+    return '$productName × $quantity';
+  }
+
+  @override
   String get marketplaceOrdersEmpty => 'No orders yet';
 
   @override
@@ -1491,6 +1496,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String orderDetailQuantity(int count) {
+    return 'Quantity: $count';
+  }
+
+  @override
   String orderDetailOrderedOn(String date) {
     return 'Ordered $date';
   }
@@ -1550,6 +1560,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String productDetailInStock(int count) {
     return '$count in stock';
   }
+
+  @override
+  String get productDetailQuantityLabel => 'Quantity';
+
+  @override
+  String productDetailQuantityTotal(String amount) {
+    return 'Total: $amount';
+  }
+
+  @override
+  String get productDetailDecreaseQuantity => 'Decrease quantity';
+
+  @override
+  String get productDetailIncreaseQuantity => 'Increase quantity';
 
   @override
   String get productDetailReviewsSection => 'Reviews';

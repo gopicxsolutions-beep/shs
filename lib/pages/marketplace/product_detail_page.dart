@@ -31,6 +31,22 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   bool _placing = false;
   bool _submittingReview = false;
   bool _launchingUpi = false;
+  // User-reported gap: the Buy flow had no quantity concept at all — every
+  // order was hard-coded to exactly 1 unit, with no way to ask for more.
+  // Clamped against the loaded product's current stock in `build` (never
+  // mutated directly there — see `_quantityFor`), so a stock change from
+  // reloading after a purchase can't leave this pointing past the new max.
+  int _quantity = 1;
+
+  /// The quantity actually usable for [product] right now — [_quantity]
+  /// clamped to its current stock (at least 1, so the field never reads 0
+  /// while the Place Order button is simply disabled for a sold-out item).
+  int _quantityFor(Product product) {
+    final maxQty = product.stock <= 0 ? 1 : product.stock;
+    if (_quantity < 1) return 1;
+    if (_quantity > maxQty) return maxQty;
+    return _quantity;
+  }
 
   @override
   void dispose() {
@@ -125,9 +141,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   Future<void> _placeOrder(Product product) async {
     final appState = context.read<AppState>();
+    final quantity = _quantityFor(product);
     setState(() => _placing = true);
     try {
-      await _repo.placeOrder(productId: product.id, buyerName: appState.user.name, buyerId: appState.profile?.id, amount: product.price);
+      await _repo.placeOrder(productId: product.id, buyerName: appState.user.name, buyerId: appState.profile?.id, amount: product.price * quantity, quantity: quantity);
       // Without this, the stock count shown on this already-open page never
       // reflected a successful order (only ever refetched once at mount) —
       // live-verified: placing an order genuinely decremented stock
@@ -135,6 +152,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       // number with no visible change beyond a brief SnackBar, making it
       // easy to believe an order hadn't gone through and place duplicates.
       _key.currentState?.reload();
+      // Back to 1 for whatever she buys next — leaving it at, say, 5 after a
+      // successful 5-unit order reads as "still asking for 5 more," not as
+      // "5 were just bought."
+      if (mounted) setState(() => _quantity = 1);
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -167,7 +188,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         queryParameters: {
           'pa': product.upiId!,
           'pn': product.sellerName,
-          'am': product.price.toString(),
+          // The picked quantity, not the bare unit price — this is a manual,
+          // order-independent payment (see this method's own doc comment
+          // above), so nothing else here accounts for buying more than 1.
+          'am': (product.price * _quantityFor(product)).toString(),
           'cu': 'INR',
           if (product.paymentNote != null && product.paymentNote!.isNotEmpty) 'tn': product.paymentNote!,
         },
@@ -183,6 +207,49 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     } finally {
       if (mounted) setState(() => _launchingUpi = false);
     }
+  }
+
+  Widget _quantityStepper(Product product, AppLocalizations l10n) {
+    final quantity = _quantityFor(product);
+    final total = product.price * quantity;
+    return AppCard(
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.productDetailQuantityLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                // Only worth a distinct "total" line once it actually
+                // differs from the unit price already shown above — at
+                // quantity 1 they're the same number, so a second identical
+                // line would just be noise.
+                if (quantity > 1) ...[
+                  const SizedBox(height: 2),
+                  Text(l10n.productDetailQuantityTotal('₹${NumberFormat('#,##,##0', 'en_IN').format(total)}'), style: AppTheme.sans(12, color: Neutral.c500)),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline_rounded),
+            color: Brand.c600,
+            tooltip: l10n.productDetailDecreaseQuantity,
+            onPressed: quantity > 1 ? () => setState(() => _quantity = quantity - 1) : null,
+          ),
+          SizedBox(
+            width: 32,
+            child: Text('$quantity', textAlign: TextAlign.center, style: AppTheme.display(16)),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline_rounded),
+            color: Brand.c600,
+            tooltip: l10n.productDetailIncreaseQuantity,
+            onPressed: quantity < product.stock ? () => setState(() => _quantity = quantity + 1) : null,
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -258,6 +325,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               Text('₹${NumberFormat('#,##,##0', 'en_IN').format(product.price)}', style: AppTheme.display(22, color: Brand.c700)),
               const SizedBox(height: 4),
               Text(l10n.productDetailInStock(product.stock), style: AppTheme.sans(12, color: product.stock > 0 ? Neutral.c500 : Accent.red600)),
+              if (product.stock > 0 && product.isActive) ...[
+                const SizedBox(height: 12),
+                // Same visibility condition as the Place Order button below
+                // (this app doesn't currently hide that button for a seller
+                // viewing her own listing either — not something this fix
+                // changes, just staying consistent with it).
+                _quantityStepper(product, l10n),
+              ],
               const SizedBox(height: 12),
               if (product.description != null) Text(product.description!, style: AppTheme.sans(13, color: Neutral.c700)),
               // Manual UPI payment details — hidden for the seller's own

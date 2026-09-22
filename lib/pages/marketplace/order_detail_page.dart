@@ -93,6 +93,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     const SizedBox(height: 6),
                     Text(l10n.orderDetailBuyerLabel(order.buyerName), style: AppTheme.sans(12, color: Neutral.c500)),
                     Text(l10n.orderDetailOrderedOn(DateFormat('dd MMM yyyy').format(order.orderDate)), style: AppTheme.sans(12, color: Neutral.c500)),
+                    if (order.quantity > 1) Text(l10n.orderDetailQuantity(order.quantity), style: AppTheme.sans(12, color: Neutral.c500)),
                     const SizedBox(height: 8),
                     Text('₹${NumberFormat('#,##,##0', 'en_IN').format(order.amount)}', style: AppTheme.display(18)),
                   ],

@@ -660,6 +660,8 @@
 
   "marketplaceOrdersTitle": "ऑर्डर",
 
+  "marketplaceOrdersTitleWithQuantity": "{productName} × {quantity}",
+
   "marketplaceOrdersEmpty": "अभी तक कोई ऑर्डर नहीं है",
 
   "marketplaceOrdersMyPurchasesTab": "मेरी खरीदारी",
@@ -714,6 +716,8 @@
 
   "orderDetailBuyerLabel": "खरीदार: {name}",
 
+  "orderDetailQuantity": "मात्रा: {count}",
+
   "orderDetailOrderedOn": "ऑर्डर किया गया {date}",
 
   "productDetailTitle": "उत्पाद",
@@ -741,6 +745,14 @@
   "productDetailBySeller": "{name} द्वारा",
 
   "productDetailInStock": "स्टॉक में {count}",
+
+  "productDetailQuantityLabel": "मात्रा",
+
+  "productDetailQuantityTotal": "कुल: {amount}",
+
+  "productDetailDecreaseQuantity": "मात्रा घटाएं",
+
+  "productDetailIncreaseQuantity": "मात्रा बढ़ाएं",
 
   "productDetailReviewsSection": "समीक्षाएं",
 

@@ -892,6 +892,14 @@
 
   "marketplaceOrdersTitle": "Orders",
 
+  "marketplaceOrdersTitleWithQuantity": "{productName} × {quantity}",
+  "@marketplaceOrdersTitleWithQuantity": {
+    "placeholders": {
+      "productName": {"type": "String"},
+      "quantity": {"type": "int"}
+    }
+  },
+
   "marketplaceOrdersEmpty": "No orders yet",
 
   "marketplaceOrdersMyPurchasesTab": "My Purchases",
@@ -986,6 +994,13 @@
     }
   },
 
+  "orderDetailQuantity": "Quantity: {count}",
+  "@orderDetailQuantity": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
   "orderDetailOrderedOn": "Ordered {date}",
   "@orderDetailOrderedOn": {
     "placeholders": {
@@ -1033,6 +1048,19 @@
       "count": {"type": "int"}
     }
   },
+
+  "productDetailQuantityLabel": "Quantity",
+
+  "productDetailQuantityTotal": "Total: {amount}",
+  "@productDetailQuantityTotal": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "productDetailDecreaseQuantity": "Decrease quantity",
+
+  "productDetailIncreaseQuantity": "Increase quantity",
 
   "productDetailReviewsSection": "Reviews",
 

@@ -775,12 +775,18 @@ picked via `file_picker` (5 MB cap, JPEG/PNG/WEBP) and uploaded to the public
 public URL is stored on the product row and shown on both the catalog grid
 and the product detail page, falling back to the original storefront-icon
 placeholder for products with no photo (including every product listed
-before this feature shipped). Placing an order calls an atomic RPC (`place_marketplace_order`, migration
-`0057`) that, in one `security definer` transaction, decrements stock in a
-single guarded statement (`stock - 1 where stock > 0`), reads the product's
-real current price, and inserts the order itself — buyer identity
-(`buyer_id`/`buyer_name`) is derived server-side from the session, never
-accepted from the client. This closes two real, previously-live bugs, both
+before this feature shipped). The product detail page offers a **quantity
+stepper** (1 up to the product's current stock — added in migration `0153`,
+a user-reported gap: buying anything previously had no way to ask for more
+than 1 unit at all) alongside a running total; placing an order calls an
+atomic RPC (`place_marketplace_order`, migrations `0057`/`0153`) that, in one
+`security definer` transaction, decrements stock by the requested quantity in
+a single guarded statement (`stock - p_quantity where stock >= p_quantity` —
+refusing a partial fulfillment rather than silently selling fewer than
+asked), reads the product's real current price, and inserts the order itself
+with `amount` set to the TOTAL for all units (`price x quantity`, not a
+per-unit price) — buyer identity (`buyer_id`/`buyer_name`) is derived
+server-side from the session, never accepted from the client. This closes two real, previously-live bugs, both
 live-confirmed rather than just reasoned about: a buyer's own client-side
 stock decrement was always a silent 0-row RLS no-op (only the seller/staff
 may write to the product row) until an earlier RPC (`decrement_product_stock`,
@@ -866,7 +872,7 @@ here, not client-side hiding.
 |---|---|---|
 | FR-MKT-1 | Member/seller lists a product (name, description, price, stock, category, optional UPI ID + payment note) | Member, Leader |
 | FR-MKT-2 | Any user browses the cross-SHG product catalog and product detail; a delisted product is hidden from general browsing but stays visible to its own seller, staff, and a past buyer | All |
-| FR-MKT-3 | Any user places an order; stock decrement, price-locking, and the delisted-product check happen atomically | All |
+| FR-MKT-3 | Any user places an order for a chosen quantity (1 up to current stock, via a stepper on the product detail page); stock decrement, price-locking (order `amount` = unit price x quantity), and the delisted-product check happen atomically | All |
 | FR-MKT-4 | Seller sets order status one step forward/back at a time (RLS-guarded); staff may override to any value for a dispute they don't personally own | Member, Leader (seller), staff |
 | FR-MKT-5 | Only a verified past buyer of the specific product may post a review; one review per reviewer per product | All |
 | FR-MKT-6 | Review moderation (edit/delete another user's review) is staff-only | Staff |

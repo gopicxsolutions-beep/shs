@@ -660,6 +660,8 @@
 
   "marketplaceOrdersTitle": "ఆర్డర్లు",
 
+  "marketplaceOrdersTitleWithQuantity": "{productName} × {quantity}",
+
   "marketplaceOrdersEmpty": "ఇంకా ఆర్డర్లు లేవు",
 
   "marketplaceOrdersMyPurchasesTab": "నా కొనుగోళ్లు",
@@ -714,6 +716,8 @@
 
   "orderDetailBuyerLabel": "కొనుగోలుదారు: {name}",
 
+  "orderDetailQuantity": "పరిమాణం: {count}",
+
   "orderDetailOrderedOn": "{date}న ఆర్డర్ చేయబడింది",
 
   "productDetailTitle": "ఉత్పత్తి",
@@ -741,6 +745,14 @@
   "productDetailBySeller": "{name} ద్వారా",
 
   "productDetailInStock": "స్టాక్‌లో {count}",
+
+  "productDetailQuantityLabel": "పరిమాణం",
+
+  "productDetailQuantityTotal": "మొత్తం: {amount}",
+
+  "productDetailDecreaseQuantity": "పరిమాణం తగ్గించండి",
+
+  "productDetailIncreaseQuantity": "పరిమాణం పెంచండి",
 
   "productDetailReviewsSection": "సమీక్షలు",
 

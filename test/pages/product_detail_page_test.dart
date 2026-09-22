@@ -41,6 +41,15 @@ void main() {
   });
 
   testWidgets('Pay via UPI shows the seller\'s UPI ID and note, and can be tapped', (tester) async {
+    // Taller than the default 800x600 test surface — the quantity stepper
+    // (added alongside the "Pay via UPI" card) pushes this button below the
+    // default viewport, which a plain `tester.tap` (unlike a real tap
+    // gesture) doesn't auto-scroll to first.
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     // Mock product 'p1' (Lakshmi Devi's saree) has upiId/paymentNote set.
     await tester.pumpWidget(harness('p1'));
     await tester.pumpAndSettle();
@@ -70,5 +79,82 @@ void main() {
     final placeOrderButton = tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Place Order'));
     expect(placeOrderButton.onPressed, isNull);
     expect(tester.takeException(), isNull);
+  });
+
+  // User-reported gap: buying anything in the marketplace had no way to ask
+  // for more than 1 unit at all — no quantity concept existed anywhere in
+  // this stack (not the UI, not the order table, not the RPC — see
+  // migration 0153). These cover the new quantity stepper end to end
+  // through demo mode's real placeOrder() (a genuine write into
+  // MarketplaceRepository's static in-memory order list — not a stub).
+  group('quantity stepper', () {
+    const stocked = mock.ProductMock(id: 'qty-1', sellerName: 'Test Seller', name: 'Stocked Item', description: 'plenty available', price: 100, stock: 3, category: 'Other');
+
+    // `find.byTooltip` matches the wrapping `Tooltip`, not the `IconButton`
+    // itself — go through the icon to reach the actual button for tapping
+    // or reading `onPressed`.
+    Finder decreaseButton() => find.widgetWithIcon(IconButton, Icons.remove_circle_outline_rounded);
+    Finder increaseButton() => find.widgetWithIcon(IconButton, Icons.add_circle_outline_rounded);
+
+    testWidgets('starts at 1, decrease is disabled, increase raises it and shows a running total', (tester) async {
+      MarketplaceRepository.debugProductsOverride = const [stocked];
+      await tester.pumpWidget(harness('qty-1'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1'), findsOneWidget, reason: 'default quantity');
+      expect(tester.widget<IconButton>(decreaseButton()).onPressed, isNull, reason: 'cannot go below 1');
+      expect(find.textContaining('Total:'), findsNothing, reason: 'no separate total needed at quantity 1 — it just repeats the unit price');
+
+      await tester.tap(increaseButton());
+      await tester.pumpAndSettle();
+      expect(find.text('2'), findsOneWidget);
+      expect(find.text('Total: ₹200'), findsOneWidget);
+
+      await tester.tap(increaseButton());
+      await tester.pumpAndSettle();
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('Total: ₹300'), findsOneWidget);
+      // Stock is exactly 3 — increase must now be disabled, not silently
+      // let her ask for more than exists.
+      expect(tester.widget<IconButton>(increaseButton()).onPressed, isNull);
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('placing an order sends the picked quantity and the TOTAL amount, then resets to 1', (tester) async {
+      MarketplaceRepository.debugProductsOverride = const [stocked];
+      await tester.pumpWidget(harness('qty-1'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(increaseButton());
+      await tester.pumpAndSettle();
+      await tester.tap(increaseButton());
+      await tester.pumpAndSettle();
+      expect(find.text('3'), findsOneWidget);
+
+      await tester.tap(find.text('Place Order'));
+      await tester.pumpAndSettle();
+
+      final placed = (await MarketplaceRepository().fetchOrdersForBuyer(null)).first;
+      expect(placed.productId, 'qty-1');
+      expect(placed.quantity, 3, reason: 'this was the bug: quantity was never sent anywhere, always defaulting to 1');
+      expect(placed.amount, 300, reason: 'amount must be the TOTAL for 3 units (100 x 3), not the bare unit price');
+
+      // Back to 1 for whatever she buys next.
+      expect(find.text('1'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('an out-of-stock product shows no quantity stepper at all', (tester) async {
+      MarketplaceRepository.debugProductsOverride = const [
+        mock.ProductMock(id: 'qty-oos', sellerName: 'Test Seller', name: 'Sold Out Item', description: 'none left', price: 50, stock: 0, category: 'Other'),
+      ];
+      await tester.pumpWidget(harness('qty-oos'));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Increase quantity'), findsNothing);
+      expect(find.byTooltip('Decrease quantity'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
   });
 }

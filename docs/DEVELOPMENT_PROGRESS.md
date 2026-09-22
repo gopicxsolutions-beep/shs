@@ -21472,3 +21472,65 @@ deployed bundle's `last-modified` (05:44:35 UTC) lands ~19 minutes after the
 `fetchMyProfile`-fix push (05:25:46 UTC), and already contains every fix
 through that commit. Production deploy is not the gap; this fix still needs
 its own push to reach it.
+
+## 2026-09-22 — Feature: marketplace orders had no quantity at all
+
+**Report**: "when any customer wants to buy anything in the market it does
+not show the quantity."
+
+**Confirmed**: not a UI oversight — `quantity` didn't exist anywhere in this
+stack. `product_detail_page.dart`'s Place Order button always bought exactly
+1 unit; `place_marketplace_order` (migration 0057) always did
+`stock = stock - 1`; `marketplace_orders` had no `quantity` column. A buyer
+wanting 5 units had no way to ask for that — only to tap Place Order 5
+separate times.
+
+**Added end to end** (migration `0153_iteration46_marketplace_order_quantity.sql`):
+- `marketplace_orders.quantity integer not null default 1 check (between 1
+  and 999)` — existing rows backfill correctly via the default (every order
+  before this migration genuinely was 1 unit).
+- `place_marketplace_order(p_product_id, p_quantity default 1)` — same
+  atomic-transaction shape 0057 established (stock check-and-decrement AND
+  the order INSERT in one `security definer` call, buyer identity
+  server-derived), now validating `p_quantity between 1 and 999` and
+  decrementing `stock >= p_quantity` (refuses outright rather than
+  partially fulfilling a request for more than remains). `amount` stored on
+  the order is the TOTAL for all units (`price x quantity`), not a per-unit
+  price. `default 1` keeps the RPC backward-compatible with any caller that
+  doesn't pass a quantity.
+- `MarketOrder.quantity` (Dart model), `MarketplaceRepository.placeOrder`'s
+  new `quantity` param (default 1), passed through to the RPC.
+- `product_detail_page.dart`: a quantity stepper (+/-, clamped to current
+  stock) with a "Total: ₹X" line once quantity > 1; resets to 1 after a
+  successful order. The manual "Pay via UPI" amount now also scales with the
+  picked quantity (a related gap in the same flow — it previously always
+  pre-filled just the unit price regardless of how many units were being
+  bought).
+- `marketplace_orders_page.dart` / `order_detail_page.dart`: show the
+  quantity ("Product × 3" / "Quantity: 3") when it's more than 1.
+- New keys in all 3 `.arb` files.
+
+**Caught in review before shipping**: `MarketplaceRepository.
+updateOrderStatus`'s demo-mode branch reconstructed a `MarketOrder` from its
+old fields but dropped both `sellerId` and (would have dropped) `quantity` —
+updating a demo-mode order's status would have silently reset its quantity
+back to 1. Fixed to carry both fields through.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1136/1136 (+4 new
+in `product_detail_page_test.dart`, covering the stepper's bounds/total, a
+real demo-mode `placeOrder()` call carrying the right quantity/total amount,
+and no stepper at all for an out-of-stock product); mutation-checked —
+reverting the page/repository to their pre-fix versions makes the new tests
+fail. **Live DB, RLS on, rolled back**: a real product (stock 25) ordered at
+quantity 3 → stock 25→22, order row `quantity=3 amount=270.00` (90 × 3);
+quantity 0/-5/1000 all refused with the validation message; a quantity
+request exceeding remaining stock correctly fails with stock left
+*unchanged* (no partial fulfillment); the exact remaining stock succeeds
+down to 0; calling the RPC with no `p_quantity` argument at all still
+behaves as quantity 1 (backward compatible). Re-queried afterward: no stock
+or order rows left modified. **Not done**: a real UI click-through in the
+live build (this session's usual OTP limitation).
+
+Docs updated in this same change: [SRS.md](SRS.md) FR-MKT-3 and the
+marketplace paragraph, [ARCHITECTURE.md](ARCHITECTURE.md)'s
+`place_marketplace_order` RPC table row.

@@ -188,7 +188,13 @@ class MarketplaceRepository {
   // and its amount are always resolved server-side by
   // `place_marketplace_order` at the moment of purchase — see the comment
   // below — never these caller-supplied values.
-  Future<void> placeOrder({required String productId, required String buyerName, required String? buyerId, required num amount}) async {
+  // [amount] is the TOTAL for [quantity] units (i.e. already `unit price x
+  // quantity`) — the caller (product_detail_page.dart) computes that, since
+  // demo mode has no server round trip to derive it from. Live mode ignores
+  // [amount] entirely (as it already did before quantity existed — see the
+  // security note below) and re-derives the true total server-side from
+  // [quantity] and the product's real current price.
+  Future<void> placeOrder({required String productId, required String buyerName, required String? buyerId, required num amount, int quantity = 1}) async {
     if (!_live) {
       final matches = _mockProducts().where((p) => p.id == productId);
       _locallyPlaced.add(MarketOrder(
@@ -197,6 +203,7 @@ class MarketplaceRepository {
         productName: matches.isEmpty ? productId : matches.first.name,
         buyerName: buyerName,
         amount: amount,
+        quantity: quantity,
         status: 'new',
         orderDate: DateTime.now(),
       ));
@@ -221,7 +228,7 @@ class MarketplaceRepository {
     // buyer identity from `auth.uid()`/`profiles.name` rather than trusting
     // any client-supplied value — there is no longer a window between
     // "stock verified" and "order recorded" for a client to skip or forge.
-    final rows = await _client.rpc('place_marketplace_order', params: {'p_product_id': productId}) as List;
+    final rows = await _client.rpc('place_marketplace_order', params: {'p_product_id': productId, 'p_quantity': quantity}) as List;
     final row = rows.first as Map<String, dynamic>;
     final ok = row['success'] as bool;
     if (!ok) throw StateError('This item is out of stock.');
@@ -279,7 +286,7 @@ class MarketplaceRepository {
       final idx = _locallyPlaced.indexWhere((o) => o.id == id);
       if (idx != -1) {
         final o = _locallyPlaced[idx];
-        _locallyPlaced[idx] = MarketOrder(id: o.id, productId: o.productId, productName: o.productName, buyerName: o.buyerName, amount: o.amount, status: status, orderDate: o.orderDate);
+        _locallyPlaced[idx] = MarketOrder(id: o.id, productId: o.productId, productName: o.productName, sellerId: o.sellerId, buyerName: o.buyerName, amount: o.amount, quantity: o.quantity, status: status, orderDate: o.orderDate);
       }
       return;
     }

@@ -1390,6 +1390,11 @@ class AppLocalizationsTe extends AppLocalizations {
   String get marketplaceOrdersTitle => 'ఆర్డర్లు';
 
   @override
+  String marketplaceOrdersTitleWithQuantity(String productName, int quantity) {
+    return '$productName × $quantity';
+  }
+
+  @override
   String get marketplaceOrdersEmpty => 'ఇంకా ఆర్డర్లు లేవు';
 
   @override
@@ -1500,6 +1505,11 @@ class AppLocalizationsTe extends AppLocalizations {
   }
 
   @override
+  String orderDetailQuantity(int count) {
+    return 'పరిమాణం: $count';
+  }
+
+  @override
   String orderDetailOrderedOn(String date) {
     return '$dateన ఆర్డర్ చేయబడింది';
   }
@@ -1559,6 +1569,20 @@ class AppLocalizationsTe extends AppLocalizations {
   String productDetailInStock(int count) {
     return 'స్టాక్‌లో $count';
   }
+
+  @override
+  String get productDetailQuantityLabel => 'పరిమాణం';
+
+  @override
+  String productDetailQuantityTotal(String amount) {
+    return 'మొత్తం: $amount';
+  }
+
+  @override
+  String get productDetailDecreaseQuantity => 'పరిమాణం తగ్గించండి';
+
+  @override
+  String get productDetailIncreaseQuantity => 'పరిమాణం పెంచండి';
 
   @override
   String get productDetailReviewsSection => 'సమీక్షలు';
