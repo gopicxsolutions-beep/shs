@@ -1497,6 +1497,26 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఆర్డర్ స్థితిని నవీకరించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.';
 
   @override
+  String get orderDetailCancelButton => 'ఆర్డర్‌ను రద్దు చేయండి';
+
+  @override
+  String get orderDetailCancelling => 'రద్దు చేస్తోంది…';
+
+  @override
+  String get orderDetailCancelConfirmTitle => 'ఈ ఆర్డర్‌ను రద్దు చేయాలా?';
+
+  @override
+  String get orderDetailCancelConfirmMessage =>
+      'ఇది మీ ఆర్డర్‌ను రద్దు చేస్తుంది మరియు స్టాక్‌ను విక్రేతకు తిరిగి ఇస్తుంది. దీన్ని రద్దు చేయలేరు.';
+
+  @override
+  String get orderDetailCancelledSuccess => 'ఆర్డర్ రద్దు చేయబడింది';
+
+  @override
+  String get orderDetailCancelError =>
+      'ఈ ఆర్డర్‌ను రద్దు చేయలేకపోయాము — ఇది ఇప్పటికే పంపిణీలో ఉండవచ్చు. దయచేసి మళ్ళీ ప్రయత్నించండి లేదా విక్రేతను సంప్రదించండి.';
+
+  @override
   String get orderDetailUpdateStatusLabel => 'స్థితిని నవీకరించండి';
 
   @override
@@ -3355,6 +3375,9 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get marketplaceOrderStatusDelivered => 'డెలివరీ చేయబడింది';
+
+  @override
+  String get marketplaceOrderStatusCancelled => 'రద్దు చేయబడింది';
 
   @override
   String get marketplaceCategoryHandicrafts => 'హస్తకళలు';

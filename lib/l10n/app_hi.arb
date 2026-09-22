@@ -712,6 +712,18 @@
 
   "orderDetailUpdateStatusError": "ऑर्डर की स्थिति अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।",
 
+  "orderDetailCancelButton": "ऑर्डर रद्द करें",
+
+  "orderDetailCancelling": "रद्द किया जा रहा है…",
+
+  "orderDetailCancelConfirmTitle": "इस ऑर्डर को रद्द करें?",
+
+  "orderDetailCancelConfirmMessage": "इससे आपका ऑर्डर रद्द हो जाएगा और स्टॉक विक्रेता को वापस मिल जाएगा। इसे वापस नहीं किया जा सकता।",
+
+  "orderDetailCancelledSuccess": "ऑर्डर रद्द कर दिया गया",
+
+  "orderDetailCancelError": "यह ऑर्डर रद्द नहीं हो सका — यह पहले से ही भेजा जा चुका हो सकता है। कृपया फिर से कोशिश करें या विक्रेता से संपर्क करें।",
+
   "orderDetailUpdateStatusLabel": "स्थिति अपडेट करें",
 
   "orderDetailBuyerLabel": "खरीदार: {name}",
@@ -1773,6 +1785,8 @@
   "marketplaceOrderStatusShipped": "भेजा गया",
 
   "marketplaceOrderStatusDelivered": "डिलीवर किया गया",
+
+  "marketplaceOrderStatusCancelled": "रद्द किया गया",
 
   "marketplaceCategoryHandicrafts": "हस्तशिल्प",
 

@@ -21669,3 +21669,60 @@ one per rejection reason plus the unrecognized-error fallback) — confirmed
 against the exact `RAISE EXCEPTION` strings in
 `0154_iteration47_marketplace_order_regression_fix.sql`, not just against
 strings this same round wrote.
+
+## 2026-09-22 — Marketplace audit round 3: buyer-initiated order cancellation (missing feature, named in this repo's own docs)
+
+Continuing the audit. This is the highest-value item still open — SRS.md's
+own Marketplace section named it explicitly: "there is no buyer-initiated
+cancellation yet (would need a new 'cancelled' status plus a stock-restore
+RPC)." Implemented exactly that, deliberately scoped narrow: a buyer may
+cancel her own order only while it's still `'new'` — before the seller has
+packed it. Once fulfillment has started, cancellation becomes a conversation
+with the seller, not a one-tap undo; a formal refund/dispute flow and
+seller/staff-initiated cancellation are explicitly out of scope for this
+pass.
+
+**Migration 0155**: `'cancelled'` added to the status CHECK constraint.
+`cancel_marketplace_order(p_order_id)` — `security definer` (touches two
+tables atomically, the same reason `place_marketplace_order` is), checks the
+caller is the order's own buyer and the order is still `'new'`, sets status
+to `'cancelled'`, and restores the product's stock by the order's own
+(locked) quantity, all in one transaction.
+
+**Migration 0156, caught in the same review pass before shipping, not by
+anyone hitting it live**: re-reading `advance_marketplace_order_status`
+(0068) with `'cancelled'` now a real status in mind found a real gap.
+`p_new_status = 'cancelled'` was already blocked (it's deliberately never in
+that function's own 4-status flow array), but the REVERSE direction wasn't:
+for an order whose CURRENT status is `'cancelled'`, the one-step-transition
+guard's `array_position(...)` returns NULL, `abs(x - NULL) <> 1` evaluates
+to NULL, and `if NULL then raise ... end if` in plpgsql treats a NULL
+condition as false — silently skipping the exception and falling through to
+the UPDATE. Both a non-staff seller AND staff (who skip that check entirely)
+could "advance" a cancelled order to any other status, resurrecting it
+without the stock cancellation restored ever being re-decremented — the
+same units effectively sellable twice. Fixed with an explicit `if v_status =
+'cancelled' then raise exception` guard before anything else runs.
+
+**Client**: `MarketOrder.buyerId` added (the model had `sellerId` but no
+`buyerId` at all — needed to determine "is the current viewer this order's
+own buyer" reliably, rather than comparing names). `MarketplaceRepository.
+cancelOrder()`, a "Cancel Order" button on `order_detail_page.dart` (buyer
+only, only while `status == 'new'`, confirm-dialog-gated since it can't be
+undone), `marketplaceOrderStatusLabel` handles `'cancelled'`. New keys in
+all 3 `.arb` files.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1146/1146 (+3 new
+in `order_detail_page_test.dart`, covering cancel/dismiss/no-longer-eligible
+through demo mode's real repository, not a stub); mutation-checked —
+disabling the cancel-button condition makes 2 of the 3 new tests fail. Live
+DB, RLS on, two rolled-back probes: (1) happy-path cancel + full stock
+restore + status change, another buyer refused, the seller refused, cancelling
+a packed order refused, double-cancelling refused with no double stock
+restoration; (2) both a seller AND staff attempting to resurrect a cancelled
+order via `advance_marketplace_order_status` correctly refused, with the
+ordinary new→packed flow confirmed unaffected. Re-queried after both: stock
+and order counts unchanged, nothing left behind.
+
+Docs updated in this same change: [SRS.md](SRS.md)'s Marketplace order-history
+paragraph.

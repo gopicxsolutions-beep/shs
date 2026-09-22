@@ -712,6 +712,18 @@
 
   "orderDetailUpdateStatusError": "ఆర్డర్ స్థితిని నవీకరించలేకపోయాము. దయచేసి మళ్ళీ ప్రయత్నించండి.",
 
+  "orderDetailCancelButton": "ఆర్డర్‌ను రద్దు చేయండి",
+
+  "orderDetailCancelling": "రద్దు చేస్తోంది…",
+
+  "orderDetailCancelConfirmTitle": "ఈ ఆర్డర్‌ను రద్దు చేయాలా?",
+
+  "orderDetailCancelConfirmMessage": "ఇది మీ ఆర్డర్‌ను రద్దు చేస్తుంది మరియు స్టాక్‌ను విక్రేతకు తిరిగి ఇస్తుంది. దీన్ని రద్దు చేయలేరు.",
+
+  "orderDetailCancelledSuccess": "ఆర్డర్ రద్దు చేయబడింది",
+
+  "orderDetailCancelError": "ఈ ఆర్డర్‌ను రద్దు చేయలేకపోయాము — ఇది ఇప్పటికే పంపిణీలో ఉండవచ్చు. దయచేసి మళ్ళీ ప్రయత్నించండి లేదా విక్రేతను సంప్రదించండి.",
+
   "orderDetailUpdateStatusLabel": "స్థితిని నవీకరించండి",
 
   "orderDetailBuyerLabel": "కొనుగోలుదారు: {name}",
@@ -1773,6 +1785,8 @@
   "marketplaceOrderStatusShipped": "పంపబడింది",
 
   "marketplaceOrderStatusDelivered": "డెలివరీ చేయబడింది",
+
+  "marketplaceOrderStatusCancelled": "రద్దు చేయబడింది",
 
   "marketplaceCategoryHandicrafts": "హస్తకళలు",
 

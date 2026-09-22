@@ -1488,6 +1488,26 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not update the order status. Please try again.';
 
   @override
+  String get orderDetailCancelButton => 'Cancel Order';
+
+  @override
+  String get orderDetailCancelling => 'Cancelling…';
+
+  @override
+  String get orderDetailCancelConfirmTitle => 'Cancel this order?';
+
+  @override
+  String get orderDetailCancelConfirmMessage =>
+      'This cancels your order and returns the stock to the seller. This can\'t be undone.';
+
+  @override
+  String get orderDetailCancelledSuccess => 'Order cancelled';
+
+  @override
+  String get orderDetailCancelError =>
+      'Could not cancel this order — it may already be on its way. Please try again or contact the seller.';
+
+  @override
   String get orderDetailUpdateStatusLabel => 'Update status';
 
   @override
@@ -3353,6 +3373,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get marketplaceOrderStatusDelivered => 'Delivered';
+
+  @override
+  String get marketplaceOrderStatusCancelled => 'Cancelled';
 
   @override
   String get marketplaceCategoryHandicrafts => 'Handicrafts';

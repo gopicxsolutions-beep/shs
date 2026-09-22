@@ -1472,6 +1472,26 @@ class AppLocalizationsHi extends AppLocalizations {
       'ऑर्डर की स्थिति अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।';
 
   @override
+  String get orderDetailCancelButton => 'ऑर्डर रद्द करें';
+
+  @override
+  String get orderDetailCancelling => 'रद्द किया जा रहा है…';
+
+  @override
+  String get orderDetailCancelConfirmTitle => 'इस ऑर्डर को रद्द करें?';
+
+  @override
+  String get orderDetailCancelConfirmMessage =>
+      'इससे आपका ऑर्डर रद्द हो जाएगा और स्टॉक विक्रेता को वापस मिल जाएगा। इसे वापस नहीं किया जा सकता।';
+
+  @override
+  String get orderDetailCancelledSuccess => 'ऑर्डर रद्द कर दिया गया';
+
+  @override
+  String get orderDetailCancelError =>
+      'यह ऑर्डर रद्द नहीं हो सका — यह पहले से ही भेजा जा चुका हो सकता है। कृपया फिर से कोशिश करें या विक्रेता से संपर्क करें।';
+
+  @override
   String get orderDetailUpdateStatusLabel => 'स्थिति अपडेट करें';
 
   @override
@@ -3307,6 +3327,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get marketplaceOrderStatusDelivered => 'डिलीवर किया गया';
+
+  @override
+  String get marketplaceOrderStatusCancelled => 'रद्द किया गया';
 
   @override
   String get marketplaceCategoryHandicrafts => 'हस्तशिल्प';

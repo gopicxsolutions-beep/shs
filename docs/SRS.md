@@ -806,8 +806,17 @@ recorded" for a client to skip or forge.
 **Order history** is visible to both sides of a purchase: `MarketplaceOrdersPage`
 carries "My Purchases" and "My Sales" tabs, backed by
 `fetchOrdersForBuyer`/`fetchOrdersForSeller` respectively. Buyers can see their
-own order status; there is no buyer-initiated cancellation yet (would need a
-new `'cancelled'` status plus a stock-restore RPC).
+own order status, and — migration `0155` — cancel their own order while it is
+still `'new'` (before the seller has packed it): `cancel_marketplace_order`
+sets the order to `'cancelled'` and restores the product's stock in one
+atomic transaction, deliberately narrower than a full refund/dispute flow.
+`advance_marketplace_order_status` (the seller/staff forward-or-back-one-step
+flow) explicitly refuses to touch a cancelled order in either direction —
+migration `0156` closed a gap where its one-step-transition guard silently
+no-op'd (treated a comparison against a status outside its known flow as
+"check passed") for exactly this case, which would have let a seller or
+staff resurrect a cancelled order without the stock ever being
+re-decremented.
 
 **Order status** (`new → packed → shipped → delivered`) is set by the seller
 (or staff) via a chip row in the UI, but — unlike this section's own earlier

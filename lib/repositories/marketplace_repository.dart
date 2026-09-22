@@ -329,6 +329,24 @@ class MarketplaceRepository {
     await _client.rpc('advance_marketplace_order_status', params: {'p_order_id': id, 'p_new_status': status});
   }
 
+  /// Buyer-initiated cancellation (`cancel_marketplace_order`, migration
+  /// 0155) — only while the order is still `'new'` (before the seller has
+  /// acted on it at all). Restores the product's stock atomically in the
+  /// same `security definer` transaction; demo mode has no stock to restore
+  /// (`placeOrder`'s own demo branch never decrements any — see its doc
+  /// comment), so this just flips the local order's status.
+  Future<void> cancelOrder(String id) async {
+    if (!_live) {
+      final idx = _locallyPlaced.indexWhere((o) => o.id == id);
+      if (idx != -1) {
+        final o = _locallyPlaced[idx];
+        _locallyPlaced[idx] = MarketOrder(id: o.id, productId: o.productId, productName: o.productName, sellerId: o.sellerId, buyerName: o.buyerName, amount: o.amount, quantity: o.quantity, status: 'cancelled', orderDate: o.orderDate);
+      }
+      return;
+    }
+    await _client.rpc('cancel_marketplace_order', params: {'p_order_id': id});
+  }
+
   /// Reviews across every product this seller lists.
   Future<List<Review>> fetchReviewsForSeller(String? sellerId) async {
     if (!_live) return mock.marketplaceReviews.map((r) => Review(id: r.id, productId: r.productId, reviewerName: r.reviewerName, rating: r.rating, comment: r.comment)).toList();

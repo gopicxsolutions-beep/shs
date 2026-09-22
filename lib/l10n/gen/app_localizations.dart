@@ -2638,6 +2638,42 @@ abstract class AppLocalizations {
   /// **'Could not update the order status. Please try again.'**
   String get orderDetailUpdateStatusError;
 
+  /// No description provided for @orderDetailCancelButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Order'**
+  String get orderDetailCancelButton;
+
+  /// No description provided for @orderDetailCancelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling…'**
+  String get orderDetailCancelling;
+
+  /// No description provided for @orderDetailCancelConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel this order?'**
+  String get orderDetailCancelConfirmTitle;
+
+  /// No description provided for @orderDetailCancelConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This cancels your order and returns the stock to the seller. This can\'t be undone.'**
+  String get orderDetailCancelConfirmMessage;
+
+  /// No description provided for @orderDetailCancelledSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Order cancelled'**
+  String get orderDetailCancelledSuccess;
+
+  /// No description provided for @orderDetailCancelError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not cancel this order — it may already be on its way. Please try again or contact the seller.'**
+  String get orderDetailCancelError;
+
   /// No description provided for @orderDetailUpdateStatusLabel.
   ///
   /// In en, this message translates to:
@@ -5853,6 +5889,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delivered'**
   String get marketplaceOrderStatusDelivered;
+
+  /// No description provided for @marketplaceOrderStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get marketplaceOrderStatusCancelled;
 
   /// No description provided for @marketplaceCategoryHandicrafts.
   ///

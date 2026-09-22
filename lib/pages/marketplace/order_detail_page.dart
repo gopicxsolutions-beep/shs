@@ -11,6 +11,7 @@ import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../../widgets/app_badge.dart';
+import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/async_state.dart';
 
@@ -41,6 +42,49 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.orderDetailUpdateStatusError)));
+      }
+    } finally {
+      if (mounted) setState(() => _updating = false);
+    }
+  }
+
+  // Missing feature, called out by name in SRS.md's Marketplace section:
+  // "there is no buyer-initiated cancellation yet." Narrow by design — only
+  // while the order is still 'new', before the seller has acted on it at
+  // all (see cancel_marketplace_order's own migration for the reasoning).
+  Future<void> _cancel(MarketOrder order) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.orderDetailCancelConfirmTitle),
+        content: Text(l10n.orderDetailCancelConfirmMessage),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.orderDetailCancelButton)),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _updating = true);
+    try {
+      await _repo.cancelOrder(order.id);
+      if (mounted) {
+        _key.currentState?.reload();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(SupabaseService.isConfigured ? l10n.orderDetailCancelledSuccess : l10n.profileUpdateDemoMode),
+        ));
+      }
+    } catch (_) {
+      // The likeliest real cause is a race with the seller: she started
+      // packing between this page loading and the buyer tapping Cancel —
+      // `cancel_marketplace_order` only allows 'new' orders, so that attempt
+      // is correctly refused. Reloading shows the now-current (no longer
+      // cancellable) status instead of leaving a stale Cancel button up.
+      if (mounted) {
+        _key.currentState?.reload();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.orderDetailCancelError)));
       }
     } finally {
       if (mounted) setState(() => _updating = false);
@@ -79,6 +123,13 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           // fulfillment flow untestable in demo mode for the leader/member
           // roles it actually exists for.
           final canUpdateStatus = isStaff || !SupabaseService.isConfigured || (order.sellerId != null && order.sellerId == appState.profile?.id);
+          // Buyer-only, and only while the order is still 'new' — see
+          // cancel_marketplace_order's own migration for why. Not staff:
+          // cancellation restores stock atomically in a way
+          // advance_marketplace_order_status deliberately can never be used
+          // for (migration 0156), so it stays a dedicated buyer action, not
+          // folded into staff's broader status-override powers.
+          final canCancel = order.status == 'new' && (!SupabaseService.isConfigured || (order.buyerId != null && order.buyerId == appState.profile?.id));
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -99,6 +150,15 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   ],
                 ),
               ),
+              if (canCancel) ...[
+                const SizedBox(height: 16),
+                AppButton(
+                  label: _updating ? l10n.orderDetailCancelling : l10n.orderDetailCancelButton,
+                  fullWidth: true,
+                  variant: ButtonVariant.outline,
+                  onPressed: _updating ? null : () => _cancel(order),
+                ),
+              ],
               if (canUpdateStatus) ...[
                 const SizedBox(height: 20),
                 Text(l10n.orderDetailUpdateStatusLabel, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),

@@ -9,6 +9,7 @@ String marketplaceOrderStatusLabel(String status, AppLocalizations l10n) => swit
       'packed' => l10n.marketplaceOrderStatusPacked,
       'shipped' => l10n.marketplaceOrderStatusShipped,
       'delivered' => l10n.marketplaceOrderStatusDelivered,
+      'cancelled' => l10n.marketplaceOrderStatusCancelled,
       _ => status,
     };
 
@@ -90,6 +91,7 @@ class MarketOrder {
   final String productId;
   final String productName;
   final String? sellerId;
+  final String? buyerId;
   final String buyerName;
   final num amount;
   // Units purchased — `amount` is already the TOTAL for all of them (unit
@@ -107,6 +109,7 @@ class MarketOrder {
     required this.productId,
     required this.productName,
     this.sellerId,
+    this.buyerId,
     required this.buyerName,
     required this.amount,
     this.quantity = 1,
@@ -119,6 +122,7 @@ class MarketOrder {
         productId: map['product_id'] as String,
         productName: (map['marketplace_products'] as Map<String, dynamic>?)?['name'] as String? ?? 'Product',
         sellerId: (map['marketplace_products'] as Map<String, dynamic>?)?['seller_id'] as String?,
+        buyerId: map['buyer_id'] as String?,
         buyerName: map['buyer_name'] as String,
         amount: map['amount'] as num,
         quantity: map['quantity'] as int? ?? 1,
