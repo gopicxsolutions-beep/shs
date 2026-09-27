@@ -47,6 +47,35 @@ class SplashPage extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            // The router only ever forces `/language-select`
+                            // on a device's very first launch
+                            // (`!hasSession && !languageSelected` — see
+                            // router.dart); once a language is picked
+                            // (persisted to SharedPreferences immediately),
+                            // that gate never fires again. Without an entry
+                            // point here, mis-tapping a language on that
+                            // one-time first screen was unrecoverable until
+                            // the ENTIRE onboarding flow — login, OTP, the
+                            // full profile form, and all 9 mandatory
+                            // baseline-survey sections — was completed,
+                            // since the only other language switcher
+                            // (`LanguagePage`, `/app/profile/language`) sits
+                            // inside the authenticated `ShellRoute` and is
+                            // unreachable until then. Re-visiting
+                            // `/language-select` explicitly like this
+                            // (unlike the router's own forced redirect) IS
+                            // allowed post-first-pick: the router's
+                            // `!hasSession` branch only excludes `/app/**`
+                            // paths from `onAuthFlow`, so a deliberate visit
+                            // here is never redirected away.
+                            InkWell(
+                              onTap: () => context.go(Paths.languageSelect),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.all(6),
+                                child: Icon(Icons.translate_rounded, color: Colors.white.withValues(alpha: 0.85), size: 18),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 40),

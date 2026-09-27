@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -18,20 +18,92 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="NavaSakhi — AI-Enabled Digital Platform for Self-Help Groups and Women-Led Microenterprises.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="NavaSakhi — AI-Enabled Digital Platform for Self-Help Groups (SHGs) and Women-Led Microenterprises. Savings, loans, meetings, livelihoods, marketplace, schemes and training for SHG members, leaders and federations, all in one app.">
+  <meta name="keywords" content="NavaSakhi, SHG Saathi, Self-Help Group app, SHG digital platform, women microenterprise, SHG savings and loans, federation monitoring, CRP CLF Admin, rural women empowerment India">
+  <meta name="author" content="NavaSakhi">
+  <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#0E8A66">
+  <link rel="canonical" href="https://navasakhi.com/">
+  <meta name="google-site-verification" content="l_-w-cbLlgYZeBXPeGmT4jQxlXY3QDSvS7BUUaDVb4I">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="NavaSakhi">
+  <meta property="og:title" content="NavaSakhi — Digital Platform for Self-Help Groups">
+  <meta property="og:description" content="AI-Enabled Digital Platform for Self-Help Groups and Women-Led Microenterprises — savings, loans, meetings, livelihoods, marketplace, schemes and training.">
+  <meta property="og:url" content="https://navasakhi.com/">
+  <meta property="og:image" content="https://navasakhi.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_IN">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="NavaSakhi — Digital Platform for Self-Help Groups">
+  <meta name="twitter:description" content="AI-Enabled Digital Platform for Self-Help Groups and Women-Led Microenterprises.">
+  <meta name="twitter:image" content="https://navasakhi.com/og-image.png">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="NavaSakhi">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="mask-icon" href="apple-touch-icon.png" color="#0E8A66">
 
-  <title>NavaSakhi</title>
+  <title>NavaSakhi — Digital Platform for Self-Help Groups</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Structured data for search engines: ties the brand name, the site and the
+       app together as one entity so "NavaSakhi" queries can resolve to a single
+       known thing instead of Google having to guess. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://navasakhi.com/#organization",
+        "name": "NavaSakhi",
+        "alternateName": "SHG Saathi",
+        "url": "https://navasakhi.com/",
+        "logo": "https://navasakhi.com/icons/Icon-512.png"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://navasakhi.com/#website",
+        "url": "https://navasakhi.com/",
+        "name": "NavaSakhi",
+        "publisher": { "@id": "https://navasakhi.com/#organization" },
+        "inLanguage": ["en", "hi", "te"]
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://navasakhi.com/#webapp",
+        "name": "NavaSakhi",
+        "alternateName": "SHG Saathi",
+        "url": "https://navasakhi.com/",
+        "description": "AI-Enabled Digital Platform for Self-Help Groups and Women-Led Microenterprises — savings, loans, meetings, livelihoods, marketplace, schemes and training.",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web, Android, iOS",
+        "image": "https://navasakhi.com/og-image.png",
+        "inLanguage": ["en", "hi", "te"],
+        "publisher": { "@id": "https://navasakhi.com/#organization" },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
+        }
+      }
+    ]
+  }
+  </script>
 
   <style>
     #app-loading {
@@ -50,6 +122,24 @@
       height: 160px;
       border-radius: 24px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    }
+    #app-loading h1 {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+      text-align: center;
+    }
+    #app-loading p {
+      margin: 0;
+      max-width: 480px;
+      padding: 0 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.85);
+      text-align: center;
     }
     #app-loading .spinner {
       width: 32px;
@@ -71,11 +161,35 @@
     widget (including SplashPage) can render. Removed automatically on the
     documented `flutter-first-frame` event, Flutter web's own signal that
     the first real frame has painted.
+
+    This markup is also this app's only real SEO payload: Flutter web renders
+    the actual UI onto a <canvas> via CanvasKit, so once the app boots there is
+    no indexable DOM text underneath it at all. Search engines that read raw
+    HTML (Google's fast first-pass crawl, social-media link unfurlers, and any
+    crawler that doesn't execute JS) only ever see what's written here — so it
+    carries real heading/description text rather than being a bare spinner.
   -->
   <div id="app-loading">
-    <img src="icons/Icon-512.png" alt="NavaSakhi">
+    <img src="icons/Icon-512.png" alt="NavaSakhi logo">
+    <h1>NavaSakhi</h1>
+    <p>
+      AI-Enabled Digital Platform for Self-Help Groups (SHGs) and Women-Led
+      Microenterprises — savings, loans, meetings, livelihoods, marketplace,
+      schemes and training, for SHG members, leaders and federations.
+    </p>
     <div class="spinner"></div>
   </div>
+  <noscript>
+    <div style="max-width: 640px; margin: 40px auto; padding: 0 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a1a;">
+      <h1>NavaSakhi — Digital Platform for Self-Help Groups</h1>
+      <p>
+        NavaSakhi (SHG Saathi) is an AI-enabled digital platform that helps
+        Self-Help Groups and women-led microenterprises manage savings, loans,
+        meetings, livelihoods, marketplace, schemes and training. Please enable
+        JavaScript to use the app.
+      </p>
+    </div>
+  </noscript>
   <script>
     window.addEventListener('flutter-first-frame', function () {
       document.getElementById('app-loading')?.remove();

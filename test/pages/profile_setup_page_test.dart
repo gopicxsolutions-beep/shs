@@ -5,10 +5,12 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shg_saathi/l10n/gen/app_localizations.dart';
+import 'package:shg_saathi/models/baseline_survey.dart';
 import 'package:shg_saathi/models/profile.dart';
 import 'package:shg_saathi/pages/auth/profile_setup_page.dart';
 import 'package:shg_saathi/repositories/shg_join_request_repository.dart';
 import 'package:shg_saathi/services/auth_service.dart';
+import 'package:shg_saathi/services/baseline_survey_repository.dart';
 import 'package:shg_saathi/services/profile_repository.dart';
 import 'package:shg_saathi/services/supabase_service.dart';
 import 'package:shg_saathi/state/app_state.dart';
@@ -19,6 +21,24 @@ class _FixedProfileRepository extends ProfileRepository {
   final Profile? _profile;
   @override
   Future<Profile?> fetchMyProfile(String? uid) async => _profile;
+}
+
+/// Deterministic `hasSubmitted` answer, plus a `submitCalls` counter — lets a
+/// test both force `AppState.needsBaselineSurvey` to a known value (instead
+/// of relying on `_loadProfile`'s fail-open behavior when no repository is
+/// injected at all) and assert whether `AppState.submitBaselineSurvey` (and
+/// therefore this repository's own upserting `submit`) was ever actually
+/// invoked.
+class _RecordingBaselineSurveyRepository extends BaselineSurveyRepository {
+  _RecordingBaselineSurveyRepository({required bool hasSubmitted}) : _hasSubmitted = hasSubmitted;
+  final bool _hasSubmitted;
+  int submitCalls = 0;
+
+  @override
+  Future<bool> hasSubmitted(String profileId) async => _hasSubmitted;
+
+  @override
+  Future<void> submit(BaselineSurveyDraft draft) async => submitCalls++;
 }
 
 class _FakeAuthServiceWithSession extends AuthService {
@@ -231,10 +251,14 @@ void main() {
       expect(nextButton(tester).onPressed, isNotNull, reason: 'baseline: every answer valid');
 
       final fields = find.byType(TextField);
-      for (final bad in ['0', '51', '100', 'abc', '2.5']) {
+      // Only still-typable bad values here — household size now carries
+      // `wholeNumberInputFormatters` (round: onboarding-flow audit, item
+      // 4.6 below), so a literal "abc"/"2.5" can no longer even be entered;
+      // that's covered separately below instead of in this range-check loop.
+      for (final bad in ['0', '51', '100']) {
         await tester.enterText(fields.at(2), bad);
         await tester.pumpAndSettle();
-        expect(nextButton(tester).onPressed, isNull, reason: 'household size "$bad" is outside 1-50 / not a whole number');
+        expect(nextButton(tester).onPressed, isNull, reason: 'household size "$bad" is outside 1-50');
         expect(find.text('Enter a number between 1 and 50'), findsOneWidget, reason: 'household size "$bad" needs a visible reason');
       }
       await tester.enterText(fields.at(2), '50');
@@ -249,15 +273,53 @@ void main() {
       await tester.pumpAndSettle();
       expect(nextButton(tester).onPressed, isNotNull, reason: 'the boundary value 120 is valid');
 
-      for (final bad in ['-1', 'NaN', 'Infinity', '10000000000', 'lots']) {
-        await tester.enterText(fields.at(3), bad);
-        await tester.pumpAndSettle();
-        expect(nextButton(tester).onPressed, isNull, reason: 'income "$bad" is negative / non-finite / overflows numeric(12,2) / not a number');
-        expect(find.text('Enter a number between 0 and 9999999999'), findsOneWidget, reason: 'income "$bad" needs a visible reason');
-      }
+      // Income carries `decimalAmountInputFormatters` (non-negative, up to 2
+      // decimal places) — "-1"/"NaN"/"Infinity"/"lots" no longer reach the
+      // field's text at all (see the dedicated formatter test below), so
+      // only a still-typable, purely-numeric overflow remains a reachable
+      // bad case here.
+      await tester.enterText(fields.at(3), '10000000000');
+      await tester.pumpAndSettle();
+      expect(nextButton(tester).onPressed, isNull, reason: 'income overflows numeric(12,2)');
+      expect(find.text('Enter a number between 0 and 9999999999'), findsOneWidget, reason: 'income overflow needs a visible reason');
       await tester.enterText(fields.at(3), '0');
       await tester.pumpAndSettle();
       expect(nextButton(tester).onPressed, isNotNull, reason: 'zero income is a legitimate answer');
+      expect(tester.takeException(), isNull);
+    });
+
+    // New coverage (onboarding-flow audit, item 4.6): these numeric fields
+    // previously relied on `keyboardType` alone, which only hints at the
+    // on-screen keyboard and enforces nothing about what can actually be
+    // typed/pasted — especially on Flutter Web, where it has no effect at
+    // all. Now every `_numberField` carries a real `inputFormatters`,
+    // matching the phone field's/OTP boxes' existing convention.
+    testWidgets('numeric fields reject non-numeric input at the formatter level, not just at validation', (tester) async {
+      await toSectionA(tester);
+      await fillSectionA(tester);
+      final fields = find.byType(TextField);
+
+      // Household size (`wholeNumberInputFormatters` = digits-only,
+      // character-by-character filtering): non-digit characters are
+      // stripped, not merely flagged after the fact.
+      await tester.enterText(fields.at(2), 'abc');
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(fields.at(2)).controller?.text, '', reason: 'every character of "abc" is non-digit, so digitsOnly strips it to nothing');
+      await tester.enterText(fields.at(2), '2.5');
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(fields.at(2)).controller?.text, '25', reason: 'the decimal point is stripped, digits kept — a whole-number field has no concept of a fractional household size');
+
+      // Income (`decimalAmountInputFormatters` = reject the whole edit
+      // unless it matches `^\d*\.?\d{0,2}$`, preserving the previous valid
+      // value): unlike the digits-only filter above, this rejects the
+      // entire attempted value rather than stripping individual characters.
+      await tester.enterText(fields.at(3), '150000');
+      await tester.pumpAndSettle();
+      for (final rejected in ['-1', 'NaN', 'Infinity', 'lots', '1,234']) {
+        await tester.enterText(fields.at(3), rejected);
+        await tester.pumpAndSettle();
+        expect(tester.widget<TextField>(fields.at(3)).controller?.text, '150000', reason: '"$rejected" does not match a valid non-negative amount, so the formatter keeps the field at its last valid value instead of accepting it');
+      }
       expect(tester.takeException(), isNull);
     });
 
@@ -347,6 +409,67 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Search & select your SHG'), findsNothing, reason: 'her SHG is already settled — step 0 must not reappear');
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  // New regression coverage (onboarding-flow audit round): the sibling case
+  // the group above didn't cover — an existing profile that still needs an
+  // SHG (`needsShgApproval == true`, e.g. a "Choose a different SHG" retry
+  // from ShgApprovalPendingPage after a rejection/withdrawal/admin removal)
+  // but has ALREADY completed the baseline survey
+  // (`needsBaselineSurvey == false`, forced deterministically here via
+  // `_RecordingBaselineSurveyRepository` rather than relying on
+  // `_loadProfile`'s fail-open default, which the group above's own
+  // `loadedProfile` helper incidentally does rely on). The removed
+  // `_surveyOnly = profile != null && !appState.needsShgApproval` flag had
+  // no way to express "needs step 0 but NOT the survey" — any visit with
+  // `needsShgApproval == true` always got `_surveyOnly == false`, which
+  // showed (and, on submit, unconditionally re-upserted — overwriting) the
+  // full 9-section survey regardless of whether it was already done. Real,
+  // live-observed shape: a member picks a different SHG after a rejection,
+  // having already answered the ICSSR survey honestly the first time.
+  group('an existing profile that still needs an SHG but already completed the survey', () {
+    setUp(() {
+      SupabaseService.isConfigured = true;
+      SharedPreferences.setMockInitialValues({});
+    });
+    tearDown(() {
+      SupabaseService.isConfigured = false;
+    });
+
+    testWidgets('shows step 0 only (Submit & Continue immediately) — the survey never re-renders or re-submits', (tester) async {
+      const profile = Profile(id: 'p1', name: 'Uma', role: 'member', shgId: null, village: 'Rangampeta');
+      final surveyRepo = _RecordingBaselineSurveyRepository(hasSubmitted: true);
+      final appState = AppState(
+        profileRepository: _FixedProfileRepository(profile),
+        authService: _FakeAuthServiceWithSession(),
+        joinRequestRepository: ShgJoinRequestRepository(),
+        baselineSurveyRepository: surveyRepo,
+      );
+      await appState.refreshProfile();
+      expect(appState.needsShgApproval, isTrue, reason: 'precondition: still needs an SHG');
+      expect(appState.needsBaselineSurvey, isFalse, reason: 'precondition: the survey is already done — this is the combination the old _surveyOnly flag could not express');
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppState>.value(
+          value: appState,
+          child: MaterialApp(home: const ProfileSetupPage(), localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: AppLocalizations.supportedLocales),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Search & select your SHG'), findsOneWidget, reason: 'step 0 must still show — an SHG pick is exactly what she needs');
+      expect(find.textContaining('Section'), findsNothing, reason: 'the survey sections must not appear — she already completed them');
+      // "Submit & Continue" (not "Continue") only shows when `isLastStep` is
+      // true. Under the removed `_surveyOnly` flag, `isLastStep` was always
+      // `_step == 9`, so step 0 here would have shown "Continue" and walked
+      // her through (and overwritten) the whole survey before ever reaching
+      // a real Submit — this label is the precise, distinguishing signal
+      // that `_includeSurvey` correctly excluded the survey from this
+      // visit's step sequence entirely.
+      final button = tester.widget<AppButton>(find.byType(AppButton));
+      expect(button.label, 'Submit & Continue', reason: 'step 0 must be the LAST step too — this visit needs no survey steps at all');
       expect(tester.takeException(), isNull);
     });
   });

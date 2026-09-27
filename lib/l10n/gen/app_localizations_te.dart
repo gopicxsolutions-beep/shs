@@ -345,6 +345,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get otpSentTo => 'మేము 6-అంకెల కోడ్‌ను పంపాము ';
 
   @override
+  String get otpChangeNumber => 'నంబర్ తప్పా? దాన్ని మార్చండి';
+
+  @override
   String get otpVerifyContinue => 'ధృవీకరించి కొనసాగించండి';
 
   @override

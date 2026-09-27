@@ -342,6 +342,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get otpSentTo => 'हमने 6-अंकों का कोड भेजा है ';
 
   @override
+  String get otpChangeNumber => 'गलत नंबर? इसे बदलें';
+
+  @override
   String get otpVerifyContinue => 'सत्यापित करें और जारी रखें';
 
   @override

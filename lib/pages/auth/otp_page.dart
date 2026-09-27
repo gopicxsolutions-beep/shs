@@ -179,7 +179,23 @@ class _OtpPageState extends State<OtpPage> {
                   TextSpan(text: _phone, style: AppTheme.sans(13, weight: FontWeight.w700, color: Neutral.c700)),
                 ]),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 8),
+              // Every navigation in this app replaces the stack
+              // (context.go(), never push/pop — see CLAUDE.md), and this
+              // page has no AppBar/back arrow, so a phone number mistyped on
+              // LoginPage had NO way back short of restarting the app: OTP
+              // verification would just keep failing against the wrong
+              // number with the same generic "incorrect or expired code"
+              // message, which misattributes the real problem. Disabled
+              // mid-verify only to avoid navigating away while `_submit`'s
+              // network call is still in flight — its own `mounted` guards
+              // already make that safe either way, this just avoids the
+              // confusing appearance of abandoning an in-progress action.
+              InkWell(
+                onTap: _verifying ? null : () => context.go(Paths.login),
+                child: Text(l10n.otpChangeNumber, style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
+              ),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 // 6 visually-identical, unlabeled boxes: a sighted user infers

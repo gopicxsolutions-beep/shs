@@ -712,6 +712,12 @@ abstract class AppLocalizations {
   /// **'We\'ve sent a 6-digit code to '**
   String get otpSentTo;
 
+  /// No description provided for @otpChangeNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong number? Change it'**
+  String get otpChangeNumber;
+
   /// No description provided for @otpVerifyContinue.
   ///
   /// In en, this message translates to:

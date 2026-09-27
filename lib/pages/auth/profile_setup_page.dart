@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../data/shg.dart';
@@ -14,6 +15,7 @@ import '../../theme/colors.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/choice_field.dart';
+import '../../widgets/input_formatters.dart';
 import '../../widgets/progress_bar.dart';
 import '../../widgets/shg_search_sheet.dart';
 
@@ -138,13 +140,21 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   final _signatureName = TextEditingController();
 
   int _step = 0;
-  // True for an account that already has a `profiles` row AND no longer
-  // needs an SHG (already has one, or is staff) but is missing only the
-  // baseline survey — see AppState.needsBaselineSurvey's doc comment. Step 0
-  // (name/village/SHG) doesn't apply to her: that data already exists. Set
-  // in `initState` — see its own comment for why "a profile exists" alone
-  // is NOT sufficient (a profile can exist with no SHG at all).
-  bool _surveyOnly = false;
+  // Whether this visit needs step 0 (name/village/SHG) and/or the 9-section
+  // baseline survey — independent flags, NOT one combined "survey only" bit.
+  // See `initState` below for why collapsing them into one was itself a real
+  // shipped bug (the "Choose a different SHG" data-loss regression this
+  // replaced): a member who already submitted the baseline survey once but
+  // needs to pick a different SHG (rejected / withdrawn / removed-by-admin —
+  // see ShgApprovalPendingPage) has `needsShgApproval == true` (so she needs
+  // step 0) but `needsBaselineSurvey == false` (she does NOT need the survey
+  // again) — a combination the old single `_surveyOnly` flag had no way to
+  // express, so it always fell into "show everything," silently re-asking
+  // and overwriting (`BaselineSurveyRepository.submit` upserts keyed on
+  // `profile_id`) her already-submitted, real research answers with a rushed
+  // blank re-entry.
+  bool _includeStep0 = true;
+  bool _includeSurvey = true;
   bool _saving = false;
   String? _error;
 
@@ -153,32 +163,39 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     super.initState();
     final appState = context.read<AppState>();
     final profile = appState.profile;
-    // Real, live-observed bug (a genuine account, no SHG and no baseline
-    // survey, stuck relogging in with the whole wizard blank every time):
-    // `_surveyOnly` used to be true for ANY existing `profiles` row,
-    // conflating two different reasons one can exist — (a) she completed
-    // full registration before the survey requirement shipped and needs
-    // ONLY the survey (this flag's original, intended purpose), and (b) she
-    // has a `profiles` row but never actually submitted an SHG join request
-    // at all (reachable via ShgApprovalPendingPage's "Choose an SHG"/
-    // "Choose a different SHG" buttons — see `_basicInfoFields`'s own doc
-    // comment below on that retry path). For (b), `_surveyOnly` skipped
-    // straight to the survey (step 1), permanently hiding the SHG picker —
-    // the ONE thing `completeProfileSetup` (which submits the join request)
-    // needs and which only step 0 offers — so submitting the survey never
-    // actually requested an SHG, `needsShgApproval` stayed true forever, and
-    // every subsequent visit re-showed the same blank 9-section survey with
-    // no way out. `needsShgApproval` (not merely "a profile exists") is the
-    // correct signal for whether she still needs step 0 at all.
-    _surveyOnly = profile != null && !appState.needsShgApproval;
-    if (_surveyOnly) {
-      _step = 1;
-    } else if (profile != null) {
-      // She's on step 0 with an existing profile (the retry path above, or
-      // an account view that predates this fix) — pre-fill from it. Fields
-      // left blank here previously, even though the server already has her
-      // answer, which is its own "asking for details again" complaint
-      // independent of the routing bug above.
+    // A brand-new signup (`profile == null`) has neither flag meaningfully
+    // set yet on the server (both `needsShgApproval`/`needsBaselineSurvey`
+    // require a profile row to exist at all — see their own doc comments),
+    // so she always needs both parts: the `profile == null` fallback below
+    // keeps that case exactly as it always was. For an existing profile,
+    // each flag now reflects only what the server says is actually still
+    // outstanding for THIS visit, instead of conflating "needs an SHG" with
+    // "needs the survey" the way the removed `_surveyOnly` bit did.
+    _includeStep0 = profile == null || appState.needsShgApproval;
+    // `|| !_includeStep0` is a defensive fallback, not part of the intended
+    // signal: the router only ever sends a `!hasProfile`/`needsShgApproval`/
+    // `needsBaselineSurvey` visit here at all (see router.dart), so in real
+    // navigation at least one of `_includeStep0`/`_includeSurvey` is always
+    // true. But `needsBaselineSurvey` reads a best-effort, fail-open lookup
+    // (`AppState._loadProfile`'s `hasSubmitted` check can silently default
+    // to "already done" on a dropped request — see its own doc comment), so
+    // a caller reaching this page via some other path with both signals
+    // false is possible. Without this fallback, `_includeStep0 == false`
+    // would start at step 1 while `_includeSurvey == false` sets the LAST
+    // step to 0 — a step index Next can never walk backward to, leaving
+    // Submit permanently unreachable. Falling back to the survey here
+    // matches this page's own pre-existing behavior for that same ambiguous
+    // case (the removed `_surveyOnly` flag defaulted to "survey only"
+    // whenever `!needsShgApproval`, regardless of the separate baseline
+    // survey answer) rather than inventing a new dead end.
+    _includeSurvey = profile == null || appState.needsBaselineSurvey || !_includeStep0;
+    _step = _includeStep0 ? 0 : 1;
+    if (profile != null && _includeStep0) {
+      // She's on step 0 with an existing profile (a "Choose a different
+      // SHG" retry, or an account view that predates this fix) — pre-fill
+      // from it. Fields left blank here previously, even though the server
+      // already has her answer, which is its own "asking for details again"
+      // complaint independent of the routing bug above.
       _name.text = profile.name;
       _village.text = profile.village ?? '';
       _mandal.text = profile.mandal ?? '';
@@ -214,7 +231,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     super.dispose();
   }
 
-  Widget _field(String label, {String? placeholder, TextEditingController? controller, TextInputAction? textInputAction, TextInputType? keyboardType, int maxLines = 1, String? errorText}) {
+  Widget _field(String label, {String? placeholder, TextEditingController? controller, TextInputAction? textInputAction, TextInputType? keyboardType, List<TextInputFormatter>? inputFormatters, int maxLines = 1, String? errorText}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -229,6 +246,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
             controller: controller,
             textInputAction: textInputAction,
             keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
             maxLines: maxLines,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(border: InputBorder.none, hintText: placeholder),
@@ -243,8 +261,22 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     );
   }
 
-  Widget _numberField(String label, TextEditingController controller, {bool decimal = false, String? errorText}) =>
-      _field(label, controller: controller, keyboardType: TextInputType.numberWithOptions(decimal: decimal), errorText: errorText);
+  // Unlike every other restricted field in this app (the phone field's
+  // `wholeNumberInputFormatters`, the OTP boxes' `OtpBoxFormatter`), these
+  // survey numeric fields relied on `keyboardType` alone, which only hints
+  // at which on-screen keyboard to show — it enforces nothing about what
+  // can actually be typed or pasted, especially on Flutter Web where it has
+  // no effect at all. `_rangeError`/`_ageError` still catch an invalid
+  // result before submit, so this was never a data-integrity gap, just an
+  // inconsistency that let non-digit text sit in a numeric field with no
+  // feedback until Next/Submit was pressed.
+  Widget _numberField(String label, TextEditingController controller, {bool decimal = false, String? errorText}) => _field(
+        label,
+        controller: controller,
+        keyboardType: TextInputType.numberWithOptions(decimal: decimal),
+        inputFormatters: decimal ? decimalAmountInputFormatters : wholeNumberInputFormatters,
+        errorText: errorText,
+      );
 
   Widget _yesNo(AppLocalizations l10n, String label, bool? value, ValueChanged<bool> onChanged) => ChoiceChipGroup<bool>(
         label: label,
@@ -277,7 +309,14 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   String? _ageError(AppLocalizations l10n) {
     if (_age.text.trim().isEmpty) return null;
     final age = _parseInt(_age);
-    if (age == null || age < _minSurveyAge) return l10n.baselineSurveyAgeBelowMinimum(_minSurveyAge);
+    // `age == null` (not a valid integer at all — e.g. a digit string long
+    // enough to overflow parsing) is genuinely a different problem than
+    // "a real age below the minimum," and every other numeric field's
+    // `_rangeError` below already reports it as such (the generic
+    // "Enter a number between X and Y") rather than folding it into
+    // whichever range-boundary message happens to be checked first.
+    if (age == null) return l10n.baselineSurveyNumberOutOfRange('$_minSurveyAge', '$_maxSurveyAge');
+    if (age < _minSurveyAge) return l10n.baselineSurveyAgeBelowMinimum(_minSurveyAge);
     if (age > _maxSurveyAge) return l10n.baselineSurveyNumberOutOfRange('$_minSurveyAge', '$_maxSurveyAge');
     return null;
   }
@@ -385,11 +424,11 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       _error = null;
     });
     final appState = context.read<AppState>();
-    if (!_surveyOnly && _selectedShg != null && SupabaseService.isConfigured) {
+    if (_includeStep0 && _selectedShg != null && SupabaseService.isConfigured) {
       appState.setPendingShg(_selectedShg!);
     }
     try {
-      if (!_surveyOnly) {
+      if (_includeStep0) {
         // See profile_setup_page.dart's (this file's) original doc comment,
         // preserved below on `_basicInfoFields`, for why an SHG is
         // mandatory and why `village` uses `?? _selectedShg?.village` while
@@ -401,7 +440,17 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           district: _district.text.trim().isNotEmpty ? _district.text.trim() : _selectedShg?.district,
         );
       }
-      await appState.submitBaselineSurvey(_buildDraft());
+      // Gated on `_includeSurvey`, NOT called unconditionally — this is the
+      // fix for the data-loss bug described on `_includeSurvey`'s own doc
+      // comment above: `BaselineSurveyRepository.submit` is an upsert keyed
+      // on `profile_id`, so unconditionally resubmitting here for a member
+      // who already has a real, previously-completed survey row (just
+      // retrying her SHG pick, `_includeStep0 == true` but
+      // `_includeSurvey == false`) would silently overwrite her genuine
+      // research answers with a blank re-entry.
+      if (_includeSurvey) {
+        await appState.submitBaselineSurvey(_buildDraft());
+      }
       // Mirrors otp_page.dart's own post-verify navigation — an explicit
       // `hasProfile` check, not a blind `context.go(Paths.dashboard)`. The
       // router's `!hasProfile` redirect (lib/routes/router.dart) always
@@ -414,9 +463,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       // back to this same page instead of advancing to Role Select. Live
       // mode is unaffected either way: `completeProfileSetup` always makes
       // `hasProfile` true before this line runs (or it already was, for the
-      // `_surveyOnly` gap-fill case), so this always picks
-      // `Paths.dashboard` there, and the router's own (correctly-targeted)
-      // `needsShgApproval` redirect takes it from there if needed.
+      // survey-only gap-fill case), so this always picks `Paths.dashboard`
+      // there, and the router's own (correctly-targeted) `needsShgApproval`
+      // redirect takes it from there if needed.
       if (mounted) context.go(appState.hasProfile ? Paths.dashboard : Paths.roleSelect);
     } catch (e, st) {
       // The user-facing text stays generic, but the real cause (a Postgres
@@ -994,8 +1043,13 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final firstStep = _surveyOnly ? 1 : 0;
-    final isLastStep = _step == 9;
+    final firstStep = _includeStep0 ? 0 : 1;
+    // The survey section steps (1-9) simply don't exist in this visit's
+    // sequence when `_includeSurvey` is false — step 0 (mandatory whenever
+    // this page is reachable with `_includeStep0`, since `_includeStep0` and
+    // `_includeSurvey` are never both false, see their own doc comment) is
+    // the last step instead of the first.
+    final isLastStep = _step == (_includeSurvey ? 9 : 0);
     final canProceed = switch (_step) {
       0 => _name.text.trim().isNotEmpty && _selectedShg != null,
       1 => _sectionAValid(),
@@ -1048,6 +1102,38 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                   ),
                 ),
               ]),
+              const SizedBox(height: 12),
+              // Every other terminal/near-terminal auth-flow screen this
+              // wizard can be reached from (ShgApprovalPendingPage,
+              // AccountDeactivatedPage) offers a way to abandon the current
+              // session; this page — reachable directly after OTP
+              // verification, before any `profiles` row exists — previously
+              // had none at all. A session verified against the wrong
+              // account (a shared device, a family member's number tapped
+              // by mistake) or a user who simply wants to restart with a
+              // different number had no in-app exit: the router forces
+              // every navigation straight back to this same page while
+              // `hasSession && !hasProfile`, and the session persists across
+              // an app restart, so force-closing didn't help either. Same
+              // signOut() + context.go(Paths.splash) shape as
+              // ShgApprovalPendingPage's identical button.
+              Center(
+                child: TextButton(
+                  onPressed: _saving
+                      ? null
+                      : () async {
+                          try {
+                            await context.read<AppState>().signOut();
+                          } catch (_) {
+                            // Fall through to navigate regardless — local
+                            // session state is cleared even if the remote
+                            // sign-out call fails.
+                          }
+                          if (context.mounted) context.go(Paths.splash);
+                        },
+                  child: Text(l10n.actionSignOut, style: AppTheme.sans(13, color: Neutral.c500)),
+                ),
+              ),
             ],
           ),
         ),

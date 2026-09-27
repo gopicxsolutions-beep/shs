@@ -27,7 +27,7 @@
 // header — see 0010_report_snapshots_cron_secret.sql for the exact SQL).
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

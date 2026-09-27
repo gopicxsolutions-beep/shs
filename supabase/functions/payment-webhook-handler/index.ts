@@ -49,7 +49,7 @@
 // already-terminal payment is logged and ignored, not applied.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno';
 
 // Tolerance window for webhook freshness — generous enough to absorb
 // realistic network/queueing delay and modest clock skew between this

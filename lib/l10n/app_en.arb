@@ -130,6 +130,7 @@
   "otpHint": "Enter the 6-digit code sent to your phone",
   "otpVerify": "Verify",
   "otpSentTo": "We've sent a 6-digit code to ",
+  "otpChangeNumber": "Wrong number? Change it",
   "otpVerifyContinue": "Verify & Continue",
   "otpVerifying": "Verifying…",
   "otpResendIn": "Resend OTP in ",

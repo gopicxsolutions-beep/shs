@@ -341,6 +341,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get otpSentTo => 'We\'ve sent a 6-digit code to ';
 
   @override
+  String get otpChangeNumber => 'Wrong number? Change it';
+
+  @override
   String get otpVerifyContinue => 'Verify & Continue';
 
   @override

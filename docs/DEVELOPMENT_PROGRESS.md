@@ -22208,3 +22208,276 @@ wasn't practical to fill out just for a visual QR check — relying on the
 automated coverage above instead, which directly exercises the same
 rendering path (`QrImageView` mounts, doesn't throw, encodes the correct
 data) without needing a live click-through.
+
+## Update (round 202) — Dedicated onboarding-flow audit: a data-loss survey-overwrite bug (HIGH), a still-open INSERT-side leader self-escalation gap (CRITICAL-class, mirrors 0117), plus 5 more dead-end/UX gaps
+
+Two independent passes converged on the same flow: a direct read-through of
+every onboarding file (router redirect chain, `AppState`, all 9
+`lib/pages/auth/*.dart` screens, the SHG join-request repository) plus a
+separate background research pass, cross-checked against each other and
+against `docs/DEVELOPMENT_PROGRESS.md`'s own history to avoid re-reporting
+anything already fixed in the 200 prior rounds.
+
+1. **[HIGH] `ProfileSetupPage`'s "Choose a different SHG" retry silently
+   overwrote an already-completed 9-section baseline survey with a blank
+   re-submission.** Root cause: `_surveyOnly = profile != null &&
+   !appState.needsShgApproval` collapsed two independent questions — "does
+   this visit need step 0 (SHG picker)?" and "does it need the survey
+   sections?" — into one flag keyed only on `needsShgApproval`. Any member
+   reaching Profile Setup via "Choose a different SHG" (offered from
+   `ShgApprovalPendingPage` while pending, rejected, or removed-by-admin)
+   has `needsShgApproval == true` by definition, so `_surveyOnly` was always
+   `false` for her regardless of whether `needsBaselineSurvey` was actually
+   `false` too (i.e., she'd already submitted real research answers) —
+   forcing a full blank wizard walk-through, and `_submit()` called
+   `appState.submitBaselineSurvey()` **unconditionally**, which upserts on
+   `profile_id` and so silently clobbered her genuine prior answers with
+   whatever she rushed through on retry. Fixed by splitting into two
+   independent flags (`_includeStep0`/`_includeSurvey`, each `profile ==
+   null || appState.needs<X>`) and gating both the step sequence and the
+   `submitBaselineSurvey()` call on `_includeSurvey` specifically — a
+   step-0-only retry now skips the survey UI and submission entirely.
+2. **[CRITICAL-class, still theoretical/REST-only] `profiles_insert_self`
+   (migration 0022) still allowed a brand-new signup to INSERT herself
+   directly as `role = 'leader'`** (with `shg_id` forced null by the same
+   policy) via raw REST — the INSERT-side twin of the exact self-escalation
+   chain migration `0117` closed on UPDATE. `0117`'s own reasoning applies
+   identically one step earlier in the lifecycle: chained with
+   `AdminRepository.assignShg()` (unconditional on role), a self-inserted
+   `role:'leader'`/`shg_id:null` profile becomes a full, RLS-backed leader
+   the moment any admin later uses the ordinary "Assign SHG" remedy on her
+   profile, with `approve_shg_join_request`/`is_staff()` never in the loop.
+   `0117` only edited `profiles_update_self_or_admin`; this INSERT-side twin
+   was never revisited since. Migration `0160` narrows
+   `profiles_insert_self`'s `WITH CHECK` from `role IN ('member','leader')`
+   to `role = 'member'` only — no live app code path is affected (`Profile
+   Repository.upsertMyProfile()` always hardcodes `role: 'member'` already).
+   **Migration file written and `docs/ARCHITECTURE.md` §3.3 updated in this
+   round, but NOT YET applied to the live database** — deploying an RLS
+   policy change to production was left for explicit user confirmation
+   rather than pushed automatically; run `supabase db push` (or apply via
+   dashboard) to actually close this.
+3. **[MEDIUM] No way back from `OtpPage` to `LoginPage`** to correct a
+   mistyped phone number short of force-closing the app — this app's flat
+   `context.go()` navigation (never `push`/`pop`) means this route had no
+   back arrow and no escape at all; verification would just keep failing
+   with the generic "incorrect or expired code" against a number that was
+   never going to receive one. Added a "Wrong number? Change it" link
+   (`otpChangeNumber`, all 3 `.arb` files) navigating back to Login,
+   disabled only mid-verify.
+4. **[MEDIUM] No Sign Out affordance anywhere on `ProfileSetupPage`** — a
+   session verified against the wrong account/number (shared device, a
+   mistaken number) had no in-app exit: the router forces every navigation
+   back to this same page while `hasSession && !hasProfile`, and the
+   session persists across an app restart. Added the same `signOut()` +
+   `context.go(Paths.splash)` control `ShgApprovalPendingPage`/
+   `AccountDeactivatedPage` already use.
+5. **[MEDIUM-HIGH] A mis-tapped first-run language choice was unrecoverable
+   until the entire onboarding flow — including the mandatory 9-section
+   survey — was completed.** `/language-select` is only ever shown once per
+   device (`!hasSession && !languageSelected`), and the only other language
+   switcher (`LanguagePage`) sits inside the authenticated `ShellRoute`,
+   unreachable until `hasProfile && !needsShgApproval &&
+   !needsBaselineSurvey`. Added a small language-switch icon to
+   `SplashPage` and `LoginPage` (both pre-session) that navigates to
+   `Paths.languageSelect` directly — the router's own redirect never blocks
+   a *deliberate* revisit post-first-pick, only the automatic first-run
+   force, so this needed no router change.
+6. **[LOW]** Baseline-survey numeric fields (`_numberField`) relied on
+   `keyboardType` alone with no `inputFormatters` — inconsistent with the
+   phone field (`wholeNumberInputFormatters`) and OTP boxes
+   (`OtpBoxFormatter`), and `keyboardType` has no enforcement effect at all
+   on Flutter Web. Wired `wholeNumberInputFormatters`/
+   `decimalAmountInputFormatters` through, matching the `decimal` flag
+   already on each call site.
+7. **[LOW]** `_ageError` folded a genuinely non-numeric value into the same
+   branch as "below minimum," showing "Must be at least 18" instead of the
+   generic out-of-range message every other numeric field's `_rangeError`
+   already uses for this case. Fixed the branch order.
+8. **[LOW-MEDIUM, doc-only]** `supabase/functions/send-sms-hook/index.ts`'s
+   header comment still said "NOT DEPLOYED by default — this is dormant" —
+   stale since the Fast2SMS activation completed 2026-07-28 (see
+   `docs/DEVELOPMENT_PROGRESS.md` round 172) and was further exercised in a
+   real production regression/fix in round 191. Updated to state it's live,
+   kept the activation steps as reference history, and pointed a future
+   debugging session at `hook_send_sms_enabled`/`hook_send_sms_uri` first
+   instead of re-running unnecessary setup.
+
+**Not fixed, deliberately** — no draft persistence across the 9-section
+baseline survey (a browser reload/backgrounded-app-kill mid-survey loses
+all typed answers with no warning). Flagged as a real completion-rate risk
+for the target audience (rural/low-connectivity users) but a reasonable,
+common trade-off for a first version, not a correctness bug — left for the
+user's own prioritization judgment rather than fixed unprompted.
+
+**Verification**: `flutter analyze` clean across the whole project after
+every change.
+
+## Update (round 203) — End-to-end verification of round 202's fixes; a self-caught correction to round 202's own item #2 (it was not actually a live gap)
+
+Requested follow-up: "conduct end to end test" of everything round 202
+claimed to fix. Two tracks, per this file's own testing discipline (§3 of
+`docs/TESTING_STRATEGY.md`) — widget/unit tests for Dart logic, and direct
+SQL against the live linked Supabase project (`supabase db query --linked`)
+for the RLS claim, since round 202 explicitly flagged that as reasoned-but-
+unverified.
+
+1. **Item 1 (the HIGH survey-overwrite fix) — widget-tested, not just
+   reasoned through.** Extended `test/pages/profile_setup_page_test.dart`
+   with a case that drives a real `AppState` into exactly the bug's target
+   shape (`needsShgApproval == true`, `needsBaselineSurvey == false`,
+   forced deterministically via a new `_RecordingBaselineSurveyRepository`
+   fake rather than relying on `_loadProfile`'s fail-open default) and
+   asserts step 0 renders alone with `Submit & Continue` immediately (proof
+   `isLastStep` is reachable at step 0, i.e. the survey was excluded from
+   the step sequence entirely) — the distinguishing signal from the old
+   buggy behavior, which would have shown `Continue` and walked her through
+   nine more sections first. Writing this test surfaced a **real edge case
+   in the fix itself**: if a caller ever reaches this page with BOTH
+   `_includeStep0` and `_includeSurvey` false (not reachable via the
+   router's own gating, but reachable via `needsBaselineSurvey`'s own
+   documented fail-open ambiguity combined with `needsShgApproval == false`
+   — exactly the existing adjacent test's own `loadedProfile` helper,
+   which doesn't inject a baseline-survey repository at all), the wizard's
+   `firstStep` (1) could never reach its `lastStep` (0) — Submit would
+   never appear, a genuine dead end my initial fix would have introduced.
+   Hardened with a defensive `_includeSurvey = ... || !_includeStep0`
+   fallback, matching the pre-existing flag's own fallback behavior for
+   this same ambiguous case, and added a comment explaining why. Also ran
+   the full test suite (1172 → 1174 passing, +2 new) to confirm no other
+   regressions — one **did** surface and was fixed in the process: adding
+   real `inputFormatters` (item 6) changed what several existing "type
+   garbage into a numeric field" tests could actually type (the formatter
+   now intercepts it before the validator ever sees it), so
+   `'abc'`/`'2.5'`/`'-1'`/`'NaN'`/`'Infinity'`/`'lots'` needed to move out
+   of the range-validation loops and into a new, dedicated test asserting
+   the formatter's own filtering/rejection behavior instead.
+2. **Item 2 (the claimed INSERT-side leader self-escalation gap) — testing
+   found the finding itself was wrong, not just unverified.** Tested
+   migration `0160` for real against the live linked database, inside a
+   transaction that applied it, ran both the attack and the legitimate
+   case under a simulated `authenticated` session (`set local role
+   authenticated` + `request.jwt.claims`, per
+   `docs/TESTING_STRATEGY.md`'s methodology), and rolled everything back —
+   zero production footprint, verified by re-querying zero leftover rows
+   and confirming the live `profiles_insert_self` definition was still
+   migration `0022`'s original afterward. The **baseline** case (self-
+   insert as `role:'leader'`, `shg_id:null`, run BEFORE `0160`'s policy
+   change, i.e. against what's actually deployed today) was already
+   blocked — not by RLS, by the `profiles_leader_requires_shg` CHECK
+   constraint (migration `0119`, `CHECK (role <> 'leader' OR shg_id IS NOT
+   NULL)`), which makes the exact row shape the supposed attack needs
+   (`role='leader' AND shg_id IS NULL`) a database-level impossibility for
+   every writer — INSERT, UPDATE, any RPC, any future bug — independent of
+   which RLS policy allowed which role value through. Round 202's own
+   audit read migrations `0022`/`0105`/`0117` for this table's INSERT/UPDATE
+   policies but never searched for a table-level `CHECK` constraint added
+   two rounds after `0117` (`0119`, itself written specifically because
+   dogfooding `0117` found the identical shape still reachable through two
+   admin-side doors `0117` never touched) — missing the one fix that
+   actually closes this structurally. **Correction applied**: migration
+   `0160` was never applied and its file was deleted rather than left
+   sitting in `supabase/migrations/` — an unapplied local migration doesn't
+   just quietly do nothing; the next unrelated `supabase db push` would
+   have swept it up and applied it too, silently shipping a redundant
+   policy change nobody specifically decided to make. This entry (and the
+   corrected `docs/ARCHITECTURE.md` §3.3, which is where a future session
+   would actually look for this property) is the full record of what was
+   checked and why it wasn't needed — moved both docs' framing from
+   "still-open gap, migration written, needs deploying" to accurately
+   describing `profiles_leader_requires_shg` as the real, already-deployed
+   closure.
+
+**Everything else from round 202** (items 3-6, 8) — the OTP change-number
+link, the Sign Out control, the language switcher, the numeric input
+formatters, the age-error message fix, and the stale Fast2SMS comment —
+are simple, low-risk UI/doc changes with no live-Supabase dependency;
+covered by the full test-suite pass above (1174/1174) and `flutter analyze`
+remaining clean, not separately live-click-through'd (the router still
+gates real live-mode onboarding screens behind an actual phone OTP this
+session had no way to receive).
+
+**Lesson for future rounds, stated plainly**: a finding written from
+reading migration files for one specific policy/table, however carefully,
+is not the same as having searched for every constraint on that table —
+`CHECK` constraints in particular don't show up when grep'ing for a named
+RLS policy. Before writing a migration meant to "close" something, check
+`pg_constraint`/`information_schema.check_constraints` for the target
+table, not just its policies — and prefer testing the CURRENT deployed
+state first (as this round eventually did) over testing only the proposed
+fix, since the former is what would have caught this immediately.
+
+## Update (round 204, 2026-09-27) — Backend verification pass: fixed 4 of 5 edge functions' broken local type-checking, which was masking a real latent type bug in the 5th
+
+Requested: "fix the errors in the backend" + "verify overall app functions."
+No specific error was reported, so this was a from-scratch verification
+sweep of both sides rather than a targeted fix — `flutter analyze` (clean,
+1 cosmetic lint only), the full Dart test suite (1174/1174 passing), and,
+since neither of those touches the actual backend code, `deno check`
+against all 5 Supabase Edge Functions individually (nothing in this repo's
+CI or docs was running this).
+
+1. **[Tooling, real bug once uncovered]** 4 of 5 edge functions
+   (`ai-advisor-proxy`, `generate-report-snapshots`, `payment-webhook-handler`,
+   `system-health-check` — every one that imports `@supabase/supabase-js`)
+   failed `deno check` with `Relative import path "events" not prefixed
+   with / or ./ or ../`, coming from esm.sh's default (browser-targeted)
+   bundle for `@supabase/supabase-js@2` pulling in `@types/node`'s `events`
+   d.ts, which itself uses a bare Node-style specifier deno's linter
+   rejects. `send-sms-hook` (the only function that doesn't import
+   supabase-js at all) was unaffected, which is what made this a per-file
+   dependency issue rather than a deno/tooling-wide breakage. Fixed by
+   pinning the import to esm.sh's Deno-targeted bundle explicitly
+   (`https://esm.sh/@supabase/supabase-js@2?target=deno` instead of the
+   bare `@2` specifier) in all 4 files — confirmed this doesn't just silence
+   the checker: it makes esm.sh serve the Deno-specific module build
+   deterministically instead of relying on esm.sh's runtime User-Agent
+   sniffing, which is the behavior Supabase's own edge functions actually
+   want. This was pre-existing (not introduced this round) and had been
+   masking real type-checking on these 4 functions indefinitely — nothing
+   in this repo previously ran `deno check` as part of verification, so it
+   had never been caught.
+2. **[Real, previously-undetected type bug — masked by finding 1]** With
+   the `events` error gone, `system-health-check/index.ts` still failed
+   `deno check` on a second, genuine error: `authorizeCaller`'s
+   `serviceClient` parameter was typed `ReturnType<typeof createClient>`,
+   which — because `createClient` is a generic function — resolves to a
+   *different* generic instantiation of `SupabaseClient` than the one
+   actually produced by the real call site (`createClient(supabaseUrl,
+   serviceRoleKey)`), a known TS quirk where `ReturnType<typeof genericFn>`
+   and a specific call's inferred return type aren't guaranteed to unify.
+   The mismatch (`SupabaseClient<any, "public", "public", any, any>` vs a
+   `{ PostgrestVersion: string }`-schema-keyed variant) meant `profile.role`
+   on line 77 was silently typed `never`. No runtime impact found — Deno's
+   edge runtime doesn't type-check at deploy time, and the actual logic
+   (`STAFF_ROLES.includes(profile.role as string)`) already had a manual
+   `as string` cast working around exactly this, which is presumably why it
+   was never noticed as broken. Still a real gap: the compiler could no
+   longer have caught a genuine misuse of `profile.role` here. Fixed by
+   importing the `SupabaseClient` type directly from the same module and
+   using it as the parameter's type instead of `ReturnType<typeof
+   createClient>`.
+3. **Backend unit tests**: `deno test` on `ai-advisor-proxy` (the only
+   function with its own test files, `history.test.ts` +
+   `moderation.test.ts`) — 62/62 passing, unaffected by the above.
+   `deno lint` flagged one line in `moderation.test.ts` for irregular
+   whitespace — that's an intentional zero-width-space test fixture (the
+   file's own comment says so, testing the moderation filter's handling of
+   exactly that obfuscation), not a bug; left as-is.
+4. **RLS/migrations**: no new gaps found. Re-confirmed round 203's own
+   closing note still holds — `profiles_leader_requires_shg` (`0119`) is
+   the real, already-deployed structural closure for the self-escalation
+   shape round 202 had (incorrectly) flagged as still-open.
+5. **Not fixed / out of scope**: no specific failing feature was named by
+   the request, and this session had no live OTP-received session
+   available to click through the real onboarding flow end-to-end in the
+   browser preview — the "as the user side" ask (verifying app-side
+   behavior, not just backend code) was covered by the existing automated
+   suite (1174 Dart tests + 62 Deno tests) rather than a fresh manual
+   click-through, since nothing indicated a specific screen was broken.
+   If a specific error or broken screen surfaces, that's the next thing to
+   chase directly rather than re-running this same broad sweep.
+
+**Verification**: `flutter analyze` clean, `flutter test` 1174/1174,
+`deno check` clean on all 5 edge functions (was 4/5 failing), `deno test`
+62/62 on `ai-advisor-proxy`.

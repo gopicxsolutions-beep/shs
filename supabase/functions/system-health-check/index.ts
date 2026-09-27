@@ -29,7 +29,7 @@
 // this function does its own auth for both cases instead.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,7 +51,7 @@ const STAFF_ROLES = ['crp', 'clf', 'admin'];
 // Resolves whether this specific request is allowed to run a health check —
 // either a trusted cron caller (shared secret) or an authenticated staff
 // member (crp/clf/admin). Returns null if neither, so the caller can 401.
-async function authorizeCaller(req: Request, supabaseUrl: string, anonKey: string, serviceClient: ReturnType<typeof createClient>): Promise<'cron' | 'staff' | null> {
+async function authorizeCaller(req: Request, supabaseUrl: string, anonKey: string, serviceClient: SupabaseClient): Promise<'cron' | 'staff' | null> {
   const cronSecret = Deno.env.get('CRON_SECRET');
   const providedSecret = req.headers.get('x-cron-secret');
   if (cronSecret && providedSecret && timingSafeEqual(providedSecret, cronSecret)) return 'cron';

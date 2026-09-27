@@ -77,6 +77,25 @@ class _LoginPageState extends State<LoginPage> {
           padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
           child: Column(
             children: [
+              // See splash_page.dart's identical language-switch link for
+              // why this needs to exist here too: the only other route to
+              // `/language-select` (SplashPage's) is easy to miss if this
+              // screen is reached directly (e.g. a bookmarked/restored
+              // `/login` tab on Flutter Web), and every other language
+              // switcher lives inside the authenticated app, unreachable
+              // until the entire onboarding flow — including the mandatory
+              // 9-section baseline survey — is complete.
+              Align(
+                alignment: Alignment.topRight,
+                child: InkWell(
+                  onTap: () => context.go(Paths.languageSelect),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(Icons.translate_rounded, color: Neutral.c400, size: 20),
+                  ),
+                ),
+              ),
               Container(
                 width: 64, height: 64,
                 decoration: BoxDecoration(

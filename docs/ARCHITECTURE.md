@@ -310,7 +310,38 @@ boundary:
    - `profiles_insert_self`: `WITH CHECK (id = auth.uid() AND role IN
      ('member','leader') AND shg_id IS NULL)` — closes the INSERT-side path
      where a brand-new signup could `POST` a profile already carrying
-     `role:'admin'`.
+     `role:'admin'`. Still lists `'leader'` alongside `'member'` (matching
+     Role Select's now-removed self-declared Leader option, migration
+     `0022`) — an audit of this policy in isolation (onboarding-flow audit
+     round) initially treated that as a live INSERT-side twin of the
+     UPDATE-side chain `0117` closed below (self-insert as `role:'leader'`,
+     `shg_id:null`, then an admin's ordinary "Assign SHG" remedy unknowingly
+     grants full leader authority) and drafted migration `0160` to narrow it
+     to `'member'` only. **End-to-end testing before deploying that
+     migration found the premise was already false**: `shg_id IS NULL AND
+     role = 'leader'` is a database-level impossibility regardless of this
+     policy, per `profiles_leader_requires_shg` below — every self-insert
+     attempt as `'leader'` fails with that CHECK constraint violation, not
+     this policy's `WITH CHECK`. Migration `0160` was left unapplied as
+     redundant rather than deployed as a fix for a gap that doesn't exist;
+     see `docs/DEVELOPMENT_PROGRESS.md` round 202 for the full correction.
+   - **`profiles_leader_requires_shg`** (migration `0119`, `CHECK (role <>
+     'leader' OR shg_id IS NOT NULL)`) — the actual, structural closure of
+     the entire "`role='leader'` with no real SHG" shape this section is
+     about, and the reason the two policy-level fixes above only need to
+     stop *legitimate-looking* self-service paths rather than being the
+     last line of defense themselves. Unlike a `WITH CHECK` clause (which
+     only constrains one specific policy's one specific writer), a
+     table-level `CHECK` constraint is enforced for literally every writer
+     — self, admin, any RPC, any future code path — independent of which
+     policy or role performed the write. `0119`'s own migration comment
+     documents why this was added *after* `0117`: dogfooding `0117` found
+     the exact `role='leader'/shg_id=null` shape still reachable through
+     two admin-side doors `0117` never touched (`AdminRepository.assignShg()`
+     and `updateUserRole()`, both unconditional on role) — the fix was to
+     stop patching individual paths and enforce the underlying invariant
+     structurally instead, which this constraint does for every path at
+     once, including ones not yet written.
    - `profiles_update_self_or_admin`: a non-admin self-update may only move
      `role` to `'member'`, and only while `shg_id` stays `NULL` — i.e. only
      during onboarding, before any real SHG linkage exists. Once `shg_id` is

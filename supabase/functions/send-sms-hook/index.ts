@@ -9,7 +9,16 @@
 // verification later still goes through Supabase's own `verifyOTP`. No
 // Flutter-side changes are needed for this swap.
 //
-// NOT DEPLOYED by default — this is dormant until wired up. To activate:
+// LIVE IN PRODUCTION as of 2026-07-28 — deployed, activated in the
+// dashboard, and confirmed end-to-end with real OTPs delivered to real
+// phones (see docs/DEVELOPMENT_PROGRESS.md round 172, plus the follow-up
+// production regression/fix in round 191). Twilio is no longer in the
+// delivery path; its provider config under Authentication → Providers →
+// Phone is still present in the Supabase dashboard but is now inert —
+// this hook takes priority over it whenever `hook_send_sms_enabled` is
+// `true`. The steps below are activation *history*, kept for reference if
+// this ever needs to be redeployed or re-activated from scratch (e.g. a
+// new environment, or after the hook is disabled to debug something):
 //   1. `supabase secrets set FAST2SMS_API_KEY=...` (from the Fast2SMS
 //      dashboard), `FAST2SMS_OTP_TEMPLATE_ID=...` (the numeric DLT-approved
 //      message/template id shown in the Fast2SMS DLT section — required by
@@ -33,9 +42,11 @@
 //      (must match exactly what the dashboard shows, or every signature
 //      verification below will fail closed and OTP delivery will silently
 //      stop).
-// Until step 3 is done in the dashboard, Supabase keeps using whichever
-// provider (Twilio) is configured under Authentication → Providers →
-// Phone — this hook has no effect merely by being deployed.
+// If OTP delivery ever appears to silently revert to Twilio (or just stop
+// entirely), check `hook_send_sms_enabled`/`hook_send_sms_uri` via the
+// Supabase Management API or dashboard first — step 3 above is the one
+// most likely to have been toggled off — before assuming the code itself
+// regressed.
 //
 // Payload/response contract is Supabase's, not ours to redesign: Supabase
 // POSTs `{ user: { phone, ... }, sms: { otp: "123456" } }` and expects a
