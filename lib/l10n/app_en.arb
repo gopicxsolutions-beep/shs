@@ -1191,6 +1191,14 @@
 
   "productDetailDelistedBadge": "Delisted",
 
+  "productDetailReturnPolicyTitle": "Return & Refund Policy",
+
+  "productDetailReturnPolicyBody": "You can cancel this order for free any time before the seller packs it — see My Purchases. NavaSakhi does not process or hold payments; once packed, any return or refund must be arranged directly with the seller.",
+
+  "productDetailReturnPolicyLink": "Read the full policy",
+
+  "productDetailReturnPolicyLinkError": "Could not open the policy page.",
+
   "meetingsHomeTitle": "Meetings",
 
   "meetingsHomeScheduleTooltip": "Schedule meeting",

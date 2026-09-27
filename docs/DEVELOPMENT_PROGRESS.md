@@ -22481,3 +22481,68 @@ CI or docs was running this).
 **Verification**: `flutter analyze` clean, `flutter test` 1174/1174,
 `deno check` clean on all 5 edge functions (was 4/5 failing), `deno test`
 62/62 on `ai-advisor-proxy`.
+
+## Update (round 205, 2026-09-27) — Marketplace: added a Return & Refund Policy disclosure
+
+User-reported gap: "when customer order any product there is no return and
+refund policy." True — nothing on the order path told a buyer what happens
+if she needs to cancel, return, or get her money back. This is a real
+omission, but scoped honestly: this app has no payment gateway at all (see
+§3.8's "Seller payment details + manual UPI pay" entry) — NavaSakhi never
+holds a buyer's money, so there is no automated refund *mechanism* to build
+here, only a policy *disclosure* that tells buyers/sellers what the existing
+mechanics (free cancellation pre-pack, direct seller contact after) actually
+mean for them.
+
+1. Added a "Return & Refund Policy" card to `ProductDetailPage`, directly
+   below the "Place Order" button — the exact point in the flow the report
+   was about, not buried in a settings/legal page. Text: free cancellation
+   any time before the seller packs the order (matches `cancel_marketplace_
+   order`, migration `0155`, exactly — not aspirational copy), and after
+   that, any return/refund must be arranged directly with the seller, since
+   NavaSakhi never processes or holds payment (FR-MKT-8). A "Read the full
+   policy" link opens a new standalone page.
+2. Added `web/refund-policy.html` — same visual pattern as the existing
+   `web/privacy.html` (drafted 2026-09-23 for Play Store submission): a
+   factual draft grounded in what the marketplace actually does (order
+   lifecycle, cancellation window, no gateway/escrow, dispute path via
+   in-app Support), with a "draft for review" callout recommending legal
+   review against India's Consumer Protection (E-Commerce) Rules, 2020
+   before publishing, and `[placeholder]` markers for the support email/
+   address — same unresolved placeholders `privacy.html` already has.
+3. Added 4 new l10n keys (`productDetailReturnPolicy*`) to all 3 `.arb`
+   files with real Hindi/Telugu translations (not machine-literal — matched
+   the register of neighboring marketplace strings), regenerated via
+   `flutter gen-l10n`.
+4. Added a dedicated widget test asserting the card renders (title, body,
+   link) and the link is tappable without throwing. Doing so surfaced two
+   unrelated regressions the new card's added height caused in the same
+   test file, both fixed:
+   - Two existing tests asserting "Write a Review" is present used a
+     `Size(400, 1200)` test viewport; the new card pushed that section far
+     enough down that `ListView`'s lazy-build range no longer included it
+     at that height — not a visibility issue but a "never built at all"
+     one, so `find.text` found nothing. Bumped both to `Size(400, 1400)`,
+     matching a viewport height an adjacent test already used successfully.
+   - `an unreviewed product shows no rating summary` asserted
+     `find.textContaining('(')` finds nothing, as a proxy for "no `(count)`
+     rating chip renders." My first draft of the policy body text used
+     `(see My Purchases)`, an unrelated parenthetical that made this
+     assertion fail by coincidence. Reworded the policy text to use em-dash
+     phrasing instead of parentheses (in all 3 languages) rather than
+     weakening the existing test's assertion.
+
+**Verification**: `flutter analyze` clean; `flutter test` 1175/1175 (was
+1174, +1 new); the standalone `web/refund-policy.html` was opened directly
+in the Browser pane and visually confirmed to render correctly (header,
+TOC, all 9 sections, no console errors). The in-app card itself was
+exercised through the real onboarding flow (login → OTP → profile setup) in
+a `flutter-web-release` demo-mode build up to the point of a lengthy,
+unrelated 9-section baseline survey wizard — not itself part of this
+change — where a full live click-through to the marketplace page was cut
+short for time; the feature's actual rendering/tap behavior is instead
+directly verified by the new widget test (`product_detail_page_test.dart`,
+part of the 1175/1175 passing suite), which pumps the real
+`ProductDetailPage` widget the same way the app does. Stated explicitly per
+this file's own quality bar rather than claiming a full manual click-through
+that didn't happen.

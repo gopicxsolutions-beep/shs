@@ -890,6 +890,20 @@ here, not client-side hiding.
 | FR-MKT-9 | Buyer may cancel her own order while it is still `'new'` (before the seller has packed it); stock is restored atomically. A cancelled order can never be resurrected by anyone, including staff | Member (own order, as buyer) |
 | FR-MKT-10 | An order's detail page shows the seller's name to the buyer (and vice versa is implicit — the seller already sees the buyer's name); a seller sees a running total of revenue earned from her `'delivered'` orders on "My Sales", and a buyer sees a running total of what she's spent on her `'delivered'` orders on "My Purchases" | All |
 | FR-MKT-11 | The browse grid, product detail page, and a seller's own "My Listings" all show a `★ average (count)` rating summary wherever a product has at least one review, maintained by a trigger on `marketplace_reviews` insert/update/delete (not a live per-product aggregate query) | All |
+| FR-MKT-12 | Product detail page shows a Return & Refund Policy note (with a link to the full policy) right next to the Place Order button, for every product | All |
+
+**Return & Refund Policy (2026-09-27).** User-reported gap: nothing on the
+order path told a buyer what happens if she needs to cancel, return, or get
+her money back — a real omission given FR-MKT-8's "no real payment gateway"
+already means NavaSakhi has no money of its own to refund. `ProductDetailPage`
+now shows a short, honest policy note right next to "Place Order": free
+cancellation while the order is still `'new'` (FR-MKT-9), and after that any
+return/refund must be arranged directly with the seller, since NavaSakhi
+never holds the payment. A "Read the full policy" link opens
+`web/refund-policy.html` — a standalone page (same style/pattern as
+`web/privacy.html`) suitable for a Play Store listing's refund-policy URL.
+This is a policy disclosure, not a new payment/refund *mechanism* — there is
+still no in-app money movement to actually reverse.
 
 ### 3.9 Government Schemes (`schemes/`)
 

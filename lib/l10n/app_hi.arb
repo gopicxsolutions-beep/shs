@@ -839,6 +839,14 @@
 
   "productDetailDelistedBadge": "हटाया गया",
 
+  "productDetailReturnPolicyTitle": "रिटर्न और रिफंड नीति",
+
+  "productDetailReturnPolicyBody": "विक्रेता के इसे पैक करने से पहले तक आप इस ऑर्डर को मुफ्त में रद्द कर सकती हैं — मेरी खरीदारी में देखें। NavaSakhi भुगतान को न तो प्रोसेस करता है और न ही अपने पास रखता है; पैक होने के बाद, कोई भी रिटर्न या रिफंड सीधे विक्रेता से बातचीत करके तय किया जाना चाहिए।",
+
+  "productDetailReturnPolicyLink": "पूरी नीति पढ़ें",
+
+  "productDetailReturnPolicyLinkError": "नीति पेज नहीं खोला जा सका।",
+
   "meetingsHomeTitle": "बैठकें",
 
   "meetingsHomeScheduleTooltip": "बैठक शेड्यूल करें",

@@ -3022,6 +3022,30 @@ abstract class AppLocalizations {
   /// **'Delisted'**
   String get productDetailDelistedBadge;
 
+  /// No description provided for @productDetailReturnPolicyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Return & Refund Policy'**
+  String get productDetailReturnPolicyTitle;
+
+  /// No description provided for @productDetailReturnPolicyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can cancel this order for free any time before the seller packs it — see My Purchases. NavaSakhi does not process or hold payments; once packed, any return or refund must be arranged directly with the seller.'**
+  String get productDetailReturnPolicyBody;
+
+  /// No description provided for @productDetailReturnPolicyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the full policy'**
+  String get productDetailReturnPolicyLink;
+
+  /// No description provided for @productDetailReturnPolicyLinkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the policy page.'**
+  String get productDetailReturnPolicyLinkError;
+
   /// No description provided for @meetingsHomeTitle.
   ///
   /// In en, this message translates to:

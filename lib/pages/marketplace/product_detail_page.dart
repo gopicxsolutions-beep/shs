@@ -372,6 +372,27 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
+  // User-reported gap: nothing on the order path told a buyer what happens
+  // if she needs to cancel, return, or get her money back — the app has no
+  // payment gateway (see `marketplaceUpiPaymentUri`'s own doc comment), so
+  // the honest answer is "cancel free before it's packed; after that, sort
+  // it out directly with the seller," matching what `cancel_marketplace_
+  // order` (migration 0155) actually enforces server-side. Shown right next
+  // to the purchase action itself, not buried in a settings/legal page.
+  Future<void> _openReturnPolicy() async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final opened = await launchUrl(Uri.parse('https://navasakhi.com/refund-policy.html'), mode: LaunchMode.externalApplication);
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.productDetailReturnPolicyLinkError)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.productDetailReturnPolicyLinkError)));
+      }
+    }
+  }
+
   Widget _quantityStepper(Product product, AppLocalizations l10n) {
     final quantity = _quantityFor(product);
     final total = product.price * quantity;
@@ -585,6 +606,26 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 fullWidth: true,
                 size: ButtonSize.lg,
                 onPressed: product.stock <= 0 || _placing || !product.isActive ? null : () => _placeOrder(product),
+              ),
+              const SizedBox(height: 16),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Icon(Icons.assignment_return_outlined, size: 16, color: Neutral.c600),
+                      const SizedBox(width: 6),
+                      Text(l10n.productDetailReturnPolicyTitle, style: AppTheme.sans(12, weight: FontWeight.w700, color: Neutral.c600)),
+                    ]),
+                    const SizedBox(height: 6),
+                    Text(l10n.productDetailReturnPolicyBody, style: AppTheme.sans(12, color: Neutral.c600)),
+                    const SizedBox(height: 4),
+                    InkWell(
+                      onTap: _openReturnPolicy,
+                      child: Text(l10n.productDetailReturnPolicyLink, style: AppTheme.sans(12, weight: FontWeight.w700, color: Brand.c600)),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
               SectionHeader(

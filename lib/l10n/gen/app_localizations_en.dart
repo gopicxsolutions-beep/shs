@@ -1756,6 +1756,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get productDetailDelistedBadge => 'Delisted';
 
   @override
+  String get productDetailReturnPolicyTitle => 'Return & Refund Policy';
+
+  @override
+  String get productDetailReturnPolicyBody =>
+      'You can cancel this order for free any time before the seller packs it — see My Purchases. NavaSakhi does not process or hold payments; once packed, any return or refund must be arranged directly with the seller.';
+
+  @override
+  String get productDetailReturnPolicyLink => 'Read the full policy';
+
+  @override
+  String get productDetailReturnPolicyLinkError =>
+      'Could not open the policy page.';
+
+  @override
   String get meetingsHomeTitle => 'Meetings';
 
   @override

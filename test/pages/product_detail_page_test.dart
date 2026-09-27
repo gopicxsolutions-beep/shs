@@ -76,6 +76,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  // User-reported gap: nothing on the order path told a buyer what happens
+  // if she needs to cancel, return, or get her money back. Shown for every
+  // product regardless of UPI/stock/review state, right next to the
+  // purchase action itself.
+  testWidgets('shows a Return & Refund Policy note next to Place Order, and its link can be tapped', (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(harness('p1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Return & Refund Policy'), findsOneWidget);
+    expect(find.textContaining('cancel this order for free'), findsOneWidget);
+    expect(find.text('Read the full policy'), findsOneWidget);
+
+    await tester.tap(find.text('Read the full policy'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+  });
+
   // Marketplace audit finding: "Write a Review" used to be offered
   // regardless of real eligibility (a delivered order + no existing review —
   // see MarketplaceRepository.canReviewProduct's own doc comment) — live
@@ -90,7 +113,11 @@ void main() {
   // session, same as placeOrder — see addReview's own doc comment — just
   // not gated by eligibility the way live mode is.)
   testWidgets('demo mode still always offers Write a Review, regardless of eligibility', (tester) async {
-    tester.view.physicalSize = const Size(400, 1200);
+    // Taller than 1200 — the Return & Refund Policy card added above Place
+    // Order pushes the Reviews section far enough down that a shorter
+    // viewport leaves it outside ListView's lazy-build range entirely (not
+    // just off-screen-but-scrollable), so `find.text` finds nothing at all.
+    tester.view.physicalSize = const Size(400, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -109,7 +136,9 @@ void main() {
   // reflects rating=2 (exactly 2 filled stars, 3 outline) rather than still
   // showing all 5 filled.
   testWidgets('tapping a star in the Write a Review dialog actually changes the selected rating', (tester) async {
-    tester.view.physicalSize = const Size(400, 1200);
+    // See the taller-viewport comment on the "always offers Write a Review"
+    // test above — same reason.
+    tester.view.physicalSize = const Size(400, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);

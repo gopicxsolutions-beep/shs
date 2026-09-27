@@ -1758,6 +1758,20 @@ class AppLocalizationsTe extends AppLocalizations {
   String get productDetailDelistedBadge => 'తీసివేయబడింది';
 
   @override
+  String get productDetailReturnPolicyTitle => 'రిటర్న్ & రీఫండ్ పాలసీ';
+
+  @override
+  String get productDetailReturnPolicyBody =>
+      'విక్రేత దీన్ని ప్యాక్ చేయడానికి ముందు వరకు మీరు ఈ ఆర్డర్‌ను ఉచితంగా రద్దు చేసుకోవచ్చు — నా కొనుగోళ్లు చూడండి. NavaSakhi చెల్లింపులను ప్రాసెస్ చేయదు లేదా తన వద్ద ఉంచదు; ప్యాక్ చేసిన తర్వాత, ఏదైనా రిటర్న్ లేదా రీఫండ్ నేరుగా విక్రేతతో మాట్లాడి ఏర్పాటు చేసుకోవాలి.';
+
+  @override
+  String get productDetailReturnPolicyLink => 'పూర్తి పాలసీ చదవండి';
+
+  @override
+  String get productDetailReturnPolicyLinkError =>
+      'పాలసీ పేజీని తెరవలేకపోయాము.';
+
+  @override
   String get meetingsHomeTitle => 'సమావేశాలు';
 
   @override

@@ -1735,6 +1735,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String get productDetailDelistedBadge => 'हटाया गया';
 
   @override
+  String get productDetailReturnPolicyTitle => 'रिटर्न और रिफंड नीति';
+
+  @override
+  String get productDetailReturnPolicyBody =>
+      'विक्रेता के इसे पैक करने से पहले तक आप इस ऑर्डर को मुफ्त में रद्द कर सकती हैं — मेरी खरीदारी में देखें। NavaSakhi भुगतान को न तो प्रोसेस करता है और न ही अपने पास रखता है; पैक होने के बाद, कोई भी रिटर्न या रिफंड सीधे विक्रेता से बातचीत करके तय किया जाना चाहिए।';
+
+  @override
+  String get productDetailReturnPolicyLink => 'पूरी नीति पढ़ें';
+
+  @override
+  String get productDetailReturnPolicyLinkError => 'नीति पेज नहीं खोला जा सका।';
+
+  @override
   String get meetingsHomeTitle => 'बैठकें';
 
   @override
