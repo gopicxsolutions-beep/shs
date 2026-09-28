@@ -87,10 +87,21 @@ Each request to Groq now carries **real cross-turn conversation memory**:
 session's prior `(query, response)` exchanges and forwards the most recent
 slice with every new `ask()` call — since one `AiAdvisorRepository` instance
 is created fresh per open `AiAdvisorChatPage` (a plain `GoRoute`, no
-state-preserving shell), this naturally resets on leaving/reopening the page
-or restarting the app, which is all real session-scoped memory needs; nothing
-persists to a database beyond the existing `ai_advisor_logs` audit trail.
-Bounded independently on both ends so a long-running chat can't make the
+state-preserving shell), this list itself is never written to a database;
+`ai_advisor_logs` remains the sole persisted record. **Fixed (2026-09-28,
+round 207)**: a fresh `AiAdvisorRepository` instance used to mean this list
+started genuinely empty on every reopen, even though `AiAdvisorChatPage`
+was simultaneously reloading and re-rendering every one of the member's
+prior bubbles from `ai_advisor_logs` (§2.2 point 1) — so the chat *looked*
+continuous but the model itself got no context at all for the next
+question, a real (if easy to miss) gap that read to members as "the
+assistant doesn't remember/store our conversation." `AiAdvisorChatPage`
+now calls `AiAdvisorRepository.seedSessionHistory()` right after loading a
+page's persisted rows, so the in-memory list is seeded from
+`ai_advisor_logs` on open — reopening the page (or a different device,
+since this reads from the same server-side rows any client can fetch) now
+gives the model real continuity again, not just a visually-continuous
+transcript with no underlying memory. Bounded independently on both ends so a long-running chat can't make the
 request grow unbounded: capped at the 6 most recent exchanges
 (`MAX_HISTORY_EXCHANGES`), then further trimmed (oldest first) if their
 combined length exceeds 6,000 characters (`MAX_HISTORY_TOTAL_CHARS`) — this
@@ -151,9 +162,14 @@ advisor answers from the conversation text alone, no live data lookup.
 
 ### 2.3 What a member cannot get from this feature
 
-- Memory resets between sessions — real memory now exists *within* one open
-  chat session (§2.1), but nothing persists across reopening the page, app
-  restart, or a different device.
+- Memory is still bounded, not unlimited — capped at the 6 most recent
+  exchanges / 6,000 characters (§2.1) regardless of how long the actual
+  conversation in `ai_advisor_logs` has grown. As of the 2026-09-28 fix,
+  reopening the page (or switching devices, since it reads from the same
+  server-side rows) *does* restore real conversation memory for the model,
+  not just the visible transcript — this list previously incorrectly
+  described that as an absolute limitation rather than the fixable gap it
+  turned out to be.
 - No personalization from her actual savings/loan/SHG data.
 - A persistent disclaimer is shown, plus a two-layer moderation/prompt-injection defense server-side — regex pre-filter and a real Llama Guard ML classifier on both input and output (§6) — the specific rejection reason now *is* surfaced to her (§2.2 point 5), but it's still not a dedicated, vendor-operated trust & safety platform.
 
@@ -764,10 +780,13 @@ decision worth making.
   keyword matching against the real transcript — open-ended free-form speech
   is understood at the *transcription* level now (real STT), but still
   resolved down to this bounded intent set rather than a general NLU model.
-- **Chat advisors now have real, session-scoped cross-turn memory** (§2.1) —
-  bounded to the 6 most recent exchanges / 6,000 characters, reset on
-  reopening the page or restarting the app; nothing persists longer than
-  that.
+- **Chat advisors now have real cross-turn memory** (§2.1) — bounded to the 6
+  most recent exchanges / 6,000 characters. As of 2026-09-28, this is now
+  re-seeded from `ai_advisor_logs` every time the page (re)opens
+  (`AiAdvisorRepository.seedSessionHistory()`), not just held for one
+  continuously-open page instance — closes a gap where the visible
+  transcript survived a reopen but the model's actual working memory
+  silently didn't.
 - **Client error handling now surfaces the server's real, specific reason**
   (§2.2, §5) instead of flattening into two generic messages — a member can
   now tell "you're asking too fast" from "the service is down" from "that

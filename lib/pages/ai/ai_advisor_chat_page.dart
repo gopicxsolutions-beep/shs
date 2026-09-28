@@ -80,6 +80,13 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
       advisorType: widget.advisorType,
     );
     if (!_loaded) {
+      // Also seeds the repository's LLM-facing session memory from these
+      // same rows (see AiAdvisorRepository.seedSessionHistory's doc comment)
+      // — otherwise the chat *looked* continuous (every old bubble still
+      // rendered below) while the model itself started with a blank slate
+      // on every reopen, silently losing context a member could see right
+      // above her new question.
+      final priorExchanges = <AiAdvisorExchange>[];
       for (final log in history) {
         _entries.add(_ChatEntry(mine: true, text: log.query));
         // A blocked query is stored with `response = null` — identical to
@@ -93,8 +100,10 @@ class _AiAdvisorChatPageState extends State<AiAdvisorChatPage> {
           _entries.add(_ChatEntry(mine: false, blocked: true, text: log.blockReason ?? 'This request could not be processed.'));
         } else if (log.response != null) {
           _entries.add(_ChatEntry(mine: false, text: log.response!));
+          priorExchanges.add(AiAdvisorExchange(query: log.query, response: log.response!));
         }
       }
+      _repo.seedSessionHistory(priorExchanges);
       _loaded = true;
       if (_entries.isNotEmpty) _scrollToEnd();
     }

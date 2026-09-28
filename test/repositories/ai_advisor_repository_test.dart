@@ -107,6 +107,48 @@ void main() {
     expect(fakeB.capturedHistories.single, isEmpty, reason: 'a fresh repository instance must not see another session\'s history');
   });
 
+  test('seedSessionHistory makes the very next ask() carry prior context, restoring memory after a page reopen', () async {
+    final fake = _FakeAiAdvisorService();
+    final repo = AiAdvisorRepository(service: fake);
+
+    repo.seedSessionHistory(const [
+      AiAdvisorExchange(query: 'q1 from a previous page instance', response: 'a1 from a previous page instance'),
+    ]);
+    await repo.ask(memberId: null, advisorType: 'financial', query: 'follow-up after reopening');
+
+    expect(fake.capturedHistories.single, hasLength(1));
+    expect(fake.capturedHistories.single.single.query, 'q1 from a previous page instance');
+    expect(fake.capturedHistories.single.single.response, 'a1 from a previous page instance');
+  });
+
+  test('seedSessionHistory only keeps the most recent 6 exchanges, same bound as normal accumulation', () async {
+    final fake = _FakeAiAdvisorService();
+    final repo = AiAdvisorRepository(service: fake);
+
+    repo.seedSessionHistory([
+      for (var i = 1; i <= 9; i++) AiAdvisorExchange(query: 'q$i', response: 'a$i'),
+    ]);
+    await repo.ask(memberId: null, advisorType: 'financial', query: 'new question');
+
+    final sent = fake.capturedHistories.single;
+    expect(sent, hasLength(6));
+    expect(sent.first.query, 'q4', reason: 'the oldest 3 of the 9 seeded exchanges must be dropped, keeping only the most recent 6');
+    expect(sent.last.query, 'q9');
+  });
+
+  test('seedSessionHistory replaces any prior seed rather than accumulating across calls', () async {
+    final fake = _FakeAiAdvisorService();
+    final repo = AiAdvisorRepository(service: fake);
+
+    repo.seedSessionHistory(const [AiAdvisorExchange(query: 'stale', response: 'stale answer')]);
+    repo.seedSessionHistory(const [AiAdvisorExchange(query: 'fresh', response: 'fresh answer')]);
+    await repo.ask(memberId: null, advisorType: 'financial', query: 'q');
+
+    final sent = fake.capturedHistories.single;
+    expect(sent, hasLength(1));
+    expect(sent.single.query, 'fresh');
+  });
+
   test('demo-mode MockAiAdvisorService also accepts and ignores the history parameter without throwing', () async {
     // Not live-backed, but AiAdvisorRepository always threads history
     // through regardless of _live, so the mock path must accept the same

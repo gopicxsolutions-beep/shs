@@ -22605,3 +22605,65 @@ three advisors in the live app as the final confirmation; a genuinely
 successful call will show up as a new row in `ai_advisor_logs` with a
 `created_at` after this deploy, which can be checked afterward without
 needing to re-run a live click-through here.
+
+## Update (round 207, 2026-09-28) — Bug fix: AI Advisor chat "not storing our search history" — the model itself had no memory on reopen, even though the transcript did
+
+**Symptom reported**: after round 206's fix, the user live-tested all three
+advisors for real (confirmed via `ai_advisor_logs`: 9 genuine new rows
+across financial/scheme/market between 05:56–06:00 UTC today, real Groq
+answers) — then reported the chat "isn't storing our search history."
+
+**Diagnosis**: first ruled out the backend/RLS layer directly rather than
+assuming the client was at fault — simulated the real member's own RLS-
+scoped `SELECT` (`set local role authenticated; set local
+request.jwt.claims = '{"sub":"<their id>",...}'`, the same technique used
+for storage.objects RLS testing earlier in this log) against
+`ai_advisor_logs` exactly as `AiAdvisorRepository.fetchHistory()` queries
+it: returned 23 real financial-advisor rows for that member, proving the
+data is both persisted and correctly retrievable under RLS. The actual gap
+was one layer up, in `lib/repositories/ai_advisor_repository.dart` +
+`lib/pages/ai/ai_advisor_chat_page.dart`: `AiAdvisorChatPage._loadHistory()`
+correctly reloads and re-renders every persisted `ai_advisor_logs` row as
+chat bubbles on open (so the *transcript* looks continuous), but a fresh
+`AiAdvisorRepository` instance's `_sessionHistory` — the actual list
+forwarded to the LLM as conversation context on the next `ask()` call —
+started genuinely empty every time, with nothing re-seeding it from the
+rows just displayed. So a member who closed and reopened the app (or just
+navigated away and back) saw her own prior questions and answers right on
+screen, but the very next question she asked got answered as if she'd
+never asked anything before — a real, member-visible "it's not
+remembering/storing our conversation" gap, distinct from and not excused
+by the *documented*, intentional design (`_sessionHistory` itself is never
+written to a database — `ai_advisor_logs` remains the sole persisted
+record; that part was correct and unchanged).
+
+**Fix**: added `AiAdvisorRepository.seedSessionHistory(List<AiAdvisorExchange>)`,
+which replaces `_sessionHistory` with the bounded (max 6, same bound as
+normal in-session accumulation) tail of a given exchange list.
+`AiAdvisorChatPage._loadHistory()` now builds that exchange list from the
+same persisted rows it uses to render bubbles (skipping blocked/no-response
+ones, same filter already applied to the visible transcript) and calls
+`seedSessionHistory()` once, right after loading. Reopening the page (or
+switching devices — this reads from the same server-side rows any client
+can fetch, keyed by `member_id` + `advisor_type`) now gives the model real
+continuity again, not just a visually-continuous transcript with no
+underlying memory.
+
+**Verification**: added 3 new repository-level unit tests
+(`test/repositories/ai_advisor_repository_test.dart`) covering
+`seedSessionHistory`'s seeding, its 6-exchange bound, and that a second
+call replaces rather than accumulates onto a prior seed — plus a new
+page-level widget test
+(`test/pages/ai_advisor_chat_history_memory_test.dart`) exercising the
+real page + real repository wiring together (not just the repository in
+isolation): pumps `AiAdvisorChatPage` in demo mode (whose `fetchHistory`
+returns the canned `mockAdvisorLogs` financial-advisor entry as "persisted
+history," exactly like a live `ai_advisor_logs` row would), confirms the
+prior exchange actually renders as a bubble, sends a follow-up through a
+recording fake `AiAdvisorService`, and asserts the follow-up's `ask()`
+call carries that prior exchange as real history — closing the "no test
+ever covered the page's history-loading path at all" gap this bug slipped
+through. `flutter analyze` clean (1 pre-existing unrelated info, 0 new);
+`flutter test` 1179/1179 (was 1175, +4 new). Updated
+`docs/AI_MODULES.md` §2.1/§2.3/§7 to correct the now-inaccurate "memory
+resets on reopening the page" claims those sections previously made.
