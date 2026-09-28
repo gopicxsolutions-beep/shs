@@ -117,7 +117,7 @@ backend) — the router redirects any live-mode visit to it away.
 - Client: Flutter (Android, iOS, Web), Material-based design system
 - Backend: Supabase (hosted Postgres + Auth + Storage + Edge Functions +
   pg_cron)
-- AI: Groq OpenAI-compatible chat-completions API (`llama-3.3-70b-versatile`),
+- AI: Groq OpenAI-compatible chat-completions API (`openai/gpt-oss-120b`),
   proxied through the `ai-advisor-proxy` Edge Function — see
   [AI_MODULES.md](AI_MODULES.md)
 - Languages: English, Hindi, Telugu (app chrome + AI Voice Assistant)

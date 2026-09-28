@@ -8,7 +8,11 @@
 // instead of this function duplicating it.
 //
 // DEPLOYED, using Groq's OpenAI-compatible chat completions API
-// (https://api.groq.com/openai/v1) with `llama-3.3-70b-versatile`. Note:
+// (https://api.groq.com/openai/v1) with `openai/gpt-oss-120b` (switched
+// 2026-09-28 from `llama-3.3-70b-versatile`, which Groq decommissioned
+// 2026-08-16 — every real advisor call 404'd against Groq from that date
+// until this fix; see docs/AI_MODULES.md §2.1 and
+// docs/DEVELOPMENT_PROGRESS.md for the incident writeup). Note:
 // the `LLM_API_KEY` secret is a Groq API key (prefix `gsk_`), not xAI's
 // "Grok" (a different, unrelated provider despite the similar name) — Groq
 // doesn't serve the Grok model. Swap the URL/model below for a different
@@ -328,7 +332,7 @@ serve(async (req) => {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages: buildMessagesWithHistory(buildSystemPrompt(systemPrompt, language), history, query),
         max_tokens: 150,
       }),

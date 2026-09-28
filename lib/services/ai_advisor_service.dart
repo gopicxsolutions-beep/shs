@@ -70,7 +70,7 @@ AiAdvisorRequestException mapFunctionExceptionToAdvisorException(FunctionExcepti
 }
 
 /// Calls the deployed `ai-advisor-proxy` Edge Function, which proxies to a
-/// real LLM (Groq's `llama-3.3-70b-versatile`) — the provider key stays
+/// real LLM (Groq's `openai/gpt-oss-120b`) — the provider key stays
 /// server-side. Used whenever Supabase is configured; falls back to
 /// [MockAiAdvisorService] only in demo mode (see `AiAdvisorRepository`).
 class EdgeFunctionAiAdvisorService implements AiAdvisorService {

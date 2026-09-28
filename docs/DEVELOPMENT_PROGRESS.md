@@ -22546,3 +22546,62 @@ part of the 1175/1175 passing suite), which pumps the real
 `ProductDetailPage` widget the same way the app does. Stated explicitly per
 this file's own quality bar rather than claiming a full manual click-through
 that didn't happen.
+
+## Update (round 206, 2026-09-28) — Bug fix: AI Advisor module completely non-functional since 2026-08-16 (Groq model decommissioned)
+
+**Symptom reported**: "the AI assistant module was not working" — a
+production report, not something found by code review.
+
+**Diagnosis**: queried the live `public.ai_advisor_logs` table directly
+(`supabase db query --linked`) and found its last row was from
+2026-07-30, nearly two months stale. Cross-checked `public.ai_advisor_rate_limits`
+and found real requests had hit the rate limiter as recently as 2026-08-19
+— proving live traffic was reaching the deployed `ai-advisor-proxy`
+function and clearing both the rate-limit and moderation stages (both of
+which log on rejection), yet producing zero successful `ai_advisor_logs`
+rows (client-side logging only fires after a 200 response). That specific
+gap — rate-limit hits with no corresponding log rows, in either direction
+— is only possible if the actual Groq completion call itself was erroring
+on every request. Confirmed the cause against Groq's own deprecation page
+(console.groq.com/docs/deprecations, fetched live): `llama-3.3-70b-versatile`
+(`index.ts`'s hardcoded advisor-completion model) was decommissioned by
+Groq on 2026-08-16 — exactly matching when the log gap begins — so every
+real member question since then received a Groq 404, mapped by `index.ts`
+to a generic `HttpError(502, 'temporarily unavailable')`. Separately found
+`llama-guard-3-8b` (the moderation classifier, §6 of AI_MODULES.md) had
+*already* been decommissioned by Groq back on 2025-06-06 — invisible until
+now because `classifyContentSafety()` deliberately fails open on any
+non-2xx Groq response, so the "real ML classifier" layer the docs describe
+had silently been a no-op since before this repo's Llama-Guard integration
+was even built.
+
+**Fix**: swapped both model ids to Groq's currently-active recommended
+replacements — `openai/gpt-oss-120b` (advisor completions) and
+`meta-llama/llama-guard-4-12b` (moderation) — confirmed active on Groq's
+own model docs as of 2026-09-28, both fetched live rather than assumed.
+Llama Guard 4 uses the same "safe"/"unsafe\n&lt;codes&gt;" reply format and
+category taxonomy as Llama Guard 3, so no parsing-logic changes were
+needed in `moderation.ts`. Updated every doc/comment reference to the old
+model ids (`index.ts`, `moderation.ts`, `ai_advisor_service.dart`,
+`docs/SRS.md`, `docs/AI_MODULES.md`, including a new §2.4 incident
+writeup in AI_MODULES.md itself).
+
+**Verification**: all 62 existing Deno unit tests in
+`supabase/functions/ai-advisor-proxy` pass unchanged (`deno test`) — none
+hardcode a model id, so this was a pure regression check, not proof of the
+fix. Deployed via `supabase functions deploy ai-advisor-proxy
+--project-ref pccbwfmlhpvieetetrpx` (version bumped, confirmed `ACTIVE`).
+Post-deploy, confirmed the function is live and `verify_jwt` is still
+correctly enforced with no regression (`curl` with no `Authorization`
+header still returns `401 UNAUTHORIZED_NO_AUTH_HEADER`, matching this
+function's original baseline behavior documented earlier in this log).
+**Not verified**: an actual authenticated member asking a real question
+end-to-end through the fixed function. Doing that needs a real signed
+Supabase session JWT, which needs either a completed phone-OTP or a
+confirmed-email login — both long-documented in this log and in
+`docs/AI_MODULES.md` §3.1 as not completable in this sandboxed
+environment. Recommend the user ask one real question through any of the
+three advisors in the live app as the final confirmation; a genuinely
+successful call will show up as a new row in `ai_advisor_logs` with a
+`created_at` after this deploy, which can be checked afterward without
+needing to re-run a live click-through here.

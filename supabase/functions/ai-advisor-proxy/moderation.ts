@@ -460,7 +460,13 @@ export const SAFE_FALLBACK_ON_SUSPECTED_LEAK: Record<Language, string> = {
 // classifier. docs/AI_MODULES.md §6/§7 named a real ML-based moderation
 // service as "the remaining highest-priority item" before scaling. This
 // section closes that gap using a real safety-purpose model — Meta's
-// Llama Guard 3, served by the same Groq account already provisioned for
+// Llama Guard 4 (12B; the `llama-guard-3-8b` this originally shipped with
+// was deprecated by Groq on 2025-06-06 and has since been removed — it
+// was already silently failing open on every call, since
+// classifyContentSafety() below treats any non-2xx Groq response as
+// "unflagged" rather than surfacing the failure. Switched 2026-09-28,
+// same incident as index.ts's advisor-completion model swap), served by
+// the same Groq account already provisioned for
 // the advisor completions themselves (`LLM_API_KEY`), so no new vendor,
 // contract, or secret is needed. Llama Guard is a model trained
 // specifically to classify a piece of text against a fixed policy taxonomy
@@ -476,7 +482,7 @@ export const SAFE_FALLBACK_ON_SUSPECTED_LEAK: Record<Language, string> = {
 // completion call, using the same `fetch`/API-key plumbing — this file only
 // owns "given Llama Guard's raw text reply, what does it mean".
 
-export const LLAMA_GUARD_MODEL = 'llama-guard-3-8b';
+export const LLAMA_GUARD_MODEL = 'meta-llama/llama-guard-4-12b';
 
 // Kept tiny: Llama Guard's own reply format is a short fixed vocabulary
 // ("safe" or "unsafe\nS1,S6" etc.) — nothing about a correct classification

@@ -80,7 +80,7 @@ Each request to Groq now carries **real cross-turn conversation memory**:
 `ai-advisor-proxy/history.ts`'s `buildMessagesWithHistory()`:
 
 ```json
-{ "model": "llama-3.3-70b-versatile", "messages": [ {"role":"system","content": <hardened system prompt>}, {"role":"user","content": <prior query 1>}, {"role":"assistant","content": <prior answer 1>}, "...", {"role":"user","content": <new query>} ], "max_tokens": 150 }
+{ "model": "openai/gpt-oss-120b", "messages": [ {"role":"system","content": <hardened system prompt>}, {"role":"user","content": <prior query 1>}, {"role":"assistant","content": <prior answer 1>}, "...", {"role":"user","content": <new query>} ], "max_tokens": 150 }
 ```
 
 `AiAdvisorRepository` keeps a small in-memory list of the current chat
@@ -156,6 +156,56 @@ advisor answers from the conversation text alone, no live data lookup.
   restart, or a different device.
 - No personalization from her actual savings/loan/SHG data.
 - A persistent disclaimer is shown, plus a two-layer moderation/prompt-injection defense server-side — regex pre-filter and a real Llama Guard ML classifier on both input and output (§6) — the specific rejection reason now *is* surfaced to her (§2.2 point 5), but it's still not a dedicated, vendor-operated trust & safety platform.
+
+### 2.4 Historical incident: every real advisor call silently failing (found and fixed 2026-09-28)
+
+**Symptom reported**: "the AI assistant module was not working."
+
+**Root cause**: both hardcoded Groq model ids in `ai-advisor-proxy` had been
+decommissioned upstream. `llama-3.3-70b-versatile` (the main advisor
+completion model, `index.ts`) was shut down by Groq on 2026-08-16; every
+completion call since then received a 404 from Groq, which `index.ts` maps
+to `HttpError(502, 'The advisor service is temporarily unavailable...')` —
+so every genuine question a member asked from that date forward failed with
+the generic "temporarily unavailable" message (§2.2 point 5's 401/500/502
+bucket), even though the app, the Edge Function deployment, the API key,
+and the rate limit were all otherwise working correctly. Separately,
+`llama-guard-3-8b` (the moderation classifier, §6) had already been
+decommissioned by Groq back on 2025-06-06 — that failure was invisible
+end-to-end because `classifyContentSafety()` deliberately fails open on any
+non-2xx Groq response (§6's documented availability trade-off), so the ML
+moderation layer had silently been a no-op for every request since before
+this feature's Llama-Guard integration was even built on top of it.
+
+**Diagnosis path**: `public.ai_advisor_logs`'s last row was from
+2026-07-30, but `public.ai_advisor_rate_limits` showed real requests
+hitting the rate limiter as recently as 2026-08-19 — proving requests were
+reaching the Edge Function and clearing the rate-limit/moderation stages
+(both of which log on rejection) but never completing successfully
+(client-side logging only happens after a 200). That gap — rate-limit hits
+with zero corresponding `ai_advisor_logs` rows — is only possible if the
+Groq completion call itself was erroring, which pointed straight at the
+hardcoded model ids. Confirmed against Groq's own deprecation list
+(console.groq.com/docs/deprecations).
+
+**Fix**: swapped to Groq's currently-active recommended replacements —
+`openai/gpt-oss-120b` for the advisor completion model, `meta-llama/llama-guard-4-12b`
+for the moderation classifier — both confirmed active on Groq's model docs
+as of 2026-09-28. Llama Guard 4 uses the same reply format (`"safe"` /
+`"unsafe\n<category codes>"`) and category taxonomy as Llama Guard 3, so
+`parseLlamaGuardVerdict()`/`reasonForLlamaGuardVerdict()` needed no changes.
+
+**Lesson for future rounds**: a third-party-hosted model id is not a
+permanent constant — Groq (and other inference providers) periodically
+decommission older models on a schedule published in their own docs, with
+no code-level warning beyond the HTTP call starting to fail. This class of
+failure produces no application error, no failing test, and no RLS/logic
+bug — `flutter analyze`/`flutter test`/code review would all stay green
+through it. The only way it surfaced was a user noticing the feature
+"wasn't working" and someone cross-referencing live DB evidence against the
+provider's own deprecation page. Worth periodically checking
+console.groq.com/docs/deprecations against the model ids actually in use
+here, not just when a user reports a failure.
 
 ---
 
@@ -597,8 +647,8 @@ using only the already-provisioned Groq key — no new paid moderation vendor:
   of the Edge Function runtime.
 
 **A real ML-based classifier now exists on top of the regex layer above** —
-Groq's **Llama Guard 3** model (`llama-guard-3-8b`), served by the same
-already-provisioned Groq account (no new vendor/contract/secret):
+Groq's **Llama Guard 4** model (`meta-llama/llama-guard-4-12b`), served by
+the same already-provisioned Groq account (no new vendor/contract/secret):
 - Runs on the live query *after* the regex pre-filter passes (avoiding a
   redundant call on requests the cheap filter already caught) and *before*
   the main advisor completion call — a genuine second-pass safety classifier
@@ -728,7 +778,7 @@ decision worth making.
   confirmed deployed and functioning against the live database (function,
   active cron job, and a successful manual invocation all directly verified;
   see §4 for details).
-- **A real ML-based classifier (Groq Llama Guard 3) now runs alongside the
+- **A real ML-based classifier (Groq Llama Guard 4) now runs alongside the
   regex pre-filter, on both input and output** (§6) — closes what used to be
   this list's top item. Blocked attempts are now logged
   (`ai_advisor_logs.blocked`, migration `0044`) and surfaced to staff via a
